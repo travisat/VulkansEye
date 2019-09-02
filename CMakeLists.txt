@@ -9,10 +9,13 @@ add_executable(VulkanTest src/main.cpp src/HelloWorldTriangle.cpp)
 set_target_properties(VulkanTest PROPERTIES
             CXX_STANDARD 17)   
 
+set(myLibraries "C:/Users/travi_000/Documents/Visual Studio Code/Libraries")
+
 target_include_directories(VulkanTest 
     PUBLIC 
-        "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/glfw-3.3.bin.WIN64/include"
-        "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/glm"
+        "${myLibraries}/glfw-3.3.bin.WIN64/include"
+        "${myLibraries}/glm"
+        "${myLibraries}/stb"
         "C:/VulkanSDK/1.1.114.0/Include"
         )
 
