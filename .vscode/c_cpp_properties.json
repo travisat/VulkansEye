@@ -8,6 +8,7 @@
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/glfw-3.3.bin.WIN32/include",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/glm",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/stb",
+                "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/tinyobjloader",
                 "C:/VulkanSDK/1.1.114.0/Include"
             ],
             "defines": [

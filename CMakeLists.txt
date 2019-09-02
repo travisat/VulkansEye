@@ -16,6 +16,7 @@ target_include_directories(VulkanTest
         "${myLibraries}/glfw-3.3.bin.WIN64/include"
         "${myLibraries}/glm"
         "${myLibraries}/stb"
+        "${myLibraries}/tinyobjloader"
         "C:/VulkanSDK/1.1.114.0/Include"
         )
 
