@@ -706,11 +706,6 @@ void HelloWorldTriangle::createDescriptorSets()
     }
 }
 
-void HelloWorldTriangle::pollEvents()
-{
-
-}
-
 VkShaderModule HelloWorldTriangle::createShaderModule(const std::vector<char> &code)
 {
     VkShaderModuleCreateInfo createInfo = {};
