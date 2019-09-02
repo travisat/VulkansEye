@@ -8,6 +8,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <stb_image.h>
+
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -59,6 +61,7 @@ struct Vertex
 {
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static VkVertexInputBindingDescription getBindingDescription()
     {
@@ -70,9 +73,9 @@ struct Vertex
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
     {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDesriptions = {};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDesriptions = {};
         attributeDesriptions[0].binding = 0;
         attributeDesriptions[0].location = 0;
         attributeDesriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -83,19 +86,25 @@ struct Vertex
         attributeDesriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDesriptions[1].offset = offsetof(Vertex, color);
 
+        attributeDesriptions[2].binding = 0;
+        attributeDesriptions[2].location = 2;
+        attributeDesriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDesriptions[2].offset = offsetof(Vertex, texCoord);
+
         return attributeDesriptions;
     }
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+    {{-0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
 
 const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
-struct UniformBufferObject {
+struct UniformBufferObject
+{
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
@@ -136,6 +145,11 @@ private:
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+    VkImageView textureImageView;
+    VkSampler textureSampler;
+
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
 
@@ -169,6 +183,9 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
     void createVertexBuffer();
     void createIndexBuffer();
     void createCommandBuffers();
@@ -180,6 +197,11 @@ private:
     VkShaderModule createShaderModule(const std::vector<char> &code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    VkImageView createImageView(VkImage image, VkFormat format);
     bool isDeviceSuitable(VkPhysicalDevice device);
     bool checkDeviceExtensionsSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamiles(VkPhysicalDevice device);
@@ -191,6 +213,7 @@ private:
     bool checkValidationLayerSupport();
     std::vector<const char *> getRequiredExtensions();
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
     void updateUniformBuffer(uint32_t currentImage);
     void recreateSwapChain();
     void cleanupSwapChain();
