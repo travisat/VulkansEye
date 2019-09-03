@@ -162,10 +162,16 @@ private:
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
+    uint32_t mipLevels;
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkImage colorImage;
+    VkDeviceMemory colorImageMemory;
+    VkImageView colorImageView;
 
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
@@ -224,9 +230,9 @@ private:
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
     bool isDeviceSuitable(VkPhysicalDevice device);
     bool checkDeviceExtensionsSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamiles(VkPhysicalDevice device);
@@ -241,8 +247,15 @@ private:
     VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat Format);
-    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
+    void createImage(uint32_t width, uint32_t height, 
+            VkFormat format, VkImageTiling tiling, 
+            VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+            VkImage &image, VkDeviceMemory &imageMemory, 
+            uint32_t mipLevels, VkSampleCountFlagBits numSamples);
     void updateUniformBuffer(uint32_t currentImage);
+    void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+    VkSampleCountFlagBits getMaxUsableSampleCount();
+    void createColorResources();
     void recreateSwapChain();
     void cleanupSwapChain();
     void drawFrame();
