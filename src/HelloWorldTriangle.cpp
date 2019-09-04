@@ -1,9 +1,11 @@
 #include "HelloWorldTriangle.h"
+#include "input.h"
 
 void HelloWorldTriangle::run()
 {
     initWindow();
     initVulkan();
+    setupInputCallbacks();
     mainLoop();
     cleanup();
 }
@@ -539,8 +541,6 @@ void HelloWorldTriangle::createColorResources()
                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY,
                 colorImage, colorImageMemory);
-
-    std::cerr << "created colorimage\n";
 
     colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
@@ -1675,6 +1675,15 @@ void HelloWorldTriangle::drawFrame()
     }
 
     currentFrame = (currentFrame + 1) & MAX_FRAMES_IN_FLIGHT;
+}
+
+void HelloWorldTriangle::setupInputCallbacks()
+{
+    Input &hexmap = Input::getInstance();
+
+    glfwSetKeyCallback(window, &Input::keyCallback);
+    glfwSetMouseButtonCallback(window, &Input::mouseButtonCallback);
+    glfwSetCursorPosCallback(window, &Input::cursorPosCallback);
 }
 
 void HelloWorldTriangle::mainLoop()

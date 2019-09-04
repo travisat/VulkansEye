@@ -271,6 +271,9 @@ private:
     void recreateSwapChain();
     void cleanupSwapChain();
     void drawFrame();
+
+    void setupInputCallbacks();
+    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
     void mainLoop();
     void cleanup();
 
