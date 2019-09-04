@@ -12,6 +12,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
+#include <vk_mem_alloc.h>
+
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 

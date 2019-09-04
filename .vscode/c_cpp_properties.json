@@ -9,6 +9,7 @@
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/glm",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/stb",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/tinyobjloader",
+                "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/vma-2.2.0/src",
                 "C:/VulkanSDK/1.1.114.0/Include"
             ],
             "defines": [

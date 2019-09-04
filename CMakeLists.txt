@@ -17,6 +17,7 @@ target_include_directories(VulkanTest
         "${myLibraries}/glm"
         "${myLibraries}/stb"
         "${myLibraries}/tinyobjloader"
+        "${myLibraries}/vma-2.2.0/src"
         "C:/VulkanSDK/1.1.114.0/Include"
         )
 

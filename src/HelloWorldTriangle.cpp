@@ -1,5 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "HelloWorldTriangle.h"
 
 void HelloWorldTriangle::run()
