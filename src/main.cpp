@@ -1,6 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
-#define VMA_IMPLEMENTATIO
+#define VMA_IMPLEMENTATION
 #include "HelloWorldTriangle.h"
 
 int main()

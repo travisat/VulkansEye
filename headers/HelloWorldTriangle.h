@@ -142,6 +142,8 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
+    VmaAllocator allocator;
+
     VkQueue graphicsQueue;
     VkQueue presentQueue;
 
@@ -182,13 +184,13 @@ private:
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
+    VmaAllocation vertexBufferMemory;
 
     VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    VmaAllocation indexBufferMemory;
 
     std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBufferMemory;
+    std::vector<VmaAllocation> uniformBufferMemory;
 
     std::vector<VkCommandBuffer> commandBuffers;
 
@@ -208,6 +210,7 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+    void createAllocator();
     void createSwapChain();
     void createImageViews();
     void createRenderPass();
@@ -228,7 +231,7 @@ private:
     void createDescriptorPool();
     void createDescriptorSets();
     VkShaderModule createShaderModule(const std::vector<char> &code);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memUsage, VkBuffer &buffer, VmaAllocation &allocation);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);

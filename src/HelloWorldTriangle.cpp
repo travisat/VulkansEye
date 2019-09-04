@@ -22,30 +22,57 @@ void HelloWorldTriangle::initWindow()
 void HelloWorldTriangle::initVulkan()
 {
     createInstance();
+    std::cerr << "created instance\n";
     setupDebugMessenger();
+    std::cerr << "setup debug messenger\n";
     createSurface();
+    std::cerr << "crated surface \n";
     pickPhysicalDevice();
+    std::cerr << "picked phys device\n";
     createLogicalDevice();
+    std::cerr << "created device\n";
+    createAllocator();
+    std::cerr << "created allocator\n";
     createSwapChain();
+    std::cerr << "created swapchain\n";
     createImageViews();
+    std::cerr << "created imageviews\n";
     createRenderPass();
+    std::cerr << "created renderpass\n";
     createDescriptorSetLayout();
+    std::cerr << "crated descriptorsetlayout\n";
     createGraphicsPipeline();
+    std::cerr << "created graphics pipeline\n";
     createCommandPool();
+    std::cerr << "created command pool\n";
     createColorResources();
+    std::cerr << "created color resources\n";
     createDepthResources();
+    std::cerr << "created depth resouirces\n"; 
     createFramebuffers();
+    std::cerr << "created framebuffers\n";
     createTextureImage();
+    std::cerr << "created texture image\n";
     createTextureImageView();
+    std::cerr << "created texture image view\n";
     createTextureSampler();
+    std::cerr << "created texture sampler\n";
     loadModel();
+    std::cerr << "loaded model\n";
     createVertexBuffer();
+    std::cerr <<"created vertex buffer\n";
     createIndexBuffer();
+    std::cerr << "created indexbuffer\n";
     createUniformBuffers();
+    std::cerr << "created uniforbuffers\n";
     createDescriptorPool();
+    std::cerr << "created descriptor pool\n";
     createDescriptorSets();
+    std::cerr << "created descriptor sets\n";
     createCommandBuffers();
+    std::cerr << "created command buffers\n";
     createSyncObjects();
+    std::cerr << "created sync objects\n";
 }
 
 void HelloWorldTriangle::createInstance()
@@ -194,6 +221,15 @@ void HelloWorldTriangle::createLogicalDevice()
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+}
+
+void HelloWorldTriangle::createAllocator()
+{
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device;
+
+    vmaCreateAllocator(&allocatorInfo, &allocator);
 }
 
 void HelloWorldTriangle::createSwapChain()
@@ -548,13 +584,15 @@ void HelloWorldTriangle::createTextureImage()
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    createBuffer(imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferMemory;
+
+    createBuffer(imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY, stagingBuffer, stagingBufferMemory);
+
 
     void *data;
-    vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+    vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(device, stagingBufferMemory);
+    vmaUnmapMemory(allocator, stagingBufferMemory);
 
     stbi_image_free(pixels);
 
@@ -567,8 +605,7 @@ void HelloWorldTriangle::createTextureImage()
     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
     copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 
     generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, mipLevels);
 }
@@ -649,28 +686,27 @@ void HelloWorldTriangle::createVertexBuffer()
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VmaAllocation stagingBufferMemory;
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 VMA_MEMORY_USAGE_CPU_ONLY,
                  stagingBuffer,
                  stagingBufferMemory);
 
     void *data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, vertices.data(), (size_t)bufferSize);
-    vkUnmapMemory(device, stagingBufferMemory);
+    vmaUnmapMemory(allocator, stagingBufferMemory);
 
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 VMA_MEMORY_USAGE_GPU_ONLY,
                  vertexBuffer,
                  vertexBufferMemory);
 
     copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
 void HelloWorldTriangle::createIndexBuffer()
@@ -678,28 +714,27 @@ void HelloWorldTriangle::createIndexBuffer()
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
+    VmaAllocation stagingBufferMemory;
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 VMA_MEMORY_USAGE_CPU_ONLY, 
                  stagingBuffer,
                  stagingBufferMemory);
 
     void *data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(allocator, stagingBufferMemory, &data);
     memcpy(data, indices.data(), (size_t)bufferSize);
-    vkUnmapMemory(device, stagingBufferMemory);
+    vmaUnmapMemory(allocator, stagingBufferMemory);
 
     createBuffer(bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 VMA_MEMORY_USAGE_GPU_ONLY,      
                  indexBuffer,
                  indexBufferMemory);
 
     copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
 void HelloWorldTriangle::createCommandBuffers()
@@ -826,7 +861,7 @@ void HelloWorldTriangle::createUniformBuffers()
 
     for (size_t i = 0; i < swapChainImages.size(); i++)
     {
-        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBufferMemory[i]);
+        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, uniformBuffers[i], uniformBufferMemory[i]);
     }
 }
 
@@ -913,7 +948,7 @@ VkShaderModule HelloWorldTriangle::createShaderModule(const std::vector<char> &c
     return shaderModule;
 }
 
-void HelloWorldTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+void HelloWorldTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memUsage, VkBuffer &buffer, VmaAllocation& allocation)
 {
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -921,25 +956,10 @@ void HelloWorldTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usag
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create buffer!");
-    }
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = memUsage;
 
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate buffer memory");
-    }
-
-    vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
 }
 
 void HelloWorldTriangle::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -1414,9 +1434,9 @@ void HelloWorldTriangle::updateUniformBuffer(uint32_t currentImage)
     ubo.proj[1][1] *= -1;
 
     void *data;
-    vkMapMemory(device, uniformBufferMemory[currentImage], 0, sizeof(ubo), 0, &data);
+    vmaMapMemory(allocator, uniformBufferMemory[currentImage], &data);
     memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device, uniformBufferMemory[currentImage]);
+    vmaUnmapMemory(allocator, uniformBufferMemory[currentImage]);
 }
 
 void HelloWorldTriangle::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
@@ -1613,8 +1633,7 @@ void HelloWorldTriangle::cleanupSwapChain()
 
     for (size_t i = 0; i < swapChainImages.size(); i++)
     {
-        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-        vkFreeMemory(device, uniformBufferMemory[i], nullptr);
+        vmaDestroyBuffer(allocator, uniformBuffers[i], uniformBufferMemory[i]);
     }
 
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -1708,10 +1727,9 @@ void HelloWorldTriangle::cleanup()
     vkDestroyImage(device, textureImage, nullptr);
     vkFreeMemory(device, textureImageMemory, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-    vkDestroyBuffer(device, indexBuffer, nullptr);
-    vkFreeMemory(device, indexBufferMemory, nullptr);
-    vkDestroyBuffer(device, vertexBuffer, nullptr);
-    vkFreeMemory(device, vertexBufferMemory, nullptr);
+    vmaDestroyBuffer(allocator, indexBuffer, indexBufferMemory);
+    vmaDestroyBuffer(allocator, vertexBuffer, vertexBufferMemory);
+    vmaDestroyAllocator(allocator);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
