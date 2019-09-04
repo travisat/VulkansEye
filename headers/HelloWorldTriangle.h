@@ -208,6 +208,7 @@ private:
 
     bool framebufferResized = false;
 
+
     void initWindow();
 
     void initVulkan();

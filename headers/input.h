@@ -1,5 +1,7 @@
 #include <glm/glm.hpp>
 
+int spinDirection = 1;
+
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 class Input
 {
@@ -45,10 +47,15 @@ public:
         {
             std::cerr << "Pressed Escape\n";
             glfwSetWindowShouldClose(window, VK_TRUE);
+        } else if ( key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+            spinDirection = -1;
+        } else if ( key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+            spinDirection = 1;
         }
     }
 
 private:
+
     Input(void) // private constructor necessary to allow only 1 instance
     {
     }
