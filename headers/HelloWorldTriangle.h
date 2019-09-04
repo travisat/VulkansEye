@@ -17,6 +17,7 @@
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 
+
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -112,15 +113,20 @@ struct Vertex
     }
 };
 
-namespace std {
-    template<> struct hash<Vertex> {
-        size_t operator()(Vertex const& vertex) const {
-            return ((hash<glm::vec3>()(vertex.pos) ^
-            (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-            (hash<glm::vec2>()(vertex.texCoord) << 1);
-        }
-    };
-}
+namespace std
+{
+template <>
+struct hash<Vertex>
+{
+    size_t operator()(Vertex const &vertex) const
+    {
+        return ((hash<glm::vec3>()(vertex.pos) ^
+                 (hash<glm::vec3>()(vertex.color) << 1)) >>
+                1) ^
+               (hash<glm::vec2>()(vertex.texCoord) << 1);
+    }
+};
+} // namespace std
 
 struct UniformBufferObject
 {
@@ -168,17 +174,17 @@ private:
 
     uint32_t mipLevels;
     VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+    VmaAllocation textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkImage colorImage;
-    VkDeviceMemory colorImageMemory;
+    VmaAllocation colorImageMemory;
     VkImageView colorImageView;
 
     VkImage depthImage;
-    VkDeviceMemory depthImageMemory;
+    VmaAllocation depthImageMemory;
     VkImageView depthImageView;
 
     std::vector<Vertex> vertices;
@@ -217,6 +223,7 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createColorResources();
     void createDepthResources();
     void createTextureImage();
     void createTextureImageView();
@@ -233,6 +240,12 @@ private:
     VkShaderModule createShaderModule(const std::vector<char> &code);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memUsage, VkBuffer &buffer, VmaAllocation &allocation);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void createImage(uint32_t width, uint32_t height,
+                     VkFormat format, VkImageTiling tiling,
+                     uint32_t mipLevels, VkSampleCountFlagBits numSamples,
+                     VkImageUsageFlags usage, VmaMemoryUsage memUsage,
+                     VkImage &image, VmaAllocation &allocation);
+    void updateUniformBuffer(uint32_t currentImage);
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
@@ -252,15 +265,9 @@ private:
     VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat Format);
-    void createImage(uint32_t width, uint32_t height, 
-            VkFormat format, VkImageTiling tiling, 
-            VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
-            VkImage &image, VkDeviceMemory &imageMemory, 
-            uint32_t mipLevels, VkSampleCountFlagBits numSamples);
-    void updateUniformBuffer(uint32_t currentImage);
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
     VkSampleCountFlagBits getMaxUsableSampleCount();
-    void createColorResources();
+
     void recreateSwapChain();
     void cleanupSwapChain();
     void drawFrame();
