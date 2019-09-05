@@ -17,7 +17,6 @@
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 
-
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -32,11 +31,7 @@
 #include <chrono>
 #include <unordered_map>
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
-
-const std::string MODEL_PATH = "resources/models/chalet.obj";
-const std::string TEXTURE_PATH = "resources/textures/chalet.jpg";
+#include "input.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -135,18 +130,30 @@ struct UniformBufferObject
     alignas(16) glm::mat4 proj;
 };
 
-class HelloWorldTriangle
+static bool framebufferResized = false;
+
+class VkBackend
 {
 public:
-    void run();
+    VkBackend(GLFWwindow *window, uint32_t width, uint32_t height, std::string tPath, std::string mPath);
+    ~VkBackend();
+    void drawFrame();
+
+    int spinDirection = 1;
+    VkDevice device;
 
 private:
     GLFWwindow *window;
+    uint32_t windowWidth;
+    uint32_t windowHeight;
+
+    std::string texturePath;
+    std::string modelPath;
+
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
 
     VmaAllocator allocator;
 
@@ -206,12 +213,8 @@ private:
 
     size_t currentFrame = 0;
 
-    bool framebufferResized = false;
-
-
-    void initWindow();
-
     void initVulkan();
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -234,6 +237,7 @@ private:
     void createIndexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
+
     void createDescriptorSetLayout();
     void createUniformBuffers();
     void createDescriptorPool();
@@ -271,12 +275,6 @@ private:
 
     void recreateSwapChain();
     void cleanupSwapChain();
-    void drawFrame();
-
-    void setupInputCallbacks();
-    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void mainLoop();
-    void cleanup();
 
     VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
                                           const VkDebugUtilsMessengerCreateInfoEXT *pcCreateInfo,
@@ -284,12 +282,6 @@ private:
                                           VkDebugUtilsMessengerEXT *pDebugMessenger);
 
     void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator);
-
-    static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
-    {
-        auto app = reinterpret_cast<HelloWorldTriangle *>(glfwGetWindowUserPointer(window));
-        app->framebufferResized = true;
-    };
 
     static std::vector<char> readFile(const std::string &filename)
     {

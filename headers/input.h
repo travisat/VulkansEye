@@ -1,6 +1,6 @@
-#include <glm/glm.hpp>
+#pragma once
 
-int spinDirection = 1;
+#include <glm/glm.hpp>
 
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 class Input
@@ -54,11 +54,23 @@ public:
         }
     }
 
+    static int getSpinDirection() 
+    {
+        return getInstance().getSpinDirectionIMPL();
+    }
+
+    int getSpinDirectionIMPL()
+    {
+        return spinDirection;
+    }
+
 private:
 
     Input(void) // private constructor necessary to allow only 1 instance
     {
     }
+
+    int spinDirection = 1;
 
     Input(Input const &);          // prevent copies
     void operator=(Input const &); // prevent assignments

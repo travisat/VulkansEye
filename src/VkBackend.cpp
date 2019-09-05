@@ -1,27 +1,49 @@
-#include "HelloWorldTriangle.h"
-#include "input.h"
+#include "VkBackend.h"
 
-void HelloWorldTriangle::run()
+VkBackend::VkBackend(GLFWwindow *window, uint32_t width, uint32_t height, std::string tPath, std::string mPath)
 {
-    initWindow();
+    window = window;
+    windowWidth = width; 
+    windowHeight = height;
+    texturePath =  tPath;
+    modelPath = mPath;
     initVulkan();
-    setupInputCallbacks();
-    mainLoop();
-    cleanup();
 }
 
-void HelloWorldTriangle::initWindow()
+VkBackend::~VkBackend()
 {
-    glfwInit();
+    cleanupSwapChain();
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    vkDestroySampler(device, textureSampler, nullptr);
+    vkDestroyImageView(device, textureImageView, nullptr);
 
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+    vmaDestroyImage(allocator, textureImage, textureImageMemory);
+    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    vmaDestroyBuffer(allocator, indexBuffer, indexBufferMemory);
+    vmaDestroyBuffer(allocator, vertexBuffer, vertexBufferMemory);
+    vmaDestroyAllocator(allocator);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(device, inFlightFences[i], nullptr);
+    }
+
+    vkDestroyCommandPool(device, commandPool, nullptr);
+
+    vkDestroyDevice(device, nullptr);
+
+    if (enableValidationLayers)
+    {
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    }
+
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
 }
 
-void HelloWorldTriangle::initVulkan()
+void VkBackend::initVulkan()
 {
     createInstance();
     setupDebugMessenger();
@@ -51,7 +73,7 @@ void HelloWorldTriangle::initVulkan()
     createSyncObjects();
 }
 
-void HelloWorldTriangle::createInstance()
+void VkBackend::createInstance()
 {
     if (enableValidationLayers && !checkValidationLayerSupport())
     {
@@ -96,7 +118,7 @@ void HelloWorldTriangle::createInstance()
     }
 }
 
-void HelloWorldTriangle::setupDebugMessenger()
+void VkBackend::setupDebugMessenger()
 {
     if (!enableValidationLayers)
         return;
@@ -110,7 +132,7 @@ void HelloWorldTriangle::setupDebugMessenger()
     }
 }
 
-void HelloWorldTriangle::createSurface()
+void VkBackend::createSurface()
 {
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
     {
@@ -118,7 +140,7 @@ void HelloWorldTriangle::createSurface()
     }
 }
 
-void HelloWorldTriangle::pickPhysicalDevice()
+void VkBackend::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -147,7 +169,7 @@ void HelloWorldTriangle::pickPhysicalDevice()
     }
 }
 
-void HelloWorldTriangle::createLogicalDevice()
+void VkBackend::createLogicalDevice()
 {
     QueueFamilyIndices indices = findQueueFamiles(physicalDevice);
 
@@ -199,7 +221,7 @@ void HelloWorldTriangle::createLogicalDevice()
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-void HelloWorldTriangle::createAllocator()
+void VkBackend::createAllocator()
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = physicalDevice;
@@ -208,7 +230,7 @@ void HelloWorldTriangle::createAllocator()
     vmaCreateAllocator(&allocatorInfo, &allocator);
 }
 
-void HelloWorldTriangle::createSwapChain()
+void VkBackend::createSwapChain()
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
@@ -266,7 +288,7 @@ void HelloWorldTriangle::createSwapChain()
     swapChainExtent = extent;
 }
 
-void HelloWorldTriangle::createImageViews()
+void VkBackend::createImageViews()
 {
     swapChainImageViews.resize(swapChainImages.size());
 
@@ -276,7 +298,7 @@ void HelloWorldTriangle::createImageViews()
     }
 }
 
-void HelloWorldTriangle::createRenderPass()
+void VkBackend::createRenderPass()
 {
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = swapChainImageFormat;
@@ -352,7 +374,7 @@ void HelloWorldTriangle::createRenderPass()
     }
 }
 
-void HelloWorldTriangle::createGraphicsPipeline()
+void VkBackend::createGraphicsPipeline()
 {
     auto vertShaderCode = readFile("resources/shaders/vert.spv");
     auto fragShaderCode = readFile("resources/shaders/frag.spv");
@@ -490,7 +512,7 @@ void HelloWorldTriangle::createGraphicsPipeline()
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
 }
 
-void HelloWorldTriangle::createFramebuffers()
+void VkBackend::createFramebuffers()
 {
     swapChainFramebuffers.resize(swapChainImageViews.size());
 
@@ -517,7 +539,7 @@ void HelloWorldTriangle::createFramebuffers()
     }
 }
 
-void HelloWorldTriangle::createCommandPool()
+void VkBackend::createCommandPool()
 {
     QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(physicalDevice);
 
@@ -531,7 +553,7 @@ void HelloWorldTriangle::createCommandPool()
     }
 }
 
-void HelloWorldTriangle::createColorResources()
+void VkBackend::createColorResources()
 {
     VkFormat colorFormat = swapChainImageFormat;
 
@@ -547,7 +569,7 @@ void HelloWorldTriangle::createColorResources()
     transitionImageLayout(colorImage, colorFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
 }
 
-void HelloWorldTriangle::createDepthResources()
+void VkBackend::createDepthResources()
 {
     VkFormat depthFormat = findDepthFormat();
 
@@ -562,10 +584,10 @@ void HelloWorldTriangle::createDepthResources()
     transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
-void HelloWorldTriangle::createTextureImage()
+void VkBackend::createTextureImage()
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc *pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels)
@@ -602,12 +624,12 @@ void HelloWorldTriangle::createTextureImage()
     generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, mipLevels);
 }
 
-void HelloWorldTriangle::createTextureImageView()
+void VkBackend::createTextureImageView()
 {
     textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 }
 
-void HelloWorldTriangle::createTextureSampler()
+void VkBackend::createTextureSampler()
 {
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -631,14 +653,14 @@ void HelloWorldTriangle::createTextureSampler()
     }
 }
 
-void HelloWorldTriangle::loadModel()
+void VkBackend::loadModel()
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str()))
     {
         throw std::runtime_error(warn + err);
     }
@@ -673,7 +695,7 @@ void HelloWorldTriangle::loadModel()
     }
 }
 
-void HelloWorldTriangle::createVertexBuffer()
+void VkBackend::createVertexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
@@ -701,7 +723,7 @@ void HelloWorldTriangle::createVertexBuffer()
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
-void HelloWorldTriangle::createIndexBuffer()
+void VkBackend::createIndexBuffer()
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
@@ -729,7 +751,7 @@ void HelloWorldTriangle::createIndexBuffer()
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
 }
 
-void HelloWorldTriangle::createCommandBuffers()
+void VkBackend::createCommandBuffers()
 {
     commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -790,7 +812,7 @@ void HelloWorldTriangle::createCommandBuffers()
     }
 }
 
-void HelloWorldTriangle::createSyncObjects()
+void VkBackend::createSyncObjects()
 {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -815,7 +837,7 @@ void HelloWorldTriangle::createSyncObjects()
     }
 }
 
-void HelloWorldTriangle::createDescriptorSetLayout()
+void VkBackend::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
@@ -844,7 +866,7 @@ void HelloWorldTriangle::createDescriptorSetLayout()
     }
 }
 
-void HelloWorldTriangle::createUniformBuffers()
+void VkBackend::createUniformBuffers()
 {
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -857,7 +879,7 @@ void HelloWorldTriangle::createUniformBuffers()
     }
 }
 
-void HelloWorldTriangle::createDescriptorPool()
+void VkBackend::createDescriptorPool()
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -877,7 +899,7 @@ void HelloWorldTriangle::createDescriptorPool()
     }
 }
 
-void HelloWorldTriangle::createDescriptorSets()
+void VkBackend::createDescriptorSets()
 {
     std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
@@ -925,7 +947,7 @@ void HelloWorldTriangle::createDescriptorSets()
     }
 }
 
-VkShaderModule HelloWorldTriangle::createShaderModule(const std::vector<char> &code)
+VkShaderModule VkBackend::createShaderModule(const std::vector<char> &code)
 {
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -940,7 +962,7 @@ VkShaderModule HelloWorldTriangle::createShaderModule(const std::vector<char> &c
     return shaderModule;
 }
 
-void HelloWorldTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+void VkBackend::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                                       VmaMemoryUsage memUsage, VkBuffer &buffer,
                                       VmaAllocation &allocation)
 {
@@ -956,7 +978,7 @@ void HelloWorldTriangle::createBuffer(VkDeviceSize size, VkBufferUsageFlags usag
     vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
 }
 
-void HelloWorldTriangle::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void VkBackend::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -967,7 +989,7 @@ void HelloWorldTriangle::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDe
     endSingleTimeCommands(commandBuffer);
 }
 
-void HelloWorldTriangle::createImage(uint32_t width, uint32_t height,
+void VkBackend::createImage(uint32_t width, uint32_t height,
                                      VkFormat format, VkImageTiling tiling,
                                      uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                                      VkImageUsageFlags usage, VmaMemoryUsage memUsage,
@@ -997,7 +1019,7 @@ void HelloWorldTriangle::createImage(uint32_t width, uint32_t height,
     };
 }
 
-VkCommandBuffer HelloWorldTriangle::beginSingleTimeCommands()
+VkCommandBuffer VkBackend::beginSingleTimeCommands()
 {
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1018,7 +1040,7 @@ VkCommandBuffer HelloWorldTriangle::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void HelloWorldTriangle::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+void VkBackend::endSingleTimeCommands(VkCommandBuffer commandBuffer)
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -1033,7 +1055,7 @@ void HelloWorldTriangle::endSingleTimeCommands(VkCommandBuffer commandBuffer)
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void HelloWorldTriangle::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
+void VkBackend::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -1113,7 +1135,7 @@ void HelloWorldTriangle::transitionImageLayout(VkImage image, VkFormat format, V
     endSingleTimeCommands(commandBuffer);
 }
 
-void HelloWorldTriangle::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+void VkBackend::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -1141,7 +1163,7 @@ void HelloWorldTriangle::copyBufferToImage(VkBuffer buffer, VkImage image, uint3
     endSingleTimeCommands(commandBuffer);
 }
 
-VkImageView HelloWorldTriangle::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
+VkImageView VkBackend::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
 {
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1163,7 +1185,7 @@ VkImageView HelloWorldTriangle::createImageView(VkImage image, VkFormat format, 
     return imageView;
 }
 
-bool HelloWorldTriangle::isDeviceSuitable(VkPhysicalDevice device)
+bool VkBackend::isDeviceSuitable(VkPhysicalDevice device)
 {
     QueueFamilyIndices indicies = findQueueFamiles(device);
 
@@ -1182,7 +1204,7 @@ bool HelloWorldTriangle::isDeviceSuitable(VkPhysicalDevice device)
     return indicies.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
-bool HelloWorldTriangle::checkDeviceExtensionsSupport(VkPhysicalDevice device)
+bool VkBackend::checkDeviceExtensionsSupport(VkPhysicalDevice device)
 {
     uint32_t extensionsCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
@@ -1200,7 +1222,7 @@ bool HelloWorldTriangle::checkDeviceExtensionsSupport(VkPhysicalDevice device)
     return requiredExtensions.empty();
 }
 
-QueueFamilyIndices HelloWorldTriangle::findQueueFamiles(VkPhysicalDevice device)
+QueueFamilyIndices VkBackend::findQueueFamiles(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices;
 
@@ -1235,7 +1257,7 @@ QueueFamilyIndices HelloWorldTriangle::findQueueFamiles(VkPhysicalDevice device)
     return indices;
 }
 
-SwapChainSupportDetails HelloWorldTriangle::querySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails VkBackend::querySwapChainSupport(VkPhysicalDevice device)
 {
     SwapChainSupportDetails details;
 
@@ -1262,7 +1284,7 @@ SwapChainSupportDetails HelloWorldTriangle::querySwapChainSupport(VkPhysicalDevi
     return details;
 }
 
-VkSurfaceFormatKHR HelloWorldTriangle::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+VkSurfaceFormatKHR VkBackend::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
     for (const auto &availableFormat : availableFormats)
     {
@@ -1275,7 +1297,7 @@ VkSurfaceFormatKHR HelloWorldTriangle::chooseSwapSurfaceFormat(const std::vector
     return availableFormats[0];
 }
 
-VkPresentModeKHR HelloWorldTriangle::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+VkPresentModeKHR VkBackend::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
     for (const auto &availablePresentMode : availablePresentModes)
     {
@@ -1287,7 +1309,7 @@ VkPresentModeKHR HelloWorldTriangle::chooseSwapPresentMode(const std::vector<VkP
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D HelloWorldTriangle::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
+VkExtent2D VkBackend::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
 {
     if (capabilities.currentExtent.width != UINT32_MAX)
     {
@@ -1295,7 +1317,7 @@ VkExtent2D HelloWorldTriangle::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &
     }
     else
     {
-        VkExtent2D actualExtent = {WIDTH, HEIGHT};
+        VkExtent2D actualExtent = {windowWidth, windowHeight};
 
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
         actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
@@ -1304,7 +1326,7 @@ VkExtent2D HelloWorldTriangle::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &
     }
 }
 
-void HelloWorldTriangle::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
+void VkBackend::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -1313,7 +1335,7 @@ void HelloWorldTriangle::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerC
     createInfo.pfnUserCallback = debugCallback;
 }
 
-bool HelloWorldTriangle::checkValidationLayerSupport()
+bool VkBackend::checkValidationLayerSupport()
 {
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -1342,7 +1364,7 @@ bool HelloWorldTriangle::checkValidationLayerSupport()
     return true;
 }
 
-std::vector<const char *> HelloWorldTriangle::getRequiredExtensions()
+std::vector<const char *> VkBackend::getRequiredExtensions()
 {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
@@ -1358,7 +1380,7 @@ std::vector<const char *> HelloWorldTriangle::getRequiredExtensions()
     return extensions;
 }
 
-uint32_t HelloWorldTriangle::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t VkBackend::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -1374,7 +1396,7 @@ uint32_t HelloWorldTriangle::findMemoryType(uint32_t typeFilter, VkMemoryPropert
     throw std::runtime_error("failed to find suitable memory type");
 }
 
-VkFormat HelloWorldTriangle::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat VkBackend::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates)
     {
@@ -1393,19 +1415,19 @@ VkFormat HelloWorldTriangle::findSupportedFormat(const std::vector<VkFormat> &ca
     throw std::runtime_error("failed to find supported format");
 }
 
-VkFormat HelloWorldTriangle::findDepthFormat()
+VkFormat VkBackend::findDepthFormat()
 {
     return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-bool HelloWorldTriangle::hasStencilComponent(VkFormat format)
+bool VkBackend::hasStencilComponent(VkFormat format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void HelloWorldTriangle::updateUniformBuffer(uint32_t currentImage)
+void VkBackend::updateUniformBuffer(uint32_t currentImage)
 {
 
     static auto startTime = std::chrono::high_resolution_clock::now();
@@ -1413,6 +1435,7 @@ void HelloWorldTriangle::updateUniformBuffer(uint32_t currentImage)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
+    int spinDirection = Input::getInstance().getSpinDirection();
     UniformBufferObject ubo = {};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) * spinDirection, glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1425,7 +1448,7 @@ void HelloWorldTriangle::updateUniformBuffer(uint32_t currentImage)
     vmaUnmapMemory(allocator, uniformBufferMemory[currentImage]);
 }
 
-void HelloWorldTriangle::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
+void VkBackend::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
 {
 
     VkFormatProperties formatProperties;
@@ -1517,7 +1540,7 @@ void HelloWorldTriangle::generateMipmaps(VkImage image, VkFormat imageFormat, in
     endSingleTimeCommands(commandBuffer);
 }
 
-VkSampleCountFlagBits HelloWorldTriangle::getMaxUsableSampleCount()
+VkSampleCountFlagBits VkBackend::getMaxUsableSampleCount()
 {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
@@ -1551,7 +1574,7 @@ VkSampleCountFlagBits HelloWorldTriangle::getMaxUsableSampleCount()
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-void HelloWorldTriangle::recreateSwapChain()
+void VkBackend::recreateSwapChain()
 {
     int width = 0, height = 0;
     while (width == 0 || height == 0)
@@ -1577,7 +1600,7 @@ void HelloWorldTriangle::recreateSwapChain()
     createCommandBuffers();
 }
 
-void HelloWorldTriangle::cleanupSwapChain()
+void VkBackend::cleanupSwapChain()
 {
     vkDestroyImageView(device, colorImageView, nullptr);
     vmaDestroyImage(allocator, colorImage, colorImageMemory);
@@ -1610,7 +1633,7 @@ void HelloWorldTriangle::cleanupSwapChain()
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
-void HelloWorldTriangle::drawFrame()
+void VkBackend::drawFrame()
 {
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -1677,64 +1700,7 @@ void HelloWorldTriangle::drawFrame()
     currentFrame = (currentFrame + 1) & MAX_FRAMES_IN_FLIGHT;
 }
 
-void HelloWorldTriangle::setupInputCallbacks()
-{
-    Input &hexmap = Input::getInstance();
-
-    glfwSetKeyCallback(window, &Input::keyCallback);
-    glfwSetMouseButtonCallback(window, &Input::mouseButtonCallback);
-    glfwSetCursorPosCallback(window, &Input::cursorPosCallback);
-}
-
-void HelloWorldTriangle::mainLoop()
-{
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
-        drawFrame();
-    }
-
-    vkDeviceWaitIdle(device);
-}
-
-void HelloWorldTriangle::cleanup()
-{
-    cleanupSwapChain();
-
-    vkDestroySampler(device, textureSampler, nullptr);
-    vkDestroyImageView(device, textureImageView, nullptr);
-
-    vmaDestroyImage(allocator, textureImage, textureImageMemory);
-    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-    vmaDestroyBuffer(allocator, indexBuffer, indexBufferMemory);
-    vmaDestroyBuffer(allocator, vertexBuffer, vertexBufferMemory);
-    vmaDestroyAllocator(allocator);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device, inFlightFences[i], nullptr);
-    }
-
-    vkDestroyCommandPool(device, commandPool, nullptr);
-
-    vkDestroyDevice(device, nullptr);
-
-    if (enableValidationLayers)
-    {
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    }
-
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
-
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
-}
-
-VkResult HelloWorldTriangle::CreateDebugUtilsMessengerEXT(VkInstance instance,
+VkResult VkBackend::CreateDebugUtilsMessengerEXT(VkInstance instance,
                                                           const VkDebugUtilsMessengerCreateInfoEXT *pcCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDebugUtilsMessengerEXT *pDebugMessenger)
@@ -1751,7 +1717,7 @@ VkResult HelloWorldTriangle::CreateDebugUtilsMessengerEXT(VkInstance instance,
     }
 }
 
-void HelloWorldTriangle::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
+void VkBackend::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks *pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
