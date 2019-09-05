@@ -6,8 +6,8 @@
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-const std::string MODEL_PATH = "resources/models/chalet.obj";
-const std::string TEXTURE_PATH = "resources/textures/chalet.jpg";
+const std::string MODEL_PATH = "resources/models/b.obj";
+const std::string TEXTURE_PATH = "resources/textures/wood.jpg";
 
 int main()
 {

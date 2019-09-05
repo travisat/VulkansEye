@@ -135,7 +135,7 @@ static bool framebufferResized = false;
 class VkBackend
 {
 public:
-    VkBackend(GLFWwindow *window, uint32_t width, uint32_t height, std::string tPath, std::string mPath);
+    VkBackend(GLFWwindow *glwindow, uint32_t width, uint32_t height, std::string tPath, std::string mPath);
     ~VkBackend();
     void drawFrame();
 

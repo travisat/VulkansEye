@@ -1,8 +1,8 @@
 #include "VkBackend.h"
 
-VkBackend::VkBackend(GLFWwindow *window, uint32_t width, uint32_t height, std::string tPath, std::string mPath)
+VkBackend::VkBackend(GLFWwindow *glwindow, uint32_t width, uint32_t height, std::string tPath, std::string mPath)
 {
-    window = window;
+    window = glwindow;
     windowWidth = width; 
     windowHeight = height;
     texturePath =  tPath;
@@ -82,7 +82,7 @@ void VkBackend::createInstance()
 
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.pApplicationName = "Vulkans Eye";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
