@@ -15,7 +15,7 @@ int main()
 
     try
     {
-        app.init(WIDTH, HEIGHT, TEXTURE_PATH, MODEL_PATH);
+        app.init(WIDTH, HEIGHT);
         app.run();
     }
     catch (const std::exception &e)

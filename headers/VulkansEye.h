@@ -3,7 +3,7 @@
 class VulkansEye
 {
 public:
-    void init(uint32_t width, uint32_t height, std::string tPath, std::string mPath);
+    void init(uint32_t width, uint32_t height);
     void run();
 
 private:
@@ -11,7 +11,7 @@ private:
     uint32_t windowWidth;
     uint32_t windowHeight;
     VkBackend *backend;
-
+    
     void initWindow();
     void initVulkan();
 

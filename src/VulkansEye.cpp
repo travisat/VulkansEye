@@ -1,13 +1,16 @@
 #include "VulkansEye.h"
 
-void VulkansEye::init(uint32_t width, uint32_t height, std::string tPath, std::string mPath)
+void VulkansEye::init(uint32_t width, uint32_t height)
 {
     windowWidth = width; 
     windowHeight = height;
     initWindow();
-    backend = new VkBackend(window, width, height, tPath, mPath);
-
+    backend = new VkBackend(window, width, height);
+    backend->initModels({"resources/models/a.obj","resources/models/b.obj"});
+    backend->initMaterials({"resources/textures/wood.jpg","resources/textures/stone.jpg"});
+    backend->initObjects({{0,0,25,50,50},{1,1,75,50,50}});
     setupInputCallbacks();
+    backend->initVulkan();
 }
 
 void VulkansEye::run()

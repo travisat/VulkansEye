@@ -47,30 +47,80 @@ public:
         {
             std::cerr << "Pressed Escape\n";
             glfwSetWindowShouldClose(window, VK_TRUE);
-        } else if ( key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
-            spinDirection = -1;
-        } else if ( key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
-            spinDirection = 1;
+        } else if ( key == GLFW_KEY_RIGHT) {
+            if (moveX > -0.5f) {
+                moveX -= 0.1f;
+            } else {
+                moveX = -0.5f;
+            }
+        } else if ( key == GLFW_KEY_LEFT) {
+            if (moveX < 0.5f) {
+                moveX += 0.1f;
+            } else {
+                moveX = 0.5f;
+            }
+        } else if ( key == GLFW_KEY_UP) {
+            if (moveY > -0.5f) {
+                moveY -= 0.1f;
+            } else {
+                moveY = -0.5f;
+            }
+        } else if ( key == GLFW_KEY_DOWN) {
+            if (moveY < 0.5f) {
+                moveY += 0.1f;
+            } else {
+                moveY = 0.5f;
+            }
         }
     }
 
-    static int getSpinDirection() 
+    static double getMoveX() 
     {
-        return getInstance().getSpinDirectionIMPL();
+        return getInstance().getMoveXIMPL();
     }
 
-    int getSpinDirectionIMPL()
+    double getMoveXIMPL()
     {
-        return spinDirection;
+        return moveX;
     }
 
+    static void setMoveX(double x) 
+    {
+       getInstance().setMoveXIMPL(x);
+    }
+
+    void setMoveXIMPL(double x)
+    {
+        moveX = x;
+    }
+    
+    static double getMoveY() 
+    {
+        return getInstance().getMoveYIMPL();
+    }
+
+    double getMoveYIMPL()
+    {
+        return moveY;
+    }
+
+    static void setMoveY(double y) 
+    {
+       getInstance().setMoveYIMPL(y);
+    }
+
+    void setMoveYIMPL(double y)
+    {
+        moveY = y;
+    }
 private:
 
     Input(void) // private constructor necessary to allow only 1 instance
     {
     }
 
-    int spinDirection = 1;
+    double moveX = 0.0f;
+    double moveY = 0.0f;
 
     Input(Input const &);          // prevent copies
     void operator=(Input const &); // prevent assignments
