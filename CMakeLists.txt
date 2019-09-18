@@ -5,7 +5,17 @@ include(CTest)
 enable_testing()
 include_directories(headers)
 
-add_executable(VulkansEye src/main.cpp src/VulkansEye.cpp src/VkBackend.cpp)
+add_executable(VulkansEye
+                src/main.cpp
+                src/VulkansEye.cpp
+                src/VkBackend.cpp
+                src/Buffer.cpp
+                src/Model.cpp
+                src/Image.cpp
+                src/State.cpp
+                src/Skybox.cpp
+                src/Scene.cpp)
+
 set_target_properties(VulkansEye PROPERTIES
             CXX_STANDARD 17)   
 

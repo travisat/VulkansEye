@@ -1,13 +1,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
+
 #include "VulkansEye.h"
+
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
-
-const std::string MODEL_PATH = "resources/models/b.obj";
-const std::string TEXTURE_PATH = "resources/textures/wood.jpg";
 
 int main()
 {

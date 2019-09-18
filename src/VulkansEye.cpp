@@ -1,14 +1,31 @@
 #include "VulkansEye.h"
 
+VulkansEye::VulkansEye()
+{
+    windowWidth = 0;
+    windowHeight = 0;
+    backend = nullptr;
+};
+
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
-    windowWidth = width; 
+    windowWidth = width;
     windowHeight = height;
     initWindow();
-    backend = new VkBackend(window, width, height);
-    backend->initModels({"resources/models/a.obj","resources/models/b.obj"});
-    backend->initMaterials({"resources/textures/wood.jpg","resources/textures/stone.jpg"});
-    backend->initObjects({{0,0,25,50,50},{1,1,75,50,50}});
+
+    Config config;
+    config.materialPaths = {"resources/textures/wood.jpg", "resources/textures/stone.jpg"};
+    config.modelPaths = {"resources/models/a.obj", "resources/models/b.obj"};
+    config.objectIndices = {{0, 0}, {0, 1}};
+    config.objectPositions = {{25, 25, 50}, {75, 50, 50}};
+    config.skyboxTextures = {"resources/textures/skyboxxneg.jpg",
+                             "resources/textures/skyboxxpos.jpg",
+                             "resources/textures/skyboxyneg.jpg",
+                             "resources/textures/skyboxypos.jpg",
+                             "resources/textures/skyboxzneg.jpg",
+                             "resources/textures/skyboxzpos.jpg"};
+
+    backend = new VkBackend(window, width, height, config);
     setupInputCallbacks();
     backend->initVulkan();
 }
@@ -47,7 +64,7 @@ void VulkansEye::mainLoop()
         backend->drawFrame();
     }
 
-    vkDeviceWaitIdle(backend->device);
+    vkDeviceWaitIdle(backend->state->device);
 }
 
 void VulkansEye::cleanup()
@@ -57,4 +74,3 @@ void VulkansEye::cleanup()
 
     glfwTerminate();
 }
-
