@@ -160,6 +160,7 @@ void Scene::createUniformBuffers()
 
 void Scene::updateUniformBuffer(uint32_t currentImage)
 {
+    skybox->updateUniformBuffer(currentImage);
 
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -226,7 +227,7 @@ void Scene::createDescriptorSets()
         {
 
             VkDescriptorBufferInfo bufferInfo = {};
-            bufferInfo.buffer = object->uniformBuffers[i]->getBuffer();
+            bufferInfo.buffer = object->uniformBuffers[i]->buffer;
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 

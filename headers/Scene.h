@@ -49,8 +49,8 @@ public:
 
     VkPipeline getPipeline() { return pipeline; };
     VkPipelineLayout getPipelineLayout() { return pipelineLayout; };
-    VkBuffer getVertexBuffer() { return vertexBuffer->getBuffer(); };
-    VkBuffer getIndexBuffer() { return indexBuffer->getBuffer(); };
+    VkBuffer getVertexBuffer() { return vertexBuffer->buffer; };
+    VkBuffer getIndexBuffer() { return indexBuffer->buffer; };
     Model *getModel(uint32_t i) { return models[i]; };
     Material *getMaterial(uint32_t i) { return materials[i]; };
     Object *getObject(uint32_t i) { return objects[i]; };

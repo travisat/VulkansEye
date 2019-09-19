@@ -55,7 +55,7 @@ Image::Image(State *state, VkFormat format,
 Image::Image(State *state, VkFormat format,
              VkImageTiling tiling, VkSampleCountFlagBits numSamples,
              VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-             VkImageCreateFlags flags, uint32_t width, uint32_t height)
+             VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t layers)
 {
 
     this->state = state;
@@ -63,88 +63,7 @@ Image::Image(State *state, VkFormat format,
     this->width = width;
     this->height = height;
 
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-
-    size = width * height * 4;
-
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = numSamples;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = flags;
-
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage = memUsage;
-
-    if (vmaCreateImage(state->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr) != VK_SUCCESS)
-    {
-        throw std::runtime_error("unable to load image");
-    }
-};
-
-Image::Image(State *state, VkFormat format,
-             VkImageTiling tiling, VkSampleCountFlagBits numSamples,
-             VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-             VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t mipLevels)
-{
-
-    this->state = state;
-    this->format = format;
-    this->width = width;
-    this->height = height;
-
-    this->mipLevels = mipLevels;
-
-    size = width * height * 4;
-    channels = 4;
-
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = numSamples;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = flags;
-
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage = memUsage;
-
-    if (vmaCreateImage(state->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr) != VK_SUCCESS)
-    {
-        throw std::runtime_error("unable to load image");
-    }
-};
-
-Image::Image(State *state, VkFormat format,
-             VkImageTiling tiling, VkSampleCountFlagBits numSamples,
-             VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-             VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers)
-{
-
-    this->state = state;
-    this->format = format;
-    this->width = width;
-    this->height = height;
-
-    this->mipLevels = mipLevels;
+    this->mipLevels = 1;
 
     size = width * height * 4;
     channels = 4;
@@ -230,7 +149,7 @@ void Image::copy(Buffer *buffer, uint32_t layerCount)
 
     vkCmdCopyBufferToImage(
         commandBuffer,
-        buffer->getBuffer(),
+        buffer->buffer,
         image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,

@@ -658,10 +658,10 @@ void VkBackend::createCommandBuffers()
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
-        VkBuffer skyboxVertexBuffers[] = {scene->skybox->getVertexBuffer()};
+        VkBuffer skyboxVertexBuffers[] = {scene->skybox->vertexBuffer->buffer};
         VkDeviceSize skyboxOffsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, skyboxVertexBuffers, skyboxOffsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], scene->skybox->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffers[i], scene->skybox->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, scene->skybox->getDescriptorSet(i), 0, nullptr);
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->getIndexCount()), 1, 0, 0, 0);
 

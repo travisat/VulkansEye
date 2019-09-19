@@ -8,13 +8,16 @@
 class Skybox
 {
 public:
+    Buffer *vertexBuffer;
+    Buffer *indexBuffer;
+
     Skybox(State *state, std::array<std::string, 6> paths);
     ~Skybox();
     void createDescriptorSets();
     void createPipeline();
     void createUniformBuffers();
-    VkBuffer getVertexBuffer() { return vertexBuffer->getBuffer(); };
-    VkBuffer getIndexBuffer() { return indexBuffer->getBuffer(); };
+    void updateUniformBuffer(uint32_t currentImage);
+
     Buffer *getUniformBuffer(uint32_t i) { return uniformBuffers[i]; };
     VkDeviceSize getVertexBufferSize() { return vertexBuffer->getSize(); };
     VkDeviceSize getIndexCount() { return indexCount; };
@@ -27,8 +30,7 @@ private:
     State *state;
     Image *image;
     VkImageView imageView;
-    Buffer *vertexBuffer;
-    Buffer *indexBuffer;
+
     VkSampler sampler;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Buffer *> uniformBuffers;

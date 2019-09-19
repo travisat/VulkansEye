@@ -20,5 +20,6 @@ out gl_PerVertex
 void main() 
 {
 	outUVW = inPos;	
-	gl_Position = ubo.proj * ubo.view * vec4(inPos, 1.0);
+	outUVW.x *= -1.0;
+	gl_Position = ubo.proj * ubo.model * vec4(inPos.xyz, 1.0);
 }

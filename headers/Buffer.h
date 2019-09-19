@@ -7,9 +7,11 @@
 class Buffer
 {
 public:
-    Buffer(State *state, VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memUsage);
+    VkBuffer buffer;
+
+    Buffer(State *state, VkDeviceSize size, VkBufferUsageFlags flags, VmaMemoryUsage usage);
     ~Buffer();
-   
+
     void resize(VkDeviceSize size);
     void loadImage(stbi_uc *pixels);
     void loadImages(stbi_uc **pixels, VkDeviceSize size, uint32_t count);
@@ -18,14 +20,12 @@ public:
     void copy(Buffer *destination);
     void update(UniformBufferObject &ubo);
 
-    VkBuffer getBuffer() { return buffer; };
-    VmaAllocation getAllocation() { return allocation; };
-    VkDeviceSize getSize() { return bufferInfo.size; };
+    VkDeviceSize getSize() { return size; };
 
 private:
     State *state;
-    VkBuffer buffer;
-    VmaAllocation allocation;
-    VkBufferCreateInfo bufferInfo;
-    VmaAllocationCreateInfo allocInfo;
+    VmaAllocation *allocation;
+    VkDeviceSize size;
+    VkBufferUsageFlags flags;
+    VmaMemoryUsage usage;
 };

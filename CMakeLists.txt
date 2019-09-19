@@ -11,6 +11,7 @@ add_executable(VulkansEye
                 src/VkBackend.cpp
                 src/Buffer.cpp
                 src/Model.cpp
+                src/Material.cpp
                 src/Image.cpp
                 src/State.cpp
                 src/Skybox.cpp

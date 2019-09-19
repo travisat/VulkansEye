@@ -1,4 +1,5 @@
 #include "Skybox.h"
+#include "Helpers.h"
 
 Skybox::Skybox(State *state, std::array<std::string, 6> paths)
 {
@@ -15,7 +16,7 @@ Skybox::Skybox(State *state, std::array<std::string, 6> paths)
     VkDeviceSize layerSize = imageSize / 6;
 
     uint32_t mipLevels = 1;
-    Buffer* stagingBuffer = new Buffer(state, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    Buffer *stagingBuffer = new Buffer(state, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer->loadImages(textureData, layerSize, 6);
 
     for (auto &data : textureData)
@@ -24,8 +25,8 @@ Skybox::Skybox(State *state, std::array<std::string, 6> paths)
     }
 
     image = new Image(state, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT,
-                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                  VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, width, height, mipLevels, 6);
+                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                      VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, width, height, 6);
     image->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
     image->copy(stagingBuffer, 6);
     image->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
@@ -43,10 +44,10 @@ Skybox::Skybox(State *state, std::array<std::string, 6> paths)
     samplerInfo.anisotropyEnable = VK_TRUE;
     samplerInfo.maxAnisotropy = 16;
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = static_cast<float>(mipLevels);
 
     if (vkCreateSampler(state->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
@@ -96,7 +97,7 @@ void Skybox::createDescriptorSets()
     {
 
         VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = uniformBuffers[i]->getBuffer();
+        bufferInfo.buffer = uniformBuffers[i]->buffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -128,14 +129,14 @@ void Skybox::createDescriptorSets()
 
 void Skybox::createUniformBuffers()
 {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        uniformBuffers.resize(state->swapChainImages.size());
+    uniformBuffers.resize(state->swapChainImages.size());
 
-        for (size_t i = 0; i < state->swapChainImages.size(); i++)
-        {
-            uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        }
+    for (size_t i = 0; i < state->swapChainImages.size(); i++)
+    {
+        uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
 };
 
 void Skybox::createPipeline()
@@ -198,12 +199,10 @@ void Skybox::createPipeline()
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -217,22 +216,15 @@ void Skybox::createPipeline()
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_FALSE;
-    depthStencil.depthWriteEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
-    depthStencil.stencilTestEnable = VK_FALSE;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -282,12 +274,12 @@ void Skybox::createCube()
                                      2, 3, 0};
 
     VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
-    Buffer* stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    Buffer *stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer->load(vertices);
 
     vertexBuffer = new Buffer(state, bufferSize,
-                          VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                          VMA_MEMORY_USAGE_GPU_ONLY);
+                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                              VMA_MEMORY_USAGE_GPU_ONLY);
 
     stagingBuffer->copy(vertexBuffer);
 
@@ -298,9 +290,20 @@ void Skybox::createCube()
     stagingBuffer->load(indices);
 
     indexBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                         VMA_MEMORY_USAGE_GPU_ONLY);
+                             VMA_MEMORY_USAGE_GPU_ONLY);
 
     stagingBuffer->copy(indexBuffer);
 
     delete stagingBuffer;
+};
+
+void Skybox::updateUniformBuffer(uint32_t currentImage)
+{
+        UniformBufferObject ubo = {};
+        ubo.view = glm::mat4(1.0f);
+        ubo.proj = glm::perspective(glm::radians(60.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.001f, 256.0f);
+        ubo.model = glm::mat4(1.0f);
+        ubo.model = ubo.view * glm::translate(ubo.model, glm::vec3(0, 0, 0));
+
+        uniformBuffers[currentImage]->update(ubo);
 };
