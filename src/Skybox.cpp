@@ -5,7 +5,7 @@ Skybox::Skybox(State *state, std::string meshPath, std::string materialPath)
 {
     this->state = state;
 
-    mesh = new Mesh(meshPath, 0); 
+    mesh = new Mesh(meshPath, 0);
     material = new Material(state, materialPath, 0);
     material->load();
 
@@ -141,7 +141,7 @@ void Skybox::createPipeline()
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -156,15 +156,23 @@ void Skybox::createPipeline()
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.blendConstants[0] = 0.0f;
+    colorBlending.blendConstants[1] = 0.0f;
+    colorBlending.blendConstants[2] = 0.0f;
+    colorBlending.blendConstants[3] = 0.0f;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
-    depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.minDepthBounds = 0.0f;
+    depthStencil.maxDepthBounds = 1.0f;
+    depthStencil.stencilTestEnable = VK_FALSE;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -203,14 +211,18 @@ void Skybox::createPipeline()
     vkDestroyShaderModule(state->device, vertShaderModule, nullptr);
 };
 
-
 void Skybox::updateUniformBuffer(uint32_t currentImage)
 {
-        UniformBufferObject ubo = {};
-        ubo.view = glm::mat4(1.0f);
-        ubo.proj = glm::perspective(glm::radians(60.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.001f, 256.0f);
-        ubo.model = glm::mat4(1.0f);
-        ubo.model = ubo.view * glm::translate(ubo.model, glm::vec3(0, 0, 0));
+    static auto startTime = std::chrono::high_resolution_clock::now();
 
-        uniformBuffers[currentImage]->update(ubo);
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBufferObject ubo = {};
+    ubo.view = glm::mat4(1.0f);
+    ubo.proj = glm::perspective(glm::radians(60.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.01f, 256.0f);
+    ubo.model = glm::mat4(1.0f);
+    ubo.model = ubo.view * glm::rotate(glm::translate(ubo.model, glm::vec3(0, 0, 0)),
+                                       time * glm::radians(3.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    uniformBuffers[currentImage]->update(ubo);
 };
