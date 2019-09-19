@@ -19,8 +19,8 @@ public:
 
   ~Image();
 
-  VkImageView createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags);
-  VkImageView createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount);
+  void createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags);
+  void createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount);
 
   void copy(Buffer *buffer);
   void copy(Buffer *buffer, uint32_t layerCount);
@@ -36,6 +36,8 @@ public:
   VmaAllocation getAllocation() { return allocation; };
   VkFormat getFormat() { return format; };
   VkDeviceSize getSize() { return size; };
+  VkImageView getImageView() { return imageView; };
+
   int getWidth() { return width; };
   int getHeight() { return height; };
   int getChannels() { return channels; };
@@ -48,6 +50,7 @@ private:
   VmaAllocation allocation;
   VkFormat format;
   VkDeviceSize size;
+  VkImageView imageView;
 
   int width;
   int height;

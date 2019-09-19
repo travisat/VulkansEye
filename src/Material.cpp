@@ -1,16 +1,16 @@
 #include "Material.h"
 
-Material::Material(State *state, std::string path)
+Material::Material(State *state, std::string path, uint32_t id)
 {
     this->state = state;
     this->path = path;
+    this->id = id;
 }
 
 Material::~Material()
 {
     delete textureImage;
     vkDestroySampler(state->device, textureSampler, nullptr);
-    vkDestroyImageView(state->device, textureImageView, nullptr);
 }
 
 void Material::load()
@@ -22,7 +22,7 @@ void Material::load()
 
     textureImage->generateMipmaps();
 
-    textureImageView = textureImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+    textureImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

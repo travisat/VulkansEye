@@ -1,69 +1,28 @@
 #include "Skybox.h"
 #include "Helpers.h"
 
-Skybox::Skybox(State *state, std::array<std::string, 6> paths)
+Skybox::Skybox(State *state, std::string meshPath, std::string materialPath)
 {
     this->state = state;
-    createCube();
 
-    stbi_uc *textureData[6];
-    int width, height, channels;
-    for (uint32_t i = 0; i < 6; i++)
-    {
-        textureData[i] = stbi_load(paths[i].c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    }
-    VkDeviceSize imageSize = width * height * 4 * 6;
-    VkDeviceSize layerSize = imageSize / 6;
+    mesh = new Mesh(meshPath, 0); 
+    material = new Material(state, materialPath, 0);
+    material->load();
 
-    uint32_t mipLevels = 1;
-    Buffer *stagingBuffer = new Buffer(state, imageSize, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer->loadImages(textureData, layerSize, 6);
-
-    for (auto &data : textureData)
-    {
-        stbi_image_free(data);
-    }
-
-    image = new Image(state, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT,
-                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                      VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, width, height, 6);
-    image->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
-    image->copy(stagingBuffer, 6);
-    image->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
-    delete stagingBuffer;
-
-    imageView = image->createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
-
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 16;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = static_cast<float>(mipLevels);
-
-    if (vkCreateSampler(state->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create skybox sampler");
-    }
     uniformBuffers.resize(state->swapChainImages.size());
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    for (size_t i = 0; i < state->swapChainImages.size(); i++)
+    {
+        uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
 }
 
 Skybox::~Skybox()
 {
-    delete indexBuffer;
-    delete vertexBuffer;
-    delete image;
-    vkDestroyImageView(state->device, imageView, nullptr);
-    vkDestroySampler(state->device, sampler, nullptr);
+    delete mesh;
+    delete material;
+
     for (auto buffer : uniformBuffers)
     {
         delete buffer;
@@ -72,13 +31,6 @@ Skybox::~Skybox()
 
 void Skybox::createDescriptorSets()
 {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    for (size_t i = 0; i < state->swapChainImages.size(); i++)
-    {
-        uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    }
-
     std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), state->descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -103,8 +55,8 @@ void Skybox::createDescriptorSets()
 
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = imageView;
-        imageInfo.sampler = sampler;
+        imageInfo.imageView = material->textureImage->getImageView();
+        imageInfo.sampler = material->textureSampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -127,22 +79,10 @@ void Skybox::createDescriptorSets()
     }
 };
 
-void Skybox::createUniformBuffers()
-{
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    uniformBuffers.resize(state->swapChainImages.size());
-
-    for (size_t i = 0; i < state->swapChainImages.size(); i++)
-    {
-        uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    }
-};
-
 void Skybox::createPipeline()
 {
-    auto vertShaderCode = readFile("resources/shaders/skyboxvert.spv");
-    auto fragShaderCode = readFile("resources/shaders/skyboxfrag.spv");
+    auto vertShaderCode = readFile("resources/shaders/vert.spv");
+    auto fragShaderCode = readFile("resources/shaders/frag.spv");
 
     VkShaderModule vertShaderModule = state->createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = state->createShaderModule(fragShaderCode);
@@ -263,39 +203,6 @@ void Skybox::createPipeline()
     vkDestroyShaderModule(state->device, vertShaderModule, nullptr);
 };
 
-void Skybox::createCube()
-{
-    std::vector<Vertex> vertices;
-    vertices.push_back({{-1.0, 1.0, -1.0}, {0, 1}});
-    vertices.push_back({{-1.0, -1.0, -1.0}, {0, 0}});
-    vertices.push_back({{1.0, -1.0, -1.0}, {1, 0}});
-    vertices.push_back({{1.0, 1.0, -1.0}, {1, 1}});
-    std::vector<uint32_t> indices = {0, 1, 2,
-                                     2, 3, 0};
-
-    VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
-    Buffer *stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer->load(vertices);
-
-    vertexBuffer = new Buffer(state, bufferSize,
-                              VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                              VMA_MEMORY_USAGE_GPU_ONLY);
-
-    stagingBuffer->copy(vertexBuffer);
-
-    bufferSize = sizeof(indices[0]) * indices.size();
-    indexCount = static_cast<uint32_t>(indices.size());
-
-    stagingBuffer->resize(bufferSize);
-    stagingBuffer->load(indices);
-
-    indexBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                             VMA_MEMORY_USAGE_GPU_ONLY);
-
-    stagingBuffer->copy(indexBuffer);
-
-    delete stagingBuffer;
-};
 
 void Skybox::updateUniformBuffer(uint32_t currentImage)
 {

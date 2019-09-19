@@ -8,12 +8,12 @@ class Material
 public:
     State *state;
     Image *textureImage;
-    VkImageView textureImageView;
     VkSampler textureSampler;
     uint32_t id;
     std::string path;
 
-    Material(State *state, std::string path);
+    //reserve id 0 for skybox;
+    Material(State *state, std::string path, uint32_t id);
 
     ~Material();
 

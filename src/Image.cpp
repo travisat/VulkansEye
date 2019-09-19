@@ -96,14 +96,15 @@ Image::Image(State *state, VkFormat format,
 Image::~Image()
 {
     vmaDestroyImage(state->allocator, image, allocation);
+    vkDestroyImageView(state->device, imageView, nullptr);
 };
 
-VkImageView Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags)
+void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags)
 {
-    return createImageView(viewType, aspectFlags, 1);
+    createImageView(viewType, aspectFlags, 1);
 };
 
-VkImageView Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
+void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
 {
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -116,13 +117,10 @@ VkImageView Image::createImageView(VkImageViewType viewType, VkImageAspectFlags 
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = layerCount;
 
-    VkImageView imageView;
     if (vkCreateImageView(state->device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture image view!");
     }
-
-    return imageView;
 };
 
 void Image::copy(Buffer *buffer)

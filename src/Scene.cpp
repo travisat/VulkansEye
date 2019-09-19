@@ -11,109 +11,146 @@ Scene::~Scene()
     delete vertexBuffer;
     delete indexBuffer;
 
-    for (auto object : objects) { delete object;};
-    for (auto model : models) { delete model;};
-    for (auto material : materials ) { delete material;};
+    for (auto const &[id, model] : models)
+    {
+        delete model;
+    };
+
+    for (auto const &[id, mesh] : meshes)
+    {
+        delete mesh;
+    };
+    for (auto const &[id, material] : materials)
+    {
+        delete material;
+    };
     delete skybox;
 }
 
 void Scene::initScene()
 {
-    initModels();
+    initMeshs();
     initMaterials();
-    initObjects();
-    loadObjects();
-    loadSkybox();
-    createPipelines();
-    createUniformBuffers();
-};
+}
 
-void Scene::initModels()
+void Scene::initMeshs()
 {
     uint32_t i = 0;
-    for (auto &path : config->modelPaths)
+    for (auto const &[id, path] : config->meshes)
     {
-        Model *model = new Model(path);
-        model->id = i;
-        i++;
-        models.push_back(model);
+        Mesh *mesh = new Mesh(path, id);
+        meshes.insert({id, mesh});
     }
 }
 
 void Scene::initMaterials()
 {
     uint32_t i = 0;
-    for (auto &path : config->materialPaths)
+    for (auto const &[id, path] : config->materials)
     {
-        Material *material = new Material(state, path);
-        material->id = i;
-        i++;
-        materials.push_back(material);
+        Material *material = new Material(state, path, id);
+        materials.insert({id, material});
     }
 }
 
-void Scene::initObjects()
+void Scene::createScene()
 {
-    uint32_t i = 0;
-    for (auto &index : config->objectIndices)
-    {
-        Object *object = new Object;
-        for (uint32_t i = 0; i < models.size(); i++)
-        {
-            if (models[i]->id == index[0])
-            {
-                object->modelIndex = i;
-            }
-        }
-        for (uint32_t i = 0; i < materials.size(); i++)
-        {
-            if (materials[i]->id == index[1])
-            {
-                object->materialIndex = i;
-            }
-        }
+    createModels();
+    createSkybox();
+    createPipelines();
+    createUniformBuffers();
+    loadBuffers();
+}
 
-        std::array<uint32_t, 3> positions = config->objectPositions[i];
+void Scene::createModels()
+{
+    for (auto &modelConfig : config->modelConfigs)
+    {
+        Model *model = new Model(state, meshes[modelConfig.meshId],
+                                 materials[modelConfig.materialId]);
 
         //convert from 0-100 to -1.0 to 1.0
-        object->xpos = (static_cast<double>(positions[0]) / 50.0f) - 1.0f;
-        object->ypos = (static_cast<double>(positions[1]) / 50.0f) - 1.0f;
-        object->zpos = (static_cast<double>(positions[2]) / 50.0f) - 1.0f;
+        model->xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
+        model->ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
+        model->zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
 
-        object->uniformBuffers = {};
-        object->descriptorSets = {};
+        model->uniformBuffers = {};
+        model->descriptorSets = {};
 
-        objects.push_back(object);
-        i++;
+        models.insert({modelConfig.id, model});
     }
-};
+}
 
-void Scene::loadObjects()
+void Scene::createSkybox()
 {
+    skybox = new Skybox(state, config->skybox.meshPath, config->skybox.materialPath);
+}
 
+void Scene::createUniformBuffers()
+{
+    for (auto const &[_, model] : models)
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        model->uniformBuffers.resize(state->swapChainImages.size());
+
+        for (size_t i = 0; i < state->swapChainImages.size(); i++)
+        {
+            model->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        }
+    }
+}
+
+void Scene::loadBuffers()
+{
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
-    //load objects model vertices and indices into single buffers
 
-    for (auto &object : objects)
+    uint32_t vertexOffset = 0;
+    uint32_t indexOffset = 0;
+    //load objects model vertices and indices into single buffers
+    //skybox comes first
+
+    skybox->vertexOffset = vertexOffset;
+    skybox->indexOffset = indexOffset;
+
+    for (auto &vertex : skybox->mesh->vertices)
     {
-        for (auto &vertex : models[object->modelIndex]->vertices)
+        vertices.push_back(vertex);
+        vertexOffset++;
+    }
+
+    for  (auto &index : skybox->mesh->indices)
+    {
+        indices.push_back(index);
+        indexOffset++;
+    }
+
+    for (auto const & [id, mesh] : meshes)
+    {
+        mesh->vertexOffset = vertexOffset;
+        mesh->indexOffset = indexOffset;
+
+        for (auto &vertex : mesh->vertices)
         {
             vertices.push_back(vertex);
+            vertexOffset++;
         }
-        for (auto &index : models[object->modelIndex]->indices)
+        for (auto &index : mesh->indices)
         {
             indices.push_back(index);
+            indexOffset++;
         }
     }
+
     VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
-    Buffer* stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    Buffer *stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer->load(vertices);
 
     vertexBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                          VMA_MEMORY_USAGE_GPU_ONLY);
+                              VMA_MEMORY_USAGE_GPU_ONLY);
 
     stagingBuffer->copy(vertexBuffer);
 
@@ -123,40 +160,18 @@ void Scene::loadObjects()
     stagingBuffer->load(indices);
 
     indexBuffer = new Buffer(state, bufferSize,
-                         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                         VMA_MEMORY_USAGE_GPU_ONLY);
+                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VMA_MEMORY_USAGE_GPU_ONLY);
 
     stagingBuffer->copy(indexBuffer);
 
     delete stagingBuffer;
 
-    for (auto &material : materials)
+    for (auto const & [id, material] : materials)
     {
         material->load();
     }
-};
-
-void Scene::loadSkybox()
-{
-    skybox = new Skybox(state, config->skyboxTextures);
-};
-
-void Scene::createUniformBuffers()
-{
-    skybox->createUniformBuffers();
-
-    for (auto &object : objects)
-    {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-        object->uniformBuffers.resize(state->swapChainImages.size());
-
-        for (size_t i = 0; i < state->swapChainImages.size(); i++)
-        {
-            object->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        }
-    }
-};
+}
 
 void Scene::updateUniformBuffer(uint32_t currentImage)
 {
@@ -168,7 +183,7 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     double moveX = Input::getInstance().getMoveX();
-    objects[0]->xpos += moveX;
+    models[1]->xpos += moveX;
     if (moveX < 0.0)
     {
         Input::getInstance().setMoveX(moveX + 0.1f);
@@ -179,7 +194,7 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     }
 
     double moveY = Input::getInstance().getMoveY();
-    objects[0]->ypos += moveY;
+    models[1]->ypos += moveY;
     if (moveY < 0.0)
     {
         Input::getInstance().setMoveY(moveY + 0.1f);
@@ -188,26 +203,26 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     {
         Input::getInstance().setMoveY(moveY - 0.1f);
     }
-    for (auto object : objects)
+
+    for (auto const & [id, model] : models)
     {
         UniformBufferObject ubo = {};
         ubo.model = glm::rotate(
-            glm::translate(glm::mat4(1.0f), glm::vec3(object->xpos, object->ypos, object->zpos)),
+            glm::translate(glm::mat4(1.0f), glm::vec3(model->xpos, model->ypos, model->zpos)),
             time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
-        object->uniformBuffers[currentImage]->update(ubo);
+        model->uniformBuffers[currentImage]->update(ubo);
     }
 }
-
 
 void Scene::createDescriptorSets()
 {
     skybox->createDescriptorSets();
 
-    for (auto object : objects)
+    for (auto const & [id, model] : models)
     {
         std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), state->descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo = {};
@@ -216,8 +231,8 @@ void Scene::createDescriptorSets()
         allocInfo.descriptorSetCount = static_cast<uint32_t>(state->swapChainImages.size());
         allocInfo.pSetLayouts = layouts.data();
 
-        object->descriptorSets.resize(state->swapChainImages.size());
-        if (vkAllocateDescriptorSets(state->device, &allocInfo, object->descriptorSets.data()) != VK_SUCCESS)
+        model->descriptorSets.resize(state->swapChainImages.size());
+        if (vkAllocateDescriptorSets(state->device, &allocInfo, model->descriptorSets.data()) != VK_SUCCESS)
         {
 
             throw std::runtime_error("failed to allocate descript sets");
@@ -227,18 +242,18 @@ void Scene::createDescriptorSets()
         {
 
             VkDescriptorBufferInfo bufferInfo = {};
-            bufferInfo.buffer = object->uniformBuffers[i]->buffer;
+            bufferInfo.buffer = model->uniformBuffers[i]->buffer;
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
             VkDescriptorImageInfo imageInfo = {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = materials[object->materialIndex]->textureImageView;
-            imageInfo.sampler = materials[object->materialIndex]->textureSampler;
+            imageInfo.imageView = model->material->textureImage->getImageView();
+            imageInfo.sampler = model->material->textureSampler;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = object->descriptorSets[i];
+            descriptorWrites[0].dstSet = model->descriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
             descriptorWrites[0].dstArrayElement = 0;
             descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -246,7 +261,7 @@ void Scene::createDescriptorSets()
             descriptorWrites[0].pBufferInfo = &bufferInfo;
 
             descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = object->descriptorSets[i];
+            descriptorWrites[1].dstSet = model->descriptorSets[i];
             descriptorWrites[1].dstBinding = 1;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

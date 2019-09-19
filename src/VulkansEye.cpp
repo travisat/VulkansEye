@@ -14,16 +14,28 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     initWindow();
 
     Config config;
-    config.materialPaths = {"resources/textures/wood.jpg", "resources/textures/stone.jpg"};
-    config.modelPaths = {"resources/models/a.obj", "resources/models/b.obj"};
-    config.objectIndices = {{0, 0}, {0, 1}};
-    config.objectPositions = {{25, 25, 50}, {75, 50, 50}};
-    config.skyboxTextures = {"resources/textures/skyboxxneg.jpg",
-                             "resources/textures/skyboxxpos.jpg",
-                             "resources/textures/skyboxyneg.jpg",
-                             "resources/textures/skyboxypos.jpg",
-                             "resources/textures/skyboxzneg.jpg",
-                             "resources/textures/skyboxzpos.jpg"};
+    config.skybox = {"resources/models/skybox.obj", "resources/textures/skybox.png"};
+    config.materials = {{1,"resources/textures/wood.jpg"}, {2,"resources/textures/stone.jpg"}};
+    config.meshes = {{1, "resources/models/a.obj"}, {2, "resources/models/b.obj"}};
+    
+    ModelConfig letterA;
+    letterA.id = 1;
+    letterA.meshId = 1;
+    letterA.materialId = 1;
+    letterA.xpos = 25;
+    letterA.ypos = 25;
+    letterA.zpos = 50;
+
+    ModelConfig letterB;
+    letterB.id = 2;
+    letterB.meshId = 2;
+    letterB.materialId = 2;
+    letterB.xpos = 75;
+    letterB.ypos = 50;
+    letterB.zpos = 50;
+
+    config.modelConfigs = {letterA, letterB};
+
 
     backend = new VkBackend(window, width, height, config);
     setupInputCallbacks();

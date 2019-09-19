@@ -2,12 +2,28 @@
 
 #include "Helpers.h"
 
+struct ModelConfig
+{
+    uint32_t id;
+    uint32_t meshId;
+    uint32_t materialId;
+    uint32_t xpos;
+    uint32_t ypos;
+    uint32_t zpos;
+};
+
+
 struct Config
 {
-    std::vector<std::string> modelPaths;
-    std::vector<std::string> materialPaths;
-    std::array<std::string, 6> skyboxTextures;
+    // <id, path>
+    std::map<uint32_t, std::string> meshes;
+    std::map<uint32_t, std::string> materials;
 
-    std::vector<std::array<uint32_t, 2>> objectIndices;
-    std::vector<std::array<uint32_t, 3>> objectPositions;
+    struct
+    {
+        std::string meshPath;
+        std::string materialPath;
+    } skybox;
+
+    std::vector<ModelConfig> modelConfigs;
 };

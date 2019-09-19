@@ -53,11 +53,8 @@ private:
     Scene* scene;
 
     Image* colorImage;
-    VkImageView colorImageView;
-
     Image* depthImage;
-    VkImageView depthImageView;
-
+  
     VkDebugUtilsMessengerEXT debugMessenger;
 
     std::vector<VkCommandBuffer> commandBuffers;

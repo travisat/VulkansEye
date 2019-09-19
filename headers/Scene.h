@@ -1,5 +1,6 @@
 #pragma once
 #include "Material.h"
+#include "Mesh.h"
 #include "Model.h"
 #include "Config.h"
 #include "Helpers.h"
@@ -7,56 +8,43 @@
 #include "State.h"
 #include "Input.h"
 
-struct Object
-{
-    Object(){};
-    ~Object()
-    {
-        for (auto buffer : uniformBuffers)
-        {
-            delete buffer;
-        }
-    };
-
-    uint32_t materialIndex;
-    uint32_t modelIndex;
-
-    State *state;
-
-    std::vector<Buffer *> uniformBuffers;
-    std::vector<VkDescriptorSet> descriptorSets;
-
-    double xpos;
-    double ypos;
-    double zpos;
-};
-
 class Scene
 {
 public:
     Scene(State *state, Config &config);
     ~Scene();
+
     void initScene();
-    void initModels();
+
+    void initMeshs();
     void initMaterials();
-    void initObjects();
-    void loadObjects();
-    void loadSkybox();
+
+    void createScene();
+    void createModels();
+    void createSkybox();
     void createUniformBuffers();
-    void updateUniformBuffer(uint32_t currentImage);
     void createDescriptorSets();
     void createPipelines();
 
-    VkPipeline getPipeline() { return pipeline; };
-    VkPipelineLayout getPipelineLayout() { return pipelineLayout; };
+    void updateUniformBuffer(uint32_t currentImage);
+
+    void loadBuffers();
+
     VkBuffer getVertexBuffer() { return vertexBuffer->buffer; };
     VkBuffer getIndexBuffer() { return indexBuffer->buffer; };
-    Model *getModel(uint32_t i) { return models[i]; };
-    Material *getMaterial(uint32_t i) { return materials[i]; };
-    Object *getObject(uint32_t i) { return objects[i]; };
-    uint32_t numObjects() { return static_cast<uint32_t>(objects.size()); };
+
+    Mesh *getMesh(uint32_t id) { return meshes[id]; };
+    Material *getMaterial(uint32_t id) { return materials[id]; };
+    Model *getModel(uint32_t id) { return models[id]; };
+
+    uint32_t numModels() { return static_cast<uint32_t>(models.size()); };
 
     Skybox *skybox;
+
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+
+    std::map<uint32_t, Model *> models;
 
 private:
     State *state;
@@ -64,12 +52,8 @@ private:
     Buffer *vertexBuffer;
     Buffer *indexBuffer;
 
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
-
-    std::vector<Object *> objects;
-    std::vector<Model *> models;
-    std::vector<Material *> materials;
+    std::map<uint32_t, Mesh *> meshes;
+    std::map<uint32_t, Material *> materials;
 
     Config *config;
 };

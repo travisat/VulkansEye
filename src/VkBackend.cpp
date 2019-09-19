@@ -58,9 +58,7 @@ VkBackend::~VkBackend()
         DestroyDebugUtilsMessengerEXT(state->instance, debugMessenger, nullptr);
     }
 
-    vkDestroyImageView(state->device, colorImageView, nullptr);
     delete colorImage;
-    vkDestroyImageView(state->device, depthImageView, nullptr);
     delete depthImage;
 
     for (auto framebuffer : swapChainFramebuffers)
@@ -70,8 +68,8 @@ VkBackend::~VkBackend()
 
     vkDestroyPipeline(state->device, scene->skybox->pipeline, nullptr);
     vkDestroyPipelineLayout(state->device, scene->skybox->pipelineLayout, nullptr);
-    vkDestroyPipeline(state->device, scene->getPipeline(), nullptr);
-    vkDestroyPipelineLayout(state->device, scene->getPipelineLayout(), nullptr);
+    vkDestroyPipeline(state->device, scene->pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, scene->pipelineLayout, nullptr);
     vkDestroyRenderPass(state->device, state->renderPass, nullptr);
 
     for (auto imageView : state->swapChainImageViews)
@@ -116,6 +114,7 @@ void VkBackend::initVulkan()
 
     createDescriptorSetLayouts();
     scene->initScene();
+    scene->createScene();
     createDescriptorPool();
     scene->createDescriptorSets();
     createCommandBuffers();
@@ -557,8 +556,8 @@ void VkBackend::createFramebuffers()
     for (size_t i = 0; i < state->swapChainImageViews.size(); i++)
     {
         std::array<VkImageView, 3> attachments = {
-            colorImageView,
-            depthImageView,
+            colorImage->getImageView(),
+            depthImage->getImageView(),
             state->swapChainImageViews[i]};
 
         VkFramebufferCreateInfo framebufferInfo = {};
@@ -599,7 +598,7 @@ void VkBackend::createColorResources()
                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                            VMA_MEMORY_USAGE_GPU_ONLY, VK_NULL_HANDLE, state->swapChainExtent.width, state->swapChainExtent.height, 1);
 
-    colorImageView = colorImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+    colorImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
     colorImage->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }
@@ -612,7 +611,7 @@ void VkBackend::createDepthResources()
                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                            VMA_MEMORY_USAGE_GPU_ONLY, VK_NULL_HANDLE,
                            state->swapChainExtent.width, state->swapChainExtent.height, 1);
-    depthImageView = depthImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     depthImage->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
@@ -657,23 +656,23 @@ void VkBackend::createCommandBuffers()
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
-        VkBuffer skyboxVertexBuffers[] = {scene->skybox->vertexBuffer->buffer};
-        VkDeviceSize skyboxOffsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, skyboxVertexBuffers, skyboxOffsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], scene->skybox->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, scene->skybox->getDescriptorSet(i), 0, nullptr);
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->getIndexCount()), 1, 0, 0, 0);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->getPipeline());
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
         VkBuffer vertexBuffers[] = {scene->getVertexBuffer()};
-        VkDeviceSize offsets[] = {scene->getModel(0)->vertexOffset, scene->getModel(1)->vertexOffset};
+        VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        for (uint32_t j = 0; j < scene->numObjects(); j++)
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, scene->skybox->getDescriptorSet(i), 0, nullptr);
+        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->mesh->indexSize), 1, 0, 0, 0);
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipeline);
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        for (auto const &[id, model] : scene->models)
         {
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->getPipelineLayout(), 0, 1, &scene->getObject(j)->descriptorSets[i], 0, nullptr);
-            vkCmdDrawIndexed(commandBuffers[i], scene->getModel(scene->getObject(j)->modelIndex)->indexSize, 1, scene->getModel(scene->getObject(j)->modelIndex)->indexOffset, 0, 0);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipelineLayout, 0, 1, &model->descriptorSets[i], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffers[i], model->mesh->indexSize, 1, model->mesh->indexOffset, model->mesh->vertexOffset, 0);
+
         }
 
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -743,16 +742,16 @@ void VkBackend::createDescriptorPool()
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numObjects() + 1));
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numModels() + 1));
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numObjects() + 1));
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numModels() + 1));
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     // set setsize to images per object times object plus skybox
-    poolInfo.maxSets = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numObjects() + 1));
+    poolInfo.maxSets = static_cast<uint32_t>(state->swapChainImages.size() * (scene->numModels() + 1));
 
     if (vkCreateDescriptorPool(state->device, &poolInfo, nullptr, &state->descriptorPool) != VK_SUCCESS)
     {
@@ -880,9 +879,7 @@ void VkBackend::recreateSwapChain()
 
 void VkBackend::cleanupSwapChain()
 {
-    vkDestroyImageView(state->device, colorImageView, nullptr);
     delete colorImage;
-    vkDestroyImageView(state->device, depthImageView, nullptr);
     delete depthImage;
 
     for (auto framebuffer : swapChainFramebuffers)
@@ -892,8 +889,8 @@ void VkBackend::cleanupSwapChain()
 
     vkDestroyPipeline(state->device, scene->skybox->pipeline, nullptr);
     vkDestroyPipelineLayout(state->device, scene->skybox->pipelineLayout, nullptr);
-    vkDestroyPipeline(state->device, scene->getPipeline(), nullptr);
-    vkDestroyPipelineLayout(state->device, scene->getPipelineLayout(), nullptr);
+    vkDestroyPipeline(state->device, scene->pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, scene->pipelineLayout, nullptr);
     vkDestroyRenderPass(state->device, state->renderPass, nullptr);
 
     for (auto imageView : state->swapChainImageViews)
@@ -908,15 +905,13 @@ void VkBackend::cleanupSwapChain()
     for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
     {
         delete scene->skybox->getUniformBuffer(i);
-    }
 
-    for (uint32_t i = 0; i < scene->numObjects(); i++)
-    {
-        for (uint32_t j = 0; j < state->swapChainImages.size(); j++)
+        for (auto const &[id, model] : scene->models)
         {
-            delete scene->getObject(i)->uniformBuffers[j];
+            delete model->uniformBuffers[i];
         }
     }
+
     vkDestroyDescriptorPool(state->device, state->descriptorPool, nullptr);
 };
 
