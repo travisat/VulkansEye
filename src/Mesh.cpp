@@ -1,8 +1,8 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::string path, uint32_t id)
+Mesh::Mesh(MeshConfig const &config)
 {
-    this->id = id;
+    this->id = config.id;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -10,7 +10,7 @@ Mesh::Mesh(std::string path, uint32_t id)
     std::string warn, err;
     std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, config.objPath.c_str()))
     {
         throw std::runtime_error(warn + err);
     }

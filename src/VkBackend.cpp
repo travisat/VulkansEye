@@ -83,7 +83,6 @@ VkBackend::~VkBackend()
     vkDestroyDescriptorPool(state->device, state->descriptorPool, nullptr);
     delete scene;
 
-    vkDestroyDescriptorSetLayout(state->device, state->descriptorSetLayout, nullptr);
     vmaDestroyAllocator(state->allocator);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -111,12 +110,10 @@ void VkBackend::initVulkan()
     createColorResources();
     createDepthResources();
     createFramebuffers();
+    createDescriptorPool(); 
 
-    createDescriptorSetLayouts();
-    scene->initScene();
-    scene->createScene();
-    createDescriptorPool();
-    scene->createDescriptorSets();
+    scene->create();
+
     createCommandBuffers();
     createSyncObjects();
 }
@@ -662,8 +659,7 @@ void VkBackend::createCommandBuffers()
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, scene->skybox->getDescriptorSet(i), 0, nullptr);
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->mesh->indexSize), 1, 0, 0, 0);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, &scene->skybox->descriptorSets[i], 0, nullptr);        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->mesh->indexSize), 1, 0, 0, 0);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipeline);
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
@@ -672,7 +668,6 @@ void VkBackend::createCommandBuffers()
         {
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipelineLayout, 0, 1, &model->descriptorSets[i], 0, nullptr);
             vkCmdDrawIndexed(commandBuffers[i], model->mesh->indexSize, 1, model->mesh->indexOffset, model->mesh->vertexOffset, 0);
-
         }
 
         vkCmdEndRenderPass(commandBuffers[i]);
@@ -706,35 +701,6 @@ void VkBackend::createSyncObjects()
         {
             throw std::runtime_error("failed to sync objects for a frame");
         }
-    }
-}
-
-void VkBackend::createDescriptorSetLayouts()
-{
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(state->device, &layoutInfo, nullptr, &state->descriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("faled to create descriptor set layout");
     }
 }
 
@@ -867,13 +833,11 @@ void VkBackend::recreateSwapChain()
     createSwapChain();
     createImageViews();
     createRenderPass();
-    scene->createPipelines();
     createColorResources();
     createDepthResources();
     createFramebuffers();
-    scene->createUniformBuffers();
     createDescriptorPool();
-    scene->createDescriptorSets();
+    scene->recreate();
     createCommandBuffers();
 };
 
@@ -887,10 +851,8 @@ void VkBackend::cleanupSwapChain()
         vkDestroyFramebuffer(state->device, framebuffer, nullptr);
     }
 
-    vkDestroyPipeline(state->device, scene->skybox->pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, scene->skybox->pipelineLayout, nullptr);
-    vkDestroyPipeline(state->device, scene->pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, scene->pipelineLayout, nullptr);
+    
+   
     vkDestroyRenderPass(state->device, state->renderPass, nullptr);
 
     for (auto imageView : state->swapChainImageViews)
@@ -902,15 +864,7 @@ void VkBackend::cleanupSwapChain()
 
     vkFreeCommandBuffers(state->device, state->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
-    for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
-    {
-        delete scene->skybox->getUniformBuffer(i);
-
-        for (auto const &[id, model] : scene->models)
-        {
-            delete model->uniformBuffers[i];
-        }
-    }
+    scene->cleanup();
 
     vkDestroyDescriptorPool(state->device, state->descriptorPool, nullptr);
 };

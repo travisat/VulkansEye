@@ -12,13 +12,15 @@ class Skybox
 public:
     Skybox(State *state, std::string meshPath, std::string materialPath);
     ~Skybox();
-    void createDescriptorSets();
-    void createPipeline();
-   
+
+    void create();
+    void cleanup();
+    void recreate();
+
     void updateUniformBuffer(uint32_t currentImage);
 
-    Buffer *getUniformBuffer(uint32_t i) { return uniformBuffers[i]; };
-    VkDescriptorSet *getDescriptorSet(uint32_t i) { return &descriptorSets[i]; };
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<Buffer *> uniformBuffers;
 
     Mesh *mesh;
     Material *material;
@@ -31,8 +33,13 @@ public:
 
 private:
     State *state;
+    VkDescriptorSetLayout descriptorSetLayout;
+    std::string meshPath;
+    std::string materialPath;
 
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<Buffer *> uniformBuffers;
 
+    void createDescriptorSetLayouts();
+    void createUniformBuffers();
+    void createDescriptorSets();
+    void createPipeline();
 };

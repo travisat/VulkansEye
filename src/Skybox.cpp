@@ -1,14 +1,94 @@
 #include "Skybox.h"
 #include "Helpers.h"
 
-Skybox::Skybox(State *state, std::string meshPath, std::string materialPath)
+Skybox::Skybox(State *_state, std::string _meshPath, std::string _materialPath)
+    : state(_state), meshPath(_meshPath), materialPath(_materialPath)
 {
-    this->state = state;
+}
 
-    mesh = new Mesh(meshPath, 0);
-    material = new Material(state, materialPath, 0);
+Skybox::~Skybox()
+{
+    delete mesh;
+    delete material;
+
+    vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
+
+    for (auto buffer : uniformBuffers)
+    {
+        delete buffer;
+    }
+}
+
+void Skybox::create()
+{
+    MeshConfig meshConfig;
+    meshConfig.id = 0;
+    meshConfig.objPath = meshPath;
+    mesh = new Mesh(meshConfig);
+
+    MaterialConfig materialConfig;
+    materialConfig.diffusePath = materialPath;
+    materialConfig.normalPath = "";
+    materialConfig.id = 0;
+    material = new Material(state, materialConfig);
+
     material->load();
 
+    createDescriptorSetLayouts();
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorSets();
+}
+
+void Skybox::cleanup()
+{
+    vkDestroyPipeline(state->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
+
+    for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
+    {
+        delete uniformBuffers[i];
+    }
+}
+
+void Skybox::recreate()
+{
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorSets();
+}
+
+void Skybox::createDescriptorSetLayouts()
+{
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(state->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("faled to create descriptor set layout");
+    }
+}
+
+void Skybox::createUniformBuffers()
+{
     uniformBuffers.resize(state->swapChainImages.size());
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -18,20 +98,9 @@ Skybox::Skybox(State *state, std::string meshPath, std::string materialPath)
     }
 }
 
-Skybox::~Skybox()
-{
-    delete mesh;
-    delete material;
-
-    for (auto buffer : uniformBuffers)
-    {
-        delete buffer;
-    }
-}
-
 void Skybox::createDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), state->descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = state->descriptorPool;
@@ -81,8 +150,8 @@ void Skybox::createDescriptorSets()
 
 void Skybox::createPipeline()
 {
-    auto vertShaderCode = readFile("resources/shaders/vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/frag.spv");
+    auto vertShaderCode = readFile("resources/shaders/skybox.vert.spv");
+    auto fragShaderCode = readFile("resources/shaders/skybox.frag.spv");
 
     VkShaderModule vertShaderModule = state->createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = state->createShaderModule(fragShaderCode);
@@ -177,7 +246,7 @@ void Skybox::createPipeline()
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &state->descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
     if (vkCreatePipelineLayout(state->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)

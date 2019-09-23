@@ -15,8 +15,24 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     Config config;
     config.skybox = {"resources/models/skybox.obj", "resources/textures/skybox.png"};
-    config.materials = {{1,"resources/textures/wood.jpg"}, {2,"resources/textures/stone.jpg"}};
-    config.meshes = {{1, "resources/models/a.obj"}, {2, "resources/models/b.obj"}};
+
+    MeshConfig a;
+    a.id = 1;
+    a.objPath= "resources/models/a.obj";
+
+    MeshConfig b;
+    b.id = 2;
+    b.objPath = "resources/models/b.obj";
+
+    config.meshes = {a, b};
+
+    MaterialConfig brick;
+    brick.id = 1;
+    brick.diffusePath = "resources/textures/brick/diffuse.png";
+    brick.normalPath = "resources/textures/brick/normal.png";
+    brick.roughnessPath = "resources/textures/brick/roughness.png";
+
+    config.materials = {brick};
     
     ModelConfig letterA;
     letterA.id = 1;
@@ -29,7 +45,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     ModelConfig letterB;
     letterB.id = 2;
     letterB.meshId = 2;
-    letterB.materialId = 2;
+    letterB.materialId = 1;
     letterB.xpos = 75;
     letterB.ypos = 50;
     letterB.zpos = 50;

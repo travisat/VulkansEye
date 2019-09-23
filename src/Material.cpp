@@ -1,10 +1,10 @@
 #include "Material.h"
 
-Material::Material(State *state, std::string path, uint32_t id)
+Material::Material(State *state, MaterialConfig const &config)
 {
     this->state = state;
-    this->path = path;
-    this->id = id;
+    this->path = config.diffusePath;
+    this->id = config.id;
 }
 
 Material::~Material()

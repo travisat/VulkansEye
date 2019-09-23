@@ -41,7 +41,6 @@ public:
     std::vector<VkImageView> swapChainImageViews;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
 
 };

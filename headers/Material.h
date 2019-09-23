@@ -2,6 +2,7 @@
 #include "Helpers.h"
 #include "Buffer.h"
 #include "Image.h"
+#include "Config.h"
 
 class Material
 {
@@ -13,7 +14,7 @@ public:
     std::string path;
 
     //reserve id 0 for skybox;
-    Material(State *state, std::string path, uint32_t id);
+    Material(State *state, MaterialConfig const &config);
 
     ~Material();
 

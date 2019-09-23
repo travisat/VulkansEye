@@ -2,12 +2,13 @@
 
 #include "Vertex.h"
 #include "Helpers.h"
+#include "Config.h"
 
 class Mesh
 {
 public:
     //reserve id 0 for Skybox
-    Mesh(std::string path, uint32_t id);
+    Mesh(MeshConfig const &config);
     
     uint32_t getId(){ return id;};
 

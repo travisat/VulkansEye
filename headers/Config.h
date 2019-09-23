@@ -12,12 +12,25 @@ struct ModelConfig
     uint32_t zpos;
 };
 
+struct MaterialConfig
+{
+    uint32_t id;
+    std::string diffusePath;
+    std::string normalPath;
+    std::string roughnessPath;
+};
+
+struct MeshConfig
+{
+    uint32_t id;
+    std::string objPath;
+};
 
 struct Config
 {
     // <id, path>
-    std::map<uint32_t, std::string> meshes;
-    std::map<uint32_t, std::string> materials;
+    std::vector<MeshConfig> meshes;
+    std::vector<MaterialConfig> materials;
 
     struct
     {

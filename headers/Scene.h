@@ -14,21 +14,12 @@ public:
     Scene(State *state, Config &config);
     ~Scene();
 
-    void initScene();
-
-    void initMeshs();
-    void initMaterials();
-
-    void createScene();
-    void createModels();
-    void createSkybox();
-    void createUniformBuffers();
-    void createDescriptorSets();
-    void createPipelines();
+    void create();
+    void cleanup();
+    void recreate();
 
     void updateUniformBuffer(uint32_t currentImage);
 
-    void loadBuffers();
 
     VkBuffer getVertexBuffer() { return vertexBuffer->buffer; };
     VkBuffer getIndexBuffer() { return indexBuffer->buffer; };
@@ -52,8 +43,15 @@ private:
     Buffer *vertexBuffer;
     Buffer *indexBuffer;
 
+    VkDescriptorSetLayout descriptorSetLayout;
+
     std::map<uint32_t, Mesh *> meshes;
     std::map<uint32_t, Material *> materials;
 
     Config *config;
+    
+    void createUniformBuffers();
+    void createDescriptorSetLayouts();
+    void createDescriptorSets();
+    void createPipelines();
 };

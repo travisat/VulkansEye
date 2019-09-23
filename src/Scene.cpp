@@ -3,13 +3,43 @@
 Scene::Scene(State *state, Config &config)
 {
     this->state = state;
-    this->config = &config;
+    skybox = new Skybox(state, config.skybox.meshPath, config.skybox.materialPath);
+
+    for (auto const &meshConfig : config.meshes)
+    {
+        Mesh *mesh = new Mesh(meshConfig);
+        meshes.insert({meshConfig.id, mesh});
+    }
+
+    for (auto const &materialConfig : config.materials)
+    {
+        Material *material = new Material(state, materialConfig);
+        materials.insert({materialConfig.id, material});
+    }
+
+    for (auto &modelConfig : config.modelConfigs)
+    {
+        Model *model = new Model(state, meshes[modelConfig.meshId],
+                                 materials[modelConfig.materialId]);
+
+        //convert from 0-100 to -1.0 to 1.0
+        model->xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
+        model->ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
+        model->zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
+
+        model->uniformBuffers = {};
+        model->descriptorSets = {};
+
+        models.insert({modelConfig.id, model});
+    }
 };
 
 Scene::~Scene()
 {
     delete vertexBuffer;
     delete indexBuffer;
+
+    vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
 
     for (auto const &[id, model] : models)
     {
@@ -27,85 +57,16 @@ Scene::~Scene()
     delete skybox;
 }
 
-void Scene::initScene()
+void Scene::create()
 {
-    initMeshs();
-    initMaterials();
-}
+    skybox->create();
 
-void Scene::initMeshs()
-{
-    uint32_t i = 0;
-    for (auto const &[id, path] : config->meshes)
-    {
-        Mesh *mesh = new Mesh(path, id);
-        meshes.insert({id, mesh});
-    }
-}
-
-void Scene::initMaterials()
-{
-    uint32_t i = 0;
-    for (auto const &[id, path] : config->materials)
-    {
-        Material *material = new Material(state, path, id);
-        materials.insert({id, material});
-    }
-}
-
-void Scene::createScene()
-{
-    createModels();
-    createSkybox();
+    createDescriptorSetLayouts();
     createPipelines();
     createUniformBuffers();
-    loadBuffers();
-}
 
-void Scene::createModels()
-{
-    for (auto &modelConfig : config->modelConfigs)
-    {
-        Model *model = new Model(state, meshes[modelConfig.meshId],
-                                 materials[modelConfig.materialId]);
-
-        //convert from 0-100 to -1.0 to 1.0
-        model->xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
-        model->ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
-        model->zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
-
-        model->uniformBuffers = {};
-        model->descriptorSets = {};
-
-        models.insert({modelConfig.id, model});
-    }
-}
-
-void Scene::createSkybox()
-{
-    skybox = new Skybox(state, config->skybox.meshPath, config->skybox.materialPath);
-}
-
-void Scene::createUniformBuffers()
-{
-    for (auto const &[_, model] : models)
-    {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-        model->uniformBuffers.resize(state->swapChainImages.size());
-
-        for (size_t i = 0; i < state->swapChainImages.size(); i++)
-        {
-            model->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        }
-    }
-}
-
-void Scene::loadBuffers()
-{
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-
 
     uint32_t vertexOffset = 0;
     uint32_t indexOffset = 0;
@@ -121,13 +82,13 @@ void Scene::loadBuffers()
         vertexOffset++;
     }
 
-    for  (auto &index : skybox->mesh->indices)
+    for (auto &index : skybox->mesh->indices)
     {
         indices.push_back(index);
         indexOffset++;
     }
 
-    for (auto const & [id, mesh] : meshes)
+    for (auto const &[id, mesh] : meshes)
     {
         mesh->vertexOffset = vertexOffset;
         mesh->indexOffset = indexOffset;
@@ -167,9 +128,49 @@ void Scene::loadBuffers()
 
     delete stagingBuffer;
 
-    for (auto const & [id, material] : materials)
+    for (auto const &[id, material] : materials)
     {
         material->load();
+    }
+
+    createDescriptorSets();
+}
+
+void Scene::cleanup()
+{
+    skybox->cleanup();
+    vkDestroyPipeline(state->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
+    for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
+    {
+        for (auto const &[id, model] : models)
+        {
+            delete model->uniformBuffers[i];
+        }
+    }
+}
+
+void Scene::recreate()
+{
+    skybox->recreate();
+    createPipelines();
+    createUniformBuffers();
+    createDescriptorSets();
+}
+
+void Scene::createUniformBuffers()
+{
+  
+    for (auto const &[_, model] : models)
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        model->uniformBuffers.resize(state->swapChainImages.size());
+
+        for (size_t i = 0; i < state->swapChainImages.size(); i++)
+        {
+            model->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        }
     }
 }
 
@@ -204,7 +205,7 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
         Input::getInstance().setMoveY(moveY - 0.1f);
     }
 
-    for (auto const & [id, model] : models)
+    for (auto const &[id, model] : models)
     {
         UniformBufferObject ubo = {};
         ubo.model = glm::rotate(
@@ -218,13 +219,40 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     }
 }
 
+void Scene::createDescriptorSetLayouts()
+{
+    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(state->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("faled to create descriptor set layout");
+    }
+}
+
 void Scene::createDescriptorSets()
 {
-    skybox->createDescriptorSets();
-
-    for (auto const & [id, model] : models)
+    for (auto const &[id, model] : models)
     {
-        std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), state->descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = state->descriptorPool;
@@ -275,10 +303,8 @@ void Scene::createDescriptorSets()
 
 void Scene::createPipelines()
 {
-    skybox->createPipeline();
-
-    auto vertShaderCode = readFile("resources/shaders/vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/frag.spv");
+    auto vertShaderCode = readFile("resources/shaders/scene.vert.spv");
+    auto fragShaderCode = readFile("resources/shaders/scene.frag.spv");
 
     VkShaderModule vertShaderModule = state->createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = state->createShaderModule(fragShaderCode);
@@ -379,7 +405,7 @@ void Scene::createPipelines()
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &state->descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
     if (vkCreatePipelineLayout(state->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
