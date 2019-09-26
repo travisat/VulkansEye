@@ -667,12 +667,9 @@ void VkBackend::createCommandBuffers()
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
-        VkBuffer skyboxVertexBuffers[] = {scene->skybox->vertexBuffer->buffer};
-        VkDeviceSize skyboxOffsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, skyboxVertexBuffers, skyboxOffsets);
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, &scene->skybox->descriptorSets[i], 0, nullptr);
-        vkCmdDraw(commandBuffers[i], 12 * 3, 1, 0, 0);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
+        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipeline);
         VkBuffer vertexBuffers[] = {scene->getVertexBuffer()};
@@ -846,7 +843,6 @@ void VkBackend::recreateSwapChain()
     state->windowHeight = height;
 
     cleanupSwapChain();
-
 
     createSwapChain();
     createImageViews();

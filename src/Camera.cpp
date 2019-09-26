@@ -14,7 +14,7 @@ void Camera::updateView()
     view = rotationMatrix * translationMatrix;
 }
 
-void Camera::setPerspective(double fieldOfView, double width, double height,double zZear, double zFar)
+void Camera::setPerspective(double fieldOfView, double width, double height, double zNear, double zFar)
 {
     this->fieldOfView = fieldOfView;
     this->width = width;
@@ -22,6 +22,8 @@ void Camera::setPerspective(double fieldOfView, double width, double height,doub
     this->zNear = zNear;
     this->zFar = zFar;
     perspective = glm::perspective(glm::radians(fieldOfView), width / height, zNear, zFar);
+    perspective = clip * perspective;
+    
 }
 
 void Camera::updateAspectRatio(double width, double height)
@@ -29,6 +31,7 @@ void Camera::updateAspectRatio(double width, double height)
     this->width = width;
     this->height = height;
     perspective = glm::perspective(glm::radians(fieldOfView), (width / height), zNear, zFar);
+    perspective = clip * perspective;
 }
 
 void Camera::rotate(glm::vec3 delta)
@@ -64,7 +67,7 @@ void Camera::update(Keys keys, glm::vec2 mousePosition, float deltaTime)
         glm::vec2 deltaPosition = lastMousePosition - mousePosition;
 
         rotation.y -= deltaPosition.x * mouseSensitivity;
-        rotation.x += deltaPosition.y * mouseSensitivity;
+        rotation.x -= deltaPosition.y * mouseSensitivity;
 
         lastMousePosition = mousePosition;
         updated = false;

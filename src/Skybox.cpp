@@ -15,16 +15,11 @@ Skybox::~Skybox()
 
 void Skybox::create()
 {
-    //load vertices for a cube
-    Buffer *stagingBuffer = new Buffer(state, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer->load(vertices);
-    vertexBuffer = new Buffer(state, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    stagingBuffer->copy(vertexBuffer);
-
     //load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(texturePath));
     assert(!texCube.empty());
-    stagingBuffer->resize(texCube.size());
+    //stagingBuffer->resize(texCube.size());
+    Buffer *stagingBuffer = new Buffer(state, texCube.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     stagingBuffer->load(texCube.data(), static_cast<uint32_t>(texCube.size()));
 
     //create new image with correct dimensions to receive texture
@@ -242,14 +237,10 @@ void Skybox::createPipeline()
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    auto attributeDescrption = Vertex::getAttributeDescriptions();
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.pVertexBindingDescriptions = nullptr;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -275,7 +266,7 @@ void Skybox::createPipeline()
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -295,9 +286,7 @@ void Skybox::createPipeline()
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_FALSE;
     depthStencil.depthWriteEnable = VK_FALSE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-    depthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
-    depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_NEVER;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -339,9 +328,8 @@ void Skybox::createPipeline()
 void Skybox::updateUniformBuffer(uint32_t currentImage)
 {
     UniformBufferObject ubo = {};
+   
     ubo.projection = camera->perspective;
     ubo.view = camera->view;
-    ubo.cameraPosition = camera->position * -1.0f;
-    ubo.model = glm::mat4(glm::mat3(camera->view));
     uniformBuffers[currentImage]->update(ubo);
 };

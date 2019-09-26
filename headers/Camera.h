@@ -1,5 +1,17 @@
 #pragma once
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "Helpers.h"
+
+const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,
+                     0.0f, -1.0f, 0.0f, 0.0f,
+                     0.0f, 0.0f, 0.5f, 0.0f,
+                     0.0f, 0.0f, 0.5f, 1.0f);
 
 class Camera
 {

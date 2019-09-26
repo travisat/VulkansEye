@@ -1,5 +1,23 @@
 #pragma once
+
+#include <array>
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
+
 #include "Helpers.h"
+
+struct UniformBufferObject
+{
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 model;
+    glm::vec3 cameraPosition;
+};
 
 struct Vertex
 {

@@ -1,11 +1,10 @@
 #pragma once
-#include "Material.h"
-#include "Mesh.h"
-#include "Model.h"
-#include "Config.h"
+
+#include <chrono>
+
 #include "Helpers.h"
+#include "Model.h"
 #include "Skybox.h"
-#include "State.h"
 #include "Input.h"
 #include "Camera.h"
 

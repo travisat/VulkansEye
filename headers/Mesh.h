@@ -1,5 +1,9 @@
 #pragma once
 
+#include <unordered_map>
+
+#include <tiny_obj_loader.h>
+
 #include "Vertex.h"
 #include "Helpers.h"
 #include "Config.h"

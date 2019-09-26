@@ -3,26 +3,14 @@
 
 layout(binding = 1) uniform samplerCube cubeSampler;
 
-layout(location = 0) in vec3 mpv;
+layout(location = 0) in vec3 eyePosition;
 
 layout(location = 0) out vec4 outColor;
 
-// From http://filmicworlds.com/blog/filmic-tonemapping-operators/
-vec3 Uncharted2Tonemap(vec3 color)
-{
-	float A = 0.15;
-	float B = 0.50;
-	float C = 0.10;
-	float D = 0.20;
-	float E = 0.02;
-	float F = 0.30;
-	float W = 11.2;
-	return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
-}
 
 void main() {
     
-    vec3 color = texture(cubeSampler, mpv).rgb;
-    color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    vec3 color = texture(cubeSampler, eyePosition).rgb;
+	//vec3 color = vec3(0.5f, 0.5f, 0.5f);
     outColor = vec4(color, 1.0);
 }

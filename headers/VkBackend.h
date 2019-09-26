@@ -1,19 +1,13 @@
 #pragma once
 
+#include <set>
 
 #include "Helpers.h"
-#include "State.h"
-#include "Input.h"
 #include "Scene.h"
-#include "Buffer.h"
-#include "Image.h"
-#include "Skybox.h"
-#include "Config.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 static bool framebufferResized = false;
-
 
 const std::vector<const char *> validationLayers = {
     "VK_LAYER_LUNARG_standard_validation"};
@@ -23,8 +17,6 @@ const std::vector<const char *> validationLayers = {
 #else
     const bool enableValidationLayers = true;
 #endif
-
-
 
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
