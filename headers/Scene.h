@@ -7,6 +7,7 @@
 #include "Skybox.h"
 #include "State.h"
 #include "Input.h"
+#include "Camera.h"
 
 class Scene
 {
@@ -39,6 +40,8 @@ public:
 
 private:
     State *state;
+
+    Camera camera;
 
     Buffer *vertexBuffer;
     Buffer *indexBuffer;

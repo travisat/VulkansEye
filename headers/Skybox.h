@@ -5,12 +5,58 @@
 #include "Buffer.h"
 #include "Vertex.h"
 #include "Mesh.h"
+#include "Camera.h"
 #include "Material.h"
+
+static std::vector<Vertex> vertices = {
+    {{-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f}}, // -X side
+    {{-1.0f, -1.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+    {{-1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+    {{-1.0f, 1.0f, -1.0f}, {0.0f, 0.0f}},
+    {{-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f}},
+
+    {{-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f}}, // -Z side
+    {{1.0f, 1.0f, -1.0f}, {0.0f, 0.0f}},
+    {{1.0f, -1.0f, -1.0f}, {0.0f, 1.0f}},
+    {{-1.0f, -1.0f, -1.0f}, {1.0f, 1.0f}},
+    {{-1.0f, 1.0f, -1.0f}, {1.0f, 0.0f}},
+    {{1.0f, 1.0f, -1.0f}, {0.0f, 0.0f}},
+
+    {{-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f}}, // -Y side}
+    {{1.0f, -1.0f, -1.0f}, {1.0f, 1.0f}},
+    {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f}},
+    {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-1.0f, -1.0f, 1.0f}, {0.0f, 0.0f}},
+
+    {{-1.0f, 1.0f, -1.0f}, {1.0f, 0.0f}}, // +Y side}
+    {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-1.0f, 1.0f, -1.0f}, {1.0f, 0.0f}},
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{1.0f, 1.0f, -1.0f}, {1.0f, 1.0f}},
+
+    {{1.0f, 1.0f, -1.0f}, {1.0f, 0.0f}}, // +X side
+    {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{1.0f, -1.0f, -1.0f}, {1.0f, 1.0f}},
+    {{1.0f, 1.0f, -1.0f}, {1.0f, 0.0f}},
+
+    {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}, // +Z side
+    {{-1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+    {{-1.0f, -1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{1.0f, -1.0f, 1.0f}, {1.0f, 1.0f}},
+    {{1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}};
 
 class Skybox
 {
 public:
-    Skybox(State *state, std::string meshPath, std::string materialPath);
+    Skybox::Skybox(State *_state, Camera *_camera, std::string _texturePath)
+        : state(_state), camera(_camera), texturePath(_texturePath){};
+
     ~Skybox();
 
     void create();
@@ -21,22 +67,21 @@ public:
 
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Buffer *> uniformBuffers;
-
-    Mesh *mesh;
-    Material *material;
-
-    uint32_t vertexOffset;
-    uint32_t indexOffset;
+    
+    Buffer* vertexBuffer;
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
 private:
     State *state;
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::string meshPath;
-    std::string materialPath;
+    Image *cubeMap;
+    VkSampler sampler;
 
+    VkDescriptorSetLayout descriptorSetLayout;
+    std::string texturePath;
+
+    Camera *camera;
 
     void createDescriptorSetLayouts();
     void createUniformBuffers();

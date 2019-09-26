@@ -74,6 +74,14 @@ void Buffer::load(std::vector<Vertex> const &vertices)
     vmaUnmapMemory(state->allocator, *allocation);
 }
 
+void Buffer::load(void *texData, uint32_t size)
+{
+    void *data;
+    vmaMapMemory(state->allocator, *allocation, &data);
+    memcpy(data, texData, static_cast<size_t>(size));
+    vmaUnmapMemory(state->allocator, *allocation);
+}
+
 void Buffer::load(std::vector<uint32_t> const &indices)
 {
     void *data;

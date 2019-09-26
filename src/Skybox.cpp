@@ -1,18 +1,12 @@
 #include "Skybox.h"
 #include "Helpers.h"
 
-Skybox::Skybox(State *_state, std::string _meshPath, std::string _materialPath)
-    : state(_state), meshPath(_meshPath), materialPath(_materialPath)
-{
-}
-
 Skybox::~Skybox()
 {
-    delete mesh;
-    delete material;
-
+    delete cubeMap;
+    vkDestroySampler(state->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
-
+    delete vertexBuffer;
     for (auto buffer : uniformBuffers)
     {
         delete buffer;
@@ -21,18 +15,94 @@ Skybox::~Skybox()
 
 void Skybox::create()
 {
-    MeshConfig meshConfig;
-    meshConfig.id = 0;
-    meshConfig.objPath = meshPath;
-    mesh = new Mesh(meshConfig);
+    //load vertices for a cube
+    Buffer *stagingBuffer = new Buffer(state, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    stagingBuffer->load(vertices);
+    vertexBuffer = new Buffer(state, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    stagingBuffer->copy(vertexBuffer);
 
-    MaterialConfig materialConfig;
-    materialConfig.diffusePath = materialPath;
-    materialConfig.normalPath = "";
-    materialConfig.id = 0;
-    material = new Material(state, materialConfig);
+    //load texture into staging buffer using gli so we can extract image
+    gli::texture_cube texCube(gli::load(texturePath));
+    assert(!texCube.empty());
+    stagingBuffer->resize(texCube.size());
+    stagingBuffer->load(texCube.data(), static_cast<uint32_t>(texCube.size()));
 
-    material->load();
+    //create new image with correct dimensions to receive texture
+    cubeMap = new Image(state, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+                        texCube.extent().x, texCube.extent().y, static_cast<uint32_t>(texCube.levels()), 6);
+
+    VkCommandBuffer commandBuffer = state->beginSingleTimeCommands();
+    std::vector<VkBufferImageCopy> bufferCopyRegions;
+
+    //loop through faces/mipLevels in gli loaded texture and create regions to copy
+    uint32_t offset = 0;
+    for (uint32_t face = 0; face < 6; face++)
+    {
+        for (uint32_t level = 0; level < cubeMap->mipLevels; level++)
+        {
+            VkBufferImageCopy bufferCopyRegion = {};
+            bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            bufferCopyRegion.imageSubresource.mipLevel = level;
+            bufferCopyRegion.imageSubresource.baseArrayLayer = face;
+            bufferCopyRegion.imageSubresource.layerCount = 1;
+            bufferCopyRegion.imageExtent.width = texCube[face][level].extent().x;
+            bufferCopyRegion.imageExtent.height = texCube[face][level].extent().y;
+            bufferCopyRegion.imageExtent.depth = 1;
+            bufferCopyRegion.bufferOffset = offset;
+
+            bufferCopyRegions.push_back(bufferCopyRegion);
+
+            offset += static_cast<uint32_t>(texCube[face][level].size());
+        }
+    }
+
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = cubeMap->mipLevels;
+    subresourceRange.layerCount = 6;
+
+    //copy gli loaded texture to image using regious created
+    cubeMap->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        stagingBuffer->buffer,
+        cubeMap->image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        static_cast<uint32_t>(bufferCopyRegions.size()),
+        bufferCopyRegions.data());
+
+    state->endSingleTimeCommands(commandBuffer);
+    
+    //convert image so shaders can use it
+    cubeMap->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
+    
+    //cannot be deleted before single time commands end
+    delete stagingBuffer;
+
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = static_cast<float>(cubeMap->mipLevels);
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    samplerInfo.maxLod = static_cast<float>(cubeMap->mipLevels);
+
+    if (vkCreateSampler(state->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create texture sampler");
+    }
+
+    cubeMap->createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
 
     createDescriptorSetLayouts();
     createPipeline();
@@ -124,8 +194,8 @@ void Skybox::createDescriptorSets()
 
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = material->textureImage->getImageView();
-        imageInfo.sampler = material->textureSampler;
+        imageInfo.imageView = cubeMap->imageView;
+        imageInfo.sampler = sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -186,24 +256,19 @@ void Skybox::createPipeline()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)state->swapChainExtent.width;
-    viewport.height = (float)state->swapChainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    std::vector<VkDynamicState> dynamicStateEnables = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR};
 
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = state->swapChainExtent;
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.pDynamicStates = dynamicStateEnables.data();
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -215,33 +280,24 @@ void Skybox::createPipeline()
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_TRUE;
-    multisampling.minSampleShading = 0.2f;
     multisampling.rasterizationSamples = state->msaaSamples;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.colorWriteMask = 0xf;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
-    depthStencil.stencilTestEnable = VK_FALSE;
+    depthStencil.depthTestEnable = VK_FALSE;
+    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -265,7 +321,7 @@ void Skybox::createPipeline()
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = nullptr;
+    pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = state->renderPass;
     pipelineInfo.subpass = 0;
@@ -282,16 +338,10 @@ void Skybox::createPipeline()
 
 void Skybox::updateUniformBuffer(uint32_t currentImage)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
     UniformBufferObject ubo = {};
-    ubo.view = glm::mat4(1.0f);
-    ubo.proj = glm::perspective(glm::radians(60.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.01f, 256.0f);
-    ubo.model = glm::mat4(1.0f);
-    ubo.model = ubo.view * glm::rotate(glm::translate(ubo.model, glm::vec3(0, 0, 0)),
-                                       time * glm::radians(3.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+    ubo.projection = camera->perspective;
+    ubo.view = camera->view;
+    ubo.cameraPosition = camera->position * -1.0f;
+    ubo.model = glm::mat4(glm::mat3(camera->view));
     uniformBuffers[currentImage]->update(ubo);
 };

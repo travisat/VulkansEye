@@ -3,7 +3,14 @@
 Scene::Scene(State *state, Config &config)
 {
     this->state = state;
-    skybox = new Skybox(state, config.skybox.meshPath, config.skybox.materialPath);
+
+    camera = {};
+    camera.setPerspective(60.0f, static_cast<double>(state->windowWidth), static_cast<double>(state->windowHeight), 0.1f, 512.0f);
+    camera.position = glm::vec3(0.0f, 0.0f, -5.0f);
+    camera.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    camera.updateView();
+
+    skybox = new Skybox(state, &camera, config.skybox);
 
     for (auto const &meshConfig : config.meshes)
     {
@@ -19,16 +26,13 @@ Scene::Scene(State *state, Config &config)
 
     for (auto &modelConfig : config.modelConfigs)
     {
-        Model *model = new Model(state, meshes[modelConfig.meshId],
-                                 materials[modelConfig.materialId]);
-
         //convert from 0-100 to -1.0 to 1.0
-        model->xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
-        model->ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
-        model->zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
+        double xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
+        double ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
+        double zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
 
-        model->uniformBuffers = {};
-        model->descriptorSets = {};
+        Model *model = new Model(state, meshes[modelConfig.meshId],
+                                 materials[modelConfig.materialId], glm::vec3(xpos, ypos, zpos));
 
         models.insert({modelConfig.id, model});
     }
@@ -71,23 +75,6 @@ void Scene::create()
     uint32_t vertexOffset = 0;
     uint32_t indexOffset = 0;
     //load objects model vertices and indices into single buffers
-    //skybox comes first
-
-    skybox->vertexOffset = vertexOffset;
-    skybox->indexOffset = indexOffset;
-
-    for (auto &vertex : skybox->mesh->vertices)
-    {
-        vertices.push_back(vertex);
-        vertexOffset++;
-    }
-
-    for (auto &index : skybox->mesh->indices)
-    {
-        indices.push_back(index);
-        indexOffset++;
-    }
-
     for (auto const &[id, mesh] : meshes)
     {
         mesh->vertexOffset = vertexOffset;
@@ -152,6 +139,7 @@ void Scene::cleanup()
 
 void Scene::recreate()
 {
+    camera.updateAspectRatio((float)state->windowWidth, (float)state->windowHeight);
     skybox->recreate();
     createPipelines();
     createUniformBuffers();
@@ -160,7 +148,7 @@ void Scene::recreate()
 
 void Scene::createUniformBuffers()
 {
-  
+
     for (auto const &[_, model] : models)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -179,41 +167,26 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     skybox->updateUniformBuffer(currentImage);
 
     static auto startTime = std::chrono::high_resolution_clock::now();
-
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    double moveX = Input::getInstance().getMoveX();
-    models[1]->xpos += moveX;
-    if (moveX < 0.0)
+    if (Input::getInstance().getMouseMode())
     {
-        Input::getInstance().setMoveX(moveX + 0.1f);
+        camera.update(Input::getKeys(), glm::vec2(Input::getInstance().getMouseX(), Input::getInstance().getMouseY()), time);
     }
-    else if (moveX > 0.0)
+    else
     {
-        Input::getInstance().setMoveX(moveX - 0.1f);
-    }
-
-    double moveY = Input::getInstance().getMoveY();
-    models[1]->ypos += moveY;
-    if (moveY < 0.0)
-    {
-        Input::getInstance().setMoveY(moveY + 0.1f);
-    }
-    else if (moveY > 0.0)
-    {
-        Input::getInstance().setMoveY(moveY - 0.1f);
+        camera.changeMouseMode(false);
     }
 
     for (auto const &[id, model] : models)
     {
         UniformBufferObject ubo = {};
-        ubo.model = glm::rotate(
-            glm::translate(glm::mat4(1.0f), glm::vec3(model->xpos, model->ypos, model->zpos)),
-            time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), state->swapChainExtent.width / (float)state->swapChainExtent.height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        ubo.model = glm::translate(glm::mat4(1.0f), model->position);
+        ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.projection = camera.perspective;
+        ubo.view = camera.view;
+        ubo.cameraPosition = camera.position * -1.0f;
 
         model->uniformBuffers[currentImage]->update(ubo);
     }
@@ -276,8 +249,8 @@ void Scene::createDescriptorSets()
 
             VkDescriptorImageInfo imageInfo = {};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = model->material->textureImage->getImageView();
-            imageInfo.sampler = model->material->textureSampler;
+            imageInfo.imageView = model->material->diffuse->imageView;
+            imageInfo.sampler = model->material->diffuseSampler;
 
             std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -339,42 +312,32 @@ void Scene::createPipelines()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)state->swapChainExtent.width;
-    viewport.height = (float)state->swapChainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    std::vector<VkDynamicState> dynamicStateEnables = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR};
 
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = state->swapChainExtent;
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.pDynamicStates = dynamicStateEnables.data();
+    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
-    viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
-    viewportState.pScissors = &scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0;
-    rasterizer.depthBiasClamp = 0.0f;
-    rasterizer.depthBiasSlopeFactor = 0.0f;
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_TRUE;
-    multisampling.minSampleShading = 0.2f;
+    multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = state->msaaSamples;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
@@ -396,11 +359,10 @@ void Scene::createPipelines()
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.minDepthBounds = 0.0f;
-    depthStencil.maxDepthBounds = 1.0f;
     depthStencil.stencilTestEnable = VK_FALSE;
+
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -424,7 +386,7 @@ void Scene::createPipelines()
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = nullptr;
+    pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = state->renderPass;
     pipelineInfo.subpass = 0;

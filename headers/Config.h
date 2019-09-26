@@ -32,11 +32,7 @@ struct Config
     std::vector<MeshConfig> meshes;
     std::vector<MaterialConfig> materials;
 
-    struct
-    {
-        std::string meshPath;
-        std::string materialPath;
-    } skybox;
+    std::string skybox;
 
     std::vector<ModelConfig> modelConfigs;
 };

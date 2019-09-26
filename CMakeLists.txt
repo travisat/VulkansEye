@@ -16,6 +16,7 @@ add_executable(VulkansEye
                 src/Image.cpp
                 src/State.cpp
                 src/Skybox.cpp
+                src/Camera.cpp
                 src/Scene.cpp)
 
 set_target_properties(VulkansEye PROPERTIES
@@ -30,7 +31,7 @@ target_include_directories(VulkansEye
         "${myLibraries}/stb"
         "${myLibraries}/tinyobjloader"
         "${myLibraries}/vma-2.2.0/src"
-        "${myLibraries}/date-2.4.1/include/date"
+        "${myLibraries}/gli"
         "C:/VulkanSDK/1.1.114.0/Include"
         )
 

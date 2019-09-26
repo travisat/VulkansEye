@@ -1,13 +1,14 @@
 #include "Model.h"
 
 
-Model::Model(State* state, Mesh *mesh, Material *material){
+Model::Model(State* state, Mesh *mesh, Material *material, glm::vec3 position){
     this->state = state;
     this->mesh = mesh;
     this->material = material;
-    xpos = 0;
-    ypos = 0;
-    zpos = 0;
+    this->position = position; 
+
+    uniformBuffers = {};
+    descriptorSets = {};
 }
 
 Model::~Model()

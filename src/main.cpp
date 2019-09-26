@@ -4,14 +4,14 @@
 
 #include "VulkansEye.h"
 
-
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
 int main()
 {
-    VulkansEye app;
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
+    VulkansEye app;
     try
     {
         app.init(WIDTH, HEIGHT);
@@ -23,5 +23,6 @@ int main()
         return EXIT_FAILURE;
     }
 
+    CoUninitialize();
     return EXIT_SUCCESS;
 }

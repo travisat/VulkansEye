@@ -15,7 +15,7 @@ public:
   Image(State *state, VkFormat format,
         VkImageTiling tiling, VkSampleCountFlagBits numSamples,
         VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-        VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t layers);
+        VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers);
 
   ~Image();
 
@@ -32,28 +32,18 @@ public:
 
   bool hasStencilComponent(VkFormat format);
 
-  VkImage getImage() { return image; };
-  VmaAllocation getAllocation() { return allocation; };
-  VkFormat getFormat() { return format; };
-  VkDeviceSize getSize() { return size; };
-  VkImageView getImageView() { return imageView; };
+  int width = 0;
+  int height = 0;
+  int channels = 0;
+  int layers = 0;
+  uint32_t mipLevels = 0;
 
-  int getWidth() { return width; };
-  int getHeight() { return height; };
-  int getChannels() { return channels; };
-  uint32_t getMipLevels() { return mipLevels; };
-  void setMiplevels(uint32_t m) { mipLevels = m; };
-
-private:
-  State *state;
   VkImage image;
   VmaAllocation allocation;
   VkFormat format;
   VkDeviceSize size;
   VkImageView imageView;
 
-  int width;
-  int height;
-  int channels;
-  uint32_t mipLevels;
+private:
+  State *state;
 };

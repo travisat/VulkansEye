@@ -1,0 +1,38 @@
+#pragma once
+#include "Helpers.h"
+
+class Camera
+{
+public:
+    glm::vec3 rotation = glm::vec3();
+    glm::vec3 position = glm::vec3();
+
+    glm::mat4 perspective;
+    glm::mat4 view;
+
+    double getNearClip() { return zNear; };
+    double getFarClip() { return zFar; };
+
+    void updateView();
+
+    void setPerspective(double fieldOfView, double width, double height, double zNear, double zFar);
+    void updateAspectRatio(double width, double height);
+
+    void rotate(glm::vec3 delta);
+    void translate(glm::vec3 delta);
+
+    void update(Keys keys, glm::vec2 mousePosition, float deltaTime);
+    void changeMouseMode(bool mouseMode) { this->mouseMode = mouseMode; };
+
+private:
+    double fieldOfView;
+    double zNear, zFar;
+    double width;
+    double height;
+
+    glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
+    bool mouseMode = false;
+
+    float mouseSensitivity = 20.0f;
+    float movementSpeed = 0.02f;
+};

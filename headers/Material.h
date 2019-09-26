@@ -8,10 +8,13 @@ class Material
 {
 public:
     State *state;
-    Image *textureImage;
-    VkSampler textureSampler;
+    Image *diffuse;
+    Image *normal;
+    VkSampler diffuseSampler;
+    VkSampler normalSampler;
     uint32_t id;
-    std::string path;
+    std::string diffusePath;
+    std::string normalPath;
 
     //reserve id 0 for skybox;
     Material(State *state, MaterialConfig const &config);

@@ -17,6 +17,7 @@ public:
     void loadImages(stbi_uc **pixels, VkDeviceSize size, uint32_t count);
     void load(std::vector<Vertex> const &vertices);
     void load(std::vector<uint32_t> const &indices);
+    void load(void *texData, uint32_t size);
     void copy(Buffer *destination);
     void update(UniformBufferObject &ubo);
 

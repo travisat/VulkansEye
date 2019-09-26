@@ -27,15 +27,26 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
+#include <gli/gli.hpp>
+
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 #include <vk_mem_alloc.h>
 
 struct UniformBufferObject
 {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
+    glm::mat4 projection;
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::vec3 cameraPosition;
+};
+
+struct Keys
+{
+    bool a = false;
+    bool d = false;
+    bool w = false;
+    bool s = false;
 };
 
 struct QueueFamilyIndices

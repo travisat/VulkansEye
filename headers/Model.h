@@ -9,7 +9,7 @@
 class Model
 {
 public:
-    Model(State *state, Mesh *mesh, Material *material);
+    Model(State *state, Mesh *mesh, Material *material, glm::vec3 position);
     ~Model();
 
     State *state;
@@ -21,7 +21,5 @@ public:
     std::vector<Buffer *> uniformBuffers;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    double xpos;
-    double ypos;
-    double zpos;
+    glm::vec3 position;
 };

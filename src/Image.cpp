@@ -55,7 +55,7 @@ Image::Image(State *state, VkFormat format,
 Image::Image(State *state, VkFormat format,
              VkImageTiling tiling, VkSampleCountFlagBits numSamples,
              VkImageUsageFlags usage, VmaMemoryUsage memUsage,
-             VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t layers)
+             VkImageCreateFlags flags, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t layers)
 {
 
     this->state = state;
@@ -63,7 +63,7 @@ Image::Image(State *state, VkFormat format,
     this->width = width;
     this->height = height;
 
-    this->mipLevels = 1;
+    this->mipLevels = mipLevels;
 
     size = width * height * 4;
     channels = 4;
@@ -97,7 +97,9 @@ Image::~Image()
 {
     vmaDestroyImage(state->allocator, image, allocation);
     vkDestroyImageView(state->device, imageView, nullptr);
-};
+}
+
+
 
 void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags)
 {
@@ -111,10 +113,9 @@ void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectF
     viewInfo.image = image;
     viewInfo.viewType = viewType;
     viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
+    viewInfo.subresourceRange = {aspectFlags, 0, 1, 0, 1};
     viewInfo.subresourceRange.levelCount = mipLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = layerCount;
 
     if (vkCreateImageView(state->device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)

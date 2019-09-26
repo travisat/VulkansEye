@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Helpers.h"
+
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 class Input
 {
@@ -20,107 +22,140 @@ public:
 
     void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods) //this is the actual implementation of the callback method
     {
-        double xpos, ypos;
-        glfwGetCursorPos(window, &xpos, &ypos);
-        std::cerr << "Mouse Button pressed at x: " << xpos << " y: " <<  ypos << std::endl;
-
+        if (key == GLFW_MOUSE_BUTTON_2)
+        {
+            if (action == GLFW_PRESS)
+            {
+                mouseButton2Pressed = true;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+            }
+            else if (action == GLFW_RELEASE)
+            {
+                mouseButton2Pressed = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
     }
 
     static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     {
-        getInstance().cursorPosCallbackImpl(window, xpos, ypos);
+        getInstance().cursorPosCallbackIMPL(window, xpos, ypos);
     }
 
-    void cursorPosCallbackImpl(GLFWwindow *window, double xpos, double ypos)
+    void cursorPosCallbackIMPL(GLFWwindow *window, double xpos, double ypos)
     {
-        std::cerr << "Mouse at " << xpos << ", " << ypos << std::endl;
+            mouseX = xpos;
+            mouseY = ypos;
     }
 
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
         getInstance().keyCallbackImpl(window, key, scancode, action, mods);
     }
 
-    void keyCallbackImpl(GLFWwindow * window, int key, int scancode, int action, int mods)
+    void keyCallbackImpl(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         {
             std::cerr << "Pressed Escape\n";
             glfwSetWindowShouldClose(window, VK_TRUE);
-        } else if ( key == GLFW_KEY_RIGHT) {
-            if (moveX > -0.5f) {
-                moveX -= 0.1f;
-            } else {
-                moveX = -0.5f;
+        }
+        else if (key == GLFW_KEY_A)
+        {
+            if (action == GLFW_PRESS)
+            {
+                keys.a = true;
             }
-        } else if ( key == GLFW_KEY_LEFT) {
-            if (moveX < 0.5f) {
-                moveX += 0.1f;
-            } else {
-                moveX = 0.5f;
+            else if (action == GLFW_RELEASE)
+            {
+                keys.a = false;
             }
-        } else if ( key == GLFW_KEY_UP) {
-            if (moveY > -0.5f) {
-                moveY -= 0.1f;
-            } else {
-                moveY = -0.5f;
+        }
+        else if (key == GLFW_KEY_D)
+        {
+            if (action == GLFW_PRESS)
+            {
+                keys.d = true;
             }
-        } else if ( key == GLFW_KEY_DOWN) {
-            if (moveY < 0.5f) {
-                moveY += 0.1f;
-            } else {
-                moveY = 0.5f;
+            else if (action == GLFW_RELEASE)
+            {
+                keys.d = false;
+            }
+        }
+        else if (key == GLFW_KEY_W)
+        {
+            if (action == GLFW_PRESS)
+            {
+                keys.w = true;
+            }
+            else if (action == GLFW_RELEASE)
+            {
+                keys.w = false;
+            }
+        }
+        else if (key == GLFW_KEY_S)
+        {
+            if (action == GLFW_PRESS)
+            {
+                keys.s = true;
+            }
+            else if (action == GLFW_RELEASE)
+            {
+                keys.s = false;
             }
         }
     }
 
-    static double getMoveX() 
+    static Keys getKeys()
     {
-        return getInstance().getMoveXIMPL();
+        return getInstance().getKeysIMPL();
     }
 
-    double getMoveXIMPL()
+    Keys getKeysIMPL()
     {
-        return moveX;
+        return keys;
     }
 
-    static void setMoveX(double x) 
+    static double getMouseY()
     {
-       getInstance().setMoveXIMPL(x);
+        return getInstance().getMouseYIMPL();
     }
 
-    void setMoveXIMPL(double x)
+    double getMouseYIMPL()
     {
-        moveX = x;
-    }
-    
-    static double getMoveY() 
-    {
-        return getInstance().getMoveYIMPL();
+        return mouseY;
     }
 
-    double getMoveYIMPL()
+    static double getMouseX()
     {
-        return moveY;
+        return getInstance().getMouseXIMPL();
     }
 
-    static void setMoveY(double y) 
+    double getMouseXIMPL()
     {
-       getInstance().setMoveYIMPL(y);
+        return mouseX;
     }
 
-    void setMoveYIMPL(double y)
-    {
-        moveY = y;
+    static bool getMouseMode(){
+        return getInstance().getMouseModeIMPL();
     }
+
+   bool getMouseModeIMPL()
+    {
+        return mouseButton2Pressed;
+    }
+
 private:
-
     Input(void) // private constructor necessary to allow only 1 instance
     {
     }
 
-    double moveX = 0.0f;
-    double moveY = 0.0f;
+    Keys keys;
+
+    bool mouseButton2Pressed = false;
+    double mouseX;
+    double mouseY;
 
     Input(Input const &);          // prevent copies
     void operator=(Input const &); // prevent assignments

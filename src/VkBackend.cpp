@@ -110,7 +110,7 @@ void VkBackend::initVulkan()
     createColorResources();
     createDepthResources();
     createFramebuffers();
-    createDescriptorPool(); 
+    createDescriptorPool();
 
     scene->create();
 
@@ -553,8 +553,8 @@ void VkBackend::createFramebuffers()
     for (size_t i = 0; i < state->swapChainImageViews.size(); i++)
     {
         std::array<VkImageView, 3> attachments = {
-            colorImage->getImageView(),
-            depthImage->getImageView(),
+            colorImage->imageView,
+            depthImage->imageView,
             state->swapChainImageViews[i]};
 
         VkFramebufferCreateInfo framebufferInfo = {};
@@ -593,7 +593,7 @@ void VkBackend::createColorResources()
 
     colorImage = new Image(state, colorFormat, VK_IMAGE_TILING_OPTIMAL, state->msaaSamples,
                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                           VMA_MEMORY_USAGE_GPU_ONLY, VK_NULL_HANDLE, state->swapChainExtent.width, state->swapChainExtent.height, 1);
+                           VMA_MEMORY_USAGE_GPU_ONLY, VK_NULL_HANDLE, state->swapChainExtent.width, state->swapChainExtent.height, 1, 1);
 
     colorImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
@@ -607,7 +607,7 @@ void VkBackend::createDepthResources()
     depthImage = new Image(state, depthFormat, VK_IMAGE_TILING_OPTIMAL, state->msaaSamples,
                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                            VMA_MEMORY_USAGE_GPU_ONLY, VK_NULL_HANDLE,
-                           state->swapChainExtent.width, state->swapChainExtent.height, 1);
+                           state->swapChainExtent.width, state->swapChainExtent.height, 1, 1);
     depthImage->createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     depthImage->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -628,42 +628,57 @@ void VkBackend::createCommandBuffers()
         throw std::runtime_error("failed to allocate command buffers");
     }
 
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 0.0f};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = state->renderPass;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = state->swapChainExtent;
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
     for (uint32_t i = 0; i < commandBuffers.size(); i++)
     {
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        renderPassInfo.framebuffer = swapChainFramebuffers[i];
 
         if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to begin recording command buffer");
         }
 
-        VkRenderPassBeginInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = state->renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = state->swapChainExtent;
+        VkViewport viewport{};
+        viewport.width = (float)state->windowWidth;
+        viewport.height = (float)state->windowHeight;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffers[i], 0, 1, &viewport);
 
-        std::array<VkClearValue, 2> clearValues = {};
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 0.0f};
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
+        VkRect2D scissor{};
+        scissor.extent = state->swapChainExtent;
+        scissor.offset.x = 0;
+        scissor.offset.y = 0;
+        vkCmdSetScissor(commandBuffers[i], 0, 1, &scissor);
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipeline);
-        VkBuffer vertexBuffers[] = {scene->getVertexBuffer()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, &scene->skybox->descriptorSets[i], 0, nullptr);        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(scene->skybox->mesh->indexSize), 1, 0, 0, 0);
+        VkBuffer skyboxVertexBuffers[] = {scene->skybox->vertexBuffer->buffer};
+        VkDeviceSize skyboxOffsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, skyboxVertexBuffers, skyboxOffsets);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->skybox->pipelineLayout, 0, 1, &scene->skybox->descriptorSets[i], 0, nullptr);
+        vkCmdDraw(commandBuffers[i], 12 * 3, 1, 0, 0);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipeline);
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        VkBuffer vertexBuffers[] = {scene->getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
         vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
         for (auto const &[id, model] : scene->models)
         {
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipelineLayout, 0, 1, &model->descriptorSets[i], 0, nullptr);
@@ -827,8 +842,11 @@ void VkBackend::recreateSwapChain()
     }
 
     vkDeviceWaitIdle(state->device);
+    state->windowWidth = width;
+    state->windowHeight = height;
 
     cleanupSwapChain();
+
 
     createSwapChain();
     createImageViews();
@@ -851,8 +869,6 @@ void VkBackend::cleanupSwapChain()
         vkDestroyFramebuffer(state->device, framebuffer, nullptr);
     }
 
-    
-   
     vkDestroyRenderPass(state->device, state->renderPass, nullptr);
 
     for (auto imageView : state->swapChainImageViews)
