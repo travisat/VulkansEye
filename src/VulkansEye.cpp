@@ -16,9 +16,17 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     Config config;
     config.skybox = {"resources/textures/skybox/nebula.dds"};
 
+    LightConfig light;
+    light.id = 0;
+    light.color = {1.0f, 1.0f, 1.0f};
+    light.position = {5.0f, 5.0f, 5.0f};
+    light.rotation = {0.0f, 0.0f, 0.0f};
+
+    config.lights = {light};
+
     MeshConfig a;
     a.id = 1;
-    a.objPath= "resources/models/a.obj";
+    a.objPath = "resources/models/a.obj";
 
     MeshConfig b;
     b.id = 2;
@@ -33,27 +41,27 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     brick.roughnessPath = "resources/textures/brick/roughness.png";
 
     config.materials = {brick};
-    
+
     ModelConfig letterA;
     letterA.id = 1;
+    letterA.position = {1.0f, 0.25f, 0.5f};
+    letterA.type = obj;
     letterA.meshId = 1;
     letterA.materialId = 1;
-    letterA.xpos = 25;
-    letterA.ypos = 25;
-    letterA.zpos = 50;
 
     ModelConfig letterB;
     letterB.id = 2;
+    letterB.position = {0.0f, 0.25f, 0.5f};
+    letterB.type = obj;
     letterB.meshId = 2;
     letterB.materialId = 1;
-    letterB.xpos = 75;
-    letterB.ypos = 50;
-    letterB.zpos = 50;
 
-    config.modelConfigs = {letterA, letterB};
+    config.models = {letterA, letterB};
 
+    state = new State(window, width, height);
+    scene = new Scene(state, config);
+    backend = new VkBackend(state, scene);
 
-    backend = new VkBackend(window, width, height, config);
     setupInputCallbacks();
     backend->initVulkan();
 }
@@ -88,11 +96,24 @@ void VulkansEye::mainLoop()
 {
     while (!glfwWindowShouldClose(window))
     {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
         glfwPollEvents();
+
+        if (Input::checkKey(GLFW_KEY_ESCAPE))
+            glfwWindowShouldClose(window);
+
+        if (Input::getMouseMode())
+            scene->camera.update(time);
+        else
+            scene->camera.changeMouseMode(false);
+
         backend->drawFrame();
     }
 
-    vkDeviceWaitIdle(backend->state->device);
+    vkDeviceWaitIdle(state->device);
 }
 
 void VulkansEye::cleanup()

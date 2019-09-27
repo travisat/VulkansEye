@@ -6,14 +6,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Config.h"
 
 
 class Light
 {
 public:
-Light(){};
-Light(glm::vec3 _color, glm::vec3 _position, glm::vec3 _rotation)
-    :color(_color), position(_position), rotation(_rotation){};
+Light(LightConfig const &config);
 
 glm::vec3 color {};
 glm::vec3 position {};
@@ -21,5 +20,7 @@ glm::vec3 rotation {};
 
 
 private:
+
+uint32_t id = 0;
 
 };

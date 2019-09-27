@@ -33,7 +33,7 @@ public:
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
 
-    void update(Keys keys, double mouseX, double mouseY, float deltaTime);
+    void update(float deltaTime);
     void changeMouseMode(bool mouseMode) { this->mouseMode = mouseMode; };
 
 private:

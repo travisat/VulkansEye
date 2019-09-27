@@ -34,13 +34,10 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 };
 
-VkBackend::VkBackend(GLFWwindow *glwindow, uint32_t width, uint32_t height, Config &config)
+VkBackend::VkBackend(State *state, Scene *scene)
 {
-    state = new State();
-    state->window = glwindow;
-    state->windowWidth = width;
-    state->windowHeight = height;
-    scene = new Scene(state, config);
+    this->state = state;
+    this->scene = scene;
     //initialize hardware
     createInstance();
     setupDebugMessenger();
@@ -376,7 +373,7 @@ void VkBackend::createSwapChain()
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, state->windowWidth, state->windowHeight);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, state->width, state->height);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -653,8 +650,8 @@ void VkBackend::createCommandBuffers()
         }
 
         VkViewport viewport{};
-        viewport.width = (float)state->windowWidth;
-        viewport.height = (float)state->windowHeight;
+        viewport.width = (float)state->width;
+        viewport.height = (float)state->height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(commandBuffers[i], 0, 1, &viewport);
@@ -839,8 +836,8 @@ void VkBackend::recreateSwapChain()
     }
 
     vkDeviceWaitIdle(state->device);
-    state->windowWidth = width;
-    state->windowHeight = height;
+    state->width = width;
+    state->height = height;
 
     cleanupSwapChain();
 

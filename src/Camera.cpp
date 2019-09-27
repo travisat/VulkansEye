@@ -46,15 +46,15 @@ void Camera::translate(glm::vec3 delta)
     updateView();
 }
 
-void Camera::update(Keys keys, double mouseX, double mouseY, float deltaTime)
-
+void Camera::update(float deltaTime)
 {
     bool updated = true;
-    if (keys.a || keys.s || keys.d || keys.w)
+    if (Input::checkKey(GLFW_KEY_A) | Input::checkKey(GLFW_KEY_S) | Input::checkKey(GLFW_KEY_D) | Input::checkKey(GLFW_KEY_W))
     {
         updated = false;
     }
-
+    double mouseX = Input::getMouseX();
+    double mouseY = Input::getMouseY();
     //convert from glfw coordinates to vulkan
     mouseX = (mouseX / (width / 2)) - 1.0f;
     mouseY = (mouseY / (height / 2)) - 1.0f;
@@ -88,13 +88,13 @@ void Camera::update(Keys keys, double mouseX, double mouseY, float deltaTime)
 
         float moveSpeed = deltaTime * movementSpeed;
 
-        if (keys.w)
+        if (Input::checkKey(GLFW_KEY_W))
             position += camFront * moveSpeed;
-        if (keys.s)
+        if (Input::checkKey(GLFW_KEY_S))
             position -= camFront * moveSpeed;
-        if (keys.a)
+        if (Input::checkKey(GLFW_KEY_A))
             position -= glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
-        if (keys.d)
+        if (Input::checkKey(GLFW_KEY_D))
             position += glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
 
         updateView();

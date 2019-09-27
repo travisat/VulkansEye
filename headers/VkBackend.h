@@ -3,7 +3,6 @@
 #include <set>
 #include <optional>
 
-
 #include "Scene.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -45,18 +44,16 @@ struct QueueFamilyIndices
 class VkBackend
 {
 public:
-    VkBackend(GLFWwindow *glwindow, uint32_t width, uint32_t height, Config &config);
+    VkBackend(State *state, Scene *scene);
     ~VkBackend();
     void drawFrame();
     void initVulkan();
-
-    State* state;
- 
 
 private:
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
     Scene* scene;
+    State* state;
 
     Image* colorImage;
     Image* depthImage;

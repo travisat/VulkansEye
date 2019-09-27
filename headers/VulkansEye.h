@@ -12,6 +12,8 @@ private:
     uint32_t windowWidth;
     uint32_t windowHeight;
     VkBackend *backend;
+    Scene *scene;
+    State *state;
     
     void initWindow();
     void initVulkan();

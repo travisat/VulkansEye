@@ -10,14 +10,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-struct Keys
-{
-    bool a = false;
-    bool d = false;
-    bool w = false;
-    bool s = false;
-};
-
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 class Input
 {
@@ -42,7 +34,6 @@ public:
             {
                 mouseButton2Pressed = true;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                glfwGetCursorPos(window, &mouseX, &mouseY);
             }
             else if (action == GLFW_RELEASE)
             {
@@ -72,54 +63,24 @@ public:
     {
         if (action == GLFW_PRESS)
         {
-            switch (key)
-            {
-            case GLFW_KEY_ESCAPE:
-                std::cerr << "Pressed Escape\n";
-                glfwSetWindowShouldClose(window, VK_TRUE);
-                break;
-            case GLFW_KEY_A:
-                keys.a = true;
-                break;
-            case GLFW_KEY_S:
-                keys.s = true;
-                break;
-            case GLFW_KEY_D:
-                keys.d = true;
-                break;
-            case GLFW_KEY_W:
-                keys.w = true;
-                break;
-            }
+            if (key >= 0 && key < 349)
+                keys[key] = true;
         }
         else if (action == GLFW_RELEASE)
         {
-            switch (key)
-            {
-            case GLFW_KEY_A:
-                keys.a = false;
-                break;
-            case GLFW_KEY_S:
-                keys.s = false;
-                break;
-            case GLFW_KEY_D:
-                keys.d = false;
-                break;
-            case GLFW_KEY_W:
-                keys.w = false;
-                break;
-            }
+            if (key >= 0 && key < 349)
+                keys[key] = false;
         }
     }
 
-    static Keys getKeys()
+    static bool checkKey(uint32_t key)
     {
-        return getInstance().getKeysIMPL();
+        return getInstance().checkKeyIMPL(key);
     }
 
-    Keys getKeysIMPL()
+    bool checkKeyIMPL(uint32_t key)
     {
-        return keys;
+        return keys[key];
     }
 
     static double getMouseY()
@@ -157,7 +118,8 @@ private:
     {
     }
 
-    Keys keys;
+    //GLFW_KEY_LAST == 348
+    bool keys[349] = {false};
 
     bool mouseButton2Pressed = false;
     double mouseX;

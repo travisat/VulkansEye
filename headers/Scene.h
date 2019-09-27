@@ -7,8 +7,7 @@
 #include "Input.h"
 #include "Camera.h"
 #include "Light.h"
-
-
+#include "Config.h"
 
 class Scene
 {
@@ -29,23 +28,24 @@ public:
     Buffer *indexBuffer;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    Camera camera;
 
     std::map<uint32_t, Model *> models;
     std::map<uint32_t, Mesh *> meshes;
     std::map<uint32_t, Material *> materials;
+    std::map<uint32_t, Light *> lights;
 
-    struct shaderValues
+    struct uniformLightObject
     {
-        glm::vec4 lightDir;
         glm::vec3 color;
-    } shaderValues;
+        glm::vec4 direction;
+    };
+
+    std::vector<Buffer *> uniformLights{};
 
 private:
     State *state;
     Config *config;
-
-    Camera camera;
-    Light light;
 
     VkDescriptorSetLayout descriptorSetLayout;
 

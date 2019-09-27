@@ -36,7 +36,7 @@ static std::vector<char> readFile(const std::string &filename)
 class State
 {
 public:
-    State();
+    State(GLFWwindow *window, uint32_t width, uint32_t height);
     ~State();
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -50,8 +50,8 @@ public:
     VkRenderPass renderPass;
 
     GLFWwindow *window;
-    uint32_t windowWidth;
-    uint32_t windowHeight;
+    uint32_t width;
+    uint32_t height;
 
     VkInstance instance;
     VkSurfaceKHR surface;

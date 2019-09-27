@@ -5,17 +5,18 @@ Scene::Scene(State *state, Config &config)
     this->state = state;
 
     camera = {};
-    camera.setPerspective(60.0f, static_cast<double>(state->windowWidth), static_cast<double>(state->windowHeight), 0.1f, 512.0f);
+    camera.setPerspective(60.0f, static_cast<double>(state->width), static_cast<double>(state->height), 0.1f, 512.0f);
     camera.position = glm::vec3(0.0f, 0.0f, -5.0f);
     camera.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.updateView();
-    
-    light = {};
-    light.color = {1.0f, 1.0f, 1.0f};
-    light.position = glm::vec3(1.0f, 1.0f, -8.0f);
-    light.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-    
+
     skybox = new Skybox(state, &camera, config.skybox);
+
+    for (auto const &lightConfig : config.lights)
+    {
+        Light *light = new Light(lightConfig);
+        lights.insert({lightConfig.id, light});
+    }
 
     for (auto const &meshConfig : config.meshes)
     {
@@ -29,17 +30,14 @@ Scene::Scene(State *state, Config &config)
         materials.insert({materialConfig.id, material});
     }
 
-    for (auto &modelConfig : config.modelConfigs)
+    for (auto &modelConfig : config.models)
     {
-        //convert from 0-100 to -1.0 to 1.0
-        double xpos = (static_cast<double>(modelConfig.xpos) / 50.0f) - 1.0f;
-        double ypos = (static_cast<double>(modelConfig.ypos) / 50.0f) - 1.0f;
-        double zpos = (static_cast<double>(modelConfig.zpos) / 50.0f) - 1.0f;
-
-        Model *model = new Model(state, meshes[modelConfig.meshId],
-                                 materials[modelConfig.materialId], glm::vec3(xpos, ypos, zpos));
-
-        models.insert({modelConfig.id, model});
+        if (modelConfig.type == obj)
+        {
+            Model *model = new Model(state, modelConfig.id, modelConfig.position,
+                                     meshes[modelConfig.meshId], materials[modelConfig.materialId]);
+            models.insert({modelConfig.id, model});
+        }
     }
 };
 
@@ -144,7 +142,7 @@ void Scene::cleanup()
 
 void Scene::recreate()
 {
-    camera.updateAspectRatio((float)state->windowWidth, (float)state->windowHeight);
+    camera.updateAspectRatio((float)state->width, (float)state->height);
     skybox->recreate();
     createPipelines();
     createUniformBuffers();
@@ -175,14 +173,7 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    if (Input::getMouseMode())
-    {
-        camera.update(Input::getKeys(), Input::getMouseX(), Input::getMouseY(), time);
-    }
-    else
-    {
-        camera.changeMouseMode(false);
-    }
+    
 
     for (auto const &[id, model] : models)
     {
@@ -367,7 +358,6 @@ void Scene::createPipelines()
     depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
-
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
