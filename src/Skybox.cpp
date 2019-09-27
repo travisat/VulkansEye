@@ -1,5 +1,4 @@
 #include "Skybox.h"
-#include "Helpers.h"
 
 Skybox::~Skybox()
 {
