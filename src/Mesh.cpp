@@ -20,11 +20,11 @@ Mesh::Mesh(MeshConfig const &config)
         for (const auto &index : shape.mesh.indices)
         {
             Vertex vertex = {};
-            vertex.pos = {
+            vertex.position = {
                 attrib.vertices[3 * index.vertex_index + 0],
                 attrib.vertices[3 * index.vertex_index + 1],
                 attrib.vertices[3 * index.vertex_index + 2]};
-            vertex.texCoord = {
+            vertex.UV = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
             if (uniqueVertices.count(vertex) == 0)
@@ -60,11 +60,11 @@ Mesh::Mesh(std::string path)
         for (const auto &index : shape.mesh.indices)
         {
             Vertex vertex = {};
-            vertex.pos = {
+            vertex.position = {
                 attrib.vertices[3 * index.vertex_index + 0],
                 attrib.vertices[3 * index.vertex_index + 1],
                 attrib.vertices[3 * index.vertex_index + 2]};
-            vertex.texCoord = {
+            vertex.UV = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
             vertex.normal = {

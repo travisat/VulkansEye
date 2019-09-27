@@ -29,10 +29,12 @@ Buffer::~Buffer()
 //destroys data in buffer
 void Buffer::resize(VkDeviceSize size)
 {
+    this->size = size;
+
     vmaDestroyBuffer(state->allocator, buffer, *allocation);
 
     allocation = new VmaAllocation();
-
+    
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
