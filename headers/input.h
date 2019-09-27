@@ -20,26 +20,23 @@ public:
         return instance;
     }
 
-    static void mouseButtonCallback(GLFWwindow *window, int key, int action, int mods) // this method is specified as glfw callback
+    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) // this method is specified as glfw callback
     {
         //here we access the instance via the singleton pattern and forward the callback to the instance method
-        getInstance().mouseButtonCallbackImpl(window, key, action, mods);
+        getInstance().mouseButtonCallbackImpl(window, button, action, mods);
     }
 
-    void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods)
+    void mouseButtonCallbackImpl(GLFWwindow *window, int button, int action, int mods)
     {
-        if (key == GLFW_MOUSE_BUTTON_2)
+        if (action == GLFW_PRESS)
         {
-            if (action == GLFW_PRESS)
-            {
-                mouseButton2Pressed = true;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                mouseButton2Pressed = false;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
+            if (button >= 0 && button < 8)
+                mouseButtons[button] = true;
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            if (button >= 0 && button < 8)
+                mouseButtons[button] = false;
         }
     }
 
@@ -73,12 +70,12 @@ public:
         }
     }
 
-    static bool checkKey(uint32_t key)
+    static bool checkKeyboard(uint32_t key)
     {
-        return getInstance().checkKeyIMPL(key);
+        return getInstance().checkKeyboardIMPL(key);
     }
 
-    bool checkKeyIMPL(uint32_t key)
+    bool checkKeyboardIMPL(uint32_t key)
     {
         return keys[key];
     }
@@ -103,14 +100,14 @@ public:
         return mouseX;
     }
 
-    static bool getMouseMode()
+    static bool checkMouse(uint32_t button)
     {
-        return getInstance().getMouseModeIMPL();
+        return getInstance().checkMouseIMPL(button);
     }
 
-    bool getMouseModeIMPL()
+    bool checkMouseIMPL(uint32_t button)
     {
-        return mouseButton2Pressed;
+        return mouseButtons[button];
     }
 
 private:
@@ -118,10 +115,12 @@ private:
     {
     }
 
+    //GLFW_MOUSE_BUTTON_LAST = 8
+    bool mouseButtons[8] = {false};
+
     //GLFW_KEY_LAST == 348
     bool keys[349] = {false};
 
-    bool mouseButton2Pressed = false;
     double mouseX;
     double mouseY;
 

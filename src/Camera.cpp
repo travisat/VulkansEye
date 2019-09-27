@@ -49,7 +49,10 @@ void Camera::translate(glm::vec3 delta)
 void Camera::update(float deltaTime)
 {
     bool updated = true;
-    if (Input::checkKey(GLFW_KEY_A) | Input::checkKey(GLFW_KEY_S) | Input::checkKey(GLFW_KEY_D) | Input::checkKey(GLFW_KEY_W))
+    if (Input::checkKeyboard(GLFW_KEY_A) 
+        | Input::checkKeyboard(GLFW_KEY_S) 
+        | Input::checkKeyboard(GLFW_KEY_D) 
+        | Input::checkKeyboard(GLFW_KEY_W))
     {
         updated = false;
     }
@@ -88,13 +91,13 @@ void Camera::update(float deltaTime)
 
         float moveSpeed = deltaTime * movementSpeed;
 
-        if (Input::checkKey(GLFW_KEY_W))
+        if (Input::checkKeyboard(GLFW_KEY_W))
             position += camFront * moveSpeed;
-        if (Input::checkKey(GLFW_KEY_S))
+        if (Input::checkKeyboard(GLFW_KEY_S))
             position -= camFront * moveSpeed;
-        if (Input::checkKey(GLFW_KEY_A))
+        if (Input::checkKeyboard(GLFW_KEY_A))
             position -= glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
-        if (Input::checkKey(GLFW_KEY_D))
+        if (Input::checkKeyboard(GLFW_KEY_D))
             position += glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
 
         updateView();

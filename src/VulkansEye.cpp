@@ -102,15 +102,25 @@ void VulkansEye::mainLoop()
 
         glfwPollEvents();
 
-        if (Input::checkKey(GLFW_KEY_ESCAPE))
-            glfwWindowShouldClose(window);
-
-        if (Input::getMouseMode())
+        if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             scene->camera.update(time);
+        }
         else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             scene->camera.changeMouseMode(false);
+        }
 
         backend->drawFrame();
+
+        if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
+        {
+            std::cerr << "Pressed Escape.  Closing." << std::endl;
+            glfwSetWindowShouldClose(window, true);
+        }
     }
 
     vkDeviceWaitIdle(state->device);

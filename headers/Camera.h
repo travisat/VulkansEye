@@ -46,5 +46,5 @@ private:
     bool mouseMode = false;
 
     float mouseSensitivity = 20.0f;
-    float movementSpeed = 0.02f;
+    float movementSpeed = 0.01f;
 };
