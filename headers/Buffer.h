@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stb_image.h>
+
 #include "Helpers.h"
 #include "State.h"
 #include "Vertex.h"

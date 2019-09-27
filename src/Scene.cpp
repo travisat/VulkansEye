@@ -9,7 +9,12 @@ Scene::Scene(State *state, Config &config)
     camera.position = glm::vec3(0.0f, 0.0f, -5.0f);
     camera.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.updateView();
-
+    
+    light = {};
+    light.color = {1.0f, 1.0f, 1.0f};
+    light.position = glm::vec3(1.0f, 1.0f, -8.0f);
+    light.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    
     skybox = new Skybox(state, &camera, config.skybox);
 
     for (auto const &meshConfig : config.meshes)
@@ -170,9 +175,9 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    if (Input::getInstance().getMouseMode())
+    if (Input::getMouseMode())
     {
-        camera.update(Input::getKeys(), glm::vec2(Input::getInstance().getMouseX(), Input::getInstance().getMouseY()), time);
+        camera.update(Input::getKeys(), Input::getMouseX(), Input::getMouseY(), time);
     }
     else
     {

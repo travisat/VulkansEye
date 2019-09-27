@@ -1,5 +1,5 @@
 #pragma once
-#include "Helpers.h"
+
 #include "Buffer.h"
 #include "Image.h"
 #include "Config.h"

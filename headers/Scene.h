@@ -2,11 +2,13 @@
 
 #include <chrono>
 
-#include "Helpers.h"
 #include "Model.h"
 #include "Skybox.h"
 #include "Input.h"
 #include "Camera.h"
+#include "Light.h"
+
+
 
 class Scene
 {
@@ -20,38 +22,33 @@ public:
 
     void updateUniformBuffer(uint32_t currentImage);
 
-
-    VkBuffer getVertexBuffer() { return vertexBuffer->buffer; };
-    VkBuffer getIndexBuffer() { return indexBuffer->buffer; };
-
-    Mesh *getMesh(uint32_t id) { return meshes[id]; };
-    Material *getMaterial(uint32_t id) { return materials[id]; };
-    Model *getModel(uint32_t id) { return models[id]; };
-
     uint32_t numModels() { return static_cast<uint32_t>(models.size()); };
 
     Skybox *skybox;
-
+    Buffer *vertexBuffer;
+    Buffer *indexBuffer;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 
     std::map<uint32_t, Model *> models;
-
-private:
-    State *state;
-
-    Camera camera;
-
-    Buffer *vertexBuffer;
-    Buffer *indexBuffer;
-
-    VkDescriptorSetLayout descriptorSetLayout;
-
     std::map<uint32_t, Mesh *> meshes;
     std::map<uint32_t, Material *> materials;
 
+    struct shaderValues
+    {
+        glm::vec4 lightDir;
+        glm::vec3 color;
+    } shaderValues;
+
+private:
+    State *state;
     Config *config;
-    
+
+    Camera camera;
+    Light light;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+
     void createUniformBuffers();
     void createDescriptorSetLayouts();
     void createDescriptorSets();

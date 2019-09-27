@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Helpers.h"
+#include "Input.h"
 
 const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,
                      0.0f, -1.0f, 0.0f, 0.0f,
@@ -33,7 +33,7 @@ public:
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
 
-    void update(Keys keys, glm::vec2 mousePosition, float deltaTime);
+    void update(Keys keys, double mouseX, double mouseY, float deltaTime);
     void changeMouseMode(bool mouseMode) { this->mouseMode = mouseMode; };
 
 private:

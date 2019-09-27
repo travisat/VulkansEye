@@ -1,8 +1,22 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 
-#include "Helpers.h"
+#include <iostream>
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+struct Keys
+{
+    bool a = false;
+    bool d = false;
+    bool w = false;
+    bool s = false;
+};
 
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 class Input
@@ -20,7 +34,7 @@ public:
         getInstance().mouseButtonCallbackImpl(window, key, action, mods);
     }
 
-    void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods) 
+    void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods)
     {
         if (key == GLFW_MOUSE_BUTTON_2)
         {
@@ -45,8 +59,8 @@ public:
 
     void cursorPosCallbackIMPL(GLFWwindow *window, double xpos, double ypos)
     {
-            mouseX = xpos;
-            mouseY = ypos;
+        mouseX = xpos;
+        mouseY = ypos;
     }
 
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -56,53 +70,44 @@ public:
 
     void keyCallbackImpl(GLFWwindow *window, int key, int scancode, int action, int mods)
     {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        if (action == GLFW_PRESS)
         {
-            std::cerr << "Pressed Escape\n";
-            glfwSetWindowShouldClose(window, VK_TRUE);
-        }
-        else if (key == GLFW_KEY_A)
-        {
-            if (action == GLFW_PRESS)
+            switch (key)
             {
+            case GLFW_KEY_ESCAPE:
+                std::cerr << "Pressed Escape\n";
+                glfwSetWindowShouldClose(window, VK_TRUE);
+                break;
+            case GLFW_KEY_A:
                 keys.a = true;
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                keys.a = false;
-            }
-        }
-        else if (key == GLFW_KEY_D)
-        {
-            if (action == GLFW_PRESS)
-            {
-                keys.d = true;
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                keys.d = false;
-            }
-        }
-        else if (key == GLFW_KEY_W)
-        {
-            if (action == GLFW_PRESS)
-            {
-                keys.w = true;
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                keys.w = false;
-            }
-        }
-        else if (key == GLFW_KEY_S)
-        {
-            if (action == GLFW_PRESS)
-            {
+                break;
+            case GLFW_KEY_S:
                 keys.s = true;
+                break;
+            case GLFW_KEY_D:
+                keys.d = true;
+                break;
+            case GLFW_KEY_W:
+                keys.w = true;
+                break;
             }
-            else if (action == GLFW_RELEASE)
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            switch (key)
             {
+            case GLFW_KEY_A:
+                keys.a = false;
+                break;
+            case GLFW_KEY_S:
                 keys.s = false;
+                break;
+            case GLFW_KEY_D:
+                keys.d = false;
+                break;
+            case GLFW_KEY_W:
+                keys.w = false;
+                break;
             }
         }
     }
@@ -137,11 +142,12 @@ public:
         return mouseX;
     }
 
-    static bool getMouseMode(){
+    static bool getMouseMode()
+    {
         return getInstance().getMouseModeIMPL();
     }
 
-   bool getMouseModeIMPL()
+    bool getMouseModeIMPL()
     {
         return mouseButton2Pressed;
     }

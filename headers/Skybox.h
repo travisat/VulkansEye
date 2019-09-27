@@ -2,10 +2,8 @@
 
 #include <gli/gli.hpp>
 
-#include "Helpers.h"
 #include "Image.h"
 #include "Buffer.h"
-
 #include "Camera.h"
 
 class Skybox
@@ -25,8 +23,6 @@ public:
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Buffer *> uniformBuffers;
     
-    Buffer* vertexBuffer;
-
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
 

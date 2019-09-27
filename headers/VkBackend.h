@@ -2,7 +2,7 @@
 
 #include <set>
 
-#include "Helpers.h"
+
 #include "Scene.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -27,6 +27,19 @@ struct SwapChainSupportDetails
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+
+    bool isComplete()
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
+
+
 
 class VkBackend
 {

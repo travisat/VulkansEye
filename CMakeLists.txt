@@ -17,6 +17,7 @@ add_executable(VulkansEye
                 src/State.cpp
                 src/Skybox.cpp
                 src/Camera.cpp
+                src/Light.cpp
                 src/Scene.cpp)
 
 set_target_properties(VulkansEye PROPERTIES
@@ -28,7 +29,7 @@ target_include_directories(VulkansEye
     PUBLIC 
         "${myLibraries}/glfw-3.3.bin.WIN64/include"
         "${myLibraries}/glm"
-        "${myLibraries}/stb"
+        "${myLibraries}/tinygltf-2.2.0"
         "${myLibraries}/tinyobjloader"
         "${myLibraries}/vma-2.2.0/src"
         "${myLibraries}/gli"

@@ -6,7 +6,6 @@ Skybox::~Skybox()
     delete cubeMap;
     vkDestroySampler(state->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
-    delete vertexBuffer;
     for (auto buffer : uniformBuffers)
     {
         delete buffer;

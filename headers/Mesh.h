@@ -5,7 +5,6 @@
 #include <tiny_obj_loader.h>
 
 #include "Vertex.h"
-#include "Helpers.h"
 #include "Config.h"
 
 class Mesh

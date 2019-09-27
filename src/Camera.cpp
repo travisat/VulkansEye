@@ -46,7 +46,8 @@ void Camera::translate(glm::vec3 delta)
     updateView();
 }
 
-void Camera::update(Keys keys, glm::vec2 mousePosition, float deltaTime)
+void Camera::update(Keys keys, double mouseX, double mouseY, float deltaTime)
+
 {
     bool updated = true;
     if (keys.a || keys.s || keys.d || keys.w)
@@ -55,9 +56,11 @@ void Camera::update(Keys keys, glm::vec2 mousePosition, float deltaTime)
     }
 
     //convert from glfw coordinates to vulkan
-    mousePosition.x = (mousePosition.x / (width / 2)) - 1.0f; 
-    mousePosition.y = (mousePosition.y / (height / 2)) - 1.0f;
+    mouseX = (mouseX / (width / 2)) - 1.0f;
+    mouseY = (mouseY / (height / 2)) - 1.0f;
 
+    glm::vec2 mousePosition(mouseX, mouseY);
+  
     if (mouseMode == false)
     {
         mouseMode = true;

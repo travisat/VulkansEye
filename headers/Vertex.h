@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
-#include "Helpers.h"
+#include <vulkan/vulkan.h>
 
 struct UniformBufferObject
 {

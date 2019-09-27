@@ -11,6 +11,11 @@ Model::Model(State* state, Mesh *mesh, Material *material, glm::vec3 position){
     descriptorSets = {};
 }
 
+Model::Model(State *state, std::string path, ModelType type, glm::vec3 position)
+{
+    /// TODO
+}
+
 Model::~Model()
     {
         for (auto buffer : uniformBuffers)

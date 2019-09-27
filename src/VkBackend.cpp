@@ -672,9 +672,9 @@ void VkBackend::createCommandBuffers()
         vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, scene->pipeline);
-        VkBuffer vertexBuffers[] = {scene->getVertexBuffer()};
+        VkBuffer vertexBuffers[] = {scene->vertexBuffer->buffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindIndexBuffer(commandBuffers[i], scene->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(commandBuffers[i], scene->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
         for (auto const &[id, model] : scene->models)
         {

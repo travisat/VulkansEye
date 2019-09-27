@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Helpers.h"
-
 struct ModelConfig
 {
     uint32_t id;
@@ -24,6 +22,14 @@ struct MeshConfig
 {
     uint32_t id;
     std::string objPath;
+};
+
+struct LightConfig
+{
+    uint32_t id;
+    glm::vec3 color;
+    glm::vec3 position;
+    glm::vec3 rotation;
 };
 
 struct Config

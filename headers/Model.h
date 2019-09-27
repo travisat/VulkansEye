@@ -1,15 +1,20 @@
 #pragma once
 
+
+
 #include "Buffer.h"
 #include "Mesh.h"
 #include "Material.h"
 #include "State.h"
-#include "Helpers.h"
+
+
+ enum ModelType { obj, gltf };
 
 class Model
 {
 public:
     Model(State *state, Mesh *mesh, Material *material, glm::vec3 position);
+    Model(State *state, std::string path, ModelType type, glm::vec3 position);
     ~Model();
 
     State *state;
