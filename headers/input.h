@@ -20,7 +20,7 @@ public:
         getInstance().mouseButtonCallbackImpl(window, key, action, mods);
     }
 
-    void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods) //this is the actual implementation of the callback method
+    void mouseButtonCallbackImpl(GLFWwindow *window, int key, int action, int mods) 
     {
         if (key == GLFW_MOUSE_BUTTON_2)
         {

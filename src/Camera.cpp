@@ -54,7 +54,9 @@ void Camera::update(Keys keys, glm::vec2 mousePosition, float deltaTime)
         updated = false;
     }
 
-    mousePosition = glm::vec2((mousePosition.x / (width / 2)) - 1.0f, (mousePosition.y / (height / 2)) - 1.0f);
+    //convert from glfw coordinates to vulkan
+    mousePosition.x = (mousePosition.x / (width / 2)) - 1.0f; 
+    mousePosition.y = (mousePosition.y / (height / 2)) - 1.0f;
 
     if (mouseMode == false)
     {

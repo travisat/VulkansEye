@@ -14,7 +14,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     initWindow();
 
     Config config;
-    config.skybox = {"resources/textures/skybox/green.dds"};
+    config.skybox = {"resources/textures/skybox/nebula.dds"};
 
     MeshConfig a;
     a.id = 1;

@@ -67,12 +67,15 @@ Mesh::Mesh(std::string path)
             vertex.texCoord = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[2 * index.normal_index + 2]};
             if (uniqueVertices.count(vertex) == 0)
             {
                 uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
                 vertices.push_back(vertex);
             }
-
             indices.push_back(uniqueVertices[vertex]);
         }
     }
