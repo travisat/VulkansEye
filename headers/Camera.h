@@ -34,7 +34,8 @@ public:
     void translate(glm::vec3 delta);
 
     void update(float deltaTime);
-    void changeMouseMode(bool mouseMode) { this->mouseMode = mouseMode; };
+
+    bool mouseMode = false;
 
 private:
     double fieldOfView;
@@ -43,7 +44,6 @@ private:
     double height;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
-    bool mouseMode = false;
 
     float mouseSensitivity = 20.0f;
     float movementSpeed = 0.01f;

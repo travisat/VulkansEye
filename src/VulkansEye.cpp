@@ -104,14 +104,17 @@ void VulkansEye::mainLoop()
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
         {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            if (!scene->camera.mouseMode)
+            {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            }
             scene->camera.update(time);
         }
         else
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            scene->camera.changeMouseMode(false);
+            scene->camera.mouseMode = false;
         }
 
         backend->drawFrame();
