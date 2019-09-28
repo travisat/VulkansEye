@@ -58,12 +58,15 @@ void Camera::update(float deltaTime)
     }
     double mouseX = Input::getMouseX();
     double mouseY = Input::getMouseY();
-    //convert from glfw coordinates to vulkan
+
+    //convert from glfw coordinates [0, width],[0, height] to [-1,1] interval
     mouseX = (mouseX / (width / 2)) - 1.0f;
     mouseY = (mouseY / (height / 2)) - 1.0f;
 
     glm::vec2 mousePosition(mouseX, mouseY);
   
+
+    //discard old lastMousePosition so mouse doesn't jump when entering mouse mode
     if (mouseMode == false)
     {
         mouseMode = true;
@@ -74,8 +77,8 @@ void Camera::update(float deltaTime)
     {
         glm::vec2 deltaPosition = lastMousePosition - mousePosition;
 
-        rotation.y -= deltaPosition.x * mouseSensitivity;
         rotation.x -= deltaPosition.y * mouseSensitivity;
+        rotation.y -= deltaPosition.x * mouseSensitivity;
 
         lastMousePosition = mousePosition;
         updated = false;
