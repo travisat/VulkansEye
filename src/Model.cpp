@@ -1,4 +1,4 @@
-#include "Model.h"
+#include "Model.hpp"
 
 Model::Model(State *state, uint32_t id, glm::vec3 position, Mesh *mesh, Material *material)
 {

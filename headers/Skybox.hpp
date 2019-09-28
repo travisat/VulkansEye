@@ -2,9 +2,9 @@
 
 #include <gli/gli.hpp>
 
-#include "Image.h"
-#include "Buffer.h"
-#include "Camera.h"
+#include "Image.hpp"
+#include "Buffer.hpp"
+#include "Camera.hpp"
 
 class Skybox
 {

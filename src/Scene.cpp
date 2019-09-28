@@ -1,13 +1,13 @@
-#include "Scene.h"
+#include "Scene.hpp"
 
 Scene::Scene(State *state, Config &config)
 {
     this->state = state;
 
     camera = {};
-    camera.setPerspective(60.0f, static_cast<double>(state->width), static_cast<double>(state->height), 0.1f, 512.0f);
-    camera.position = glm::vec3(0.0f, 0.0f, -5.0f);
-    camera.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    camera.setPerspective(config.cameras[0].fieldOfView, static_cast<double>(state->width), static_cast<double>(state->height), 0.1f, 512.0f);
+    camera.position = config.cameras[0].position;
+    camera.rotation = config.cameras[0].rotation;
     camera.updateView();
 
     skybox = new Skybox(state, &camera, config.skybox);
@@ -136,6 +136,7 @@ void Scene::cleanup()
         for (auto const &[id, model] : models)
         {
             delete model->uniformBuffers[i];
+            delete model->uniformLights[i];
         }
     }
 }
@@ -155,12 +156,15 @@ void Scene::createUniformBuffers()
     for (auto const &[_, model] : models)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+        VkDeviceSize lightSize = sizeof(uniformLightObject);
 
         model->uniformBuffers.resize(state->swapChainImages.size());
+        model->uniformLights.resize(state->swapChainImages.size());
 
         for (size_t i = 0; i < state->swapChainImages.size(); i++)
         {
             model->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+            model->uniformLights[i] = new Buffer(state, lightSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
     }
 }
@@ -173,8 +177,6 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    
-
     for (auto const &[id, model] : models)
     {
         UniformBufferObject ubo = {};
@@ -183,6 +185,10 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
         ubo.projection = camera.perspective;
         ubo.view = camera.view;
         ubo.cameraPosition = camera.position * -1.0f;
+
+        uniformLightObject ulo = {};
+        ulo.color = lights[0]->color;
+        ulo.position = lights[0]->position;
 
         model->uniformBuffers[currentImage]->update(ubo);
     }

@@ -2,7 +2,7 @@
 
 #include <stb_image.h>
 
-#include "State.h"
+#include "State.hpp"
 #include "Vertex.h"
 
 class Buffer

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "State.h"
-#include "Buffer.h"
+#include "State.hpp"
+#include "Buffer.hpp"
 
 class Image
 {

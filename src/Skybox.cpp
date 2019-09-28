@@ -1,4 +1,4 @@
-#include "Skybox.h"
+#include "Skybox.hpp"
 
 Skybox::~Skybox()
 {

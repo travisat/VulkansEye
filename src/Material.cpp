@@ -1,4 +1,4 @@
-#include "Material.h"
+#include "Material.hpp"
 
 Material::Material(State *state, MaterialConfig const &config)
 {

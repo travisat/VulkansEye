@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "Mesh.hpp"
 
 Mesh::Mesh(MeshConfig const &config)
 {

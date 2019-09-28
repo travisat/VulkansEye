@@ -50,9 +50,16 @@ struct LightConfig
     glm::vec3 rotation;
 };
 
+struct CameraConfig
+{
+    float fieldOfView = 60.0f;
+    glm::vec3 position;
+    glm::vec3 rotation;
+};
+
 struct Config
 {
-    
+    std::vector<CameraConfig> cameras {}; //TODO cameras[0] is only usable camera atm
     std::vector<MeshConfig> meshes {};
     std::vector<MaterialConfig> materials {};
     std::vector<LightConfig> lights {};

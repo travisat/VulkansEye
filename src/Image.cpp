@@ -1,4 +1,4 @@
-#include "Image.h"
+#include "Image.hpp"
 
 Image::Image(State *state, VkFormat format,
              VkImageTiling tiling, VkSampleCountFlagBits numSamples,

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Buffer.h"
-#include "Image.h"
+#include "Buffer.hpp"
+#include "Image.hpp"
 #include "Config.h"
 
 class Material

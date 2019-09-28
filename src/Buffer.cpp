@@ -1,4 +1,4 @@
-#include "Buffer.h"
+#include "Buffer.hpp"
 
 Buffer::Buffer(State *state, VkDeviceSize size, VkBufferUsageFlags flags, VmaMemoryUsage usage)
 {

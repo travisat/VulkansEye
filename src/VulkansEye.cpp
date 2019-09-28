@@ -1,4 +1,4 @@
-#include "VulkansEye.h"
+#include "VulkansEye.hpp"
 
 VulkansEye::VulkansEye()
 {
@@ -16,22 +16,25 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     Config config;
     config.skybox = {"resources/textures/skybox/nebula.dds"};
 
+    CameraConfig camera;
+    camera.fieldOfView = 60.0f;
+    camera.position = {0.0f, 0.0f, -5.0f};
+    camera.rotation = {0.0f, 0.0f, 0.0f};
+    config.cameras = {camera};
+
     LightConfig light;
     light.id = 0;
     light.color = {1.0f, 1.0f, 1.0f};
     light.position = {5.0f, 5.0f, 5.0f};
     light.rotation = {0.0f, 0.0f, 0.0f};
-
     config.lights = {light};
 
     MeshConfig a;
     a.id = 1;
     a.objPath = "resources/models/a.obj";
-
     MeshConfig b;
     b.id = 2;
     b.objPath = "resources/models/b.obj";
-
     config.meshes = {a, b};
 
     MaterialConfig brick;
@@ -39,7 +42,6 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     brick.diffusePath = "resources/textures/brick/diffuse.png";
     brick.normalPath = "resources/textures/brick/normal.png";
     brick.roughnessPath = "resources/textures/brick/roughness.png";
-
     config.materials = {brick};
 
     ModelConfig letterA;
@@ -48,14 +50,12 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     letterA.type = obj;
     letterA.meshId = 1;
     letterA.materialId = 1;
-
     ModelConfig letterB;
     letterB.id = 2;
     letterB.position = {0.0f, 0.25f, 0.5f};
     letterB.type = obj;
     letterB.meshId = 2;
     letterB.materialId = 1;
-
     config.models = {letterA, letterB};
 
     state = new State(window, width, height);

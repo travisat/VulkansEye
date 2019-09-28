@@ -1,4 +1,4 @@
-#include "State.h"
+#include "State.hpp"
 
 State::State(GLFWwindow *_window, uint32_t _width, uint32_t _height)
 : window(_window), width(_width), height(_height)

@@ -2,11 +2,11 @@
 
 #include <chrono>
 
-#include "Model.h"
-#include "Skybox.h"
-#include "Input.h"
-#include "Camera.h"
-#include "Light.h"
+#include "Model.hpp"
+#include "Skybox.hpp"
+#include "Input.hpp"
+#include "Camera.hpp"
+#include "Light.hpp"
 #include "Config.h"
 
 class Scene
@@ -38,10 +38,8 @@ public:
     struct uniformLightObject
     {
         glm::vec3 color;
-        glm::vec4 direction;
+        glm::vec3 position;
     };
-
-    std::vector<Buffer *> uniformLights{};
 
 private:
     State *state;

@@ -1,4 +1,4 @@
-#include "Camera.h"
+#include "Camera.hpp"
 
 void Camera::updateView()
 {
@@ -22,6 +22,7 @@ void Camera::setPerspective(double fieldOfView, double width, double height, dou
     this->zNear = zNear;
     this->zFar = zFar;
     perspective = glm::perspective(glm::radians(fieldOfView), width / height, zNear, zFar);
+    //convert to vulkan
     perspective = clip * perspective;
     
 }
@@ -31,6 +32,7 @@ void Camera::updateAspectRatio(double width, double height)
     this->width = width;
     this->height = height;
     perspective = glm::perspective(glm::radians(fieldOfView), (width / height), zNear, zFar);
+    //convert to vulkan
     perspective = clip * perspective;
 }
 

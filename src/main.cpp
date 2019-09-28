@@ -4,7 +4,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
-#include "VulkansEye.h"
+#include "VulkansEye.hpp"
 
 const int WIDTH = 800;
 const int HEIGHT = 600;

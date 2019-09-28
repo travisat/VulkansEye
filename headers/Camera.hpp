@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Input.h"
+#include "Input.hpp"
 
 const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,
                      0.0f, -1.0f, 0.0f, 0.0f,

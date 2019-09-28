@@ -3,7 +3,7 @@
 #include <set>
 #include <optional>
 
-#include "Scene.h"
+#include "Scene.hpp"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 

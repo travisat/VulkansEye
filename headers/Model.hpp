@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Buffer.h"
-#include "Mesh.h"
-#include "Material.h"
-#include "State.h"
+#include "Buffer.hpp"
+#include "Mesh.hpp"
+#include "Material.hpp"
+#include "State.hpp"
 #include "Config.h"
-
-
 
 class Model
 {
@@ -25,6 +23,7 @@ public:
     Material *material;
 
     std::vector<Buffer *> uniformBuffers {};
+    std::vector<Buffer *> uniformLights{};
     std::vector<VkDescriptorSet> descriptorSets {};
     
 };
