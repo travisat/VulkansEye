@@ -3,6 +3,8 @@
 Skybox::~Skybox()
 {
     delete cubeMap;
+    vkDestroyPipeline(state->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
     vkDestroySampler(state->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
     for (auto buffer : uniformBuffers)

@@ -32,12 +32,12 @@ Scene::Scene(State *state, Config &config)
 
     for (auto &modelConfig : config.models)
     {
-        if (modelConfig.type == obj)
-        {
-            Model *model = new Model(state, modelConfig.id, modelConfig.position,
+        //if (modelConfig.type == obj)
+        //{
+            Model *model = new Model(state, modelConfig.id, modelConfig.position, modelConfig.scale,
                                      meshes[modelConfig.meshId], materials[modelConfig.materialId]);
             models.insert({modelConfig.id, model});
-        }
+        //}
     }
 };
 
@@ -45,6 +45,9 @@ Scene::~Scene()
 {
     delete vertexBuffer;
     delete indexBuffer;
+
+    vkDestroyPipeline(state->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
 
     vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
 
@@ -61,6 +64,7 @@ Scene::~Scene()
     {
         delete material;
     };
+
     delete skybox;
 }
 
@@ -68,9 +72,9 @@ void Scene::create()
 {
     skybox->create();
 
+    createUniformBuffers();
     createDescriptorSetLayouts();
     createPipelines();
-    createUniformBuffers();
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -78,17 +82,28 @@ void Scene::create()
     uint32_t vertexOffset = 0;
     uint32_t indexOffset = 0;
     //load objects model vertices and indices into single buffers
-    for (auto const &[id, mesh] : meshes)
+    for (auto const &[id, model] : models)
     {
-        mesh->vertexOffset = vertexOffset;
-        mesh->indexOffset = indexOffset;
+        model->vertexOffset = vertexOffset;
+        model->indexOffset = indexOffset;
+        model->vertexSize = model->mesh->vertexSize;
+        model->indexSize = model->mesh->indexSize;
 
-        for (auto &vertex : mesh->vertices)
+        for (auto &vertex : model->mesh->vertices)
         {
-            vertices.push_back(vertex);
+            //converte mesh into size/scale for the model
+            //then move to correct initial position
+            Vertex out;
+            out.position.x = (vertex.position.x * model->scale.x) + model->position.x;
+            out.position.y = (vertex.position.y * model->scale.y) + model->position.y;
+            out.position.z = (vertex.position.z * model->scale.z) + model->position.z;
+            out.UV = vertex.UV;
+            out.normal = vertex.normal;
+
+            vertices.push_back(out);
             vertexOffset++;
         }
-        for (auto &index : mesh->indices)
+        for (auto &index : model->mesh->indices)
         {
             indices.push_back(index);
             indexOffset++;
@@ -156,7 +171,7 @@ void Scene::createUniformBuffers()
     for (auto const &[_, model] : models)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-        VkDeviceSize lightSize = sizeof(uniformLightObject);
+        VkDeviceSize lightSize = sizeof(UniformLightObject);
 
         model->uniformBuffers.resize(state->swapChainImages.size());
         model->uniformLights.resize(state->swapChainImages.size());
@@ -180,17 +195,20 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     for (auto const &[id, model] : models)
     {
         UniformBufferObject ubo = {};
-        ubo.model = glm::translate(glm::mat4(1.0f), model->position);
-        ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::mat4(1.0f);
+        //ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), model->position);
         ubo.projection = camera.perspective;
         ubo.view = camera.view;
         ubo.cameraPosition = camera.position * -1.0f;
 
-        uniformLightObject ulo = {};
-        ulo.color = lights[0]->color;
-        ulo.position = lights[0]->position;
+        UniformLightObject ulo = {};
+        ulo.lights[0] = lights[0]->light;
+        ulo.lights[1] = lights[1]->light;
+        ulo.gamma = gamma;
+        ulo.exposure = exposure;
 
         model->uniformBuffers[currentImage]->update(ubo);
+        model->uniformLights[currentImage]->update(ulo);
     }
 }
 
@@ -200,17 +218,45 @@ void Scene::createDescriptorSetLayouts()
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkDescriptorSetLayoutBinding uloLayoutBinding = {};
+    uloLayoutBinding.binding = 1;
+    uloLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uloLayoutBinding.descriptorCount = 1;
+    uloLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uloLayoutBinding.pImmutableSamplers = nullptr;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    VkDescriptorSetLayoutBinding diffuseLayoutBinding = {};
+    diffuseLayoutBinding.binding = 2;
+    diffuseLayoutBinding.descriptorCount = 1;
+    diffuseLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    diffuseLayoutBinding.pImmutableSamplers = nullptr;
+    diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding normalLayoutBinding = {};
+    normalLayoutBinding.binding = 3;
+    normalLayoutBinding.descriptorCount = 1;
+    normalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    normalLayoutBinding.pImmutableSamplers = nullptr;
+    normalLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding roughnessLayoutBinding = {};
+    roughnessLayoutBinding.binding = 4;
+    roughnessLayoutBinding.descriptorCount = 1;
+    roughnessLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    roughnessLayoutBinding.pImmutableSamplers = nullptr;
+    roughnessLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding aoLayoutBinding = {};
+    aoLayoutBinding.binding = 5;
+    aoLayoutBinding.descriptorCount = 1;
+    aoLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    aoLayoutBinding.pImmutableSamplers = nullptr;
+    aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 6> bindings = {uboLayoutBinding, uloLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, aoLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -249,12 +295,32 @@ void Scene::createDescriptorSets()
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo = {};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = model->material->diffuse->imageView;
-            imageInfo.sampler = model->material->diffuseSampler;
+            VkDescriptorBufferInfo lightInfo = {};
+            lightInfo.buffer = model->uniformLights[i]->buffer;
+            lightInfo.offset = 0;
+            lightInfo.range = sizeof(UniformLightObject);
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+            VkDescriptorImageInfo diffuseInfo = {};
+            diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            diffuseInfo.imageView = model->material->diffuse->imageView;
+            diffuseInfo.sampler = model->material->diffuseSampler;
+
+            VkDescriptorImageInfo normalInfo = {};
+            normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            normalInfo.imageView = model->material->normal->imageView;
+            normalInfo.sampler = model->material->normalSampler;
+
+            VkDescriptorImageInfo roughnessInfo = {};
+            roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            roughnessInfo.imageView = model->material->roughness->imageView;
+            roughnessInfo.sampler = model->material->roughnessSampler;
+
+            VkDescriptorImageInfo aoInfo = {};
+            aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            aoInfo.imageView = model->material->ao->imageView;
+            aoInfo.sampler = model->material->aoSampler;
+
+            std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = model->descriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
@@ -267,9 +333,41 @@ void Scene::createDescriptorSets()
             descriptorWrites[1].dstSet = model->descriptorSets[i];
             descriptorWrites[1].dstBinding = 1;
             descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+            descriptorWrites[1].pBufferInfo = &lightInfo;
+
+            descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[2].dstSet = model->descriptorSets[i];
+            descriptorWrites[2].dstBinding = 2;
+            descriptorWrites[2].dstArrayElement = 0;
+            descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[2].descriptorCount = 1;
+            descriptorWrites[2].pImageInfo = &diffuseInfo;
+
+            descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[3].dstSet = model->descriptorSets[i];
+            descriptorWrites[3].dstBinding = 3;
+            descriptorWrites[3].dstArrayElement = 0;
+            descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[3].descriptorCount = 1;
+            descriptorWrites[3].pImageInfo = &normalInfo;
+
+            descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[4].dstSet = model->descriptorSets[i];
+            descriptorWrites[4].dstBinding = 4;
+            descriptorWrites[4].dstArrayElement = 0;
+            descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[4].descriptorCount = 1;
+            descriptorWrites[4].pImageInfo = &roughnessInfo;
+
+            descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[5].dstSet = model->descriptorSets[i];
+            descriptorWrites[5].dstBinding = 5;
+            descriptorWrites[5].dstArrayElement = 0;
+            descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[5].descriptorCount = 1;
+            descriptorWrites[5].pImageInfo = &aoInfo;
 
             vkUpdateDescriptorSets(state->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

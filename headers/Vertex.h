@@ -52,6 +52,8 @@ struct Vertex
         attributeDesriptions[2].location = 2;
         attributeDesriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDesriptions[2].offset = offsetof(Vertex, normal);
+
+
         return attributeDesriptions;
     }
 

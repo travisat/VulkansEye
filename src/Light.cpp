@@ -4,7 +4,7 @@
 Light::Light(LightConfig const &config)
 {
     this->id = config.id;
-    this->position = config.position;
-    this->rotation = config.rotation;
-    this->color = config.color;
+    this->light = config.light;
+    this->temperature = config.temperature;
+    this->lumens = config.lumens;
 }

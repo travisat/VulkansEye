@@ -33,11 +33,11 @@ static std::vector<char> readFile(const std::string &filename)
     return buffer;
 };
 
-class State
+struct State
 {
-public:
     State(GLFWwindow *window, uint32_t width, uint32_t height);
     ~State();
+
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -73,5 +73,4 @@ public:
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkDescriptorPool descriptorPool;
-
 };

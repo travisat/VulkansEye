@@ -12,7 +12,6 @@ class Mesh
 public:
     Mesh(){};
     Mesh(MeshConfig const &config);
-    Mesh(std::string path);
     
     uint32_t getId(){ return id;};
 

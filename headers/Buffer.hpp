@@ -4,6 +4,7 @@
 
 #include "State.hpp"
 #include "Vertex.h"
+#include "Light.hpp"
 
 class Buffer
 {
@@ -21,6 +22,7 @@ public:
     void load(void *texData, uint32_t size);
     void copy(Buffer *destination);
     void update(UniformBufferObject &ubo);
+    void update(UniformLightObject &ulo);
 
     VkDeviceSize getSize() { return size; };
 

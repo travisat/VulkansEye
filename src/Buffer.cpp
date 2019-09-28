@@ -109,3 +109,11 @@ void Buffer::update(UniformBufferObject &ubo)
     memcpy(data, &ubo, sizeof(ubo));
     vmaUnmapMemory(state->allocator, *allocation);
 }
+
+void Buffer::update(UniformLightObject &ulo)
+{
+    void *data;
+    vmaMapMemory(state->allocator, *allocation, &data);
+    memcpy(data, &ulo, sizeof(ulo));
+    vmaUnmapMemory(state->allocator, *allocation);
+}

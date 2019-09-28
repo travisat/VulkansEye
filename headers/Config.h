@@ -19,6 +19,7 @@ struct ModelConfig
     uint32_t id = 0;
     ModelType type;
     glm::vec3 position;
+    glm::vec3 scale;
 
     //if type is obj these are needed
     uint32_t meshId = 0;
@@ -34,6 +35,8 @@ struct MaterialConfig
     std::string diffusePath = "";
     std::string normalPath = "";
     std::string roughnessPath = "";
+    std::string aoPath = "";
+    std::string metallicPath = "";
 };
 
 struct MeshConfig
@@ -45,9 +48,9 @@ struct MeshConfig
 struct LightConfig
 {
     uint32_t id = 0;
-    glm::vec3 color;
-    glm::vec3 position;
-    glm::vec3 rotation;
+    glm::vec4 light;
+    float temperature = 0;
+    float lumens = 0;
 };
 
 struct CameraConfig

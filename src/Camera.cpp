@@ -24,7 +24,6 @@ void Camera::setPerspective(double fieldOfView, double width, double height, dou
     perspective = glm::perspective(glm::radians(fieldOfView), width / height, zNear, zFar);
     //convert to vulkan
     perspective = clip * perspective;
-    
 }
 
 void Camera::updateAspectRatio(double width, double height)
@@ -51,10 +50,7 @@ void Camera::translate(glm::vec3 delta)
 void Camera::update(float deltaTime)
 {
     bool updated = true;
-    if (Input::checkKeyboard(GLFW_KEY_A) 
-        | Input::checkKeyboard(GLFW_KEY_S) 
-        | Input::checkKeyboard(GLFW_KEY_D) 
-        | Input::checkKeyboard(GLFW_KEY_W))
+    if (Input::checkKeyboard(GLFW_KEY_A) | Input::checkKeyboard(GLFW_KEY_S) | Input::checkKeyboard(GLFW_KEY_D) | Input::checkKeyboard(GLFW_KEY_W))
     {
         updated = false;
     }
@@ -66,7 +62,6 @@ void Camera::update(float deltaTime)
     mouseY = (mouseY / (height / 2)) - 1.0f;
 
     glm::vec2 mousePosition(mouseX, mouseY);
-  
 
     //discard old lastMousePosition so mouse doesn't jump when entering mouse mode
     if (mouseMode == false)

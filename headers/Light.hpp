@@ -8,19 +8,22 @@
 
 #include "Config.h"
 
+struct UniformLightObject
+{
+    glm::vec4 lights[2];
+    float exposure = 4.5f;
+    float gamma = 2.2f;
+};
 
 class Light
 {
 public:
-Light(LightConfig const &config);
+    Light(LightConfig const &config);
 
-glm::vec3 color {};
-glm::vec3 position {};
-glm::vec3 rotation {};
-
+    glm::vec4 light;
+    float lumens = 0;
+    float temperature = 0;
 
 private:
-
-uint32_t id = 0;
-
+    uint32_t id = 0;
 };

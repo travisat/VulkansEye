@@ -4,7 +4,7 @@ VulkansEye::VulkansEye()
 {
     windowWidth = 0;
     windowHeight = 0;
-    backend = nullptr;
+    engine = nullptr;
 };
 
 void VulkansEye::init(uint32_t width, uint32_t height)
@@ -18,16 +18,25 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     CameraConfig camera;
     camera.fieldOfView = 60.0f;
-    camera.position = {0.0f, 0.0f, -5.0f};
-    camera.rotation = {0.0f, 0.0f, 0.0f};
+    camera.position = {0.0f, 10.0f, 0.0f};
+    camera.rotation = {0.0f, -34.0f, 0.0f};
     config.cameras = {camera};
 
-    LightConfig light;
-    light.id = 0;
-    light.color = {1.0f, 1.0f, 1.0f};
-    light.position = {5.0f, 5.0f, 5.0f};
-    light.rotation = {0.0f, 0.0f, 0.0f};
-    config.lights = {light};
+    const float p = 15.0f;
+    LightConfig light0;
+    light0.id = 0;
+    light0.light = {-p, -p * 0.5f, -p, 1.0f};
+    LightConfig light1;
+    light1.id = 1;
+    light0.light = {-p, -p * 0.5f, p, 1.0f};
+    LightConfig light2;
+    light2.id = 2;
+    light0.light = {p, -p * 0.5f, p, 1.0f};
+    LightConfig light3;
+    light3.id = 3;
+    light0.light = {p, -p * 0.5f, -p, 1.0f};
+
+    config.lights = {light0, light1};
 
     MeshConfig a;
     a.id = 1;
@@ -35,35 +44,48 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     MeshConfig b;
     b.id = 2;
     b.objPath = "resources/models/b.obj";
-    config.meshes = {a, b};
+    MeshConfig wallMesh;
+    wallMesh.id = 3;
+    wallMesh.objPath = "resources/models/wall.obj";
+    config.meshes = {a, wallMesh};
 
     MaterialConfig brick;
     brick.id = 1;
     brick.diffusePath = "resources/textures/brick/diffuse.png";
     brick.normalPath = "resources/textures/brick/normal.png";
     brick.roughnessPath = "resources/textures/brick/roughness.png";
-    config.materials = {brick};
+    brick.aoPath = "resources/textures/brick/ambientOcclusion.png";
+    MaterialConfig alien;
+    alien.id = 2;
+    alien.diffusePath = "resources/textures/alien/diffuse.png";
+    alien.normalPath = "resources/textures/alien/normal.png";
+    alien.roughnessPath = "resources/textures/alien/roughness.png";
+    alien.aoPath = "resources/textures/alien/ambientOcclusion.png";
+    config.materials = {brick, alien};
 
     ModelConfig letterA;
     letterA.id = 1;
-    letterA.position = {1.0f, 0.25f, 0.5f};
+    letterA.position = {1.0f, 0.0f, 5.5f};
+    letterA.scale = glm::vec3(1.0f);
     letterA.type = obj;
-    letterA.meshId = 1;
+    letterA.meshId = 3;
     letterA.materialId = 1;
-    ModelConfig letterB;
-    letterB.id = 2;
-    letterB.position = {0.0f, 0.25f, 0.5f};
-    letterB.type = obj;
-    letterB.meshId = 2;
-    letterB.materialId = 1;
-    config.models = {letterA, letterB};
+
+    ModelConfig wall;
+    wall.id = 3;
+    wall.position = {1.0f,0.0f,0.0f};
+    wall.scale = glm::vec3(1.0f);
+    wall.type = obj;
+    wall.meshId = 1;
+    wall.materialId = 2;
+    config.models = {letterA, wall};
 
     state = new State(window, width, height);
     scene = new Scene(state, config);
-    backend = new VkBackend(state, scene);
+    engine = new VkEngine(state, scene);
 
     setupInputCallbacks();
-    backend->initVulkan();
+    engine->initVulkan();
 }
 
 void VulkansEye::run()
@@ -117,7 +139,7 @@ void VulkansEye::mainLoop()
             scene->camera.mouseMode = false;
         }
 
-        backend->drawFrame();
+        engine->drawFrame();
 
         if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
         {
@@ -131,7 +153,7 @@ void VulkansEye::mainLoop()
 
 void VulkansEye::cleanup()
 {
-    delete backend;
+    delete engine;
     glfwDestroyWindow(window);
 
     glfwTerminate();

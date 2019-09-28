@@ -1,4 +1,5 @@
-#include "VkBackend.hpp"
+#include "VkEngine.hpp"
+#include "Scene.hpp"
 
 class VulkansEye
 {
@@ -11,7 +12,7 @@ private:
     GLFWwindow *window;
     uint32_t windowWidth;
     uint32_t windowHeight;
-    VkBackend *backend;
+    VkEngine *engine;
     Scene *scene;
     State *state;
     
@@ -27,7 +28,7 @@ private:
 
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
     {
-        auto app = reinterpret_cast<VkBackend *>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<VkEngine *>(glfwGetWindowUserPointer(window));
         framebufferResized = true;
     };
 };

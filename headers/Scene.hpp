@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+#include "State.hpp"
 #include "Model.hpp"
 #include "Skybox.hpp"
 #include "Input.hpp"
@@ -35,15 +36,13 @@ public:
     std::map<uint32_t, Material *> materials;
     std::map<uint32_t, Light *> lights;
 
-    struct uniformLightObject
-    {
-        glm::vec3 color;
-        glm::vec3 position;
-    };
-
 private:
     State *state;
     Config *config;
+
+
+    float gamma = 4.5f;
+    float exposure = 2.2f;
 
     VkDescriptorSetLayout descriptorSetLayout;
 
