@@ -1,40 +1,62 @@
 #include "Buffer.hpp"
-
-Buffer::Buffer(State *state, VkDeviceSize size, VkBufferUsageFlags flags, VmaMemoryUsage usage)
-{
-    this->state = state;
-    this->flags = flags;
-    this->usage = usage;
-    this->size = size;
-
-    allocation = new VmaAllocation();
-
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = flags;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage = usage;
-
-    vmaCreateBuffer(state->allocator, &bufferInfo, &allocInfo, &buffer, allocation, nullptr);
-}
+#include "macros.h"
 
 Buffer::~Buffer()
 {
-    vmaDestroyBuffer(state->allocator, buffer, *allocation);
+    unmap();
+    vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
+    Trace("Destroyed ", name, " at ", Timer::systemTime());
 }
 
-//destroys data in buffer
-void Buffer::resize(VkDeviceSize size)
+VkResult Buffer::map()
 {
-    this->size = size;
+    VkResult result = vmaMapMemory(vulkan->allocator, allocation, &mapped);
+    if (result != VK_SUCCESS)
+    {
+        Trace("Unable to map ", name, " at ", Timer::systemTime());
+        return result;
+    }
+    Trace("Mapped ", name, " at ", Timer::systemTime());
+    ismapped = true;
+    return result;
+}
 
-    vmaDestroyBuffer(state->allocator, buffer, *allocation);
+void Buffer::unmap()
+{
+    if (ismapped)
+    {
+        vmaUnmapMemory(vulkan->allocator, allocation);
+        Trace("Unmapped ", name, " at ", Timer::systemTime());
+        mapped = nullptr;
+        ismapped = false;
+    }
+}
 
-    allocation = new VmaAllocation();
-    
+VkResult Buffer::resize(VkDeviceSize s)
+{
+    VkResult result;
+    if (!buffer) //buffer hasn't been allocated yet
+    {
+        result = allocate(s);
+    }
+    else if (s > size) //new buffer size is bigger than maximum buffer size
+    {
+        if (s > maxSize)
+        {
+            result = allocate(s);
+        }
+    }
+    maxSize = size; //buffer requested is smaller than one already there, don't reallocate use old buffer space
+    size = s;
+    return VK_SUCCESS; //don't do anything with buffer and let new data be put in it
+                       //todo determine if making buffer smaller is good idea
+};
+
+VkResult Buffer::allocate(VkDeviceSize s)
+{
+    size = s;
+    maxSize = s;
+
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -44,76 +66,32 @@ void Buffer::resize(VkDeviceSize size)
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = usage;
 
-    vmaCreateBuffer(state->allocator, &bufferInfo, &allocInfo, &buffer, allocation, nullptr);
-}
-
-void Buffer::loadImage(stbi_uc *pixels)
-{
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, pixels, static_cast<size_t>(size));
-    vmaUnmapMemory(state->allocator, *allocation);
-
-}
-
-void Buffer::loadImages(stbi_uc *pixels[], VkDeviceSize size, uint32_t count)
-{
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-
-    for (uint32_t i = 0; i < count; i++)
+    VkResult result = vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+    if (result == VK_SUCCESS)
     {
-        memcpy(data, pixels[i], static_cast<size_t>(size));
+        Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
     }
-    vmaUnmapMemory(state->allocator, *allocation);
+    return result;
 }
 
-void Buffer::load(std::vector<Vertex> const &vertices)
+void Buffer::deallocate()
 {
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(size));
-    vmaUnmapMemory(state->allocator, *allocation);
+    vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
 }
 
-void Buffer::load(void *texData, uint32_t size)
+void Buffer::copyTo(Buffer &destination)
 {
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, texData, static_cast<size_t>(size));
-    vmaUnmapMemory(state->allocator, *allocation);
-}
+    //if destination buffer is a different size than source buffer reaclloate
+    if (size != destination.size)
+    {
+        destination.allocate(size);
+    }
 
-void Buffer::load(std::vector<uint32_t> const &indices)
-{
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(size));
-    vmaUnmapMemory(state->allocator, *allocation);
-}
-
-void Buffer::copy(Buffer *destination)
-{
-    VkCommandBuffer commandBuffer = state->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
 
     VkBufferCopy copyRegion = {};
     copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, buffer, destination->buffer, 1, &copyRegion);
-    state->endSingleTimeCommands(commandBuffer);
-}
+    vkCmdCopyBuffer(commandBuffer, buffer, destination.buffer, 1, &copyRegion);
 
-void Buffer::update(UniformBufferObject &ubo)
-{
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, &ubo, sizeof(ubo));
-    vmaUnmapMemory(state->allocator, *allocation);
-}
-
-void Buffer::update(UniformLightObject &ulo)
-{
-    void *data;
-    vmaMapMemory(state->allocator, *allocation, &data);
-    memcpy(data, &ulo, sizeof(ulo));
-    vmaUnmapMemory(state->allocator, *allocation);
+    vulkan->endSingleTimeCommands(commandBuffer);
 }

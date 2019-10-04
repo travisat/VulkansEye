@@ -6,8 +6,8 @@
 
 #include "VulkansEye.hpp"
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1024;
+const int HEIGHT = 768;
 
 int main()
 {

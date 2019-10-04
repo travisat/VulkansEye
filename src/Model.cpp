@@ -1,34 +1,21 @@
 #include "Model.hpp"
 
-Model::Model(State *state, uint32_t id, glm::vec3 position, glm::vec3 scale, Mesh *mesh, Material *material)
+Model::Model(tat::Vulkan *vulkan, const ModelConfig &config)
 {
-    this->state = state;
-    this->id = id;
-    this->position = position; 
-    this->scale = scale;
-    this->mesh = mesh;
-    this->material = material;
+    this->vulkan = vulkan;
+    id = config.id;
+    position = config.position;
+    scale = config.scale;
     
+    //TODO implement using path to load model
+
+    material.vulkan = vulkan;
+    material.loadConfig(config.materialConfig);
+    mesh.loadConfig(config.meshConfig);
+        
 }
 
-Model::Model(State *state, uint32_t id, ModelType type, glm::vec3 position, glm::vec3 scale, std::string path){
-    this->state = state;
-    this->id = id;
-    this->position = position; 
-    this->scale = scale;
-
-   //TODO create loading other formats
-    
+void Model::draw(const VkCommandBuffer &commandBuffer)
+{
+            vkCmdDrawIndexed(commandBuffer, mesh.indexSize, 1, mesh.indexOffset, mesh.vertexOffset, 0);
 }
-
-Model::~Model()
-    {
-        for (auto buffer : uniformBuffers)
-        {
-            delete buffer;
-        }
-        for (auto light : uniformLights)
-        {
-            delete light;
-        }
-    }

@@ -1,25 +1,30 @@
 #include "VulkansEye.hpp"
+#include "macros.h"
 
 VulkansEye::VulkansEye()
 {
-    windowWidth = 0;
-    windowHeight = 0;
-    engine = nullptr;
-};
+    Timer::getInstance();
+    Timer::systemTime();
+}
 
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
-    windowWidth = width;
-    windowHeight = height;
+    this->width = width;
+    this->height = height;
     initWindow();
 
-    Config config;
+    Input::getInstance();
+    glfwSetKeyCallback(window, &Input::keyCallback);
+    glfwSetMouseButtonCallback(window, &Input::mouseButtonCallback);
+    glfwSetCursorPosCallback(window, &Input::cursorPosCallback);
+
+    Config config {};
     config.skybox = {"resources/textures/skybox/nebula.dds"};
 
     CameraConfig camera;
     camera.fieldOfView = 60.0f;
-    camera.position = {0.0f, 10.0f, 0.0f};
-    camera.rotation = {0.0f, -34.0f, 0.0f};
+    camera.position = {9.0f, 12.0f, -3.0f};
+    camera.rotation = {-46.0f, 87.0f, 0.0f};
     config.cameras = {camera};
 
     const float p = 15.0f;
@@ -38,54 +43,38 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     config.lights = {light0, light1};
 
-    MeshConfig a;
-    a.id = 1;
-    a.objPath = "resources/models/a.obj";
-    MeshConfig b;
-    b.id = 2;
-    b.objPath = "resources/models/b.obj";
-    MeshConfig wallMesh;
-    wallMesh.id = 3;
-    wallMesh.objPath = "resources/models/wall.obj";
-    config.meshes = {a, wallMesh};
-
-    MaterialConfig brick;
-    brick.id = 1;
-    brick.diffusePath = "resources/textures/brick/diffuse.png";
-    brick.normalPath = "resources/textures/brick/normal.png";
-    brick.roughnessPath = "resources/textures/brick/roughness.png";
-    brick.aoPath = "resources/textures/brick/ambientOcclusion.png";
-    MaterialConfig alien;
-    alien.id = 2;
-    alien.diffusePath = "resources/textures/alien/diffuse.png";
-    alien.normalPath = "resources/textures/alien/normal.png";
-    alien.roughnessPath = "resources/textures/alien/roughness.png";
-    alien.aoPath = "resources/textures/alien/ambientOcclusion.png";
-    config.materials = {brick, alien};
-
-    ModelConfig letterA;
-    letterA.id = 1;
-    letterA.position = {1.0f, 0.0f, 5.5f};
-    letterA.scale = glm::vec3(1.0f);
-    letterA.type = obj;
-    letterA.meshId = 3;
-    letterA.materialId = 1;
-
     ModelConfig wall;
-    wall.id = 3;
-    wall.position = {1.0f,0.0f,0.0f};
+    wall.id = 1;
+    wall.position = {1.0f, 0.0f, 5.5f};
     wall.scale = glm::vec3(1.0f);
-    wall.type = obj;
-    wall.meshId = 1;
-    wall.materialId = 2;
-    config.models = {letterA, wall};
+    wall.type = ModelType::obj;
+    wall.materialConfig.id = 1;
+    wall.materialConfig.type = ImageType::png;
+    wall.materialConfig.diffusePath = "resources/textures/alien/diffuse.png";
+    wall.materialConfig.normalPath = "resources/textures/alien/normal.png";
+    wall.materialConfig.roughnessPath = "resources/textures/alien/roughness.png";
+    wall.materialConfig.ambientOcclusionPath = "resources/textures/alien/ambientOcclusion.png";
+    wall.meshConfig.id = 1;
+    wall.meshConfig.objPath = "resources/models/wall.obj";
 
-    state = new State(window, width, height);
-    scene = new Scene(state, config);
-    engine = new VkEngine(state, scene);
+    config.models = {wall};
 
-    setupInputCallbacks();
-    engine->initVulkan();
+    vulkan.window = window;
+    vulkan.width = width;
+    vulkan.height = height;
+
+    scene.config = &config;
+    scene.vulkan = &vulkan;
+
+    imgui.vulkan = &vulkan;
+    imgui.cameraPosition = &scene.camera.position;
+    imgui.cameraRotation = &scene.camera.rotation;
+    imgui.init();
+
+    engine.vulkan = &vulkan;
+    engine.scene = &scene;
+    engine.imgui = &imgui;
+    engine.init();
 }
 
 void VulkansEye::run()
@@ -100,46 +89,44 @@ void VulkansEye::initWindow()
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    window = glfwCreateWindow(windowWidth, windowHeight, "Vulkans Eye", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "Vulkans Eye", nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
-void VulkansEye::setupInputCallbacks()
-{
-    Input &hexmap = Input::getInstance();
-
-    glfwSetKeyCallback(window, &Input::keyCallback);
-    glfwSetMouseButtonCallback(window, &Input::mouseButtonCallback);
-    glfwSetCursorPosCallback(window, &Input::cursorPosCallback);
-}
-
 void VulkansEye::mainLoop()
 {
+    auto lastFrameTime = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
         glfwPollEvents();
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
         {
-            if (!scene->camera.mouseMode)
+            if (!scene.camera.mouseMode)
             {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             }
-            scene->camera.update(time);
+            scene.camera.update(Timer::getInstance().getCount() / 1000.0f);
         }
         else
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            scene->camera.mouseMode = false;
+            scene.camera.mouseMode = false;
         }
 
-        engine->drawFrame();
+        ImGuiIO &io = ImGui::GetIO();
+
+        io.DisplaySize = ImVec2((float)width, (float)height);
+        io.DeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
+        lastFrameTime = Timer::getTime();
+
+        imgui.newFrame(vulkan.frameCounter == 0);
+        imgui.updateBuffers();
+
+        engine.drawFrame();
+        vulkan.frameCounter++;
 
         if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
         {
@@ -147,14 +134,11 @@ void VulkansEye::mainLoop()
             glfwSetWindowShouldClose(window, true);
         }
     }
-
-    vkDeviceWaitIdle(state->device);
+    vkDeviceWaitIdle(vulkan.device);
 }
 
 void VulkansEye::cleanup()
 {
-    delete engine;
     glfwDestroyWindow(window);
-
     glfwTerminate();
 }

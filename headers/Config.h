@@ -8,10 +8,45 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
-enum ModelType
+enum class ModelType
 {
+    unknown,
     obj,
     gltf
+};
+
+enum class ImageType
+{
+    unknown,
+    png, //stb_image.h types
+    jpg,
+    bmp,
+    psd,
+    tga,
+    gif,
+    hdr,
+    pic,
+    pnm,
+    dds, //gli types
+    ktx,
+    kmg
+};
+
+struct MaterialConfig
+{
+    uint32_t id = 0;
+    ImageType type = ImageType::png;
+    std::string diffusePath = "";
+    std::string normalPath = "";
+    std::string roughnessPath = "";
+    std::string ambientOcclusionPath = "";
+    std::string metallicPath = "";
+};
+
+struct MeshConfig
+{
+    uint32_t id = 0;
+    std::string objPath = "";
 };
 
 struct ModelConfig
@@ -21,28 +56,11 @@ struct ModelConfig
     glm::vec3 position;
     glm::vec3 scale;
 
-    //if type is obj these are needed
-    uint32_t meshId = 0;
-    uint32_t materialId = 0;
-    
     //if gltf provide path
     std::string path = "";
-};
 
-struct MaterialConfig
-{
-    uint32_t id = 0;
-    std::string diffusePath = "";
-    std::string normalPath = "";
-    std::string roughnessPath = "";
-    std::string aoPath = "";
-    std::string metallicPath = "";
-};
-
-struct MeshConfig
-{
-    uint32_t id = 0;
-    std::string objPath = "";
+    MaterialConfig materialConfig;
+    MeshConfig meshConfig;
 };
 
 struct LightConfig
@@ -62,12 +80,12 @@ struct CameraConfig
 
 struct Config
 {
-    std::vector<CameraConfig> cameras {}; //TODO cameras[0] is only usable camera atm
-    std::vector<MeshConfig> meshes {};
-    std::vector<MaterialConfig> materials {};
-    std::vector<LightConfig> lights {};
+    std::vector<CameraConfig> cameras{}; //TODO cameras[0] is only usable camera atm
+    std::vector<MeshConfig> meshes{};
+    std::vector<MaterialConfig> materials{};
+    std::vector<LightConfig> lights{};
 
     std::string skybox = "";
 
-    std::vector<ModelConfig> models {};
+    std::vector<ModelConfig> models{};
 };

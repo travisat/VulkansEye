@@ -8,6 +8,7 @@
 
 #include "Config.h"
 
+
 struct UniformLightObject
 {
     glm::vec4 lights[2];
@@ -19,6 +20,8 @@ class Light
 {
 public:
     Light(LightConfig const &config);
+
+    void load();
 
     glm::vec4 light;
     float lumens = 0;

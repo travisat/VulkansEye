@@ -1,71 +1,35 @@
 #include "Scene.hpp"
-
-Scene::Scene(State *state, Config &config)
-{
-    this->state = state;
-
-    camera = {};
-    camera.setPerspective(config.cameras[0].fieldOfView, static_cast<double>(state->width), static_cast<double>(state->height), 0.1f, 512.0f);
-    camera.position = config.cameras[0].position;
-    camera.rotation = config.cameras[0].rotation;
-    camera.updateView();
-
-    skybox = new Skybox(state, &camera, config.skybox);
-
-    for (auto const &lightConfig : config.lights)
-    {
-        Light *light = new Light(lightConfig);
-        lights.insert({lightConfig.id, light});
-    }
-
-    for (auto const &meshConfig : config.meshes)
-    {
-        Mesh *mesh = new Mesh(meshConfig);
-        meshes.insert({meshConfig.id, mesh});
-    }
-
-    for (auto const &materialConfig : config.materials)
-    {
-        Material *material = new Material(state, materialConfig);
-        materials.insert({materialConfig.id, material});
-    }
-
-    for (auto &modelConfig : config.models)
-    {
-        //if (modelConfig.type == obj)
-        //{
-            Model *model = new Model(state, modelConfig.id, modelConfig.position, modelConfig.scale,
-                                     meshes[modelConfig.meshId], materials[modelConfig.materialId]);
-            models.insert({modelConfig.id, model});
-        //}
-    }
-};
+#include "macros.h"
 
 Scene::~Scene()
 {
-    delete vertexBuffer;
-    delete indexBuffer;
-
-    vkDestroyPipeline(state->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
-
-    vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
-
-    for (auto const &[id, model] : models)
-    {
-        delete model;
-    };
-
-    for (auto const &[id, mesh] : meshes)
-    {
-        delete mesh;
-    };
-    for (auto const &[id, material] : materials)
-    {
-        delete material;
-    };
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
 
     delete skybox;
+}
+
+void Scene::init()
+{
+    camera.setPerspective(config->cameras[0].fieldOfView, static_cast<double>(vulkan->width), static_cast<double>(vulkan->height), 0.1f, 512.0f);
+    camera.position = config->cameras[0].position;
+    camera.rotation = config->cameras[0].rotation;
+    camera.updateView();
+
+    skybox = new Skybox(vulkan, &camera, config->skybox);
+
+    for (auto const &lightConfig : config->lights)
+    {
+        std::unique_ptr<Light> light(new Light(lightConfig));
+        lights.push_back(std::move(light));
+    }
+
+    for (auto &modelConfig : config->models)
+    {
+        std::unique_ptr<Model> model(new Model(vulkan, modelConfig));
+        models.push_back(std::move(model));
+    }
 }
 
 void Scene::create()
@@ -82,14 +46,12 @@ void Scene::create()
     uint32_t vertexOffset = 0;
     uint32_t indexOffset = 0;
     //load objects model vertices and indices into single buffers
-    for (auto const &[id, model] : models)
+    for (auto &&model : models)
     {
-        model->vertexOffset = vertexOffset;
-        model->indexOffset = indexOffset;
-        model->vertexSize = model->mesh->vertexSize;
-        model->indexSize = model->mesh->indexSize;
+        model->mesh.vertexOffset = vertexOffset;
+        model->mesh.indexOffset = indexOffset;
 
-        for (auto &vertex : model->mesh->vertices)
+        for (auto &vertex : model->mesh.vertices)
         {
             //converte mesh into size/scale for the model
             //then move to correct initial position
@@ -100,43 +62,38 @@ void Scene::create()
             out.UV = vertex.UV;
             out.normal = vertex.normal;
 
-            vertices.push_back(out);
+            vertices.push_back(out); //this should be pushing back a copy of out
             vertexOffset++;
         }
-        for (auto &index : model->mesh->indices)
+        for (auto &index : model->mesh.indices)
         {
             indices.push_back(index);
             indexOffset++;
         }
     }
 
-    VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    Buffer stagingBuffer{};
+    stagingBuffer.vulkan = vulkan;
+    stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    stagingBuffer.name = "staging";
+    stagingBuffer.load(vertices);
 
-    Buffer *stagingBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer->load(vertices);
+    vertexBuffer.vulkan = vulkan;
+    vertexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vertexBuffer.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    vertexBuffer.name = "scene/vertex";
 
-    vertexBuffer = new Buffer(state, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                              VMA_MEMORY_USAGE_GPU_ONLY);
+    stagingBuffer.copyTo(vertexBuffer);
 
-    stagingBuffer->copy(vertexBuffer);
+    stagingBuffer.load(indices);
 
-    bufferSize = sizeof(uint32_t) * indices.size();
+    indexBuffer.vulkan = vulkan;
+    indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    indexBuffer.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    indexBuffer.name = "scene/index";
 
-    stagingBuffer->resize(bufferSize);
-    stagingBuffer->load(indices);
-
-    indexBuffer = new Buffer(state, bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                             VMA_MEMORY_USAGE_GPU_ONLY);
-
-    stagingBuffer->copy(indexBuffer);
-
-    delete stagingBuffer;
-
-    for (auto const &[id, material] : materials)
-    {
-        material->load();
-    }
+    stagingBuffer.copyTo(indexBuffer);
 
     createDescriptorSets();
 }
@@ -144,42 +101,64 @@ void Scene::create()
 void Scene::cleanup()
 {
     skybox->cleanup();
-    vkDestroyPipeline(state->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
-    for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
-    {
-        for (auto const &[id, model] : models)
-        {
-            delete model->uniformBuffers[i];
-            delete model->uniformLights[i];
-        }
-    }
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
 }
 
 void Scene::recreate()
 {
-    camera.updateAspectRatio((float)state->width, (float)state->height);
+    camera.updateAspectRatio((float)vulkan->width, (float)vulkan->height);
     skybox->recreate();
     createPipelines();
     createUniformBuffers();
     createDescriptorSets();
 }
 
+void Scene::draw(VkCommandBuffer &commandBuffer, uint32_t currentImage)
+{
+    skybox->draw(commandBuffer, currentImage);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    VkBuffer vertexBuffers[] = {vertexBuffer.buffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    for (auto &&model : models)
+    {
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &model->descriptorSets[currentImage], 0, nullptr);
+        model->draw(commandBuffer);
+        Trace("Model ", model->getId(), " drawn to command buffer at: ", Timer::systemTime());
+    }
+}
+
 void Scene::createUniformBuffers()
 {
 
-    for (auto const &[_, model] : models)
+    for (auto &&model : models)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
         VkDeviceSize lightSize = sizeof(UniformLightObject);
 
-        model->uniformBuffers.resize(state->swapChainImages.size());
-        model->uniformLights.resize(state->swapChainImages.size());
+        model->uniformBuffers.resize(vulkan->swapChainImages.size());
+        model->uniformLights.resize(vulkan->swapChainImages.size());
 
-        for (size_t i = 0; i < state->swapChainImages.size(); i++)
+        for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
         {
-            model->uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-            model->uniformLights[i] = new Buffer(state, lightSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+            model->uniformBuffers[i].vulkan = vulkan;
+            model->uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            model->uniformBuffers[i].usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            model->uniformBuffers[i].name = "Scene/UBO";
+
+            UniformBufferObject ubo{};
+            model->uniformBuffers[i].update(ubo);
+
+            model->uniformLights[i].vulkan = vulkan;
+            model->uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            model->uniformLights[i].usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            model->uniformLights[i].name = "Scene/ULO";
+
+            UniformLightObject ulo{};
+            model->uniformLights[i].update(ulo);
         }
     }
 }
@@ -192,23 +171,23 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    for (auto const &[id, model] : models)
+    for (auto &&model : models)
     {
-        UniformBufferObject ubo = {};
+        UniformBufferObject ubo{};
         ubo.model = glm::mat4(1.0f);
         //ubo.model = glm::rotate(ubo.model, time * glm::radians(90.f), model->position);
         ubo.projection = camera.perspective;
         ubo.view = camera.view;
         ubo.cameraPosition = camera.position * -1.0f;
 
-        UniformLightObject ulo = {};
+        UniformLightObject ulo{};
         ulo.lights[0] = lights[0]->light;
         ulo.lights[1] = lights[1]->light;
         ulo.gamma = gamma;
         ulo.exposure = exposure;
 
-        model->uniformBuffers[currentImage]->update(ubo);
-        model->uniformLights[currentImage]->update(ulo);
+        model->uniformBuffers[currentImage].update(ubo);
+        model->uniformLights[currentImage].update(ulo);
     }
 }
 
@@ -263,7 +242,7 @@ void Scene::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(state->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+    if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("faled to create descriptor set layout");
     }
@@ -271,54 +250,54 @@ void Scene::createDescriptorSetLayouts()
 
 void Scene::createDescriptorSets()
 {
-    for (auto const &[id, model] : models)
+    for (auto &&model : models)
     {
-        std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = state->descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(state->swapChainImages.size());
+        allocInfo.descriptorPool = vulkan->descriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
         allocInfo.pSetLayouts = layouts.data();
 
-        model->descriptorSets.resize(state->swapChainImages.size());
-        if (vkAllocateDescriptorSets(state->device, &allocInfo, model->descriptorSets.data()) != VK_SUCCESS)
+        model->descriptorSets.resize(vulkan->swapChainImages.size());
+        if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, model->descriptorSets.data()) != VK_SUCCESS)
         {
 
             throw std::runtime_error("failed to allocate descript sets");
         }
 
-        for (size_t i = 0; i < state->swapChainImages.size(); i++)
+        for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
         {
 
             VkDescriptorBufferInfo bufferInfo = {};
-            bufferInfo.buffer = model->uniformBuffers[i]->buffer;
+            bufferInfo.buffer = model->uniformBuffers[i].buffer;
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
             VkDescriptorBufferInfo lightInfo = {};
-            lightInfo.buffer = model->uniformLights[i]->buffer;
+            lightInfo.buffer = model->uniformLights[i].buffer;
             lightInfo.offset = 0;
             lightInfo.range = sizeof(UniformLightObject);
 
             VkDescriptorImageInfo diffuseInfo = {};
             diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            diffuseInfo.imageView = model->material->diffuse->imageView;
-            diffuseInfo.sampler = model->material->diffuseSampler;
+            diffuseInfo.imageView = model->material.diffuse.imageView;
+            diffuseInfo.sampler = model->material.diffuseSampler;
 
             VkDescriptorImageInfo normalInfo = {};
             normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            normalInfo.imageView = model->material->normal->imageView;
-            normalInfo.sampler = model->material->normalSampler;
+            normalInfo.imageView = model->material.normal.imageView;
+            normalInfo.sampler = model->material.normalSampler;
 
             VkDescriptorImageInfo roughnessInfo = {};
             roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            roughnessInfo.imageView = model->material->roughness->imageView;
-            roughnessInfo.sampler = model->material->roughnessSampler;
+            roughnessInfo.imageView = model->material.roughness.imageView;
+            roughnessInfo.sampler = model->material.roughnessSampler;
 
             VkDescriptorImageInfo aoInfo = {};
             aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            aoInfo.imageView = model->material->ao->imageView;
-            aoInfo.sampler = model->material->aoSampler;
+            aoInfo.imageView = model->material.ambientOcclusion.imageView;
+            aoInfo.sampler = model->material.ambientOcclusionSampler;
 
             std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -369,18 +348,18 @@ void Scene::createDescriptorSets()
             descriptorWrites[5].descriptorCount = 1;
             descriptorWrites[5].pImageInfo = &aoInfo;
 
-            vkUpdateDescriptorSets(state->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
     }
 };
 
 void Scene::createPipelines()
 {
-    auto vertShaderCode = readFile("resources/shaders/scene.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/scene.frag.spv");
+    auto vertShaderCode = tat::readFile("resources/shaders/scene.vert.spv");
+    auto fragShaderCode = tat::readFile("resources/shaders/scene.frag.spv");
 
-    VkShaderModule vertShaderModule = state->createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = state->createShaderModule(fragShaderCode);
+    VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -438,7 +417,7 @@ void Scene::createPipelines()
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = state->msaaSamples;
+    multisampling.rasterizationSamples = vulkan->msaaSamples;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -469,7 +448,7 @@ void Scene::createPipelines()
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    if (vkCreatePipelineLayout(state->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("faled to create pipeline layout");
     }
@@ -487,15 +466,15 @@ void Scene::createPipelines()
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = state->renderPass;
+    pipelineInfo.renderPass = vulkan->renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(state->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(state->device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(state->device, vertShaderModule, nullptr);
+    vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 };

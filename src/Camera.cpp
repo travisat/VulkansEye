@@ -47,7 +47,7 @@ void Camera::translate(glm::vec3 delta)
     updateView();
 }
 
-void Camera::update(float deltaTime)
+void Camera::update(double deltaTime)
 {
     bool updated = true;
     if (Input::checkKeyboard(GLFW_KEY_A) | Input::checkKeyboard(GLFW_KEY_S) | Input::checkKeyboard(GLFW_KEY_D) | Input::checkKeyboard(GLFW_KEY_W))
@@ -89,7 +89,7 @@ void Camera::update(float deltaTime)
         camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
         camFront = glm::normalize(camFront);
 
-        float moveSpeed = deltaTime * movementSpeed;
+        float moveSpeed = (float)(deltaTime * movementSpeed);
 
         if (Input::checkKeyboard(GLFW_KEY_W))
             position += camFront * moveSpeed;

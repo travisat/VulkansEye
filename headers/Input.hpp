@@ -11,6 +11,8 @@
 #include <GLFW/glfw3.h>
 
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
+//Singleton as there can only be one Input and Input should never be locked
+
 class Input
 {
 public:
@@ -70,12 +72,12 @@ public:
         }
     }
 
-    static bool checkKeyboard(uint32_t key)
+    static bool checkKeyboard(const uint32_t key)
     {
         return getInstance().checkKeyboardIMPL(key);
     }
 
-    bool checkKeyboardIMPL(uint32_t key)
+    bool checkKeyboardIMPL(const uint32_t key)
     {
         return keys[key];
     }

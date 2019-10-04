@@ -1,5 +1,6 @@
 #include "VkEngine.hpp"
-#include "Scene.hpp"
+#include "Overlay.hpp"
+#include "Timer.h"
 
 class VulkansEye
 {
@@ -9,20 +10,21 @@ public:
     void run();
 
 private:
-    GLFWwindow *window;
-    uint32_t windowWidth;
-    uint32_t windowHeight;
-    VkEngine *engine;
-    Scene *scene;
-    State *state;
-    
+    tat::Vulkan vulkan{};
+    VkEngine engine{};
+    Overlay imgui{}; //at base becuase should have access to all info to display it
+    Scene scene {};
+
+    GLFWwindow *window = nullptr;
+
+    int width = 0;
+    int height = 0;
+
     void initWindow();
     void initVulkan();
 
     void drawFrame();
 
-    void setupInputCallbacks();
-    void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     void mainLoop();
     void cleanup();
 

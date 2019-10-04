@@ -1,16 +1,15 @@
 #pragma once
 
-#include <gli/gli.hpp>
-
 #include "Image.hpp"
 #include "Buffer.hpp"
 #include "Camera.hpp"
+#include "Timer.h"
 
 class Skybox
 {
 public:
-    Skybox::Skybox(State *_state, Camera *_camera, std::string _texturePath)
-        : state(_state), camera(_camera), texturePath(_texturePath){};
+    Skybox::Skybox(tat::Vulkan *_vulkan, Camera *_camera, std::string _texturePath)
+        : vulkan(_vulkan), camera(_camera), texturePath(_texturePath){};
 
     ~Skybox();
 
@@ -18,23 +17,26 @@ public:
     void cleanup();
     void recreate();
 
+    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+
     void updateUniformBuffer(uint32_t currentImage);
 
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<Buffer *> uniformBuffers;
+    std::vector<VkDescriptorSet> descriptorSets {};
+    std::vector<Buffer> uniformBuffers {};
+
+    tat::Vulkan *vulkan = nullptr;
     
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
 
 private:
-    State *state;
-    Image *cubeMap;
-    VkSampler sampler;
+    Image cubeMap {};
+    VkSampler sampler = VK_NULL_HANDLE;
 
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::string texturePath;
+    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+    std::string texturePath {};
 
-    Camera *camera;
+    Camera *camera  = nullptr;
 
     void createDescriptorSetLayouts();
     void createUniformBuffers();

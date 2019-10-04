@@ -10,9 +10,8 @@
 class Mesh
 {
 public:
-    Mesh(){};
-    Mesh(MeshConfig const &config);
-    
+
+    void loadConfig(const MeshConfig &config);
     uint32_t getId(){ return id;};
 
     uint32_t vertexSize = 0;
@@ -25,5 +24,5 @@ public:
     std::vector<uint32_t> indices = {};
 
 private:
-    uint32_t id = 0;
+    int32_t id = 0;
 };

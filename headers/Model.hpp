@@ -3,33 +3,32 @@
 #include "Buffer.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
-#include "State.hpp"
+#include "Vulkan.hpp"
 #include "Config.h"
 
 class Model
 {
 public:
-    Model(State *state, uint32_t id, glm::vec3 position, glm::vec3 scale, Mesh *mesh, Material *material); //for already loaded mesh/material
-    Model(State *state, uint32_t id, ModelType type, glm::vec3 position, glm::vec3 scale, std::string path); // for types supported that provide mesh/material
-    ~Model();
+    Model(tat::Vulkan *vulkan, const ModelConfig &config); //for already loaded mesh/material
 
-    State *state;
+    tat::Vulkan *vulkan = nullptr;
 
-    uint32_t id;
-    glm::vec3 position;
-    glm::vec3 scale;
-    ModelType type;
+    void draw(const VkCommandBuffer &commandBuffer);
 
-    Mesh *mesh;
-    Material *material;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 scale =glm::vec3(1.0f);
+    ModelType type= ModelType::unknown;
+    std::string name = "Unknwon";
 
-    uint32_t vertexOffset = 0;
-    uint32_t indexOffset = 0;
-    uint32_t vertexSize = 0;
-    uint32_t indexSize = 0;
+    Mesh mesh {};
+    Material material {};
 
-    std::vector<Buffer *> uniformBuffers {};
-    std::vector<Buffer *> uniformLights{};
+    std::vector<Buffer> uniformBuffers {};
+    std::vector<Buffer> uniformLights{};
     std::vector<VkDescriptorSet> descriptorSets {};
+
+    int32_t getId(){ return id;};
+private:
+    int32_t id = 0;
     
 };

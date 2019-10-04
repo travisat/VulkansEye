@@ -33,7 +33,7 @@ public:
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
 
-    void update(float deltaTime);
+    void update(double deltaTime);
 
     bool mouseMode = false;
 

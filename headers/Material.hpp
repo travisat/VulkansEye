@@ -9,28 +9,22 @@
 class Material
 {
 public:
-    State *state;
-    Image *diffuse;
-    Image *normal;
-    Image *roughness;
-    Image *ao;
-    VkSampler diffuseSampler;
-    VkSampler normalSampler;
-    VkSampler roughnessSampler;
-    VkSampler aoSampler;
-    uint32_t id;
-    std::string diffusePath;
-    std::string normalPath;
-    std::string roughnessPath;
-    std::string aoPath;
+    tat::Vulkan *vulkan = nullptr;
 
-    //reserve id 0 for skybox;
-    Material(State *state, MaterialConfig const &config);
+    Image diffuse{};
+    Image normal{};
+    Image roughness{};
+    Image ambientOcclusion{};
+    VkSampler diffuseSampler = VK_NULL_HANDLE;
+    VkSampler normalSampler = VK_NULL_HANDLE;
+    VkSampler roughnessSampler = VK_NULL_HANDLE;
+    VkSampler ambientOcclusionSampler = VK_NULL_HANDLE;
+    uint32_t id = 0;
 
     ~Material();
 
-    void load();
+    void loadConfig(MaterialConfig const &config);
 
-    private:
-         Image * loadImage(std::string &path, VkFormat format, VkSampler *sampler);
+private:
+    void loadImage(const std::string &path, ImageType type, Image &image, VkFormat format, VkSampler &sampler);
 };

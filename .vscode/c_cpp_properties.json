@@ -11,7 +11,8 @@
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/tinyobjloader",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/vma-2.2.0/src",
                 "C:/Users/travi_000/Documents/Visual Studio Code/Libraries/date-2.4.1/include/date",
-                "C:/VulkanSDK/1.1.114.0/Include"
+                "C:/VulkanSDK/1.1.114.0/Include",
+                "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Tools/MSVC/14.22.27905/include"
             ],
             "defines": [
                 "_DEBUG",

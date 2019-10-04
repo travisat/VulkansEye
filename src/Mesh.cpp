@@ -1,8 +1,8 @@
 #include "Mesh.hpp"
 
-Mesh::Mesh(MeshConfig const &config)
+void Mesh::loadConfig(const MeshConfig &config)
 {
-    this->id = config.id;
+    id = config.id;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -27,6 +27,11 @@ Mesh::Mesh(MeshConfig const &config)
             vertex.UV = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2]};
+            
             if (uniqueVertices.count(vertex) == 0)
             {
                 uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());

@@ -1,81 +1,29 @@
 #include "Skybox.hpp"
+#include "macros.h"
 
 Skybox::~Skybox()
 {
-    delete cubeMap;
-    vkDestroyPipeline(state->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
-    vkDestroySampler(state->device, sampler, nullptr);
-    vkDestroyDescriptorSetLayout(state->device, descriptorSetLayout, nullptr);
-    for (auto buffer : uniformBuffers)
-    {
-        delete buffer;
-    }
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroySampler(vulkan->device, sampler, nullptr);
+    vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
 }
 
 void Skybox::create()
 {
-    //load texture into staging buffer using gli so we can extract image
-    gli::texture_cube texCube(gli::load(texturePath));
-    assert(!texCube.empty());
-    //stagingBuffer->resize(texCube.size());
-    Buffer *stagingBuffer = new Buffer(state, texCube.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    stagingBuffer->load(texCube.data(), static_cast<uint32_t>(texCube.size()));
+    cubeMap.vulkan = vulkan;
+    cubeMap.format = VK_FORMAT_B8G8R8A8_UNORM;
+    cubeMap.tiling = VK_IMAGE_TILING_OPTIMAL;
+    cubeMap.numSamples = VK_SAMPLE_COUNT_1_BIT;
+    cubeMap.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    cubeMap.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    cubeMap.type = ImageType::dds;
 
-    //create new image with correct dimensions to receive texture
-    cubeMap = new Image(state, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_SAMPLE_COUNT_1_BIT,
-                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
-                        texCube.extent().x, texCube.extent().y, static_cast<uint32_t>(texCube.levels()), 6);
+    cubeMap.loadTextureCube(texturePath);
 
-    VkCommandBuffer commandBuffer = state->beginSingleTimeCommands();
-    std::vector<VkBufferImageCopy> bufferCopyRegions;
-
-    //loop through faces/mipLevels in gli loaded texture and create regions to copy
-    uint32_t offset = 0;
-    for (uint32_t face = 0; face < 6; face++)
-    {
-        for (uint32_t level = 0; level < cubeMap->mipLevels; level++)
-        {
-            VkBufferImageCopy bufferCopyRegion = {};
-            bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            bufferCopyRegion.imageSubresource.mipLevel = level;
-            bufferCopyRegion.imageSubresource.baseArrayLayer = face;
-            bufferCopyRegion.imageSubresource.layerCount = 1;
-            bufferCopyRegion.imageExtent.width = texCube[face][level].extent().x;
-            bufferCopyRegion.imageExtent.height = texCube[face][level].extent().y;
-            bufferCopyRegion.imageExtent.depth = 1;
-            bufferCopyRegion.bufferOffset = offset;
-
-            bufferCopyRegions.push_back(bufferCopyRegion);
-
-            offset += static_cast<uint32_t>(texCube[face][level].size());
-        }
-    }
-
-    VkImageSubresourceRange subresourceRange = {};
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount = cubeMap->mipLevels;
-    subresourceRange.layerCount = 6;
-
-    //copy gli loaded texture to image using regious created
-    cubeMap->transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
-    vkCmdCopyBufferToImage(
-        commandBuffer,
-        stagingBuffer->buffer,
-        cubeMap->image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        static_cast<uint32_t>(bufferCopyRegions.size()),
-        bufferCopyRegions.data());
-
-    state->endSingleTimeCommands(commandBuffer);
-    
     //convert image so shaders can use it
-    cubeMap->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
-    
-    //cannot be deleted before single time commands end
-    delete stagingBuffer;
+    cubeMap.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
 
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -87,17 +35,17 @@ void Skybox::create()
     samplerInfo.maxAnisotropy = 1.0f;
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = static_cast<float>(cubeMap->mipLevels);
+    samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    samplerInfo.maxLod = static_cast<float>(cubeMap->mipLevels);
+    samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
 
-    if (vkCreateSampler(state->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+    if (vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create texture sampler");
     }
 
-    cubeMap->createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
+    cubeMap.createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
 
     createDescriptorSetLayouts();
     createPipeline();
@@ -107,13 +55,8 @@ void Skybox::create()
 
 void Skybox::cleanup()
 {
-    vkDestroyPipeline(state->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(state->device, pipelineLayout, nullptr);
-
-    for (uint32_t i = 0; i < state->swapChainImages.size(); i++)
-    {
-        delete uniformBuffers[i];
-    }
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
 }
 
 void Skybox::recreate()
@@ -121,6 +64,14 @@ void Skybox::recreate()
     createPipeline();
     createUniformBuffers();
     createDescriptorSets();
+}
+
+void Skybox::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
+{
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentImage], 0, nullptr);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        Trace("Skybox drawn to command buffer at: ", Timer::systemTime());
 }
 
 void Skybox::createDescriptorSetLayouts()
@@ -146,7 +97,7 @@ void Skybox::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(state->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+    if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("faled to create descriptor set layout");
     }
@@ -154,42 +105,51 @@ void Skybox::createDescriptorSetLayouts()
 
 void Skybox::createUniformBuffers()
 {
-    uniformBuffers.resize(state->swapChainImages.size());
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    for (size_t i = 0; i < state->swapChainImages.size(); i++)
+    uniformBuffers.resize(vulkan->swapChainImages.size());
+    for (auto &buffer : uniformBuffers)
     {
-        uniformBuffers[i] = new Buffer(state, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        buffer.vulkan = vulkan;
+        buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        buffer.name = "Skybox/UBO";
+
+        //uniformBufferObject to store in uniformBuffer
+        UniformBufferObject ubo{};
+        ubo.projection = camera->perspective;
+        ubo.view = camera->view;
+
+        //store and add
+        buffer.update(ubo);
     }
 }
 
 void Skybox::createDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> layouts(state->swapChainImages.size(), descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = state->descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(state->swapChainImages.size());
+    allocInfo.descriptorPool = vulkan->descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(state->swapChainImages.size());
-    if (vkAllocateDescriptorSets(state->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+    descriptorSets.resize(vulkan->swapChainImages.size());
+    if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
     {
 
         throw std::runtime_error("failed to allocate descript sets");
     }
 
-    for (size_t i = 0; i < state->swapChainImages.size(); i++)
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {
 
         VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = uniformBuffers[i]->buffer;
+        bufferInfo.buffer = uniformBuffers[i].buffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = cubeMap->imageView;
+        imageInfo.imageView = cubeMap.imageView;
         imageInfo.sampler = sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
@@ -209,17 +169,17 @@ void Skybox::createDescriptorSets()
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(state->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 };
 
 void Skybox::createPipeline()
 {
-    auto vertShaderCode = readFile("resources/shaders/skybox.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/skybox.frag.spv");
+    auto vertShaderCode = tat::readFile("resources/shaders/skybox.vert.spv");
+    auto fragShaderCode = tat::readFile("resources/shaders/skybox.frag.spv");
 
-    VkShaderModule vertShaderModule = state->createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = state->createShaderModule(fragShaderCode);
+    VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -271,7 +231,7 @@ void Skybox::createPipeline()
 
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.rasterizationSamples = state->msaaSamples;
+    multisampling.rasterizationSamples = vulkan->msaaSamples;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     colorBlendAttachment.colorWriteMask = 0xf;
@@ -294,7 +254,7 @@ void Skybox::createPipeline()
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    if (vkCreatePipelineLayout(state->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("faled to create pipeline layout");
     }
@@ -312,24 +272,24 @@ void Skybox::createPipeline()
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.renderPass = state->renderPass;
+    pipelineInfo.renderPass = vulkan->renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(state->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    vkDestroyShaderModule(state->device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(state->device, vertShaderModule, nullptr);
+    vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 };
 
 void Skybox::updateUniformBuffer(uint32_t currentImage)
 {
     UniformBufferObject ubo = {};
-   
+
     ubo.projection = camera->perspective;
     ubo.view = camera->view;
-    uniformBuffers[currentImage]->update(ubo);
+    uniformBuffers[currentImage].update(ubo);
 };
