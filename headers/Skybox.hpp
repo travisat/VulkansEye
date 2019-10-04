@@ -21,10 +21,12 @@ public:
 
     void updateUniformBuffer(uint32_t currentImage);
 
-    std::vector<VkDescriptorSet> descriptorSets {};
-    std::vector<Buffer> uniformBuffers {};
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<Buffer> uniformBuffers;
+    VkDescriptorPool descriptorPool;
 
     tat::Vulkan *vulkan = nullptr;
+    std::string name = "Uknown";
     
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
@@ -38,6 +40,7 @@ private:
 
     Camera *camera  = nullptr;
 
+    void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();
     void createDescriptorSets();

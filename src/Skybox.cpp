@@ -47,6 +47,7 @@ void Skybox::create()
 
     cubeMap.createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
 
+    createDescriptorPool();
     createDescriptorSetLayouts();
     createPipeline();
     createUniformBuffers();
@@ -57,21 +58,48 @@ void Skybox::cleanup()
 {
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
 void Skybox::recreate()
 {
     createPipeline();
     createUniformBuffers();
+     createDescriptorPool();
     createDescriptorSets();
 }
 
 void Skybox::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentImage], 0, nullptr);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        Trace("Skybox drawn to command buffer at: ", Timer::systemTime());
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentImage], 0, nullptr);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    Trace("Skybox drawn to command buffer at: ", Timer::systemTime());
+}
+
+void Skybox::createDescriptorPool()
+{
+
+    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = numSwapChainImages;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = numSwapChainImages;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    // set max set size to which set is larger
+    poolInfo.maxSets = numSwapChainImages;
+
+    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor pool");
+    }
+    Trace("Created ", name, " descriptor pool at ", Timer::systemTime());
 }
 
 void Skybox::createDescriptorSetLayouts()
@@ -128,7 +156,7 @@ void Skybox::createDescriptorSets()
     std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vulkan->descriptorPool;
+    allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 

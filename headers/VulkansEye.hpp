@@ -5,23 +5,14 @@
 class VulkansEye
 {
 public:
-    VulkansEye();
     void init(uint32_t width, uint32_t height);
     void run();
 
 private:
-    tat::Vulkan vulkan{};
-    VkEngine engine{};
-    Overlay imgui{}; //at base becuase should have access to all info to display it
-    Scene scene {};
-
-    GLFWwindow *window = nullptr;
-
-    int width = 0;
-    int height = 0;
-
-    void initWindow();
-    void initVulkan();
+    tat::Vulkan vulkan;
+    VkEngine engine;
+    Overlay imgui; 
+    Scene scene;
 
     void drawFrame();
 

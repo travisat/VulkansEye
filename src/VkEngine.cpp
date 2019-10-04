@@ -56,7 +56,6 @@ void VkEngine::init()
     scene->init(); //can't create descriptor pool until num models is known
     //todo move descriptor pool to scene and create another for imgui so it can be disabled if needed
 
-    createDescriptorPool();
     createSyncObjects();
 
     scene->create();
@@ -129,8 +128,8 @@ void VkEngine::recordCommandBuffers()
         vkCmdSetScissor(currentCB, 0, 1, &scissor);
 
         //scene->draw(currentCB, i);
-        imgui->draw(currentCB, i);
         scene->skybox->draw(currentCB, i);
+        imgui->draw(currentCB, i);
 
         vkCmdEndRenderPass(currentCB);
 
@@ -156,6 +155,12 @@ void VkEngine::drawFrame()
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
         throw std::runtime_error("failed to aquire swap chain image");
+    }
+
+    if (imgui->update)
+    {
+        imgui->recreate();
+        createCommandBuffers();
     }
 
     scene->updateUniformBuffer(imageIndex);
@@ -207,6 +212,56 @@ void VkEngine::drawFrame()
     }
 
     currentFrame = (currentFrame + 1) & MAX_FRAMES_IN_FLIGHT;
+}
+
+void VkEngine::recreate()
+{
+    int width = 0;
+    int height = 0;
+    while (width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(vulkan->window, &width, &height);
+        glfwWaitEvents();
+    }
+    vkDeviceWaitIdle(vulkan->device);
+    vulkan->width = width;
+    vulkan->height = height;
+
+    for (auto framebuffer : swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+    }
+
+    vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+
+    for (auto imageView : vulkan->swapChainImageViews)
+    {
+        vkDestroyImageView(vulkan->device, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(vulkan->device, vulkan->swapChain, nullptr);
+
+    vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+
+    scene->cleanup();
+    imgui->cleanup();
+
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+
+    colorImage.resize(width, height);
+    colorImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+    depthImage.resize(width, height);
+    depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    createFramebuffers();
+    scene->recreate();
+    imgui->recreate();
+    createCommandBuffers();
+    vkDeviceWaitIdle(vulkan->device);
+
+    Trace("Recreated with size ", width, "x", height, " at ", Timer::systemTime());
 }
 
 void VkEngine::createInstance()
@@ -773,33 +828,6 @@ void VkEngine::createSyncObjects()
     Trace("Created sync objects at ", Timer::systemTime());
 }
 
-void VkEngine::createDescriptorPool()
-{
-
-    uint32_t numUniformBuffers = scene->numUniformBuffers() + imgui->numUniformBuffers();
-    uint32_t numImageSamplers = scene->numImageSamplers() + imgui->numImageSamplers();
-    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
-
-    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = numUniformBuffers * numSwapChainImages;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = numImageSamplers * numSwapChainImages;
-
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    // set max set size to which set is larger
-    poolInfo.maxSets = std::max(numUniformBuffers, numImageSamplers) * numSwapChainImages;
-
-    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &vulkan->descriptorPool) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create descriptor pool");
-    }
-    Trace("Created descriptor pool at ", Timer::systemTime());
-}
-
 std::vector<const char *> VkEngine::getRequiredExtensions()
 {
     uint32_t glfwExtensionCount = 0;
@@ -918,55 +946,3 @@ VkFormat VkEngine::findDepthFormat()
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-void VkEngine::recreate()
-{
-    int width = 0;
-    int height = 0;
-    while (width == 0 || height == 0)
-    {
-        glfwGetFramebufferSize(vulkan->window, &width, &height);
-        glfwWaitEvents();
-    }
-    vkDeviceWaitIdle(vulkan->device);
-    vulkan->width = width;
-    vulkan->height = height;
-
-    for (auto framebuffer : swapChainFramebuffers)
-    {
-        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
-    }
-
-    vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
-
-    for (auto imageView : vulkan->swapChainImageViews)
-    {
-        vkDestroyImageView(vulkan->device, imageView, nullptr);
-    }
-
-    vkDestroySwapchainKHR(vulkan->device, vulkan->swapChain, nullptr);
-
-    vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-
-    scene->cleanup();
-    imgui->cleanup();
-
-    vkDestroyDescriptorPool(vulkan->device, vulkan->descriptorPool, nullptr);
-
-    createSwapChain();
-    createImageViews();
-    createRenderPass();
-
-    colorImage.resize(width, height);
-    colorImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-    depthImage.resize(width, height);
-    depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    createFramebuffers();
-    createDescriptorPool();
-    scene->recreate();
-    imgui->recreate();
-    createCommandBuffers();
-    vkDeviceWaitIdle(vulkan->device);
-
-    Trace("Recreated with size ", width, "x", height, " at ", Timer::systemTime());
-}

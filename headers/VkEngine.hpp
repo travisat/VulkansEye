@@ -84,8 +84,6 @@ private:
     void createColorResources();
     void createDepthResources();
     void createDescriptorSetLayouts();
-    void createDescriptorPool();
-
     void createCommandBuffers();
     void createSyncObjects();
 

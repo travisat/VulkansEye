@@ -28,7 +28,6 @@ public:
             vkDestroyImageView(device, imageView, nullptr);
         }
         vkDestroySwapchainKHR(device, swapChain, nullptr);
-        vkDestroyDescriptorPool(device, descriptorPool, nullptr); //todo move descriptor pools to pipelined objects
         vkDestroyCommandPool(device, commandPool, nullptr);
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
@@ -38,22 +37,18 @@ public:
     };
 
     std::string name = "Unknown";
-    VkDevice device = VK_NULL_HANDLE;
 
-    VkRenderPass renderPass = VK_NULL_HANDLE;
-    VkPhysicalDevice vkphysicalDevice = VK_NULL_HANDLE;
-    VkInstance vkinstance = VK_NULL_HANDLE;
-    VkSurfaceKHR vksurface = VK_NULL_HANDLE;
-
-    VmaAllocator allocator = VK_NULL_HANDLE;
-    VkDescriptorPool descriptorPool; //needs to be moved out
-
-    std::vector<VkImage> swapChainImages{};
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-
+    VkInstance vkinstance;
+    VkSurfaceKHR vksurface;
+    VkPhysicalDevice vkphysicalDevice;
+    VkDevice device;
+    VmaAllocator allocator;
+    VkCommandPool commandPool;
     VkSwapchainKHR swapChain;
+    std::vector<VkImage> swapChainImages{};
+    VkRenderPass renderPass;
+
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkQueue graphicsQueue;
     VkQueue presentQueue;

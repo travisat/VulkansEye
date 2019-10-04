@@ -54,9 +54,11 @@ private:
     float gamma = 4.5f;
     float exposure = 2.2f;
 
+    VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 
     void createUniformBuffers();
+    void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createDescriptorSets();
     void createPipelines();

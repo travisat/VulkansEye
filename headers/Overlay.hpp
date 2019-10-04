@@ -31,16 +31,17 @@ class Overlay
 {
 private:
     // Vulkan resources for rendering the UI
-    VkSampler sampler {};
-    Buffer vertexBuffer {};
-    Buffer indexBuffer  {};
+    VkSampler sampler{};
+    Buffer vertexBuffer{};
+    Buffer indexBuffer{};
     int32_t vertexCount = 0;
     int32_t indexCount = 0;
 
-    Image fontImage {};
+    Image fontImage{};
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
+    VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
 
@@ -48,8 +49,16 @@ private:
 
     float lastFrametime = 0;
 
+    void createDescriptorPool();
+    void createDescriptorLayouts();
+    void createDescriptorSets();
+    void createPipelineLayout();
+    void createPipeline();
+
 public:
     tat::Vulkan *vulkan = nullptr;
+
+    bool  update = false;
     // UI params are set via push constants
     struct PushConstBlock
     {
@@ -69,6 +78,7 @@ public:
         vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
         vkDestroyPipeline(vulkan->device, pipeline, nullptr);
         vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+        vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
     }
 
     void recreate()
@@ -78,10 +88,6 @@ public:
 
     // Initialize styles, keys, etc.
     void init();
-
-    //for allocating descriptor pool
-    uint32_t numUniformBuffers() { return 0; };
-    uint32_t numImageSamplers() { return 1; };
 
     // Initialize all Vulkan resources used by the ui
     void initResources();
@@ -97,5 +103,4 @@ public:
 
     glm::vec3 *cameraPosition = nullptr;
     glm::vec3 *cameraRotation = nullptr;
-   
 };

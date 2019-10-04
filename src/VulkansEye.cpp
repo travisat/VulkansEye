@@ -1,24 +1,31 @@
 #include "VulkansEye.hpp"
 #include "macros.h"
 
-VulkansEye::VulkansEye()
-{
-    Timer::getInstance();
-    Timer::systemTime();
-}
-
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
-    this->width = width;
-    this->height = height;
-    initWindow();
+    vulkan.width = width;
+    vulkan.height = height;
 
+    //setup timers
+    Timer::getInstance();
+    Timer::systemTime();
+
+    //setup glfw window
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    vulkan.window = glfwCreateWindow(vulkan.width, vulkan.height, "Vulkans Eye", nullptr, nullptr);
+    glfwSetWindowUserPointer(vulkan.window, this);
+    glfwSetFramebufferSizeCallback(vulkan.window, framebufferResizeCallback);
+
+    //setup input
     Input::getInstance();
-    glfwSetKeyCallback(window, &Input::keyCallback);
-    glfwSetMouseButtonCallback(window, &Input::mouseButtonCallback);
-    glfwSetCursorPosCallback(window, &Input::cursorPosCallback);
+    glfwSetKeyCallback(vulkan.window, &Input::keyCallback);
+    glfwSetMouseButtonCallback(vulkan.window, &Input::mouseButtonCallback);
+    glfwSetCursorPosCallback(vulkan.window, &Input::cursorPosCallback);
 
-    Config config {};
+    //setup config
+    //TODO load from config file
+    Config config{};
     config.skybox = {"resources/textures/skybox/nebula.dds"};
 
     CameraConfig camera;
@@ -59,18 +66,17 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     config.models = {wall};
 
-    vulkan.window = window;
-    vulkan.width = width;
-    vulkan.height = height;
-
+    //setup scene
     scene.config = &config;
     scene.vulkan = &vulkan;
 
+    //setup overlay
     imgui.vulkan = &vulkan;
     imgui.cameraPosition = &scene.camera.position;
     imgui.cameraRotation = &scene.camera.rotation;
     imgui.init();
 
+    //setup engine
     engine.vulkan = &vulkan;
     engine.scene = &scene;
     engine.imgui = &imgui;
@@ -83,21 +89,10 @@ void VulkansEye::run()
     cleanup();
 }
 
-void VulkansEye::initWindow()
-{
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    window = glfwCreateWindow(width, height, "Vulkans Eye", nullptr, nullptr);
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-}
-
 void VulkansEye::mainLoop()
 {
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(vulkan.window))
     {
         glfwPollEvents();
 
@@ -105,20 +100,20 @@ void VulkansEye::mainLoop()
         {
             if (!scene.camera.mouseMode)
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             }
             scene.camera.update(Timer::getInstance().getCount() / 1000.0f);
         }
         else
         {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             scene.camera.mouseMode = false;
         }
 
         ImGuiIO &io = ImGui::GetIO();
 
-        io.DisplaySize = ImVec2((float)width, (float)height);
+        io.DisplaySize = ImVec2((float)vulkan.width, (float)vulkan.height);
         io.DeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         lastFrameTime = Timer::getTime();
 
@@ -131,7 +126,7 @@ void VulkansEye::mainLoop()
         if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
         {
             std::cerr << "Pressed Escape.  Closing." << std::endl;
-            glfwSetWindowShouldClose(window, true);
+            glfwSetWindowShouldClose(vulkan.window, true);
         }
     }
     vkDeviceWaitIdle(vulkan.device);
@@ -139,6 +134,6 @@ void VulkansEye::mainLoop()
 
 void VulkansEye::cleanup()
 {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(vulkan.window);
     glfwTerminate();
 }

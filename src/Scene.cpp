@@ -6,6 +6,7 @@ Scene::~Scene()
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 
     delete skybox;
 }
@@ -37,6 +38,7 @@ void Scene::create()
     skybox->create();
 
     createUniformBuffers();
+    createDescriptorPool();
     createDescriptorSetLayouts();
     createPipelines();
 
@@ -103,6 +105,7 @@ void Scene::cleanup()
     skybox->cleanup();
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
 void Scene::recreate()
@@ -191,6 +194,31 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     }
 }
 
+void Scene::createDescriptorPool()
+{
+
+    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = numUniformBuffers() * numSwapChainImages;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    // set max set size to which set is larger
+    poolInfo.maxSets = std::max(numUniformBuffers(), numImageSamplers()) * numSwapChainImages;
+
+    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor pool");
+    }
+    Trace("Created descriptor pool at ", Timer::systemTime());
+}
+
 void Scene::createDescriptorSetLayouts()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
@@ -255,7 +283,7 @@ void Scene::createDescriptorSets()
         std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = vulkan->descriptorPool;
+        allocInfo.descriptorPool = descriptorPool;
         allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
         allocInfo.pSetLayouts = layouts.data();
 

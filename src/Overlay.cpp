@@ -23,10 +23,10 @@ void Overlay::initResources()
 
     vertexBuffer.flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vertexBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    vertexBuffer.name = "Overlay vertex buffer";
+    vertexBuffer.name = "overlay vertex buffer";
     indexBuffer.flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     indexBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    indexBuffer.name = "Overlay index buffer";
+    indexBuffer.name = "overlay index buffer";
 
     // Create font texture
     unsigned char *fontData;
@@ -39,7 +39,7 @@ void Overlay::initResources()
     fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     fontImage.width = texWidth;
     fontImage.height = texHeight;
-    fontImage.name = "Overlay fontimage";
+    fontImage.name = "overlay fontimage";
     fontImage.allocate();
 
     fontImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -49,7 +49,7 @@ void Overlay::initResources()
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "overlay staging buffer 1";
+    stagingBuffer.name = "overlay font image staging buffer";
 
     stagingBuffer.load(gsl::make_span(fontData, fontData + static_cast<uint32_t>(uploadSize)));
 
@@ -90,6 +90,37 @@ void Overlay::initResources()
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler);
 
+    createDescriptorPool();
+    createDescriptorLayouts();
+    createDescriptorSets();
+    createPipelineLayout();
+    createPipeline();
+}
+
+void Overlay::createDescriptorPool()
+{
+    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+
+    std::array<VkDescriptorPoolSize, 1> poolSizes = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[0].descriptorCount = numSwapChainImages;
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    // set max set size to which set is larger
+    poolInfo.maxSets = numSwapChainImages;
+
+    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor pool");
+    }
+    Trace("Created overlay descriptor pool at ", Timer::systemTime());
+}
+
+void Overlay::createDescriptorLayouts()
+{
     VkDescriptorSetLayoutBinding samplerBinding = {};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
@@ -107,11 +138,14 @@ void Overlay::initResources()
     {
         throw std::runtime_error("failed to create descriptor set layout");
     }
+}
 
+void Overlay::createDescriptorSets()
+{
     std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vulkan->descriptorPool;
+    allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
@@ -139,7 +173,10 @@ void Overlay::initResources()
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
+}
 
+void Overlay::createPipelineLayout()
+{
     // Pipeline layout
     // Push constants for UI rendering parameters
     VkPushConstantRange pushConstantRange = {};
@@ -159,6 +196,10 @@ void Overlay::initResources()
         throw std::runtime_error("faled to create pipeline layout");
     }
 
+}
+
+void Overlay::createPipeline()
+{
     // Vertex bindings an attributes based on ImGui vertex definition
     auto vertShaderCode = tat::readFile("resources/shaders/ui.vert.spv");
     auto fragShaderCode = tat::readFile("resources/shaders/ui.frag.spv");
@@ -290,6 +331,8 @@ void Overlay::initResources()
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
 
+
+
 void Overlay::newFrame(bool updateFrameGraph)
 {
     ImGui::NewFrame();
@@ -355,9 +398,9 @@ void Overlay::updateBuffers()
 
         // Update buffers only if vertex or index count has been changed compared to current buffer size
 
-        bool updateBuffers = (vertexBuffer.buffer == VK_NULL_HANDLE) || (vertexCount != imDrawData->TotalVtxCount) || (indexBuffer.buffer == VK_NULL_HANDLE) || (indexCount != imDrawData->TotalIdxCount);
+        update = (vertexBuffer.buffer == VK_NULL_HANDLE) || (vertexCount != imDrawData->TotalVtxCount) || (indexBuffer.buffer == VK_NULL_HANDLE) || (indexCount != imDrawData->TotalIdxCount);
 
-        if (updateBuffers)
+        if (update)
         {
             vkDeviceWaitIdle(vulkan->device);
 
