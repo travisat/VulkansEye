@@ -35,7 +35,16 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 void VkEngine::init()
 {
-    //initialize hardware
+   //setup scene
+    scene.config = config;
+    scene.vulkan = vulkan;
+    scene.name = "Scene";
+
+    //setup overlay
+    overlay.vulkan = vulkan;
+    overlay.cameraPosition = &scene.camera.position;
+    overlay.cameraRotation = &scene.camera.rotation;
+
     createInstance();
     setupDebugMessenger();
     createSurface();
@@ -43,24 +52,17 @@ void VkEngine::init()
     createLogicalDevice();
     createAllocator();
 
-    //create swapchain to pass images to card
     createSwapChain();
     createImageViews();
     createRenderPass();
-
     createCommandPool();
     createColorResources();
     createDepthResources();
     createFramebuffers();
-
-    scene->init(); //can't create descriptor pool until num models is known
-    //todo move descriptor pool to scene and create another for imgui so it can be disabled if needed
-
     createSyncObjects();
 
-    scene->create();
-    imgui->initResources();
-    imgui->newFrame(true);
+    scene.create();
+    overlay.create();
 
     createCommandBuffers();
 }
@@ -82,6 +84,24 @@ VkEngine::~VkEngine()
         vkDestroySemaphore(vulkan->device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(vulkan->device, inFlightFences[i], nullptr);
     }
+}
+
+void VkEngine::createCommandBuffers()
+{
+    commandBuffers.resize(swapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = vulkan->commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+
+    if (vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate command buffers");
+    }
+    Trace("Allocated command buffers at ", Timer::systemTime());
+    recordCommandBuffers();
 }
 
 void VkEngine::recordCommandBuffers()
@@ -127,9 +147,9 @@ void VkEngine::recordCommandBuffers()
         scissor.offset.y = 0;
         vkCmdSetScissor(currentCB, 0, 1, &scissor);
 
-        //scene->draw(currentCB, i);
-        scene->skybox->draw(currentCB, i);
-        imgui->draw(currentCB, i);
+        //scene.draw(currentCB, i);
+        scene.skybox.draw(currentCB, i);
+        overlay.draw(currentCB, i);
 
         vkCmdEndRenderPass(currentCB);
 
@@ -157,13 +177,14 @@ void VkEngine::drawFrame()
         throw std::runtime_error("failed to aquire swap chain image");
     }
 
-    if (imgui->update)
+    if (overlay.update)
     {
-        imgui->recreate();
+        overlay.cleanup();
+        overlay.recreate();
         createCommandBuffers();
     }
 
-    scene->updateUniformBuffer(imageIndex);
+    scene.updateUniformBuffer(imageIndex);
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -180,6 +201,7 @@ void VkEngine::drawFrame()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
+    vkWaitForFences(vulkan->device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
     vkResetFences(vulkan->device, 1, &inFlightFences[currentFrame]);
 
     result = vkQueueSubmit(vulkan->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
@@ -243,21 +265,21 @@ void VkEngine::recreate()
 
     vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
-    scene->cleanup();
-    imgui->cleanup();
+    scene.cleanup();
+    overlay.cleanup();
 
     createSwapChain();
     createImageViews();
     createRenderPass();
-
     colorImage.resize(width, height);
     colorImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
     depthImage.resize(width, height);
     depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
-
     createFramebuffers();
-    scene->recreate();
-    imgui->recreate();
+
+    scene.recreate();
+    overlay.recreate();
+    
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
 
@@ -784,23 +806,7 @@ void VkEngine::createDepthResources()
     depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-void VkEngine::createCommandBuffers()
-{
-    commandBuffers.resize(swapChainFramebuffers.size());
 
-    VkCommandBufferAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = vulkan->commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
-
-    if (vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to allocate command buffers");
-    }
-    Trace("Allocated command buffers at ", Timer::systemTime());
-    recordCommandBuffers();
-}
 
 void VkEngine::createSyncObjects()
 {
@@ -945,4 +951,3 @@ VkFormat VkEngine::findDepthFormat()
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
-

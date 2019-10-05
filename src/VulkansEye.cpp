@@ -3,6 +3,7 @@
 
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
+    vulkan.name = "Vulkans Eye";
     vulkan.width = width;
     vulkan.height = height;
 
@@ -29,6 +30,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     config.skybox = {"resources/textures/skybox/nebula.dds"};
 
     CameraConfig camera;
+    camera.name = "camera";
     camera.fieldOfView = 60.0f;
     camera.position = {9.0f, 12.0f, -3.0f};
     camera.rotation = {-46.0f, 87.0f, 0.0f};
@@ -36,15 +38,19 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     const float p = 15.0f;
     LightConfig light0;
+    light0.name = "light0";
     light0.id = 0;
     light0.light = {-p, -p * 0.5f, -p, 1.0f};
     LightConfig light1;
+    light1.name = "light1";
     light1.id = 1;
     light0.light = {-p, -p * 0.5f, p, 1.0f};
     LightConfig light2;
+    light2.name = "light2";
     light2.id = 2;
     light0.light = {p, -p * 0.5f, p, 1.0f};
     LightConfig light3;
+    light3.name = "light3";
     light3.id = 3;
     light0.light = {p, -p * 0.5f, -p, 1.0f};
 
@@ -52,34 +58,26 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     ModelConfig wall;
     wall.id = 1;
+    wall.name = "Wall Model";
     wall.position = {1.0f, 0.0f, 5.5f};
     wall.scale = glm::vec3(1.0f);
     wall.type = ModelType::obj;
     wall.materialConfig.id = 1;
+    wall.materialConfig.name = "Alien Texture";
     wall.materialConfig.type = ImageType::png;
     wall.materialConfig.diffusePath = "resources/textures/alien/diffuse.png";
     wall.materialConfig.normalPath = "resources/textures/alien/normal.png";
     wall.materialConfig.roughnessPath = "resources/textures/alien/roughness.png";
     wall.materialConfig.ambientOcclusionPath = "resources/textures/alien/ambientOcclusion.png";
     wall.meshConfig.id = 1;
+    wall.meshConfig.name = "Wall Mesh";
     wall.meshConfig.objPath = "resources/models/wall.obj";
 
     config.models = {wall};
 
-    //setup scene
-    scene.config = &config;
-    scene.vulkan = &vulkan;
-
-    //setup overlay
-    imgui.vulkan = &vulkan;
-    imgui.cameraPosition = &scene.camera.position;
-    imgui.cameraRotation = &scene.camera.rotation;
-    imgui.init();
-
     //setup engine
     engine.vulkan = &vulkan;
-    engine.scene = &scene;
-    engine.imgui = &imgui;
+    engine.config = &config;
     engine.init();
 }
 
@@ -98,17 +96,17 @@ void VulkansEye::mainLoop()
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
         {
-            if (!scene.camera.mouseMode)
+            if (!engine.scene.camera.mouseMode)
             {
                 glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             }
-            scene.camera.update(Timer::getInstance().getCount() / 1000.0f);
+            engine.scene.camera.update(Timer::getInstance().getCount() / 1000.0f);
         }
         else
         {
             glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            scene.camera.mouseMode = false;
+            engine.scene.camera.mouseMode = false;
         }
 
         ImGuiIO &io = ImGui::GetIO();
@@ -117,8 +115,8 @@ void VulkansEye::mainLoop()
         io.DeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         lastFrameTime = Timer::getTime();
 
-        imgui.newFrame(vulkan.frameCounter == 0);
-        imgui.updateBuffers();
+        engine.overlay.newFrame(vulkan.frameCounter == 0);
+        engine.overlay.updateBuffers();
 
         engine.drawFrame();
         vulkan.frameCounter++;

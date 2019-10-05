@@ -21,45 +21,48 @@ public:
 
     void loadConfig(Config &config);
 
-    void init();
     void create();
     void cleanup();
     void recreate();
 
-    void draw(VkCommandBuffer &commandBuffer, uint32_t currentImage);
+    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
 
     void updateUniformBuffer(uint32_t currentImage);
 
     uint32_t numModels() { return static_cast<uint32_t>(models.size()); };
 
-    //TODO make these pull from actual numbers
-    // num uniform buffers per model and skybox uniform buffers
-    uint32_t numUniformBuffers() { return static_cast<uint32_t>(models.size() * 2 + 1); };
-    // same but for imagesamplers
-    uint32_t numImageSamplers() { return static_cast<uint32_t>(models.size() * 4 + 1); };
-
+    // num uniform buffers per model (UBO and ULO)
+    uint32_t numUniformBuffers() { return static_cast<uint32_t>(models.size() * 2); };
+    // same but for imagesamplers (diffuse, normal, roughness, ambientOcclusion)
+    uint32_t numImageSamplers() { return static_cast<uint32_t>(models.size() * 4); };
 
     std::string name = "Unknown";
-    Skybox *skybox = nullptr;
-    Buffer vertexBuffer{};
-    Buffer indexBuffer{};
-    VkPipelineLayout pipelineLayout{};
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    Camera camera{};
+    Skybox skybox;
+    Buffer vertexBuffer;
+    Buffer indexBuffer;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+    Camera camera;
 
-    std::vector<std::unique_ptr<Model>> models;
-    std::vector<std::unique_ptr<Light>> lights;
+    //use unique ptrs so destroyed on destruction of scene
+    std::vector<Model *> models;
+    std::vector<Light *> lights;
 
 private:
     float gamma = 4.5f;
     float exposure = 2.2f;
 
     VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptorSetLayout;
 
-    void createUniformBuffers();
+    void loadLights();
+    void loadModels();
+
+    void createBuffers(); //put models meshes into vertex/index buffers
+
     void createDescriptorPool();
     void createDescriptorSetLayouts();
+    void createPipeline();
+    void createUniformBuffers();
     void createDescriptorSets();
-    void createPipelines();
 };

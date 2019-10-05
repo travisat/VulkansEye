@@ -3,52 +3,101 @@
 
 Scene::~Scene()
 {
+    for (auto light : lights)
+        delete light;
+    for (auto model : models)
+        delete model;
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
-
-    delete skybox;
 }
 
-void Scene::init()
+void Scene::create()
 {
     camera.setPerspective(config->cameras[0].fieldOfView, static_cast<double>(vulkan->width), static_cast<double>(vulkan->height), 0.1f, 512.0f);
     camera.position = config->cameras[0].position;
     camera.rotation = config->cameras[0].rotation;
     camera.updateView();
 
-    skybox = new Skybox(vulkan, &camera, config->skybox);
+    skybox.vulkan = vulkan;
+    skybox.camera = &camera;
+    skybox.name = "Skybox";
+    skybox.path = config->skybox;
+    skybox.create();
 
-    for (auto const &lightConfig : config->lights)
-    {
-        std::unique_ptr<Light> light(new Light(lightConfig));
-        lights.push_back(std::move(light));
-    }
+    loadLights();
+    loadModels();
 
-    for (auto &modelConfig : config->models)
+    createBuffers();
+
+    createDescriptorPool();
+    createDescriptorSetLayouts();
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorSets();
+}
+
+void Scene::cleanup()
+{
+    skybox.cleanup();
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+}
+
+void Scene::recreate()
+{
+    camera.updateAspectRatio((float)vulkan->width, (float)vulkan->height);
+    skybox.recreate();
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorPool();
+    createDescriptorSets();
+}
+
+void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
+{
+    skybox.draw(commandBuffer, currentImage);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    VkBuffer vertexBuffers[] = {vertexBuffer.buffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    for (auto &&model : models)
     {
-        std::unique_ptr<Model> model(new Model(vulkan, modelConfig));
-        models.push_back(std::move(model));
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &model->descriptorSets[currentImage], 0, nullptr);
+        vkCmdDrawIndexed(commandBuffer, model->mesh.indexSize, 1, model->mesh.indexOffset, model->mesh.vertexOffset, 0);
+        Trace("Model ", model->getId(), " drawn to command buffer at: ", Timer::systemTime());
     }
 }
 
-void Scene::create()
+void Scene::loadLights()
 {
-    skybox->create();
+    for (auto const &lightConfig : config->lights)
+    {
+        lights.push_back(new Light(lightConfig));
+    }
+}
 
-    createUniformBuffers();
-    createDescriptorPool();
-    createDescriptorSetLayouts();
-    createPipelines();
+void Scene::loadModels()
+{
+    for (auto &modelConfig : config->models)
+    {
+        models.push_back(new Model(vulkan, modelConfig));
+    }
+}
 
+void Scene::createBuffers()
+{
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
     uint32_t vertexOffset = 0;
     uint32_t indexOffset = 0;
     //load objects model vertices and indices into single buffers
-    for (auto &&model : models)
+    for (auto model : models)
     {
         model->mesh.vertexOffset = vertexOffset;
         model->mesh.indexOffset = indexOffset;
@@ -61,6 +110,7 @@ void Scene::create()
             out.position.x = (vertex.position.x * model->scale.x) + model->position.x;
             out.position.y = (vertex.position.y * model->scale.y) + model->position.y;
             out.position.z = (vertex.position.z * model->scale.z) + model->position.z;
+            //out.position = vertex.position;
             out.UV = vertex.UV;
             out.normal = vertex.normal;
 
@@ -77,13 +127,13 @@ void Scene::create()
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "staging";
+    stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    stagingBuffer.name = "scene staging buffer";
     stagingBuffer.load(vertices);
 
     vertexBuffer.vulkan = vulkan;
     vertexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    vertexBuffer.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     vertexBuffer.name = "scene/vertex";
 
     stagingBuffer.copyTo(vertexBuffer);
@@ -92,52 +142,15 @@ void Scene::create()
 
     indexBuffer.vulkan = vulkan;
     indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    indexBuffer.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     indexBuffer.name = "scene/index";
 
     stagingBuffer.copyTo(indexBuffer);
-
-    createDescriptorSets();
-}
-
-void Scene::cleanup()
-{
-    skybox->cleanup();
-    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
-}
-
-void Scene::recreate()
-{
-    camera.updateAspectRatio((float)vulkan->width, (float)vulkan->height);
-    skybox->recreate();
-    createPipelines();
-    createUniformBuffers();
-    createDescriptorSets();
-}
-
-void Scene::draw(VkCommandBuffer &commandBuffer, uint32_t currentImage)
-{
-    skybox->draw(commandBuffer, currentImage);
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    VkBuffer vertexBuffers[] = {vertexBuffer.buffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    for (auto &&model : models)
-    {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &model->descriptorSets[currentImage], 0, nullptr);
-        model->draw(commandBuffer);
-        Trace("Model ", model->getId(), " drawn to command buffer at: ", Timer::systemTime());
-    }
 }
 
 void Scene::createUniformBuffers()
 {
-
-    for (auto &&model : models)
+    for (auto model : models)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
         VkDeviceSize lightSize = sizeof(UniformLightObject);
@@ -145,20 +158,20 @@ void Scene::createUniformBuffers()
         model->uniformBuffers.resize(vulkan->swapChainImages.size());
         model->uniformLights.resize(vulkan->swapChainImages.size());
 
-        for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
+        for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
         {
             model->uniformBuffers[i].vulkan = vulkan;
             model->uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            model->uniformBuffers[i].usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            model->uniformBuffers[i].name = "Scene/UBO";
+            model->uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            model->uniformBuffers[i].name = model->name + " UBO";
 
             UniformBufferObject ubo{};
             model->uniformBuffers[i].update(ubo);
 
             model->uniformLights[i].vulkan = vulkan;
             model->uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            model->uniformLights[i].usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            model->uniformLights[i].name = "Scene/ULO";
+            model->uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            model->uniformLights[i].name = model->name + " ULO";
 
             UniformLightObject ulo{};
             model->uniformLights[i].update(ulo);
@@ -168,11 +181,7 @@ void Scene::createUniformBuffers()
 
 void Scene::updateUniformBuffer(uint32_t currentImage)
 {
-    skybox->updateUniformBuffer(currentImage);
-
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    skybox.updateUniformBuffer(currentImage);
 
     for (auto &&model : models)
     {
@@ -196,7 +205,6 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
 
 void Scene::createDescriptorPool()
 {
-
     uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
@@ -214,9 +222,9 @@ void Scene::createDescriptorPool()
 
     if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to create descriptor pool");
+        throw std::runtime_error("Failed to create scene descriptor pool");
     }
-    Trace("Created descriptor pool at ", Timer::systemTime());
+    Trace("Created scene descriptor pool at ", Timer::systemTime());
 }
 
 void Scene::createDescriptorSetLayouts()
@@ -272,13 +280,14 @@ void Scene::createDescriptorSetLayouts()
 
     if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
     {
-        throw std::runtime_error("faled to create descriptor set layout");
+        throw std::runtime_error("Failed to create descriptor set layouts for scene");
     }
+    Trace("Created scene descriptor set layouts at ", Timer::systemTime());
 }
 
 void Scene::createDescriptorSets()
 {
-    for (auto &&model : models)
+    for (auto model : models)
     {
         std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo = {};
@@ -291,7 +300,7 @@ void Scene::createDescriptorSets()
         if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, model->descriptorSets.data()) != VK_SUCCESS)
         {
 
-            throw std::runtime_error("failed to allocate descript sets");
+            throw std::runtime_error("Failed to allocate descriptor sets for scene");
         }
 
         for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
@@ -379,9 +388,10 @@ void Scene::createDescriptorSets()
             vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
     }
+    Trace("Created descriptor sets for scene at ", Timer::systemTime());
 };
 
-void Scene::createPipelines()
+void Scene::createPipeline()
 {
     auto vertShaderCode = tat::readFile("resources/shaders/scene.vert.spv");
     auto fragShaderCode = tat::readFile("resources/shaders/scene.frag.spv");
@@ -478,7 +488,7 @@ void Scene::createPipelines()
 
     if (vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
     {
-        throw std::runtime_error("faled to create pipeline layout");
+        throw std::runtime_error("Failed to create pipeline layout for scene");
     }
 
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -505,4 +515,6 @@ void Scene::createPipelines()
 
     vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
+
+    Trace("Created pipelines for scene at ", Timer::systemTime());
 };

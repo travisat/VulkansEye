@@ -64,8 +64,8 @@ VkResult Image::loadSTB(std::string path)
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.name = "staging";
+    stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+    stagingBuffer.name = "image staging buffer";
     stagingBuffer.load(gsl::make_span(pixels, pixels + size));
 
     stbi_image_free(pixels);
@@ -119,8 +119,8 @@ VkResult Image::loadTextureCube(std::string path)
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.name = "staging buffer";
+    stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+    stagingBuffer.name = "image staging buffer";
     //convert void * from texCube.data() to bytes * which is what texCube.size() provides size in
     const std::byte *byteBuffer = (std::byte *)texCube.data();
     stagingBuffer.load(gsl::make_span(byteBuffer, byteBuffer + texCube.size()));

@@ -9,16 +9,14 @@
 class Model
 {
 public:
-    Model(tat::Vulkan *vulkan, const ModelConfig &config); //for already loaded mesh/material
-
+    Model(tat::Vulkan *vulkan, const ModelConfig &config);
+    ~Model();
     tat::Vulkan *vulkan = nullptr;
-
-    void draw(const VkCommandBuffer &commandBuffer);
 
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 scale =glm::vec3(1.0f);
     ModelType type= ModelType::unknown;
-    std::string name = "Unknwon";
+    std::string name = "Unknown Model";
 
     Mesh mesh {};
     Material material {};

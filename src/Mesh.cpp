@@ -1,8 +1,15 @@
 #include "Mesh.hpp"
+#include "macros.h"
+
+Mesh::~Mesh()
+{
+    Trace("Destroyed ", name, " at ", Timer::systemTime());
+}
 
 void Mesh::loadConfig(const MeshConfig &config)
 {
     id = config.id;
+    name = config.name;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -44,4 +51,5 @@ void Mesh::loadConfig(const MeshConfig &config)
 
     vertexSize = static_cast<uint32_t>(vertices.size());
     indexSize = static_cast<uint32_t>(indices.size());
+    Trace("Loaded ", config.objPath, " at ", Timer::systemTime());
 }

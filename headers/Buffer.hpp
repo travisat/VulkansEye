@@ -13,7 +13,10 @@ public:
     tat::Vulkan *vulkan;
     VkBuffer buffer = VK_NULL_HANDLE;
     VkBufferUsageFlags flags = 0;
-    VmaMemoryUsage usage = VMA_MEMORY_USAGE_UNKNOWN;
+    VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
+    VmaAllocationCreateFlags memFlags= 0;
+
+    void *mapped = nullptr;
 
     std::string name = "Unkown";
 
@@ -22,10 +25,9 @@ public:
     template <typename T>
     void load(std::vector<T> const &v)
     {
-        if (v.size() * sizeof(T) != size)
-        {
-            allocate(v.size() * sizeof(T));
-        }
+        if (buffer)
+            deallocate();
+        allocate(v.size() * sizeof(v[0]));
         void *data;
         vmaMapMemory(vulkan->allocator, allocation, &data);
         memcpy(data, v.data(), static_cast<size_t>(size));
@@ -36,10 +38,10 @@ public:
     void load(gsl::span<T> const &t)
     {
         //check size of buffer currently loaded and if different reallocatue buffer
-        if (t.size() * sizeof(T) != size)
-        {
-            allocate(t.size() * sizeof(T));
-        }
+        if (buffer)
+            deallocate();
+
+        allocate(t.size() * sizeof(T));
 
         //map buffer memory
         //copy over data to buffer
@@ -50,15 +52,15 @@ public:
         vmaUnmapMemory(vulkan->allocator, allocation);
     };
 
-    void copyTo(Buffer &destination);
+    VkResult copyTo(Buffer &destination);
 
     //updates buffer to contents in T
     template <typename T>
     void update(const T &t)
     {
-        if (sizeof(T) != size)
+        if (sizeof(t) != size)
         {
-            allocate(sizeof(T));
+            allocate(sizeof(t));
         }
         void *data;
         vmaMapMemory(vulkan->allocator, allocation, &data);
@@ -70,10 +72,6 @@ public:
 
     VkResult resize(VkDeviceSize s);
 
-    void *mapped = nullptr;
-    VkResult map();
-    void unmap();
-
     void flush(size_t size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
     {
         vmaFlushAllocation(vulkan->allocator, allocation, offset, size);
@@ -82,7 +80,6 @@ public:
 private:
     VmaAllocation allocation{};
     VkDeviceSize size = 0;
-    VkDeviceSize maxSize = 0;
 
     VkResult allocate(VkDeviceSize s);
     void deallocate();

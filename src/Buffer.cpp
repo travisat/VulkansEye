@@ -3,59 +3,30 @@
 
 Buffer::~Buffer()
 {
-    unmap();
     vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
     Trace("Destroyed ", name, " at ", Timer::systemTime());
-}
-
-VkResult Buffer::map()
-{
-    VkResult result = vmaMapMemory(vulkan->allocator, allocation, &mapped);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to map ", name, " at ", Timer::systemTime());
-        return result;
-    }
-    Trace("Mapped ", name, " at ", Timer::systemTime());
-    ismapped = true;
-    return result;
-}
-
-void Buffer::unmap()
-{
-    if (ismapped)
-    {
-        vmaUnmapMemory(vulkan->allocator, allocation);
-        Trace("Unmapped ", name, " at ", Timer::systemTime());
-        mapped = nullptr;
-        ismapped = false;
-    }
 }
 
 VkResult Buffer::resize(VkDeviceSize s)
 {
     VkResult result;
-    if (!buffer) //buffer hasn't been allocated yet
+    if (buffer) 
     {
-        result = allocate(s);
+        deallocate();
     }
-    else if (s > size) //new buffer size is bigger than maximum buffer size
+    result = allocate(s);
+    if( result != VK_SUCCESS)
     {
-        if (s > maxSize)
-        {
-            result = allocate(s);
-        }
+          Trace("Unable to resize ", name, " to ", s, " at ", Timer::systemTime());
+          return result;
     }
-    maxSize = size; //buffer requested is smaller than one already there, don't reallocate use old buffer space
-    size = s;
-    return VK_SUCCESS; //don't do anything with buffer and let new data be put in it
-                       //todo determine if making buffer smaller is good idea
+    Trace("Resized ", name, " to ", s, " at ", Timer::systemTime());
+    return result;
 };
 
 VkResult Buffer::allocate(VkDeviceSize s)
 {
     size = s;
-    maxSize = s;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -64,22 +35,28 @@ VkResult Buffer::allocate(VkDeviceSize s)
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage = usage;
+    allocInfo.usage = memUsage;
+    allocInfo.flags = memFlags;
 
-    VkResult result = vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
-    if (result == VK_SUCCESS)
+    VmaAllocationInfo info = {};
+
+    VkResult result = vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &info);
+    if (result != VK_SUCCESS)
     {
-        Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
+        Trace("Unable to llocate ", name, " with size ", size, " at ", Timer::systemTime());
     }
+    mapped = info.pMappedData;
+    Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
     return result;
 }
 
 void Buffer::deallocate()
 {
+    Trace("Deallocated ", name, " at ", Timer::systemTime());
     vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
 }
 
-void Buffer::copyTo(Buffer &destination)
+VkResult Buffer::copyTo(Buffer &destination)
 {
     //if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
@@ -93,5 +70,13 @@ void Buffer::copyTo(Buffer &destination)
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, buffer, destination.buffer, 1, &copyRegion);
 
-    vulkan->endSingleTimeCommands(commandBuffer);
+    VkResult result = vulkan->endSingleTimeCommands(commandBuffer);
+
+    if (result != VK_SUCCESS)
+    {
+        Trace("Unable to copy ", name, " to ", destination.name, " at ", Timer::systemTime());
+        return result;
+    }
+    Trace("Copied ", name, " to ", destination.name, " at ", Timer::systemTime());
+    return result;
 }

@@ -36,6 +36,7 @@ struct MaterialConfig
 {
     uint32_t id = 0;
     ImageType type = ImageType::png;
+    std::string name = "Unknown Material";
     std::string diffusePath = "";
     std::string normalPath = "";
     std::string roughnessPath = "";
@@ -46,6 +47,7 @@ struct MaterialConfig
 struct MeshConfig
 {
     uint32_t id = 0;
+    std::string name = "Uknown Mesh";
     std::string objPath = "";
 };
 
@@ -53,6 +55,7 @@ struct ModelConfig
 {
     uint32_t id = 0;
     ModelType type;
+    std::string name = "Unknown Model";
     glm::vec3 position;
     glm::vec3 scale;
 
@@ -66,6 +69,7 @@ struct ModelConfig
 struct LightConfig
 {
     uint32_t id = 0;
+    std::string name = "Unknown Light";
     glm::vec4 light;
     float temperature = 0;
     float lumens = 0;
@@ -73,6 +77,7 @@ struct LightConfig
 
 struct CameraConfig
 {
+    std::string name = "Unknown Camera";
     float fieldOfView = 60.0f;
     glm::vec3 position;
     glm::vec3 rotation;
@@ -81,11 +86,7 @@ struct CameraConfig
 struct Config
 {
     std::vector<CameraConfig> cameras{}; //TODO cameras[0] is only usable camera atm
-    std::vector<MeshConfig> meshes{};
-    std::vector<MaterialConfig> materials{};
     std::vector<LightConfig> lights{};
-
     std::string skybox = "";
-
     std::vector<ModelConfig> models{};
 };

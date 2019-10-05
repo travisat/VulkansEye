@@ -1,4 +1,5 @@
 #include "Material.hpp"
+#include "macros.h"
 
 Material::~Material()
 {
@@ -6,15 +7,18 @@ Material::~Material()
     vkDestroySampler(vulkan->device, normalSampler, nullptr);
     vkDestroySampler(vulkan->device, roughnessSampler, nullptr);
     vkDestroySampler(vulkan->device, ambientOcclusionSampler, nullptr);
+    Trace("Destroyed ", name, " at ", Timer::systemTime());
 }
 
 void Material::loadConfig(MaterialConfig const &config)
 {   
     id = config.id;
+    name = config.name;
     loadImage(config.diffusePath, config.type, diffuse, VK_FORMAT_R8G8B8A8_UNORM, diffuseSampler);
     loadImage(config.normalPath, config.type, normal, VK_FORMAT_R8G8B8A8_UNORM, normalSampler);
     loadImage(config.roughnessPath, config.type, roughness, VK_FORMAT_R8_UNORM, roughnessSampler);
     loadImage(config.ambientOcclusionPath, config.type, ambientOcclusion, VK_FORMAT_R8_UNORM, ambientOcclusionSampler);
+    Trace("Loaded ", name, " at ", Timer::systemTime());
 }
 
 void Material::loadImage(const std::string &path, ImageType type, Image &image, VkFormat format, VkSampler &sampler)
@@ -30,7 +34,7 @@ void Material::loadImage(const std::string &path, ImageType type, Image &image, 
     image.generateMipmaps();
 
     image.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-
+   
     VkSamplerCreateInfo imageSamplerInfo = {};
     imageSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     imageSamplerInfo.magFilter = VK_FILTER_LINEAR;

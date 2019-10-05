@@ -1,9 +1,11 @@
 #include "Model.hpp"
+#include "macros.h"
 
 Model::Model(tat::Vulkan *vulkan, const ModelConfig &config)
 {
     this->vulkan = vulkan;
     id = config.id;
+    name = config.name;
     position = config.position;
     scale = config.scale;
     
@@ -15,7 +17,7 @@ Model::Model(tat::Vulkan *vulkan, const ModelConfig &config)
         
 }
 
-void Model::draw(const VkCommandBuffer &commandBuffer)
+Model::~Model()
 {
-            vkCmdDrawIndexed(commandBuffer, mesh.indexSize, 1, mesh.indexOffset, mesh.vertexOffset, 0);
+    Trace("Destroyed ", name, " at ", Timer::systemTime());
 }

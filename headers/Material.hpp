@@ -20,6 +20,7 @@ public:
     VkSampler roughnessSampler = VK_NULL_HANDLE;
     VkSampler ambientOcclusionSampler = VK_NULL_HANDLE;
     uint32_t id = 0;
+    std::string name = "Uknown material";
 
     ~Material();
 

@@ -6,11 +6,14 @@
 
 #include "Vertex.h"
 #include "Config.h"
+#include "Timer.h"
 
 class Mesh
 {
 public:
 
+    ~Mesh();
+    std::string name = "Uknown Mesh";
     void loadConfig(const MeshConfig &config);
     uint32_t getId(){ return id;};
 

@@ -46,8 +46,9 @@ class VkEngine
 {
 public:
     tat::Vulkan *vulkan = nullptr;
-    Scene *scene = nullptr;
-    Overlay *imgui = nullptr;
+    Config *config = nullptr;
+    Scene scene;
+    Overlay overlay;
 
     ~VkEngine();
     void init();
@@ -101,6 +102,4 @@ private:
     bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
 
     void recreate(); //for screen size changes
-   
-   
 };

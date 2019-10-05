@@ -7,6 +7,7 @@ Skybox::~Skybox()
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
     vkDestroySampler(vulkan->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
 void Skybox::create()
@@ -20,7 +21,7 @@ void Skybox::create()
     cubeMap.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     cubeMap.type = ImageType::dds;
 
-    cubeMap.loadTextureCube(texturePath);
+    cubeMap.loadTextureCube(path);
 
     //convert image so shaders can use it
     cubeMap.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
@@ -65,7 +66,7 @@ void Skybox::recreate()
 {
     createPipeline();
     createUniformBuffers();
-     createDescriptorPool();
+    createDescriptorPool();
     createDescriptorSets();
 }
 
@@ -127,7 +128,7 @@ void Skybox::createDescriptorSetLayouts()
 
     if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
     {
-        throw std::runtime_error("faled to create descriptor set layout");
+        throw std::runtime_error("Failed to create skybox descriptor set layout");
     }
 }
 
@@ -138,7 +139,7 @@ void Skybox::createUniformBuffers()
     {
         buffer.vulkan = vulkan;
         buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.name = "Skybox/UBO";
 
         //uniformBufferObject to store in uniformBuffer
@@ -164,7 +165,7 @@ void Skybox::createDescriptorSets()
     if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
     {
 
-        throw std::runtime_error("failed to allocate descript sets");
+        throw std::runtime_error("Failed to allocate skybox descriptorsets");
     }
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)

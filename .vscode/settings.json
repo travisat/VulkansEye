@@ -80,7 +80,8 @@
         "xmemory": "cpp",
         "xstddef": "cpp",
         "xtr1common": "cpp",
-        "pointers": "cpp"
+        "pointers": "cpp",
+        "*.mm": "cpp"
     },
     "C_Cpp.configurationWarnings": "Disabled"
 }

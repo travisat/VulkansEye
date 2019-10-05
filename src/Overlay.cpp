@@ -1,7 +1,17 @@
 #include "Overlay.hpp"
 #include "macros.h"
 
-void Overlay::init()
+Overlay::~Overlay()
+{
+    ImGui::DestroyContext();
+    vkDestroySampler(vulkan->device, sampler, nullptr);
+    vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+}
+
+void Overlay::create()
 {
     ImGui::CreateContext();
     // Color scheme
@@ -15,20 +25,48 @@ void Overlay::init()
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
+    createBuffers();
+    createFont();
+
+    createDescriptorPool();
+    createDescriptorLayouts();
+    createDescriptorSets();
+    createPipelineLayout();
+    createPipeline();
+    newFrame(true);
 }
 
-void Overlay::initResources()
+void Overlay::recreate()
 {
-    ImGuiIO &io = ImGui::GetIO();
+    createPipelineLayout();
+    createPipeline(); 
+    createDescriptorPool();
+    createDescriptorSets();
+}
 
+void Overlay::cleanup()
+{
+    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
+    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+}
+
+void Overlay::createBuffers()
+{
     vertexBuffer.flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    vertexBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    vertexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    vertexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     vertexBuffer.name = "overlay vertex buffer";
     indexBuffer.flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    indexBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    indexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    indexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     indexBuffer.name = "overlay index buffer";
+}
 
-    // Create font texture
+void Overlay::createFont()
+{
+    ImGuiIO &io = ImGui::GetIO();
     unsigned char *fontData;
     int texWidth, texHeight;
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
@@ -48,7 +86,7 @@ void Overlay::initResources()
     Buffer stagingBuffer;
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    stagingBuffer.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     stagingBuffer.name = "overlay font image staging buffer";
 
     stagingBuffer.load(gsl::make_span(fontData, fontData + static_cast<uint32_t>(uploadSize)));
@@ -89,12 +127,6 @@ void Overlay::initResources()
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler);
-
-    createDescriptorPool();
-    createDescriptorLayouts();
-    createDescriptorSets();
-    createPipelineLayout();
-    createPipeline();
 }
 
 void Overlay::createDescriptorPool()
@@ -195,7 +227,6 @@ void Overlay::createPipelineLayout()
     {
         throw std::runtime_error("faled to create pipeline layout");
     }
-
 }
 
 void Overlay::createPipeline()
@@ -331,18 +362,12 @@ void Overlay::createPipeline()
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
 
-
-
 void Overlay::newFrame(bool updateFrameGraph)
 {
     ImGui::NewFrame();
 
-    // Init imGui windows and elements
-
-    ImVec4 clear_color = ImColor(114, 144, 154);
     static float f = 0.0f;
     ImGui::TextUnformatted(vulkan->name.c_str());
-    //ImGui::TextUnformatted(state->properties.deviceName);
 
     // Update frame time display
     if (updateFrameGraph)
@@ -407,12 +432,10 @@ void Overlay::updateBuffers()
             vertexBuffer.vulkan = vulkan;
             vertexBuffer.resize(vertexBufferSize);
             vertexCount = imDrawData->TotalVtxCount;
-            vertexBuffer.map();
 
             indexBuffer.vulkan = vulkan;
             indexBuffer.resize(indexBufferSize);
             indexCount = imDrawData->TotalIdxCount;
-            indexBuffer.map();
         }
         // Upload data
         ImDrawVert *vtxDst = (ImDrawVert *)vertexBuffer.mapped;
