@@ -3,6 +3,7 @@
 
 void Player::updateView()
 {
+    
     glm::mat4 rotationMatrix = glm::mat4(1.0f);
     glm::mat4 translationMatrix;
 
@@ -11,6 +12,7 @@ void Player::updateView()
     rotationMatrix = glm::rotate(rotationMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     translationMatrix = glm::translate(glm::mat4(1.0f), position);
+    
 
     view = rotationMatrix * translationMatrix;
 }
@@ -73,10 +75,10 @@ void Player::update(double deltaTime)
 
     if (lastMousePosition != mousePosition)
     {
-        glm::vec2 deltaPosition = lastMousePosition - mousePosition;
+        glm::vec2 deltaPosition = mousePosition - lastMousePosition;
 
-        rotation.x -= deltaPosition.y * mouseSensitivity;
-        rotation.y -= deltaPosition.x * mouseSensitivity;
+        rotation.x += deltaPosition.y * mouseSensitivity;
+        rotation.y += deltaPosition.x * mouseSensitivity;
 
         lastMousePosition = mousePosition;
         updated = false;
@@ -93,13 +95,17 @@ void Player::update(double deltaTime)
         float moveSpeed = (float)(deltaTime * movementSpeed);
 
         if (Input::checkKeyboard(GLFW_KEY_W))
-            position += camFront * moveSpeed;
+            position += camFront * glm::vec3(1.0f, 0.0f, 1.0f) * moveSpeed;
         if (Input::checkKeyboard(GLFW_KEY_S))
-            position -= camFront * moveSpeed;
+            position -= camFront * glm::vec3(1.0f, 0.0f, 1.0f) * moveSpeed;
         if (Input::checkKeyboard(GLFW_KEY_A))
-            position -= glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+            position -= glm::cross(camFront, (glm::vec3(0.0f, 1.0f, 0.0f) * moveSpeed));
         if (Input::checkKeyboard(GLFW_KEY_D))
-            position += glm::normalize(glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+            position += glm::cross(camFront, (glm::vec3(0.0f, 1.0f, 0.0f) * moveSpeed));
+        if (Input::checkKeyboard(GLFW_KEY_SPACE))
+            position -= glm::vec3(0.0f, 1.0f, 0.0f) * moveSpeed;
+        if (Input::checkKeyboard(GLFW_KEY_LEFT_SHIFT))
+            position += glm::vec3(0.0f, 1.0f, 0.0f) * moveSpeed;
 
         updateView();
     }

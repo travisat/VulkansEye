@@ -391,7 +391,7 @@ void Overlay::newFrame(bool updateFrameGraph)
 
     ImGui::Text("Camera");
     ImGui::InputFloat3("position", &player->position.x, 2);
-    ImGui::InputFloat3("rotation", &player->rotation.y, 2);
+    ImGui::InputFloat3("rotation", &player->rotation.x, 2);
 
     /*
         ImGui::SetNextWindowSize(ImVec2(550, 380), ImGuiCond_FirstUseEver);

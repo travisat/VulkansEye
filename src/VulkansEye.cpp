@@ -44,10 +44,11 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     
     PlayerConfig playerConfig;
     playerConfig.name = "You";
-    playerConfig.fieldOfView = 60.0f;
-    playerConfig.position = {0.0f, -2.0f, 0.0f};
-    playerConfig.rotation = {0.0f, 0.0f, 0.0f};
     playerConfig.height = 1.7f;
+    playerConfig.fieldOfView = 60.0f;
+    playerConfig.position = {0.0f, -playerConfig.height, 0.0f};
+    playerConfig.rotation = {0.0f, 0.0f, 0.0f};
+    
     config.playerConfig = playerConfig;
 
     const float p = 15.0f;
@@ -75,7 +76,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     ActorConfig wall;
     wall.index = 0;
     wall.name = "Wall Model";
-    wall.position = {1.0f, 0.0f, 5.5f};
+    wall.position = {0.0f, 0.0f,10.0f};
     wall.scale = glm::vec3(1.0f);
     wall.modelConfig = wallModel;
 
