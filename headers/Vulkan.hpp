@@ -62,6 +62,8 @@ public:
     uint32_t width = 0;
     uint32_t height = 0;
 
+    uint32_t currentImage = 0;
+    bool prepared = false;
     uint32_t frameCounter = 0;
     uint32_t lastFPS = 0;
 

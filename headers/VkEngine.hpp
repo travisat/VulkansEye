@@ -46,9 +46,8 @@ class VkEngine
 {
 public:
     tat::Vulkan *vulkan = nullptr;
-    Config *config = nullptr;
-    Scene scene;
-    Overlay overlay;
+    Scene *scene;
+    Overlay *overlay;
 
     ~VkEngine();
     void init();
@@ -63,12 +62,14 @@ private:
 
     std::vector<VkCommandBuffer> commandBuffers{};
 
-    std::vector<VkSemaphore> imageAvailableSemaphores{};
+    std::vector<VkSemaphore> presentFinishedSemaphores{};
     std::vector<VkSemaphore> renderFinishedSemaphores{};
-    std::vector<VkFence> inFlightFences{};
-    size_t currentFrame = 0;
-
+    std::vector<VkFence> waitFences{};
+   
+    void createCommandBuffers();
     void recordCommandBuffers();
+
+    void resizeWindow();
 
     void createInstance();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
@@ -84,8 +85,7 @@ private:
     void createCommandPool();
     void createColorResources();
     void createDepthResources();
-    void createDescriptorSetLayouts();
-    void createCommandBuffers();
+  //  void createDescriptorSetLayouts();
     void createSyncObjects();
 
     std::vector<const char *> getRequiredExtensions();
@@ -100,6 +100,4 @@ private:
     QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device);
     bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
-
-    void recreate(); //for screen size changes
 };

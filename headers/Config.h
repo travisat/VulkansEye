@@ -32,11 +32,13 @@ enum class ImageType
     kmg
 };
 
-struct MaterialConfig
+struct ModelConfig
 {
-    uint32_t id = 0;
-    ImageType type = ImageType::png;
-    std::string name = "Unknown Material";
+    uint32_t index;
+    std::string name = "Unknown Model";
+    ImageType imageType;
+    ModelType modelType; //Todo load textures through obj
+    std::string objPath = "";
     std::string diffusePath = "";
     std::string normalPath = "";
     std::string roughnessPath = "";
@@ -44,49 +46,54 @@ struct MaterialConfig
     std::string metallicPath = "";
 };
 
-struct MeshConfig
+struct ActorConfig
 {
-    uint32_t id = 0;
-    std::string name = "Uknown Mesh";
-    std::string objPath = "";
-};
-
-struct ModelConfig
-{
-    uint32_t id = 0;
-    ModelType type;
-    std::string name = "Unknown Model";
+    uint32_t index;
+    std::string name = "Unknown Actor";
     glm::vec3 position;
     glm::vec3 scale;
-
-    //if gltf provide path
-    std::string path = "";
-
-    MaterialConfig materialConfig;
-    MeshConfig meshConfig;
+    ModelConfig modelConfig;
 };
 
 struct LightConfig
 {
-    uint32_t id = 0;
+    uint32_t index;
     std::string name = "Unknown Light";
-    glm::vec4 light;
+    glm::vec3 color;
+    glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
 };
 
-struct CameraConfig
+struct PlayerConfig
 {
-    std::string name = "Unknown Camera";
+    std::string name = "Unknown Player";
     float fieldOfView = 60.0f;
     glm::vec3 position;
     glm::vec3 rotation;
+    float height; //meters 1.0f == 1m
 };
 
-struct Config
+struct StageConfig
 {
-    std::vector<CameraConfig> cameras{}; //TODO cameras[0] is only usable camera atm
+    uint32_t index;
+    std::string name = "Unknown Stage";
+    ModelType modelType;
+    std::string objPath = "";
+    ImageType imageType;
+    std::string diffusePath = "";
+    std::string normalPath = "";
+    std::string roughnessPath = "";
+    std::string ambientOcclusionPath = "";
+    std::string metallicPath = "";
+};
+
+struct SceneConfig
+{
+    uint32_t index;
+    PlayerConfig playerConfig;
+    StageConfig stageConfig;
     std::vector<LightConfig> lights{};
-    std::string skybox = "";
-    std::vector<ModelConfig> models{};
+    std::string backdrop = "";
+    std::vector<ActorConfig> actors;
 };

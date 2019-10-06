@@ -4,22 +4,32 @@
 #include <utility>
 
 #include "Vulkan.hpp"
-#include "Model.hpp"
-#include "Skybox.hpp"
-#include "Input.hpp"
-#include "Camera.hpp"
+#include "Actor.hpp"
+#include "Backdrop.hpp"
+#include "Player.hpp"
 #include "Light.hpp"
+#include "Stage.hpp"
 #include "Config.h"
 
 class Scene
 {
 public:
+    //config values
     tat::Vulkan *vulkan = nullptr;
-    Config *config = nullptr;
+    SceneConfig *config = nullptr;
+    Player *player = nullptr;
+
+    //generated values
+    std::string name = "Unknown";
+    Backdrop backdrop;
+    Stage stage;
+   
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline;
+    std::vector<Actor> actors;
+    std::vector<Light> lights;
 
     ~Scene();
-
-    void loadConfig(Config &config);
 
     void create();
     void cleanup();
@@ -29,24 +39,12 @@ public:
 
     void updateUniformBuffer(uint32_t currentImage);
 
-    uint32_t numModels() { return static_cast<uint32_t>(models.size()); };
+    uint32_t numActors() { return static_cast<uint32_t>(actors.size()); };
 
-    // num uniform buffers per model (UBO and ULO)
-    uint32_t numUniformBuffers() { return static_cast<uint32_t>(models.size() * 2); };
-    // same but for imagesamplers (diffuse, normal, roughness, ambientOcclusion)
-    uint32_t numImageSamplers() { return static_cast<uint32_t>(models.size() * 4); };
-
-    std::string name = "Unknown";
-    Skybox skybox;
-    Buffer vertexBuffer;
-    Buffer indexBuffer;
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
-    Camera camera;
-
-    //use unique ptrs so destroyed on destruction of scene
-    std::vector<Model *> models;
-    std::vector<Light *> lights;
+    // num uniform buffers per model and stage (UBO and ULO)
+    uint32_t numUniformBuffers() { return static_cast<uint32_t>((actors.size() + 1) * 2); };
+    // same but for imagesamplers (diffuse, normal, roughness, ambientOcclusion) + sampler for stage
+    uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 4); };
 
 private:
     float gamma = 4.5f;
@@ -55,14 +53,15 @@ private:
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
 
-    void loadLights();
-    void loadModels();
-
-    void createBuffers(); //put models meshes into vertex/index buffers
+    void createLights();
+    void createActors();
+    void createBackdrop();
+    void createStage();
 
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createPipeline();
+    void createPipelineLayout();
     void createUniformBuffers();
     void createDescriptorSets();
 };

@@ -13,7 +13,7 @@ const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,
                      0.0f, 0.0f, 0.5f, 0.0f,
                      0.0f, 0.0f, 0.5f, 1.0f);
 
-class Camera
+class Player
 {
 public:
     glm::vec3 rotation = glm::vec3();
@@ -22,13 +22,15 @@ public:
     glm::mat4 perspective;
     glm::mat4 view;
 
+    float height;
+
     double getNearClip() { return zNear; };
     double getFarClip() { return zFar; };
 
     void updateView();
 
-    void setPerspective(double fieldOfView, double width, double height, double zNear, double zFar);
-    void updateAspectRatio(double width, double height);
+    void setPerspective(double fieldOfView, double windowWidth, double windowHeight, double zNear, double zFar);
+    void updateAspectRatio(double windowWidth, double windowHeight);
 
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
@@ -40,8 +42,8 @@ public:
 private:
     double fieldOfView;
     double zNear, zFar;
-    double width;
-    double height;
+    double windowWidth;
+    double windowHeight;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
 

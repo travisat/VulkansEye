@@ -1,6 +1,7 @@
-#include "Camera.hpp"
+#include "Player.hpp"
+#include "helpers.h"
 
-void Camera::updateView()
+void Player::updateView()
 {
     glm::mat4 rotationMatrix = glm::mat4(1.0f);
     glm::mat4 translationMatrix;
@@ -14,11 +15,11 @@ void Camera::updateView()
     view = rotationMatrix * translationMatrix;
 }
 
-void Camera::setPerspective(double fieldOfView, double width, double height, double zNear, double zFar)
+void Player::setPerspective(double fieldOfView, double width, double height, double zNear, double zFar)
 {
     this->fieldOfView = fieldOfView;
-    this->width = width;
-    this->height = height;
+    this->windowWidth = width;
+    this->windowHeight = height;
     this->zNear = zNear;
     this->zFar = zFar;
     perspective = glm::perspective(glm::radians(fieldOfView), width / height, zNear, zFar);
@@ -26,28 +27,28 @@ void Camera::setPerspective(double fieldOfView, double width, double height, dou
     perspective = clip * perspective;
 }
 
-void Camera::updateAspectRatio(double width, double height)
+void Player::updateAspectRatio(double width, double height)
 {
-    this->width = width;
-    this->height = height;
+    this->windowWidth = width;
+    this->windowHeight = height;
     perspective = glm::perspective(glm::radians(fieldOfView), (width / height), zNear, zFar);
     //convert to vulkan
     perspective = clip * perspective;
 }
 
-void Camera::rotate(glm::vec3 delta)
+void Player::rotate(glm::vec3 delta)
 {
     this->rotation += delta;
     updateView();
 }
 
-void Camera::translate(glm::vec3 delta)
+void Player::translate(glm::vec3 delta)
 {
     this->position += delta;
     updateView();
 }
 
-void Camera::update(double deltaTime)
+void Player::update(double deltaTime)
 {
     bool updated = true;
     if (Input::checkKeyboard(GLFW_KEY_A) | Input::checkKeyboard(GLFW_KEY_S) | Input::checkKeyboard(GLFW_KEY_D) | Input::checkKeyboard(GLFW_KEY_W))
@@ -58,8 +59,8 @@ void Camera::update(double deltaTime)
     double mouseY = Input::getMouseY();
 
     //convert from glfw coordinates [0, width],[0, height] to [-1,1] interval
-    mouseX = (mouseX / (width / 2)) - 1.0f;
-    mouseY = (mouseY / (height / 2)) - 1.0f;
+    mouseX = (mouseX / (windowWidth / 2)) - 1.0f;
+    mouseY = (mouseY / (windowHeight / 2)) - 1.0f;
 
     glm::vec2 mousePosition(mouseX, mouseY);
 

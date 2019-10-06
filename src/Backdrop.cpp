@@ -1,7 +1,7 @@
-#include "Skybox.hpp"
-#include "macros.h"
+#include "Backdrop.hpp"
+#include "helpers.h"
 
-Skybox::~Skybox()
+Backdrop::~Backdrop()
 {
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
@@ -10,7 +10,18 @@ Skybox::~Skybox()
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
-void Skybox::create()
+void Backdrop::create()
+{
+    loadCubeMap();
+
+    createDescriptorPool();
+    createDescriptorSetLayouts();
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorSets();
+}
+
+void Backdrop::loadCubeMap()
 {
     cubeMap.vulkan = vulkan;
     cubeMap.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -47,22 +58,16 @@ void Skybox::create()
     }
 
     cubeMap.createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
-
-    createDescriptorPool();
-    createDescriptorSetLayouts();
-    createPipeline();
-    createUniformBuffers();
-    createDescriptorSets();
 }
 
-void Skybox::cleanup()
+void Backdrop::cleanup()
 {
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
-void Skybox::recreate()
+void Backdrop::recreate()
 {
     createPipeline();
     createUniformBuffers();
@@ -70,15 +75,43 @@ void Skybox::recreate()
     createDescriptorSets();
 }
 
-void Skybox::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Backdrop::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentImage], 0, nullptr);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-    Trace("Skybox drawn to command buffer at: ", Timer::systemTime());
 }
 
-void Skybox::createDescriptorPool()
+void Backdrop::createUniformBuffers()
+{
+    uniformBuffers.resize(vulkan->swapChainImages.size());
+    for (auto &buffer : uniformBuffers)
+    {
+        buffer.vulkan = vulkan;
+        buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        buffer.name = "Backdrop/UBO";
+
+        //uniformBufferObject to store in uniformBuffer
+        UniformBufferObject ubo{};
+        ubo.projection = player->perspective;
+        ubo.view = player->view;
+
+        //store and add
+        buffer.update(ubo);
+    }
+}
+
+void Backdrop::updateUniformBuffer(uint32_t currentImage)
+{
+    UniformBufferObject ubo = {};
+
+    ubo.projection = player->perspective;
+    ubo.view = player->view;
+    uniformBuffers[currentImage].update(ubo);
+}
+
+void Backdrop::createDescriptorPool()
 {
 
     uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
@@ -103,7 +136,7 @@ void Skybox::createDescriptorPool()
     Trace("Created ", name, " descriptor pool at ", Timer::systemTime());
 }
 
-void Skybox::createDescriptorSetLayouts()
+void Backdrop::createDescriptorSetLayouts()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
@@ -132,27 +165,7 @@ void Skybox::createDescriptorSetLayouts()
     }
 }
 
-void Skybox::createUniformBuffers()
-{
-    uniformBuffers.resize(vulkan->swapChainImages.size());
-    for (auto &buffer : uniformBuffers)
-    {
-        buffer.vulkan = vulkan;
-        buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        buffer.name = "Skybox/UBO";
-
-        //uniformBufferObject to store in uniformBuffer
-        UniformBufferObject ubo{};
-        ubo.projection = camera->perspective;
-        ubo.view = camera->view;
-
-        //store and add
-        buffer.update(ubo);
-    }
-}
-
-void Skybox::createDescriptorSets()
+void Backdrop::createDescriptorSets()
 {
     std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo = {};
@@ -202,7 +215,7 @@ void Skybox::createDescriptorSets()
     }
 };
 
-void Skybox::createPipeline()
+void Backdrop::createPipeline()
 {
     auto vertShaderCode = tat::readFile("resources/shaders/skybox.vert.spv");
     auto fragShaderCode = tat::readFile("resources/shaders/skybox.frag.spv");
@@ -307,18 +320,9 @@ void Skybox::createPipeline()
 
     if (vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to create graphics pipeline!");
+        throw std::runtime_error("failed to create skybox graphics pipeline!");
     }
 
     vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
-};
-
-void Skybox::updateUniformBuffer(uint32_t currentImage)
-{
-    UniformBufferObject ubo = {};
-
-    ubo.projection = camera->perspective;
-    ubo.view = camera->view;
-    uniformBuffers[currentImage].update(ubo);
-};
+}

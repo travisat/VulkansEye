@@ -11,6 +11,9 @@ public:
 private:
     tat::Vulkan vulkan;
     VkEngine engine;
+    Scene scene;
+    Player player;
+    Overlay overlay;
 
     void drawFrame();
 

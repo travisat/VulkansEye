@@ -1,30 +1,22 @@
 #include "Buffer.hpp"
-#include "macros.h"
+#include "helpers.h"
 
 Buffer::~Buffer()
 {
-    vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
-    Trace("Destroyed ", name, " at ", Timer::systemTime());
+   deallocate(); 
 }
 
-VkResult Buffer::resize(VkDeviceSize s)
+void Buffer::resize(VkDeviceSize s)
 {
-    VkResult result;
-    if (buffer) 
+    if (buffer)
     {
         deallocate();
     }
-    result = allocate(s);
-    if( result != VK_SUCCESS)
-    {
-          Trace("Unable to resize ", name, " to ", s, " at ", Timer::systemTime());
-          return result;
-    }
+    allocate(s);
     Trace("Resized ", name, " to ", s, " at ", Timer::systemTime());
-    return result;
-};
+}
 
-VkResult Buffer::allocate(VkDeviceSize s)
+void Buffer::allocate(VkDeviceSize s)
 {
     size = s;
 
@@ -40,14 +32,9 @@ VkResult Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info = {};
 
-    VkResult result = vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &info);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to llocate ", name, " with size ", size, " at ", Timer::systemTime());
-    }
+    CheckResult(vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &info));
     mapped = info.pMappedData;
     Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
-    return result;
 }
 
 void Buffer::deallocate()
@@ -56,11 +43,13 @@ void Buffer::deallocate()
     vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
 }
 
-VkResult Buffer::copyTo(Buffer &destination)
+void Buffer::copyTo(Buffer &destination)
 {
     //if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
+        if (destination.buffer)
+            destination.deallocate();
         destination.allocate(size);
     }
 
@@ -70,13 +59,6 @@ VkResult Buffer::copyTo(Buffer &destination)
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, buffer, destination.buffer, 1, &copyRegion);
 
-    VkResult result = vulkan->endSingleTimeCommands(commandBuffer);
-
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to copy ", name, " to ", destination.name, " at ", Timer::systemTime());
-        return result;
-    }
+    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     Trace("Copied ", name, " to ", destination.name, " at ", Timer::systemTime());
-    return result;
 }

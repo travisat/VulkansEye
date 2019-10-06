@@ -14,13 +14,16 @@ public:
     VkBuffer buffer = VK_NULL_HANDLE;
     VkBufferUsageFlags flags = 0;
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
-    VmaAllocationCreateFlags memFlags= 0;
+    VmaAllocationCreateFlags memFlags = 0;
 
     void *mapped = nullptr;
 
     std::string name = "Unkown";
 
     ~Buffer();
+
+    void allocate(VkDeviceSize s);
+    void deallocate();
 
     template <typename T>
     void load(std::vector<T> const &v)
@@ -52,25 +55,26 @@ public:
         vmaUnmapMemory(vulkan->allocator, allocation);
     };
 
-    VkResult copyTo(Buffer &destination);
+    void copyTo(Buffer &destination);
 
     //updates buffer to contents in T
     template <typename T>
-    void update(const T &t)
+    void update(T t)
     {
-        if (sizeof(t) != size)
+        size_t s = sizeof(t);
+        if (s != size)
         {
-            allocate(sizeof(t));
+            allocate(s);
         }
         void *data;
         vmaMapMemory(vulkan->allocator, allocation, &data);
-        memcpy(data, &t, static_cast<size_t>(size));
+        memcpy(data, &t, s);
         vmaUnmapMemory(vulkan->allocator, allocation);
     };
 
     VkDeviceSize getSize() { return size; };
 
-    VkResult resize(VkDeviceSize s);
+    void resize(VkDeviceSize s);
 
     void flush(size_t size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
     {
@@ -80,9 +84,6 @@ public:
 private:
     VmaAllocation allocation{};
     VkDeviceSize size = 0;
-
-    VkResult allocate(VkDeviceSize s);
-    void deallocate();
 
     bool ismapped = false;
 };

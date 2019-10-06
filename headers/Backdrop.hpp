@@ -2,13 +2,13 @@
 
 #include "Image.hpp"
 #include "Buffer.hpp"
-#include "Camera.hpp"
+#include "Player.hpp"
 #include "Timer.h"
 
-class Skybox
+class Backdrop
 {
 public:
-    ~Skybox();
+    ~Backdrop();
 
     void create();
     void cleanup();
@@ -25,7 +25,7 @@ public:
     tat::Vulkan *vulkan = nullptr;
     std::string name = "Uknown";
 
-    Camera *camera = nullptr;
+    Player *player = nullptr;
     std::string path;
 
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -37,7 +37,7 @@ private:
 
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
  
-
+    void loadCubeMap();
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

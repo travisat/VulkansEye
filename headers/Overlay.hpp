@@ -8,6 +8,7 @@
 #include "Vulkan.hpp"
 #include "Timer.h"
 #include "Image.hpp"
+#include "Player.hpp"
 
 //sourced from https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
 
@@ -31,6 +32,7 @@ class Overlay
 {
 public:
     tat::Vulkan *vulkan = nullptr;
+    Player *player = nullptr;
 
     bool update = false;
     // UI params are set via push constants
@@ -55,10 +57,6 @@ public:
 
     // Draw current imGui frame into a command buffer
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
-
-    glm::vec3 *cameraPosition = nullptr;
-    glm::vec3 *cameraRotation = nullptr;
-
 private:
     // Vulkan resources for rendering the UI
     VkSampler sampler{};

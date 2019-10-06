@@ -1,5 +1,5 @@
 #include "Image.hpp"
-#include "macros.h"
+#include "helpers.h"
 
 Image::~Image()
 {
@@ -11,15 +11,13 @@ Image::~Image()
     if (imageView)
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
-        Trace("Destroyed ", name, " imageView at ", Timer::systemTime);
+        Trace("Destroyed ", name, " imageView at ", Timer::systemTime());
     }
-    Trace("Destroyed ", name, " at ", Timer::systemTime());
 }
 
-VkResult Image::loadFile(std::string path)
+void Image::loadFile(std::string path)
 {
     name = path;
-    VkResult result;
 
     switch (type)
     {
@@ -32,34 +30,28 @@ VkResult Image::loadFile(std::string path)
     case ImageType::hdr:
     case ImageType::pic:
     case ImageType::pnm:
-        result = loadSTB(path);
+        loadSTB(path);
         break;
     case ImageType::dds:
     case ImageType::ktx:
     case ImageType::kmg:
-        result = loadGLI(path);
+        loadGLI(path);
         break;
     default:
         Trace("Uknown ImageType for ", name, " attempting to load using stb_image at ", Timer::systemTime());
-        result = loadSTB(path);
+        loadSTB(path);
     }
     Trace("Loaded ", name, " at ", Timer::systemTime());
-    return result;
 }
 
-VkResult Image::loadSTB(std::string path)
+void Image::loadSTB(std::string path)
 {
-    VkResult result = VK_SUCCESS;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
     stbi_uc *pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     size = width * height * STBI_rgb_alpha;
 
-    if (!pixels)
-    {
-        Trace("Unable to load ", name, " at ", Timer::systemTime);
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+    assert(pixels);
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -70,31 +62,17 @@ VkResult Image::loadSTB(std::string path)
 
     stbi_image_free(pixels);
 
-    result = allocate();
-    if (result != VK_SUCCESS)
-    {
-        return result;
-    }
-
-    result = transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    if (result != VK_SUCCESS)
-    {
-        return result;
-    }
-
-    result = copyFrom(stagingBuffer);
-
-    return result;
+    allocate();
+    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyFrom(stagingBuffer);
 }
 
-VkResult Image::loadGLI(std::string path)
+void Image::loadGLI(std::string path)
 {
-    return VK_ERROR_INITIALIZATION_FAILED;
 }
 
-VkResult Image::loadTextureCube(std::string path)
+void Image::loadTextureCube(std::string path)
 {
-    VkResult result = VK_SUCCESS;
     name = path;
 
     //only handle gli implementations right now
@@ -105,16 +83,12 @@ VkResult Image::loadTextureCube(std::string path)
     case ImageType::kmg:
         break;
     default:
-        Trace("Unknown ImageType for ", name, " attempting to load anyway at ", Timer::systemTime());
+        Trace("Unknown ImageType for ", name, " attempting to load anyway");
     }
 
     //load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(path));
-    if (texCube.empty())
-    {
-        Trace("Unable to load ", name, " at ", Timer::systemTime());
-        return VK_ERROR_INITIALIZATION_FAILED;
-    }
+    assert(!texCube.empty());
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -130,11 +104,7 @@ VkResult Image::loadTextureCube(std::string path)
     height = texCube.extent().y;
     mipLevels = static_cast<uint32_t>(texCube.levels());
     layers = 6;
-    result = allocate();
-    if (result != VK_SUCCESS)
-    {
-        return result;
-    }
+    allocate();
 
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
     std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -168,29 +138,20 @@ VkResult Image::loadTextureCube(std::string path)
     subresourceRange.layerCount = 6;
 
     //copy gli loaded texture to image using regious created
-    result = transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
-    if (result == VK_SUCCESS)
-    {
-        vkCmdCopyBufferToImage(
-            commandBuffer,
-            stagingBuffer.buffer,
-            image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            static_cast<uint32_t>(bufferCopyRegions.size()),
-            bufferCopyRegions.data());
+    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        stagingBuffer.buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        static_cast<uint32_t>(bufferCopyRegions.size()),
+        bufferCopyRegions.data());
 
-        Trace("Loading ", name, " at ", Timer::systemTime());
-        result = vulkan->endSingleTimeCommands(commandBuffer);
-        return result;
-    }
-    Trace("Failed loading ", name, " at ", Timer::systemTime());
-    VkResult result2 = vulkan->endSingleTimeCommands(commandBuffer);
-    if (result2 == VK_SUCCESS)
-        return result;
-    return result2;
+    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
+    Trace("Loaded ", name, " at ", Timer::systemTime());
 }
 
-VkResult Image::allocate()
+void Image::allocate()
 {
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -211,18 +172,9 @@ VkResult Image::allocate()
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memUsage;
 
-    VkResult result = vmaCreateImage(vulkan->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr);
-
-    if (result == VK_SUCCESS)
-    {
-        Trace("Allocated ", name, " at ", Timer::systemTime());
-    }
-    else
-    {
-        Trace("Unable to allocate ", name, " at", Timer::systemTime());
-    }
-    return result;
-};
+    CheckResult(vmaCreateImage(vulkan->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr));
+    Trace("Allocated ", name, " at ", Timer::systemTime());
+}
 
 void Image::deallocate()
 {
@@ -237,7 +189,7 @@ void Image::deallocate()
     Trace("Deallocated ", name, " at ", Timer::systemTime());
 }
 
-VkResult Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
+void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
 {
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -249,17 +201,11 @@ VkResult Image::createImageView(VkImageViewType viewType, VkImageAspectFlags asp
     viewInfo.subresourceRange.levelCount = mipLevels;
     viewInfo.subresourceRange.layerCount = layerCount;
 
-    VkResult result = vkCreateImageView(vulkan->device, &viewInfo, nullptr, &imageView);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to create imageview for ", name, " at ", Timer::systemTime);
-        return result;
-    }
+    CheckResult(vkCreateImageView(vulkan->device, &viewInfo, nullptr, &imageView));
     Trace("Created imageview for ", name, " at ", Timer::systemTime());
-    return result;
 }
 
-VkResult Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
+void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
 {
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
 
@@ -284,29 +230,22 @@ VkResult Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
         1,
         &region);
 
-    VkResult result = vulkan->endSingleTimeCommands(commandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to copy data from ", buffer.name, " to ", name, " at ", Timer::systemTime());
-        return result;
-    }
+    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     Trace("Copied data from ", buffer.name, " to ", name, " at ", Timer::systemTime());
-    return result;
 }
 
-VkResult Image::resize(int width, int height, int channels, int layers)
+void Image::resize(int width, int height, int channels, int layers)
 {
     deallocate();
     this->width = width;
     this->height = height;
     this->channels = channels;
     this->layers = layers;
-    VkResult result = allocate();
+    allocate();
     transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, layout);
-    return result;
 }
 
-VkResult Image::generateMipmaps()
+void Image::generateMipmaps()
 {
 
     VkFormatProperties formatProperties;
@@ -395,17 +334,11 @@ VkResult Image::generateMipmaps()
                          0, nullptr,
                          1, &barrier);
 
-    VkResult result = vulkan->endSingleTimeCommands(commandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to generate mipmaps for ", name, " at ", Timer::systemTime());
-        return result;
-    }
+    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     Trace("Generated mipmaps for ", name, " at ", Timer::systemTime());
-    return result;
 }
 
-VkResult Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount)
+void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount)
 {
 
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
@@ -481,15 +414,9 @@ VkResult Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout new
         0, nullptr,
         1, &barrier);
 
-    VkResult result = vulkan->endSingleTimeCommands(commandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Unable to Transition layout of ", name, " at ", Timer::systemTime());
-        return result;
-    }
+    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     layout = newLayout;
     Trace("Transitioned layout of ", name, " at ", Timer::systemTime());
-    return result;
 }
 
 bool Image::hasStencilComponent(VkFormat format)

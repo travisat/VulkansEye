@@ -1,5 +1,5 @@
 #include "VkEngine.hpp"
-#include "macros.h"
+#include "helpers.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -35,15 +35,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 void VkEngine::init()
 {
-   //setup scene
-    scene.config = config;
-    scene.vulkan = vulkan;
-    scene.name = "Scene";
-
-    //setup overlay
-    overlay.vulkan = vulkan;
-    overlay.cameraPosition = &scene.camera.position;
-    overlay.cameraRotation = &scene.camera.rotation;
+   
 
     createInstance();
     setupDebugMessenger();
@@ -61,10 +53,11 @@ void VkEngine::init()
     createFramebuffers();
     createSyncObjects();
 
-    scene.create();
-    overlay.create();
+    scene->create();
+    overlay->create();
 
     createCommandBuffers();
+    vulkan->prepared = true;
 }
 
 VkEngine::~VkEngine()
@@ -81,8 +74,8 @@ VkEngine::~VkEngine()
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(vulkan->device, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(vulkan->device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(vulkan->device, inFlightFences[i], nullptr);
+        vkDestroySemaphore(vulkan->device, presentFinishedSemaphores[i], nullptr);
+        vkDestroyFence(vulkan->device, waitFences[i], nullptr);
     }
 }
 
@@ -96,11 +89,7 @@ void VkEngine::createCommandBuffers()
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-    if (vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to allocate command buffers");
-    }
-    Trace("Allocated command buffers at ", Timer::systemTime());
+    CheckResult(vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()));
     recordCommandBuffers();
 }
 
@@ -127,11 +116,7 @@ void VkEngine::recordCommandBuffers()
 
         VkCommandBuffer currentCB = commandBuffers[i];
 
-        if (vkBeginCommandBuffer(currentCB, &beginInfo) != VK_SUCCESS)
-        {
-            Trace("Failed to begin recording command buffer at: ", Timer::systemTime());
-            throw std::runtime_error("failed to begin recording command buffer");
-        }
+        CheckResult(vkBeginCommandBuffer(currentCB, &beginInfo));
         vkCmdBeginRenderPass(currentCB, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport{};
@@ -147,97 +132,90 @@ void VkEngine::recordCommandBuffers()
         scissor.offset.y = 0;
         vkCmdSetScissor(currentCB, 0, 1, &scissor);
 
-        //scene.draw(currentCB, i);
-        scene.skybox.draw(currentCB, i);
-        overlay.draw(currentCB, i);
+        scene->draw(currentCB, i);
+        //scene->backdrop.draw(currentCB, i);
+
+        overlay->draw(currentCB, i);
 
         vkCmdEndRenderPass(currentCB);
 
-        if (vkEndCommandBuffer(currentCB) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to record command buffer");
-        }
+        CheckResult(vkEndCommandBuffer(currentCB));
     }
 }
 
 void VkEngine::drawFrame()
 {
-    vkWaitForFences(vulkan->device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(vulkan->device, vulkan->swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        recreate();
+    if (!vulkan->prepared)
         return;
-    }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    {
-        throw std::runtime_error("failed to aquire swap chain image");
-    }
 
-    if (overlay.update)
+    if (overlay->update)
     {
-        overlay.cleanup();
-        overlay.recreate();
+        overlay->cleanup();
+        overlay->recreate();
         createCommandBuffers();
     }
 
-    scene.updateUniformBuffer(imageIndex);
+    CheckResult(vkWaitForFences(vulkan->device, 1, &waitFences[vulkan->currentImage], VK_FALSE, UINT64_MAX));
+    CheckResult(vkResetFences(vulkan->device, 1, &waitFences[vulkan->currentImage]));
 
+    uint32_t currentBuffer; //three buffers per swapchain only two images per max frames in flight idk
+    VkResult result = vkAcquireNextImageKHR(vulkan->device, vulkan->swapChain, UINT64_MAX, presentFinishedSemaphores[vulkan->currentImage], VK_NULL_HANDLE, &currentBuffer);
+
+    if ((result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_SUBOPTIMAL_KHR))
+    {
+        resizeWindow();
+        //return;
+    }
+    else
+    {
+        CheckResult(result);
+    }
+
+    scene->updateUniformBuffer(currentBuffer);
+
+    const VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.pWaitDstStageMask = &waitStages;
+    submitInfo.pWaitSemaphores = &presentFinishedSemaphores[vulkan->currentImage];
     submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
-
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[vulkan->currentImage];
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    vkWaitForFences(vulkan->device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(vulkan->device, 1, &inFlightFences[currentFrame]);
-
-    result = vkQueueSubmit(vulkan->graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-    if (result != VK_SUCCESS)
-    {
-        Trace("Result of vkQueueSubmit: ", result);
-        throw std::runtime_error("Failed to draw Command Buffer");
-    }
+    submitInfo.pCommandBuffers = &commandBuffers[currentBuffer];
+    submitInfo.commandBufferCount = 1;
+    CheckResult(vkQueueSubmit(vulkan->graphicsQueue, 1, &submitInfo, waitFences[vulkan->currentImage]));
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-
-    VkSwapchainKHR swapChains[] = {vulkan->swapChain};
+    presentInfo.pNext = NULL;
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-
-    presentInfo.pImageIndices = &imageIndex;
-
+    presentInfo.pSwapchains = &vulkan->swapChain;
+    presentInfo.pImageIndices = &currentBuffer;
+    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[vulkan->currentImage];
+    presentInfo.waitSemaphoreCount = 1;
     result = vkQueuePresentKHR(vulkan->presentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        recreate();
+        resizeWindow();
+        return;
     }
     else if (result != VK_SUCCESS)
     {
-        throw std::runtime_error("Failed to present swap chain image");
+        CheckResult(result);
     }
 
-    currentFrame = (currentFrame + 1) & MAX_FRAMES_IN_FLIGHT;
+    vulkan->currentImage = (vulkan->currentImage + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void VkEngine::recreate()
+void VkEngine::resizeWindow()
 {
+    if (!vulkan->prepared)
+    {
+        return;
+    }
+    vulkan->prepared = false;
+
     int width = 0;
     int height = 0;
     while (width == 0 || height == 0)
@@ -265,8 +243,8 @@ void VkEngine::recreate()
 
     vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
-    scene.cleanup();
-    overlay.cleanup();
+    scene->cleanup();
+    overlay->cleanup();
 
     createSwapChain();
     createImageViews();
@@ -277,13 +255,14 @@ void VkEngine::recreate()
     depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
     createFramebuffers();
 
-    scene.recreate();
-    overlay.recreate();
-    
+    scene->recreate();
+    overlay->recreate();
+
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
 
-    Trace("Recreated with size ", width, "x", height, " at ", Timer::systemTime());
+    Trace("Resized window to ", width, "x", height, " at ", Timer::systemTime());
+    vulkan->prepared = true;
 }
 
 void VkEngine::createInstance()
@@ -309,21 +288,16 @@ void VkEngine::createInstance()
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
-
         populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
     }
     else
     {
         createInfo.enabledLayerCount = 0;
-
         createInfo.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &vulkan->vkinstance) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create instance!");
-    }
+    CheckResult(vkCreateInstance(&createInfo, nullptr, &vulkan->vkinstance));
 }
 
 void VkEngine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
@@ -343,18 +317,12 @@ void VkEngine::setupDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(createInfo);
 
-    if (CreateDebugUtilsMessengerEXT(vulkan->vkinstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to set up debug messenger!");
-    }
+    CheckResult(CreateDebugUtilsMessengerEXT(vulkan->vkinstance, &createInfo, nullptr, &debugMessenger));
 }
 
 void VkEngine::createSurface()
 {
-    if (glfwCreateWindowSurface(vulkan->vkinstance, vulkan->window, nullptr, &vulkan->vksurface) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create window surface");
-    }
+    CheckResult(glfwCreateWindowSurface(vulkan->vkinstance, vulkan->window, nullptr, &vulkan->vksurface));
 }
 
 void VkEngine::pickPhysicalDevice()
@@ -362,10 +330,7 @@ void VkEngine::pickPhysicalDevice()
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vulkan->vkinstance, &deviceCount, nullptr);
 
-    if (deviceCount == 0)
-    {
-        throw std::runtime_error("faled to find gpus with vulkan support!");
-    }
+    assert(deviceCount != 0);
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(vulkan->vkinstance, &deviceCount, devices.data());
@@ -383,10 +348,7 @@ void VkEngine::pickPhysicalDevice()
         }
     }
 
-    if (vulkan->vkphysicalDevice == VK_NULL_HANDLE)
-    {
-        throw std::runtime_error("Failed to find sutiable gpu");
-    }
+    assert(vulkan->vkphysicalDevice != VK_NULL_HANDLE);
 }
 
 bool VkEngine::isDeviceSuitable(VkPhysicalDevice const &device)
@@ -523,11 +485,7 @@ void VkEngine::createLogicalDevice()
 
     createInfo.enabledLayerCount = 0;
 
-    if (vkCreateDevice(vulkan->vkphysicalDevice, &createInfo, nullptr, &vulkan->device) != VK_SUCCESS)
-    {
-        throw std::runtime_error("faled to create logical device");
-    }
-    Trace("Created logical device at ", Timer::systemTime());
+    CheckResult(vkCreateDevice(vulkan->vkphysicalDevice, &createInfo, nullptr, &vulkan->device));
 
     vkGetDeviceQueue(vulkan->device, indices.graphicsFamily.value(), 0, &vulkan->graphicsQueue);
     vkGetDeviceQueue(vulkan->device, indices.presentFamily.value(), 0, &vulkan->presentQueue);
@@ -539,8 +497,7 @@ void VkEngine::createAllocator()
     allocatorInfo.physicalDevice = vulkan->vkphysicalDevice;
     allocatorInfo.device = vulkan->device;
 
-    vmaCreateAllocator(&allocatorInfo, &vulkan->allocator);
-    Trace("Created allocator at ", Timer::systemTime());
+    CheckResult(vmaCreateAllocator(&allocatorInfo, &vulkan->allocator));
 }
 
 void VkEngine::createSwapChain()
@@ -588,12 +545,7 @@ void VkEngine::createSwapChain()
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(vulkan->device, &createInfo, nullptr, &vulkan->swapChain) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create swapchain");
-    }
-
-    Trace("Created swapchain at ", Timer::systemTime());
+    CheckResult(vkCreateSwapchainKHR(vulkan->device, &createInfo, nullptr, &vulkan->swapChain));
 
     vkGetSwapchainImagesKHR(vulkan->device, vulkan->swapChain, &imageCount, nullptr);
     vulkan->swapChainImages.resize(imageCount);
@@ -620,10 +572,7 @@ void VkEngine::createImageViews()
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(vulkan->device, &viewInfo, nullptr, &vulkan->swapChainImageViews[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        CheckResult(vkCreateImageView(vulkan->device, &viewInfo, nullptr, &vulkan->swapChainImageViews[i]));
     }
 }
 
@@ -715,11 +664,7 @@ void VkEngine::createRenderPass()
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(vulkan->device, &renderPassInfo, nullptr, &vulkan->renderPass) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create reender pass");
-    }
-    Trace("Created render pass at ", Timer::systemTime());
+    CheckResult(vkCreateRenderPass(vulkan->device, &renderPassInfo, nullptr, &vulkan->renderPass));
 }
 
 void VkEngine::createFramebuffers()
@@ -742,12 +687,8 @@ void VkEngine::createFramebuffers()
         framebufferInfo.height = vulkan->swapChainExtent.height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(vulkan->device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
+        CheckResult(vkCreateFramebuffer(vulkan->device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]));
     }
-    Trace("Created framebuffers at ", Timer::systemTime());
 }
 
 void VkEngine::createCommandPool()
@@ -758,12 +699,7 @@ void VkEngine::createCommandPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
-    if (vkCreateCommandPool(vulkan->device, &poolInfo, nullptr, &vulkan->commandPool) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create command pool");
-    }
-
-    Trace("Created command pool at ", Timer::systemTime());
+    CheckResult(vkCreateCommandPool(vulkan->device, &poolInfo, nullptr, &vulkan->commandPool));
 }
 
 void VkEngine::createColorResources()
@@ -806,32 +742,31 @@ void VkEngine::createDepthResources()
     depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-
-
 void VkEngine::createSyncObjects()
 {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    presentFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    waitFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-    VkSemaphoreCreateInfo semaphoreInfo = {};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (auto &semaphore : presentFinishedSemaphores)
     {
-
-        if (vkCreateSemaphore(vulkan->device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(vulkan->device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(vulkan->device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to sync objects for a frame");
-        }
+        VkSemaphoreCreateInfo semaphoreInfo = {};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        CheckResult(vkCreateSemaphore(vulkan->device, &semaphoreInfo, nullptr, &semaphore));
     }
-    Trace("Created sync objects at ", Timer::systemTime());
+    for (auto &semaphore : renderFinishedSemaphores)
+    {
+        VkSemaphoreCreateInfo semaphoreInfo = {};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        CheckResult(vkCreateSemaphore(vulkan->device, &semaphoreInfo, nullptr, &semaphore));
+    }
+    for (auto &fence : waitFences)
+    {
+        VkFenceCreateInfo fenceInfo = {};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        CheckResult(vkCreateFence(vulkan->device, &fenceInfo, nullptr, &fence));
+    }
 }
 
 std::vector<const char *> VkEngine::getRequiredExtensions()

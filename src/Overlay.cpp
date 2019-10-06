@@ -1,5 +1,5 @@
 #include "Overlay.hpp"
-#include "macros.h"
+#include "helpers.h"
 
 Overlay::~Overlay()
 {
@@ -26,7 +26,7 @@ void Overlay::create()
     io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
-    createBuffers();
+    
     createFont();
 
     createDescriptorPool();
@@ -35,6 +35,7 @@ void Overlay::create()
     createPipelineLayout();
     createPipeline();
     newFrame(true);
+    createBuffers();
 }
 
 void Overlay::recreate()
@@ -389,8 +390,8 @@ void Overlay::newFrame(bool updateFrameGraph)
     ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin, uiSettings.frameTimeMax, ImVec2(0, 80));
 
     ImGui::Text("Camera");
-    ImGui::InputFloat3("position", &cameraPosition->x, 2);
-    ImGui::InputFloat3("rotation", &cameraRotation->y, 2);
+    ImGui::InputFloat3("position", &player->position.x, 2);
+    ImGui::InputFloat3("rotation", &player->rotation.y, 2);
 
     /*
         ImGui::SetNextWindowSize(ImVec2(550, 380), ImGuiCond_FirstUseEver);
@@ -485,9 +486,6 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
     int32_t vertexOffset = 0;
     int32_t indexOffset = 0;
 
-    //if (imDrawData && imDrawData->CmdListsCount > 0)
-    //{
-
     VkDeviceSize offsets[1] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, offsets);
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
@@ -509,7 +507,4 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
         }
         vertexOffset += cmd_list->VtxBuffer.Size;
     }
-    //}
-
-    Trace("Overlay drawn to command buffer at: ", Timer::systemTime());
 }

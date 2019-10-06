@@ -1,10 +1,9 @@
 #include "Light.hpp"
+#include "helpers.h"
 
-
-Light::Light(LightConfig const &config)
+void Light::load()
 {
-    this->id = config.id;
-    this->light = config.light;
-    this->temperature = config.temperature;
-    this->lumens = config.lumens;
+    name = config->name;
+    position = config->position;
+    color = config->position;
 }

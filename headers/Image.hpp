@@ -6,8 +6,6 @@
 #include "Vulkan.hpp"
 #include "Buffer.hpp"
 
-
-
 class Image
 {
 public:
@@ -37,28 +35,27 @@ public:
 
       ~Image();
 
-        //create VkImage allocation
-      VkResult allocate();
+      //create VkImage allocation
+      void allocate();
 
-      VkResult loadFile(std::string path);
-      VkResult loadTextureCube(std::string path);
+      void loadFile(std::string path);
+      void loadTextureCube(std::string path);
 
-      VkResult copyFrom(const Buffer &buffer, uint32_t layerCount = 1);
-      VkResult resize(int width, int height, int channels = 4, int layers = 1);
+      void copyFrom(const Buffer &buffer, uint32_t layerCount = 1);
+      void resize(int width, int height, int channels = 4, int layers = 1);
 
-      VkResult createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount = 1);
+      void createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount = 1);
 
-     VkResult transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount = 1);
+      void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount = 1);
 
-      VkResult generateMipmaps();
+      void generateMipmaps();
 
 private:
-    
       //destroy VkImage and VkImageView if they exist
       void deallocate();
 
-      VkResult loadSTB(std::string path); //use stb_image.h to load most normal image formats
-      VkResult loadGLI(std::string path); //use gli to load texture (dds/ktx/kmg) files)
+      void loadSTB(std::string path); //use stb_image.h to load most normal image formats
+      void loadGLI(std::string path); //use gli to load texture (dds/ktx/kmg) files)
 
       bool hasStencilComponent(VkFormat format);
 };

@@ -1,5 +1,5 @@
 #include "VulkansEye.hpp"
-#include "macros.h"
+#include "helpers.h"
 
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
@@ -26,58 +26,82 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     //setup config
     //TODO load from config file
-    Config config{};
-    config.skybox = {"resources/textures/skybox/nebula.dds"};
+    SceneConfig config{};
+    config.backdrop = {"resources/backdrop/nebula.dds"};
 
-    CameraConfig camera;
-    camera.name = "camera";
-    camera.fieldOfView = 60.0f;
-    camera.position = {9.0f, 12.0f, -3.0f};
-    camera.rotation = {-46.0f, 87.0f, 0.0f};
-    config.cameras = {camera};
+    StageConfig stageConfig;
+    stageConfig.index = 0;
+    stageConfig.name = "floor";
+    stageConfig.modelType = ModelType::obj;
+    stageConfig.objPath = "resources/stage/floor.obj";
+    stageConfig.imageType = ImageType::png;
+    stageConfig.diffusePath = "resources/textures/brick/diffuse.png";
+    stageConfig.normalPath = "resources/textures/brick/normal.png";
+    stageConfig.roughnessPath = "resources/textures/brick/roughness.png";
+    stageConfig.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
+    
+    config.stageConfig = stageConfig;
+    
+    PlayerConfig playerConfig;
+    playerConfig.name = "You";
+    playerConfig.fieldOfView = 60.0f;
+    playerConfig.position = {0.0f, -2.0f, 0.0f};
+    playerConfig.rotation = {0.0f, 0.0f, 0.0f};
+    playerConfig.height = 1.7f;
+    config.playerConfig = playerConfig;
 
     const float p = 15.0f;
     LightConfig light0;
     light0.name = "light0";
-    light0.id = 0;
-    light0.light = {-p, -p * 0.5f, -p, 1.0f};
+    light0.index = 0;
+    light0.position = {-p, -p * 0.5f, -p};
     LightConfig light1;
     light1.name = "light1";
-    light1.id = 1;
-    light0.light = {-p, -p * 0.5f, p, 1.0f};
-    LightConfig light2;
-    light2.name = "light2";
-    light2.id = 2;
-    light0.light = {p, -p * 0.5f, p, 1.0f};
-    LightConfig light3;
-    light3.name = "light3";
-    light3.id = 3;
-    light0.light = {p, -p * 0.5f, -p, 1.0f};
-
+    light1.index = 1;
+    light1.position = {-p, -p * 0.5f, p};
     config.lights = {light0, light1};
 
-    ModelConfig wall;
-    wall.id = 1;
+    ModelConfig wallModel;
+    wallModel.index = 0;
+    wallModel.name = "Brick Wall";
+    wallModel.imageType = ImageType::png;
+    wallModel.diffusePath = "resources/textures/brick/diffuse.png";
+    wallModel.normalPath = "resources/textures/brick/normal.png";
+    wallModel.roughnessPath = "resources/textures/brick/roughness.png";
+    wallModel.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
+    wallModel.modelType = ModelType::obj;
+    wallModel.objPath = "resources/models/wall.obj";
+
+    ActorConfig wall;
+    wall.index = 0;
     wall.name = "Wall Model";
     wall.position = {1.0f, 0.0f, 5.5f};
     wall.scale = glm::vec3(1.0f);
-    wall.type = ModelType::obj;
-    wall.materialConfig.id = 1;
-    wall.materialConfig.name = "Alien Texture";
-    wall.materialConfig.type = ImageType::png;
-    wall.materialConfig.diffusePath = "resources/textures/alien/diffuse.png";
-    wall.materialConfig.normalPath = "resources/textures/alien/normal.png";
-    wall.materialConfig.roughnessPath = "resources/textures/alien/roughness.png";
-    wall.materialConfig.ambientOcclusionPath = "resources/textures/alien/ambientOcclusion.png";
-    wall.meshConfig.id = 1;
-    wall.meshConfig.name = "Wall Mesh";
-    wall.meshConfig.objPath = "resources/models/wall.obj";
+    wall.modelConfig = wallModel;
 
-    config.models = {wall};
+    config.actors = {wall};
+
+    //setup player
+    player.height = config.playerConfig.height;
+    player.setPerspective(config.playerConfig.fieldOfView, static_cast<double>(vulkan.width), static_cast<double>(vulkan.height), 0.1f, 512.0f);
+    player.position = config.playerConfig.position;
+    player.rotation = config.playerConfig.rotation;
+    player.updateView();
+
+    //setup scene
+    scene.config = &config;
+    scene.vulkan = &vulkan;
+    scene.player = &player;
+    scene.name = "Scene";
+
+    //setup overlay
+    overlay.vulkan = &vulkan;
+    overlay.player = &player;
 
     //setup engine
     engine.vulkan = &vulkan;
-    engine.config = &config;
+    engine.scene = &scene;
+    engine.overlay = &overlay;
     engine.init();
 }
 
@@ -96,17 +120,17 @@ void VulkansEye::mainLoop()
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
         {
-            if (!engine.scene.camera.mouseMode)
+            if (!player.mouseMode)
             {
                 glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             }
-            engine.scene.camera.update(Timer::getInstance().getCount() / 1000.0f);
+            player.update(Timer::getInstance().getCount() / 1000.0f);
         }
         else
         {
             glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            engine.scene.camera.mouseMode = false;
+            player.mouseMode = false;
         }
 
         ImGuiIO &io = ImGui::GetIO();
@@ -115,8 +139,9 @@ void VulkansEye::mainLoop()
         io.DeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         lastFrameTime = Timer::getTime();
 
-        engine.overlay.newFrame(vulkan.frameCounter == 0);
-        engine.overlay.updateBuffers();
+        overlay.newFrame(vulkan.frameCounter == 0);
+
+        overlay.updateBuffers();
 
         engine.drawFrame();
         vulkan.frameCounter++;
