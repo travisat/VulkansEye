@@ -10,7 +10,7 @@
 
 #include "Image.hpp"
 
-static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)
+static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices, glm::vec3 scale = glm::vec3(1.0f), glm::vec3 position = glm::vec3(0.0f))
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -26,9 +26,9 @@ static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector
         {
             Vertex vertex = {};
             vertex.position = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]};
+                (attrib.vertices[3 * index.vertex_index + 0] * scale.x) + position.x,
+                (attrib.vertices[3 * index.vertex_index + 1] * scale.y) + position.y,
+                (attrib.vertices[3 * index.vertex_index + 2] * scale.z) + position.z};
             vertex.UV = {
                 attrib.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
@@ -55,6 +55,8 @@ public:
     tat::Vulkan *vulkan = nullptr;
     ModelConfig *config;
     std::string name = "Uknown Model";
+    glm::vec3 scale = glm::vec3(1.0f);
+    glm::vec3 position = glm::vec3(0.0f);
 
     //generated values
     //mesh properties

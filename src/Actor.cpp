@@ -10,6 +10,8 @@ void Actor::create()
 
     model.vulkan = vulkan;
     model.config =&config->modelConfig;
+    model.scale = config->scale;
+    model.position = config->position;
     model.create();
 
     createBuffers();

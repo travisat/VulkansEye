@@ -17,7 +17,7 @@ void Model::create()
 
 void Model::loadMesh()
 {
-    loadObj(config->objPath, vertices, indices);
+    loadObj(config->objPath, vertices, indices, scale, position);
     vertexSize = static_cast<uint32_t>(vertices.size());
     indexSize = static_cast<uint32_t>(indices.size());
     Trace("Loaded ", config->objPath, " at ", Timer::systemTime());

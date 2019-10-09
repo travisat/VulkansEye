@@ -145,11 +145,8 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create descriptor pool");
-    }
-    Trace("Created overlay descriptor pool at ", Timer::systemTime());
+    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
+    //Trace("Created overlay descriptor pool at ", Timer::systemTime());
 }
 
 void Overlay::createDescriptorLayouts()
@@ -167,10 +164,7 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout");
-    }
+    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout));
 }
 
 void Overlay::createDescriptorSets()
@@ -183,10 +177,7 @@ void Overlay::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets.resize(vulkan->swapChainImages.size());
-    if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate descriptorsets");
-    }
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {
@@ -224,10 +215,7 @@ void Overlay::createPipelineLayout()
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(vulkan->device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("faled to create pipeline layout");
-    }
+    CheckResult(vkCreatePipelineLayout(vulkan->device, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
 void Overlay::createPipeline()
@@ -354,10 +342,7 @@ void Overlay::createPipeline()
     pipelineCreateInfo.pVertexInputState = &vertexInputState;
     pipelineCreateInfo.layout = pipelineLayout;
 
-    if (vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline));
 
     vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
@@ -392,6 +377,8 @@ void Overlay::newFrame(bool updateFrameGraph)
     ImGui::Text("Camera");
     ImGui::InputFloat3("position", &player->position.x, 2);
     ImGui::InputFloat3("rotation", &player->rotation.x, 2);
+    ImGui::InputFloat3("velocity", &player->velocity.x, 2);
+    ImGui::InputFloat3("force", &player->force.x, 2);
 
     /*
         ImGui::SetNextWindowSize(ImVec2(550, 380), ImGuiCond_FirstUseEver);

@@ -62,25 +62,25 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     light1.position = {-p, -p * 0.5f, p};
     config.lights = {light0, light1};
 
-    ModelConfig wallModel;
-    wallModel.index = 0;
-    wallModel.name = "Brick Wall";
-    wallModel.imageType = ImageType::png;
-    wallModel.diffusePath = "resources/textures/brick/diffuse.png";
-    wallModel.normalPath = "resources/textures/brick/normal.png";
-    wallModel.roughnessPath = "resources/textures/brick/roughness.png";
-    wallModel.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
-    wallModel.modelType = ModelType::obj;
-    wallModel.objPath = "resources/models/wall.obj";
+    ModelConfig tableModel;
+    tableModel.index = 0;
+    tableModel.name = "Table";
+    tableModel.imageType = ImageType::png;
+    tableModel.diffusePath = "resources/textures/alien/diffuse.png";
+    tableModel.normalPath = "resources/textures/alien/normal.png";
+    tableModel.roughnessPath = "resources/textures/alien/roughness.png";
+    tableModel.ambientOcclusionPath = "resources/textures/alien/ambientOcclusion.png";
+    tableModel.modelType = ModelType::obj;
+    tableModel.objPath = "resources/models/table.obj";
 
-    ActorConfig wall;
-    wall.index = 0;
-    wall.name = "Wall Model";
-    wall.position = {0.0f, 0.0f,10.0f};
-    wall.scale = glm::vec3(1.0f);
-    wall.modelConfig = wallModel;
+    ActorConfig table;
+    table.index = 0;
+    table.name = "table Model";
+    table.position = {0.0f, 0.0f,0.0f};
+    table.scale = glm::vec3(0.25f);
+    table.modelConfig = tableModel;
 
-    config.actors = {wall};
+    config.actors = {table};
 
     //setup player
     player.height = config.playerConfig.height;
@@ -117,6 +117,7 @@ void VulkansEye::mainLoop()
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(vulkan.window))
     {
+        auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         glfwPollEvents();
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
@@ -125,19 +126,20 @@ void VulkansEye::mainLoop()
             {
                 glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                player.mouseMode = true;
             }
-            player.update(Timer::getInstance().getCount() / 1000.0f);
-        }
+        }   
         else
         {
             glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             player.mouseMode = false;
         }
 
-        ImGuiIO &io = ImGui::GetIO();
+        player.update(deltaTime); 
 
+        ImGuiIO &io = ImGui::GetIO();
         io.DisplaySize = ImVec2((float)vulkan.width, (float)vulkan.height);
-        io.DeltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
+        io.DeltaTime = deltaTime;
         lastFrameTime = Timer::getTime();
 
         overlay.newFrame(vulkan.frameCounter == 0);

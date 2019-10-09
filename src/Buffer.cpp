@@ -13,7 +13,7 @@ void Buffer::resize(VkDeviceSize s)
         deallocate();
     }
     allocate(s);
-    Trace("Resized ", name, " to ", s, " at ", Timer::systemTime());
+    //Trace("Resized ", name, " to ", s, " at ", Timer::systemTime());
 }
 
 void Buffer::allocate(VkDeviceSize s)
@@ -34,12 +34,12 @@ void Buffer::allocate(VkDeviceSize s)
 
     CheckResult(vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &info));
     mapped = info.pMappedData;
-    Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
+    //Trace("Allocated ", name, " with size ", size, " at ", Timer::systemTime());
 }
 
 void Buffer::deallocate()
 {
-    Trace("Deallocated ", name, " at ", Timer::systemTime());
+    //Trace("Deallocated ", name, " at ", Timer::systemTime());
     vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
 }
 
@@ -60,5 +60,5 @@ void Buffer::copyTo(Buffer &destination)
     vkCmdCopyBuffer(commandBuffer, buffer, destination.buffer, 1, &copyRegion);
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
-    Trace("Copied ", name, " to ", destination.name, " at ", Timer::systemTime());
+    //Trace("Copied ", name, " to ", destination.name, " at ", Timer::systemTime());
 }

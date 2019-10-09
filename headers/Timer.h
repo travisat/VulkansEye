@@ -21,7 +21,7 @@ public:
     };
 
     //returns milliseconts since first call of function
-    static double getCount()
+    static float getCount()
     {
         return getInstance().getCountIMPL();
     };
@@ -31,7 +31,7 @@ public:
         return getInstance().getTimeIMPL();
     };
 
-    static double systemTime()
+    static float systemTime()
     {
        return getInstance().systemTimeIMPL();
     };
@@ -39,11 +39,11 @@ public:
 private:
     Timer(void){};
 
-    double getCountIMPL()
+    float getCountIMPL()
     {
         static std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
-        return std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
+        return std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - startTime).count();
     };
 
     std::chrono::steady_clock::time_point getTimeIMPL()
@@ -51,10 +51,10 @@ private:
         return std::chrono::high_resolution_clock::now();
     };
 
-    double systemTimeIMPL()
+    float systemTimeIMPL()
     {
         static auto startTime = std::chrono::system_clock::now();
         auto currentTime = std::chrono::system_clock::now();
-        return std::chrono::duration<double, std::chrono::seconds::period>(currentTime - startTime).count();
+        return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     }
 };
