@@ -121,14 +121,13 @@ void Player::update(float deltaTime)
         }
         else //apply stopping force
         {
-            float internalFriction = (glm::length(velocity) / velocityMax) * stoppingForce; //internal friction, our legs only move so fast
+            float internalFriction = (glm::length(velocity) / velocityMax) * stoppingForce;
             force = internalFriction * (-1.0f * normalize(velocity));
         }
     }
 
     //apply force to acceleration
     acceleration = force / mass;
-
     //apply acceleration to velocity
     velocity = velocity + (deltaTime * acceleration);
     //apply velocity to position
