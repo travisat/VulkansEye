@@ -1,82 +1,154 @@
 #include "Stage.hpp"
 #include "helpers.h"
 
-Stage::~Stage()
-{
-    vkDestroySampler(vulkan->device, diffuseSampler, nullptr);
-    vkDestroySampler(vulkan->device, normalSampler, nullptr);
-    vkDestroySampler(vulkan->device, roughnessSampler, nullptr);
-    vkDestroySampler(vulkan->device, ambientOcclusionSampler, nullptr);
-}
-
 void Stage::create()
 {
-    loadMesh();
-    loadMaterial();
-}
+   //TODO implement using path to load model
+    name = config->name;
 
-void Stage::loadMesh()
-{
-    loadObj(config->objPath, vertices, indices);
-    vertexSize = static_cast<uint32_t>(vertices.size());
-    indexSize = static_cast<uint32_t>(indices.size());
+    model.vulkan = vulkan;
+    model.config = &config->modelConfig;
+    model.create();
+
     //copy buffers to gpu only memory
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "stage staging buffer";
+    stagingBuffer.name = "scene staging buffer";
 
-    stagingBuffer.load(vertices);
+    stagingBuffer.load(model.vertices);
     vertexBuffer.vulkan = vulkan;
     vertexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    vertexBuffer.name = "stage/vertex";
+    vertexBuffer.name = "scene/vertex";
     stagingBuffer.copyTo(vertexBuffer);
 
-    stagingBuffer.load(indices);
+    stagingBuffer.load(model.indices);
     indexBuffer.vulkan = vulkan;
     indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    indexBuffer.name = "stage/index";
+    indexBuffer.name = "scene/index";
     stagingBuffer.copyTo(indexBuffer);
 }
 
-void Stage::loadMaterial()
+void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout)
 {
-    loadImage(config->diffusePath, config->imageType, diffuse, VK_FORMAT_R8G8B8A8_UNORM, diffuseSampler);
-    loadImage(config->normalPath, config->imageType, normal, VK_FORMAT_R8G8B8A8_UNORM, normalSampler);
-    loadImage(config->roughnessPath, config->imageType, roughness, VK_FORMAT_R8_UNORM, roughnessSampler);
-    loadImage(config->ambientOcclusionPath, config->imageType, ambientOcclusion, VK_FORMAT_R8_UNORM, ambientOcclusionSampler);
+    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(vulkan->swapChainImages.size());
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
+    {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = uniformBuffers[i].buffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
+
+        VkDescriptorBufferInfo lightInfo = {};
+        lightInfo.buffer = uniformLights[i].buffer;
+        lightInfo.offset = 0;
+        lightInfo.range = sizeof(UniformLightObject);
+
+        VkDescriptorImageInfo diffuseInfo = {};
+        diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        diffuseInfo.imageView = model.diffuse.imageView;
+        diffuseInfo.sampler = model.diffuseSampler;
+
+        VkDescriptorImageInfo normalInfo = {};
+        normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        normalInfo.imageView = model.normal.imageView;
+        normalInfo.sampler = model.normalSampler;
+
+        VkDescriptorImageInfo roughnessInfo = {};
+        roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        roughnessInfo.imageView = model.roughness.imageView;
+        roughnessInfo.sampler = model.roughnessSampler;
+
+        VkDescriptorImageInfo aoInfo = {};
+        aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        aoInfo.imageView = model.ambientOcclusion.imageView;
+        aoInfo.sampler = model.ambientOcclusionSampler;
+        std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &lightInfo;
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = descriptorSets[i];
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pImageInfo = &diffuseInfo;
+
+        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[3].dstSet = descriptorSets[i];
+        descriptorWrites[3].dstBinding = 3;
+        descriptorWrites[3].dstArrayElement = 0;
+        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[3].descriptorCount = 1;
+        descriptorWrites[3].pImageInfo = &normalInfo;
+
+        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4].dstSet = descriptorSets[i];
+        descriptorWrites[4].dstBinding = 4;
+        descriptorWrites[4].dstArrayElement = 0;
+        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[4].descriptorCount = 1;
+        descriptorWrites[4].pImageInfo = &roughnessInfo;
+
+        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[5].dstSet = descriptorSets[i];
+        descriptorWrites[5].dstBinding = 5;
+        descriptorWrites[5].dstArrayElement = 0;
+        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[5].descriptorCount = 1;
+        descriptorWrites[5].pImageInfo = &aoInfo;
+
+        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+}
+void Stage::createUniformBuffers()
+{
+    uniformBuffers.resize(vulkan->swapChainImages.size());
+    uniformLights.resize(vulkan->swapChainImages.size());
+
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    {
+        uniformBuffers[i].vulkan = vulkan;
+        uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        uniformBuffers[i].name = name + " UBO";
+        uniformBuffers[i].resize(sizeof(UniformBufferObject));
+
+        uniformLights[i].vulkan = vulkan;
+        uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        uniformLights[i].name = name + " ULO";
+        uniformLights[i].resize(sizeof(UniformLightObject));
+    }
 }
 
-void Stage::loadImage(const std::string &path, ImageType type, Image &image, VkFormat format, VkSampler &sampler)
+void Stage::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, UniformLightObject &ulo)
 {
-    image.vulkan = vulkan;
-    image.format = format;
-    image.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image.type = ImageType::png;
-    image.loadFile(path);
-
-    image.generateMipmaps();
-    image.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-
-    VkSamplerCreateInfo imageSamplerInfo = {};
-    imageSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    imageSamplerInfo.magFilter = VK_FILTER_LINEAR;
-    imageSamplerInfo.minFilter = VK_FILTER_LINEAR;
-    imageSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.anisotropyEnable = VK_TRUE;
-    imageSamplerInfo.maxAnisotropy = 16;
-    imageSamplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    imageSamplerInfo.unnormalizedCoordinates = VK_FALSE;
-    imageSamplerInfo.compareEnable = VK_FALSE;
-    imageSamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    imageSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    imageSamplerInfo.maxLod = static_cast<float>(image.mipLevels);
-
-    CheckResult(vkCreateSampler(vulkan->device, &imageSamplerInfo, nullptr, &sampler));
+    uniformBuffers[currentImage].update(ubo);
+    uniformLights[currentImage].update(ulo);
 }

@@ -84,13 +84,13 @@ void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
     backdrop.draw(commandBuffer, currentImage);
 
-    VkDeviceSize offsets[1] = {0};
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
+    VkDeviceSize offsets[1] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, &stage.vertexBuffer.buffer, offsets);
     vkCmdBindIndexBuffer(commandBuffer, stage.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &stage.descriptorSets[currentImage], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, stage.indexSize, 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, stage.model.indexSize, 1, 0, 0, 0);
 
     for (auto &actor : actors)
     {
@@ -99,49 +99,15 @@ void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &actor.descriptorSets[currentImage], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, actor.model.indexSize, 1, 0, 0, 0);
     }
-
 }
 
 void Scene::createUniformBuffers()
 {
-
-    stage.uniformBuffers.resize(vulkan->swapChainImages.size());
-    stage.uniformLights.resize(vulkan->swapChainImages.size());
-
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
-    {
-        stage.uniformBuffers[i].vulkan = vulkan;
-        stage.uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        stage.uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        stage.uniformBuffers[i].name = stage.name + " UBO";
-        stage.uniformBuffers[i].resize(sizeof(UniformBufferObject));
-
-        stage.uniformLights[i].vulkan = vulkan;
-        stage.uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        stage.uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        stage.uniformLights[i].name = stage.name + " ULO";
-        stage.uniformLights[i].resize(sizeof(UniformLightObject));
-    }
+    stage.createUniformBuffers();
 
     for (auto &actor : actors)
     {
-        actor.uniformBuffers.resize(vulkan->swapChainImages.size());
-        actor.uniformLights.resize(vulkan->swapChainImages.size());
-
-        for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
-        {
-            actor.uniformBuffers[i].vulkan = vulkan;
-            actor.uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            actor.uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            actor.uniformBuffers[i].name = actor.name + " UBO";
-            actor.uniformBuffers[i].resize(sizeof(UniformBufferObject));
-
-            actor.uniformLights[i].vulkan = vulkan;
-            actor.uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            actor.uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            actor.uniformLights[i].name = actor.name + " ULO";
-            actor.uniformLights[i].resize(sizeof(UniformLightObject));
-        }
+        actor.createUniformBuffers();
     }
 }
 
@@ -160,16 +126,12 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ulo.positions[1] = lights[1].position;
     ulo.colors[0] = lights[0].color;
     ulo.colors[1] = lights[1].color;
-    ulo.gamma = gamma;
-    ulo.exposure = exposure;
 
-    stage.uniformBuffers[currentImage].update(ubo);
-    stage.uniformLights[currentImage].update(ulo);
+    stage.updateUniformBuffer(currentImage, ubo, ulo);
 
     for (auto &actor : actors)
     {
-        actor.uniformBuffers[currentImage].update(ubo);
-        actor.uniformLights[currentImage].update(ulo);
+        actor.updateUniformBuffer(currentImage, ubo, ulo);
     }
 }
 
@@ -248,186 +210,11 @@ void Scene::createDescriptorSetLayouts()
 
 void Scene::createDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
-    allocInfo.pSetLayouts = layouts.data();
-
-    stage.descriptorSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, stage.descriptorSets.data()));
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
-    {
-        VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = stage.uniformBuffers[i].buffer;
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-
-        VkDescriptorBufferInfo lightInfo = {};
-        lightInfo.buffer = stage.uniformLights[i].buffer;
-        lightInfo.offset = 0;
-        lightInfo.range = sizeof(UniformLightObject);
-
-        VkDescriptorImageInfo diffuseInfo = {};
-        diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        diffuseInfo.imageView = stage.diffuse.imageView;
-        diffuseInfo.sampler = stage.diffuseSampler;
-
-        VkDescriptorImageInfo normalInfo = {};
-        normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        normalInfo.imageView = stage.normal.imageView;
-        normalInfo.sampler = stage.normalSampler;
-
-        VkDescriptorImageInfo roughnessInfo = {};
-        roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        roughnessInfo.imageView = stage.roughness.imageView;
-        roughnessInfo.sampler = stage.roughnessSampler;
-
-        VkDescriptorImageInfo aoInfo = {};
-        aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        aoInfo.imageView = stage.ambientOcclusion.imageView;
-        aoInfo.sampler = stage.ambientOcclusionSampler;
-
-        std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = stage.descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = stage.descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo = &lightInfo;
-
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = stage.descriptorSets[i];
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pImageInfo = &diffuseInfo;
-
-        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[3].dstSet = stage.descriptorSets[i];
-        descriptorWrites[3].dstBinding = 3;
-        descriptorWrites[3].dstArrayElement = 0;
-        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[3].descriptorCount = 1;
-        descriptorWrites[3].pImageInfo = &normalInfo;
-
-        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[4].dstSet = stage.descriptorSets[i];
-        descriptorWrites[4].dstBinding = 4;
-        descriptorWrites[4].dstArrayElement = 0;
-        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pImageInfo = &roughnessInfo;
-
-        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[5].dstSet = stage.descriptorSets[i];
-        descriptorWrites[5].dstBinding = 5;
-        descriptorWrites[5].dstArrayElement = 0;
-        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &aoInfo;
-
-        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
+    stage.createDescriptorSets(descriptorPool, descriptorSetLayout);
 
     for (auto &actor : actors)
     {
-        actor.descriptorSets.resize(vulkan->swapChainImages.size());
-        CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, actor.descriptorSets.data()));
-        for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
-        {
-            VkDescriptorBufferInfo bufferInfo = {};
-            bufferInfo.buffer = actor.uniformBuffers[i].buffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            VkDescriptorBufferInfo lightInfo = {};
-            lightInfo.buffer = actor.uniformLights[i].buffer;
-            lightInfo.offset = 0;
-            lightInfo.range = sizeof(UniformLightObject);
-
-            VkDescriptorImageInfo diffuseInfo = {};
-            diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            diffuseInfo.imageView = actor.model.diffuse.imageView;
-            diffuseInfo.sampler = actor.model.diffuseSampler;
-
-            VkDescriptorImageInfo normalInfo = {};
-            normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            normalInfo.imageView = actor.model.normal.imageView;
-            normalInfo.sampler = actor.model.normalSampler;
-
-            VkDescriptorImageInfo roughnessInfo = {};
-            roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            roughnessInfo.imageView = actor.model.roughness.imageView;
-            roughnessInfo.sampler = actor.model.roughnessSampler;
-
-            VkDescriptorImageInfo aoInfo = {};
-            aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            aoInfo.imageView = actor.model.ambientOcclusion.imageView;
-            aoInfo.sampler = actor.model.ambientOcclusionSampler;
-
-            std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = actor.descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = actor.descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pBufferInfo = &lightInfo;
-
-            descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[2].dstSet = actor.descriptorSets[i];
-            descriptorWrites[2].dstBinding = 2;
-            descriptorWrites[2].dstArrayElement = 0;
-            descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[2].descriptorCount = 1;
-            descriptorWrites[2].pImageInfo = &diffuseInfo;
-
-            descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[3].dstSet = actor.descriptorSets[i];
-            descriptorWrites[3].dstBinding = 3;
-            descriptorWrites[3].dstArrayElement = 0;
-            descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[3].descriptorCount = 1;
-            descriptorWrites[3].pImageInfo = &normalInfo;
-
-            descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[4].dstSet = actor.descriptorSets[i];
-            descriptorWrites[4].dstBinding = 4;
-            descriptorWrites[4].dstArrayElement = 0;
-            descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[4].descriptorCount = 1;
-            descriptorWrites[4].pImageInfo = &roughnessInfo;
-
-            descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[5].dstSet = actor.descriptorSets[i];
-            descriptorWrites[5].dstBinding = 5;
-            descriptorWrites[5].dstArrayElement = 0;
-            descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[5].descriptorCount = 1;
-            descriptorWrites[5].pImageInfo = &aoInfo;
-
-            vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        }
+        actor.createDescriptorSets(descriptorPool, descriptorSetLayout);
     }
 }
 

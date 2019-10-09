@@ -26,19 +26,22 @@ void VulkansEye::init(uint32_t width, uint32_t height)
 
     //setup config
     //TODO load from config file
-    SceneConfig config{};
+    SceneConfig config;
     config.backdrop = {"resources/backdrop/nebula.dds"};
+
+    ModelConfig stageModel;    
+    stageModel.modelType = ModelType::obj;
+    stageModel.objPath = "resources/stage/floor.obj";
+    stageModel.imageType = ImageType::png;
+    stageModel.diffusePath = "resources/textures/brick/diffuse.png";
+    stageModel.normalPath = "resources/textures/brick/normal.png";
+    stageModel.roughnessPath = "resources/textures/brick/roughness.png";
+    stageModel.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
 
     StageConfig stageConfig;
     stageConfig.index = 0;
     stageConfig.name = "floor";
-    stageConfig.modelType = ModelType::obj;
-    stageConfig.objPath = "resources/stage/floor.obj";
-    stageConfig.imageType = ImageType::png;
-    stageConfig.diffusePath = "resources/textures/brick/diffuse.png";
-    stageConfig.normalPath = "resources/textures/brick/normal.png";
-    stageConfig.roughnessPath = "resources/textures/brick/roughness.png";
-    stageConfig.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
+    stageConfig.modelConfig = stageModel;
     
     config.stageConfig = stageConfig;
     

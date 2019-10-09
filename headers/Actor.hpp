@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Config.h"
+
+#include "Vulkan.hpp"
 #include "Buffer.hpp"
 #include "Model.hpp"
-#include "Vulkan.hpp"
-#include "Config.h"
 
 class Actor
 {
@@ -24,6 +25,9 @@ public:
     std::vector<VkDescriptorSet> descriptorSets;
 
     void create();
-    void createBuffers();
+    void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
+    void createUniformBuffers();
+    void updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, UniformLightObject &ulo);
+
 private:
 };

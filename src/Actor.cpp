@@ -9,16 +9,9 @@ void Actor::create()
     scale = config->scale;
 
     model.vulkan = vulkan;
-    model.config =&config->modelConfig;
-    model.scale = config->scale;
-    model.position = config->position;
+    model.config = &config->modelConfig;
     model.create();
 
-    createBuffers();
-}
-
-void Actor::createBuffers()
-{
     //copy buffers to gpu only memory
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -39,4 +32,125 @@ void Actor::createBuffers()
     indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     indexBuffer.name = "scene/index";
     stagingBuffer.copyTo(indexBuffer);
+}
+
+void Actor::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout)
+{
+    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(vulkan->swapChainImages.size());
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
+    {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = uniformBuffers[i].buffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
+
+        VkDescriptorBufferInfo lightInfo = {};
+        lightInfo.buffer = uniformLights[i].buffer;
+        lightInfo.offset = 0;
+        lightInfo.range = sizeof(UniformLightObject);
+
+        VkDescriptorImageInfo diffuseInfo = {};
+        diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        diffuseInfo.imageView = model.diffuse.imageView;
+        diffuseInfo.sampler = model.diffuseSampler;
+
+        VkDescriptorImageInfo normalInfo = {};
+        normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        normalInfo.imageView = model.normal.imageView;
+        normalInfo.sampler = model.normalSampler;
+
+        VkDescriptorImageInfo roughnessInfo = {};
+        roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        roughnessInfo.imageView = model.roughness.imageView;
+        roughnessInfo.sampler = model.roughnessSampler;
+
+        VkDescriptorImageInfo aoInfo = {};
+        aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        aoInfo.imageView = model.ambientOcclusion.imageView;
+        aoInfo.sampler = model.ambientOcclusionSampler;
+        std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &lightInfo;
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = descriptorSets[i];
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pImageInfo = &diffuseInfo;
+
+        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[3].dstSet = descriptorSets[i];
+        descriptorWrites[3].dstBinding = 3;
+        descriptorWrites[3].dstArrayElement = 0;
+        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[3].descriptorCount = 1;
+        descriptorWrites[3].pImageInfo = &normalInfo;
+
+        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4].dstSet = descriptorSets[i];
+        descriptorWrites[4].dstBinding = 4;
+        descriptorWrites[4].dstArrayElement = 0;
+        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[4].descriptorCount = 1;
+        descriptorWrites[4].pImageInfo = &roughnessInfo;
+
+        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[5].dstSet = descriptorSets[i];
+        descriptorWrites[5].dstBinding = 5;
+        descriptorWrites[5].dstArrayElement = 0;
+        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[5].descriptorCount = 1;
+        descriptorWrites[5].pImageInfo = &aoInfo;
+
+        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+}
+void Actor::createUniformBuffers()
+{
+    uniformBuffers.resize(vulkan->swapChainImages.size());
+    uniformLights.resize(vulkan->swapChainImages.size());
+
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    {
+        uniformBuffers[i].vulkan = vulkan;
+        uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        uniformBuffers[i].name = name + " UBO";
+        uniformBuffers[i].resize(sizeof(UniformBufferObject));
+
+        uniformLights[i].vulkan = vulkan;
+        uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        uniformLights[i].name = name + " ULO";
+        uniformLights[i].resize(sizeof(UniformLightObject));
+    }
+}
+
+void Actor::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, UniformLightObject &ulo)
+{
+    uniformBuffers[currentImage].update(ubo);
+    uniformLights[currentImage].update(ulo);
 }

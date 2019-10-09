@@ -78,14 +78,7 @@ struct StageConfig
 {
     uint32_t index;
     std::string name = "Unknown Stage";
-    ModelType modelType;
-    std::string objPath = "";
-    ImageType imageType;
-    std::string diffusePath = "";
-    std::string normalPath = "";
-    std::string roughnessPath = "";
-    std::string ambientOcclusionPath = "";
-    std::string metallicPath = "";
+    ModelConfig modelConfig;
 };
 
 struct SceneConfig
