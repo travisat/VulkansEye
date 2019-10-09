@@ -12,7 +12,8 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(binding = 1) uniform UniformLightObject
 {
-    vec4 lights[2];
+    vec3 position;
+    vec3 color;
     float exposure;
     float gamma;
 } ulo;

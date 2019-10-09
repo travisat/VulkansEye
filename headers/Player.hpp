@@ -31,7 +31,7 @@ public:
     float mass = 100;//kg
 
     //force applied while walking
-    float velocityMax = 5.0f; //m/s  also people in games don't walk normal up this a bit
+    float velocityMax = 6.0f; //m/s  also people in games don't walk normal up this a bit
     float timeToReachVMax = 0.6f; //s
     float timeToStopfromVMax = 0.1f; //s
     
@@ -56,7 +56,7 @@ private:
     double windowHeight;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
-    float mouseSensitivity = 20.0f;
+    float mouseSensitivity = 31.4f;
    
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);

@@ -18,15 +18,14 @@ void Overlay::create()
     ImGuiStyle &style = ImGui::GetStyle();
     style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.6f);
     style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.0f, 0.0f, 0.0f, 0.8f);
-    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.4f);
-    style.Colors[ImGuiCol_Header] = ImVec4(1.0f, 0.0f, 0.0f, 0.4f);
-    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
-    
     createFont();
 
     createDescriptorPool();
@@ -34,14 +33,14 @@ void Overlay::create()
     createDescriptorSets();
     createPipelineLayout();
     createPipeline();
-    newFrame(true);
+    newFrame();
     createBuffers();
 }
 
 void Overlay::recreate()
 {
     createPipelineLayout();
-    createPipeline(); 
+    createPipeline();
     createDescriptorPool();
     createDescriptorSets();
 }
@@ -348,37 +347,29 @@ void Overlay::createPipeline()
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
 
-void Overlay::newFrame(bool updateFrameGraph)
+void Overlay::newFrame()
 {
     ImGui::NewFrame();
 
-    static float f = 0.0f;
-    ImGui::TextUnformatted(vulkan->name.c_str());
-
-    // Update frame time display
-    if (updateFrameGraph)
+    float frameTime = (float)(Timer::getCount() / 1000.0f);
+    float deltaTime = frameTime - lastFrameTime;
+    lastFrameTime = frameTime;
+    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0f))
     {
-        std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-        float frameTime = (float)(Timer::getCount() * 1000.0f) - lastFrametime;
-        lastFrametime = frameTime;
-        uiSettings.frameTimes.back() = frameTime;
-        if (frameTime < uiSettings.frameTimeMin)
-        {
-            uiSettings.frameTimeMin = frameTime;
-        }
-        if (frameTime > uiSettings.frameTimeMax)
-        {
-            uiSettings.frameTimeMax = frameTime;
-        }
+        lastUpdateTime = frameTime;
+        uiSettings.position = player->position * -1.0f; //world is opposite cameras position
+        uiSettings.position.y -= player->height;        //put position on ground
+        uiSettings.velocity = glm::length(player->velocity);
+        uiSettings.fps = 1.0f / deltaTime;
     }
 
-    ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin, uiSettings.frameTimeMax, ImVec2(0, 80));
-
-    ImGui::Text("Camera");
-    ImGui::InputFloat3("position", &player->position.x, 2);
-    ImGui::InputFloat3("rotation", &player->rotation.x, 2);
-    ImGui::InputFloat3("velocity", &player->velocity.x, 2);
-    ImGui::InputFloat3("force", &player->force.x, 2);
+    ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::Begin(vulkan->name.c_str());
+    ImGui::InputFloat("Fps", &uiSettings.fps);
+    ImGui::InputFloat3("Position", &uiSettings.position.x, 2);
+    ImGui::InputFloat("Velocity", &uiSettings.velocity);
+    ImGui::End();
 
     /*
         ImGui::SetNextWindowSize(ImVec2(550, 380), ImGuiCond_FirstUseEver);
@@ -394,8 +385,6 @@ void Overlay::newFrame(bool updateFrameGraph)
         ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 */
     //ImGui::ShowDemoWindow();
-
-    // Render to generate draw buffers
     ImGui::Render();
 }
 
@@ -448,7 +437,7 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
     if (!vertexBuffer.buffer || !indexBuffer.buffer)
     {
-        newFrame(true);
+        newFrame();
         updateBuffers();
     }
     ImGuiIO &io = ImGui::GetIO();

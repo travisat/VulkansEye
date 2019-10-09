@@ -48,6 +48,8 @@ public:
     std::vector<VkImage> swapChainImages{};
     VkRenderPass renderPass;
 
+    VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkQueue graphicsQueue;

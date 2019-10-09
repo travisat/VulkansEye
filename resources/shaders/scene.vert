@@ -19,7 +19,7 @@ layout(location = 2) out vec3 outNormal;
 
 void main() {
     outUV = inUV;
-    //outNormal = mat3(ubo.model) * inNormal;
+    outNormal = mat3(ubo.model) * inNormal;
 
     vec3 locPos = vec3(ubo.model * vec4(inPosition, 1.0));
     outWorldPos = locPos;

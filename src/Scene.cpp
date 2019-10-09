@@ -126,11 +126,15 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ulo.positions[1] = lights[1].position;
     ulo.colors[0] = lights[0].color;
     ulo.colors[1] = lights[1].color;
+    ulo.gamma = gamma;
+    ulo.exposure = exposure;
 
     stage.updateUniformBuffer(currentImage, ubo, ulo);
 
     for (auto &actor : actors)
     {
+        ubo.model = glm::translate(ubo.model, actor.position);
+        ubo.model = glm::scale(ubo.model, actor.scale);
         actor.updateUniformBuffer(currentImage, ubo, ulo);
     }
 }

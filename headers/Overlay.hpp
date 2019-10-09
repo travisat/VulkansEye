@@ -20,9 +20,10 @@ struct UISettings
     bool displayBackground = true;
     bool animateLight = false;
     float lightSpeed = 0.25f;
-    std::array<float, 50> frameTimes{};
-    float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
     float lightTimer = 0.0f;
+    glm::vec3 position = glm::vec3(0.0f);
+    float velocity = 0.0f;
+    float fps = 0.0f;
 };
 
 // ----------------------------------------------------------------------------
@@ -43,20 +44,20 @@ public:
     } pushConstBlock;
 
     ~Overlay();
-    
+
     void create();
     void recreate();
     void cleanup();
-   
 
     // Starts a new imGui frame and sets up windows and ui elements
-    void newFrame(bool updateFrameGraph);
+    void newFrame();
 
     // Update vertex and index buffer containing the imGui elements when required
     void updateBuffers();
 
     // Draw current imGui frame into a command buffer
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+
 private:
     // Vulkan resources for rendering the UI
     VkSampler sampler{};
@@ -75,7 +76,9 @@ private:
 
     UISettings uiSettings;
 
-    float lastFrametime = 0;
+    float lastFrameTime = 0;
+    float lastUpdateTime = 0;
+    float updateFreqTime = 0.1f; //time between updates
 
     void createBuffers();
     void createFont();

@@ -79,7 +79,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     ActorConfig table;
     table.index = 0;
     table.name = "table Model";
-    table.position = {0.0f, 0.0f,0.0f};
+    table.position = glm::vec3(4.0f, 0.0f, 5.0f);
     table.scale = glm::vec3(0.25f);
     table.modelConfig = tableModel;
 
@@ -121,6 +121,8 @@ void VulkansEye::mainLoop()
     while (!glfwWindowShouldClose(vulkan.window))
     {
         auto deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
+        lastFrameTime = Timer::getTime();
+
         glfwPollEvents();
 
         if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
@@ -143,9 +145,8 @@ void VulkansEye::mainLoop()
         ImGuiIO &io = ImGui::GetIO();
         io.DisplaySize = ImVec2((float)vulkan.width, (float)vulkan.height);
         io.DeltaTime = deltaTime;
-        lastFrameTime = Timer::getTime();
 
-        overlay.newFrame(vulkan.frameCounter == 0);
+        overlay.newFrame();
 
         overlay.updateBuffers();
 
