@@ -122,10 +122,8 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ubo.cameraPosition = player->position * -1.0f;
 
     UniformLightObject ulo{};
-    ulo.positions[0] = lights[0].position;
-    ulo.positions[1] = lights[1].position;
-    ulo.colors[0] = lights[0].color;
-    ulo.colors[1] = lights[1].color;
+    ulo.position = lights[0].position;
+    ulo.color = lights[0].color;
     ulo.gamma = gamma;
     ulo.exposure = exposure;
 
@@ -195,14 +193,21 @@ void Scene::createDescriptorSetLayouts()
     roughnessLayoutBinding.pImmutableSamplers = nullptr;
     roughnessLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+    VkDescriptorSetLayoutBinding metallicLayoutBinding = {};
+    metallicLayoutBinding.binding = 5;
+    metallicLayoutBinding.descriptorCount = 1;
+    metallicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    metallicLayoutBinding.pImmutableSamplers = nullptr;
+    metallicLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
     VkDescriptorSetLayoutBinding aoLayoutBinding = {};
-    aoLayoutBinding.binding = 5;
+    aoLayoutBinding.binding = 6;
     aoLayoutBinding.descriptorCount = 1;
     aoLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     aoLayoutBinding.pImmutableSamplers = nullptr;
     aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 6> bindings = {uboLayoutBinding, uloLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, aoLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 7> bindings = {uboLayoutBinding, uloLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, metallicLayoutBinding, aoLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

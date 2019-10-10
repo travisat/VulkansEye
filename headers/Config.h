@@ -39,11 +39,11 @@ struct ModelConfig
     ImageType imageType;
     ModelType modelType; //Todo load textures through obj
     std::string objPath = "";
-    std::string diffusePath = "";
-    std::string normalPath = "";
-    std::string roughnessPath = "";
-    std::string ambientOcclusionPath = "";
-    std::string metallicPath = "";
+    std::string diffusePath = "resources/textures/default/diffuse.png";
+    std::string normalPath = "resources/textures/default/normal.png";
+    std::string roughnessPath = "resources/textures/default/roughness.png";
+    std::string metallicPath = "resources/textures/default/metallic.png";
+    std::string aoPath = "resources/textures/default/ao.png";
 };
 
 struct ActorConfig

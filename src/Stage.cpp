@@ -70,11 +70,17 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         roughnessInfo.imageView = model.roughness.imageView;
         roughnessInfo.sampler = model.roughnessSampler;
 
+        VkDescriptorImageInfo metallicInfo = {};
+        metallicInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        metallicInfo.imageView = model.metallic.imageView;
+        metallicInfo.sampler = model.metallicSampler;
+
         VkDescriptorImageInfo aoInfo = {};
         aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         aoInfo.imageView = model.ambientOcclusion.imageView;
-        aoInfo.sampler = model.ambientOcclusionSampler;
-        std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
+        aoInfo.sampler = model.aoSampler;
+
+        std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
@@ -121,7 +127,15 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[5].dstArrayElement = 0;
         descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &aoInfo;
+        descriptorWrites[5].pImageInfo = &metallicInfo;
+
+        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[6].dstSet = descriptorSets[i];
+        descriptorWrites[6].dstBinding = 6;
+        descriptorWrites[6].dstArrayElement = 0;
+        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[6].descriptorCount = 1;
+        descriptorWrites[6].pImageInfo = &aoInfo;
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }

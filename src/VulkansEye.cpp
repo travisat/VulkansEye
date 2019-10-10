@@ -32,11 +32,12 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     ModelConfig stageModel;    
     stageModel.modelType = ModelType::obj;
     stageModel.objPath = "resources/stage/floor.obj";
-    stageModel.imageType = ImageType::png;
-    stageModel.diffusePath = "resources/textures/brick/diffuse.png";
-    stageModel.normalPath = "resources/textures/brick/normal.png";
-    stageModel.roughnessPath = "resources/textures/brick/roughness.png";
-    stageModel.ambientOcclusionPath = "resources/textures/brick/ambientOcclusion.png";
+    stageModel.imageType = ImageType::jpg;
+    stageModel.diffusePath = "resources/textures/pavingstones/PavingStones45_col.jpg";
+    stageModel.normalPath = "resources/textures/pavingstones/PavingStones45_nrm.jpg";
+    stageModel.roughnessPath = "resources/textures/pavingstones/PavingStones45_rgh.jpg";
+    stageModel.aoPath = "resources/textures/pavingstones/PavingStones45_AO.jpg";
+    //stageModel.metallicPath = "resources/textures/brick/metallic.jpg";
 
     StageConfig stageConfig;
     stageConfig.index = 0;
@@ -54,25 +55,21 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     
     config.playerConfig = playerConfig;
 
-    const float p = 15.0f;
+    const float p = 10.0f;
     LightConfig light0;
     light0.name = "light0";
     light0.index = 0;
-    light0.position = {-p, -p * 0.5f, -p};
-    LightConfig light1;
-    light1.name = "light1";
-    light1.index = 1;
-    light1.position = {-p, -p * 0.5f, p};
-    config.lights = {light0, light1};
+    light0.position = {4.0f, 10.0f, 5.0f};
+    light0.color = {1.0f, 1.0f, 1.0f};
+    config.lights = {light0};
 
     ModelConfig tableModel;
     tableModel.index = 0;
     tableModel.name = "Table";
-    tableModel.imageType = ImageType::png;
-    tableModel.diffusePath = "resources/textures/alien/diffuse.png";
-    tableModel.normalPath = "resources/textures/alien/normal.png";
-    tableModel.roughnessPath = "resources/textures/alien/roughness.png";
-    tableModel.ambientOcclusionPath = "resources/textures/alien/ambientOcclusion.png";
+    tableModel.imageType = ImageType::jpg;
+    tableModel.diffusePath = "resources/textures/wood16/diffuse.jpg";
+    tableModel.normalPath = "resources/textures/wood16/normal.jpg";
+    tableModel.roughnessPath = "resources/textures/wood16/roughness.jpg";
     tableModel.modelType = ModelType::obj;
     tableModel.objPath = "resources/models/table.obj";
 

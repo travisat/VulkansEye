@@ -6,7 +6,8 @@ Model::~Model()
     vkDestroySampler(vulkan->device, diffuseSampler, nullptr);
     vkDestroySampler(vulkan->device, normalSampler, nullptr);
     vkDestroySampler(vulkan->device, roughnessSampler, nullptr);
-    vkDestroySampler(vulkan->device, ambientOcclusionSampler, nullptr);
+    vkDestroySampler(vulkan->device, metallicSampler, nullptr);
+    vkDestroySampler(vulkan->device, aoSampler, nullptr);
 }
 
 void Model::create()
@@ -27,8 +28,9 @@ void Model::loadMaterial()
 {
     loadImage(config->diffusePath, config->imageType, diffuse, VK_FORMAT_R8G8B8A8_UNORM, diffuseSampler);
     loadImage(config->normalPath, config->imageType, normal, VK_FORMAT_R8G8B8A8_UNORM, normalSampler);
-    loadImage(config->roughnessPath, config->imageType, roughness, VK_FORMAT_R8_UNORM, roughnessSampler);
-    loadImage(config->ambientOcclusionPath, config->imageType, ambientOcclusion, VK_FORMAT_R8_UNORM, ambientOcclusionSampler);
+    loadImage(config->roughnessPath, config->imageType, roughness, VK_FORMAT_R8G8B8A8_UNORM, roughnessSampler);
+    loadImage(config->metallicPath, config->imageType, metallic, VK_FORMAT_R8G8B8A8_UNORM, metallicSampler);
+    loadImage(config->aoPath, config->imageType, ambientOcclusion, VK_FORMAT_R8G8B8A8_UNORM, aoSampler);
 }
 
 void Model::loadImage(const std::string &path, ImageType type, Image &image, VkFormat format, VkSampler &sampler)

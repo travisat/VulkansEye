@@ -43,8 +43,8 @@ public:
 
     // num uniform buffers per model and stage (UBO and ULO)
     uint32_t numUniformBuffers() { return static_cast<uint32_t>((actors.size() + 1) * 2); };
-    // same but for imagesamplers (diffuse, normal, roughness, ambientOcclusion) + sampler for stage
-    uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 4); };
+    // same but for imagesamplers (diffuse, normal, roughness, metllalic, ambientOcclusion) + sampler for stage
+    uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 5); };
 
 private:
     float gamma = 4.5f;

@@ -66,11 +66,13 @@ public:
     Image diffuse;
     Image normal;
     Image roughness;
+    Image metallic;
     Image ambientOcclusion;
     VkSampler diffuseSampler;
     VkSampler normalSampler;
     VkSampler roughnessSampler;
-    VkSampler ambientOcclusionSampler;
+    VkSampler metallicSampler;
+    VkSampler aoSampler;
 
     ~Model();
     void create();
