@@ -19,6 +19,7 @@ public:
     Buffer indexBuffer;
     std::vector<Buffer> uniformBuffers;
     std::vector<Buffer> uniformLights;
+    glm::vec3 scale = glm::vec3(1.0f);
 
     std::vector<VkDescriptorSet> descriptorSets;
 

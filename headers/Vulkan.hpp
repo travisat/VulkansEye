@@ -32,15 +32,16 @@ public:
         vmaDestroyAllocator(allocator);
         vkDestroyDevice(device, nullptr);
 
-        vkDestroySurfaceKHR(vkinstance, vksurface, nullptr);
-        vkDestroyInstance(vkinstance, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkDestroyInstance(instance, nullptr);
     };
 
     std::string name = "Unknown";
 
-    VkInstance vkinstance;
-    VkSurfaceKHR vksurface;
-    VkPhysicalDevice vkphysicalDevice;
+    VkInstance instance;
+    VkSurfaceKHR surface;
+    VkPhysicalDevice physicalDevice;
+    VkPhysicalDeviceProperties physicalDeviceProperties;
     VkDevice device;
     VmaAllocator allocator;
     VkCommandPool commandPool;
@@ -68,6 +69,13 @@ public:
     bool prepared = false;
     uint32_t frameCounter = 0;
     uint32_t lastFPS = 0;
+
+    bool checkFormat(VkFormat format)
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        return props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    };
 
     VkCommandBuffer beginSingleTimeCommands()
     {

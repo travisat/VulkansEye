@@ -10,12 +10,15 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 model;
     vec3 campos;
+	vec2 texScale;
 } ubo;
 
 layout(binding = 1) uniform UniformLightObject
 {
-    vec3 position;
-    vec3 color;
+    vec3 position[2];
+    vec3 color[2];
+	float lumens[2];
+	float numlights;
     float exposure;
     float gamma;
 } ulo;
@@ -68,10 +71,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 // Find the normal for this fragment, pulling either from a predefined normal map
 // or from the interpolated mesh normal and tangent attributes.
-vec3 getNormal()
+vec3 getNormal(vec2 inUV)
 {
 	// Perturb normal, see http://www.thetenthplanet.de/archives/1180
-	vec3 tangentNormal = texture(normalMap, inUV).xyz * 2.0 - 1.0;
+	vec3 tangentNormal = SRGBtoLINEAR(texture(normalMap, inUV)).xyz * 2.0 - 1.0;
 
 	vec3 q1 = dFdx(inPosition);
 	vec3 q2 = dFdy(inPosition);
@@ -134,54 +137,63 @@ float microfacetDistribution(float NdotH, float roughness)
 }
 
 void main() {
-    vec3 localCamPos = ubo.campos;
-	vec3 localLightPos = ulo.position;
+	vec3 localCamPos = ubo.campos;
 
     float roughness = texture(roughnessMap, inUV).r;
     float metallic = texture(metallicMap, inUV).r;
+	float ambientOcclusion = texture(aoMap, inUV).r;
     vec3 baseColor = SRGBtoLINEAR(texture(diffuseMap, inUV)).rgb;
 
-    vec3 N = getNormal();
+	vec3 N = getNormal(inUV);
 	vec3 V = normalize(localCamPos - inPosition);    // Vector from surface point to camera
-	vec3 L = normalize(localLightPos - inPosition);     // Vector from surface point to light
-	vec3 H = normalize(L+V);                        // Half vector between l and v
 
 	vec3 f0 = vec3(0.04);
-    vec3 specularColor = mix(f0, baseColor, metallic);
-    float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
+	vec3 specularColor = mix(f0, baseColor, metallic);
+	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
     // For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
 	// For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
 	float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
 	vec3 specularEnvironmentR0 = specularColor.rgb;
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
+
+	vec3 directLighting = vec3(0.0);
+	//for (int i = 1; i < 2; ++i){
+		//vec3 lightPos = ulo.position[1];
+		vec3 lightPos = ubo.campos;
+		vec3 lightcolor = ulo.color[0];
+		float lumens = ulo.lumens[0];
+		
+		vec3 L = normalize(lightPos - inPosition);     // Vector from surface point to light
+		vec3 H = normalize(L+V);                        // Half vector between l and v
    
-    float NdotL = max(0.0, dot(N, L)); //cos angle between normal and light direction
-	float NdotV = max(0.001, abs(dot(N, V))); //cos angle between nornal and view direction
-	float NdotH = max(0.001, dot(N, H)); //cos angle between normal and half vector
-	float LdotH = max(0.001, dot(L, H)); //cos angle between light direction and half vector
-	float VdotH = max(0.001, dot(V, H)); //cos angle between view angle and half vector
+	    float NdotL = max(0.0, dot(N, L)); //cos angle between normal and light direction
+		float NdotV = max(0.001, abs(dot(N, V))); //cos angle between nornal and view direction
+		float NdotH = max(0.001, dot(N, H)); //cos angle between normal and half vector
+		float LdotH = max(0.001, dot(L, H)); //cos angle between light direction and half vector
+		float VdotH = max(0.001, dot(V, H)); //cos angle between view angle and half vector
 
-    vec3 F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH); 
-    float D = microfacetDistribution(NdotH, roughness);
-    float G = geometricOcclusion(NdotL, NdotV, roughness);
+	    vec3 F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH); 
+	    float D = microfacetDistribution(NdotH, roughness);
+	    float G = geometricOcclusion(NdotL, NdotV, roughness);
 
-	vec3 diffuseColor = baseColor * (vec3(1.0) - f0);
-	//diffuseColor *= 1.0 - metallic;
+		vec3 diffuseColor = baseColor * (vec3(1.0) - f0);
+		diffuseColor *= 1.0 - metallic;
 
-    vec3 diffuseContrib = (1.0 - F) * lambertianDiffuse(diffuseColor);
-    vec3 specContrib = F * G * D / max(4.0 * NdotL * NdotV, 0.001);
+	    vec3 diffuseContrib = (1.0 - F) * lambertianDiffuse(diffuseColor);
+	    vec3 specContrib = F * G * D / max(4.0 * NdotL * NdotV, 0.001);
 
-	float distance = length(localLightPos - inPosition);
-	float attenuation = 1.0 / (distance * distance);
-    vec3 lightColor = ulo.color;// * attenuation;
+		float intensity = lumens * lumens;
+		lightcolor = lightcolor * intensity;
+
+		directLighting += NdotL * lightcolor * (diffuseContrib + specContrib);
+//}
 
 	const float u_OcclusionStrength = 1.0f;
-	vec3 ambientLight = vec3(0.5) * baseColor;
-	float ambientOcclusion = texture(aoMap, inUV).r;
+	vec3 ambientLight = vec3(0.04) * baseColor;
 	ambientLight = mix(ambientLight, ambientLight * ambientOcclusion, u_OcclusionStrength);
 
-    vec3 color = NdotL * (lightColor + ambientLight) * (diffuseContrib + specContrib);
+    vec3 color = directLighting + ambientLight;
 
     outColor = vec4(color, 1.0);
 } 

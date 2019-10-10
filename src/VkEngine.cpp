@@ -35,7 +35,6 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 
 void VkEngine::init()
 {
-   
 
     createInstance();
     setupDebugMessenger();
@@ -64,7 +63,7 @@ VkEngine::~VkEngine()
 {
     if (enableValidationLayers)
     {
-        DestroyDebugUtilsMessengerEXT(vulkan->vkinstance, debugMessenger, nullptr);
+        DestroyDebugUtilsMessengerEXT(vulkan->instance, debugMessenger, nullptr);
     }
     for (auto framebuffer : swapChainFramebuffers)
     {
@@ -297,7 +296,7 @@ void VkEngine::createInstance()
         createInfo.pNext = nullptr;
     }
 
-    CheckResult(vkCreateInstance(&createInfo, nullptr, &vulkan->vkinstance));
+    CheckResult(vkCreateInstance(&createInfo, nullptr, &vulkan->instance));
 }
 
 void VkEngine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
@@ -317,38 +316,37 @@ void VkEngine::setupDebugMessenger()
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(createInfo);
 
-    CheckResult(CreateDebugUtilsMessengerEXT(vulkan->vkinstance, &createInfo, nullptr, &debugMessenger));
+    CheckResult(CreateDebugUtilsMessengerEXT(vulkan->instance, &createInfo, nullptr, &debugMessenger));
 }
 
 void VkEngine::createSurface()
 {
-    CheckResult(glfwCreateWindowSurface(vulkan->vkinstance, vulkan->window, nullptr, &vulkan->vksurface));
+    CheckResult(glfwCreateWindowSurface(vulkan->instance, vulkan->window, nullptr, &vulkan->surface));
 }
 
 void VkEngine::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(vulkan->vkinstance, &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(vulkan->instance, &deviceCount, nullptr);
 
     assert(deviceCount != 0);
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(vulkan->vkinstance, &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(vulkan->instance, &deviceCount, devices.data());
 
     for (const auto &device : devices)
     {
         if (isDeviceSuitable(device))
         {
-            VkPhysicalDeviceProperties properties{};
-            vkGetPhysicalDeviceProperties(device, &properties);
-            Trace("Physical Device: ", properties.deviceName);
-            vulkan->vkphysicalDevice = device;
+            vkGetPhysicalDeviceProperties(device, &vulkan->physicalDeviceProperties);
+            Trace("Physical Device: ", vulkan->physicalDeviceProperties.deviceName);
+            vulkan->physicalDevice = device;
             vulkan->msaaSamples = getMaxUsableSampleCount();
             break;
         }
     }
 
-    assert(vulkan->vkphysicalDevice != VK_NULL_HANDLE);
+    assert(vulkan->physicalDevice != VK_NULL_HANDLE);
 }
 
 bool VkEngine::isDeviceSuitable(VkPhysicalDevice const &device)
@@ -389,7 +387,7 @@ QueueFamilyIndices VkEngine::findQueueFamiles(VkPhysicalDevice const &device)
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vulkan->vksurface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vulkan->surface, &presentSupport);
 
         if (queueFamily.queueCount > 0 && presentSupport)
         {
@@ -409,24 +407,24 @@ SwapChainSupportDetails VkEngine::querySwapChainSupport(VkPhysicalDevice const &
 {
     SwapChainSupportDetails details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vulkan->vksurface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vulkan->surface, &details.capabilities);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkan->vksurface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkan->surface, &formatCount, nullptr);
 
     if (formatCount != 0)
     {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkan->vksurface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, vulkan->surface, &formatCount, details.formats.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkan->vksurface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkan->surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0)
     {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkan->vksurface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, vulkan->surface, &presentModeCount, details.presentModes.data());
     }
 
     return details;
@@ -452,7 +450,7 @@ bool VkEngine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device)
 
 void VkEngine::createLogicalDevice()
 {
-    QueueFamilyIndices indices = findQueueFamiles(vulkan->vkphysicalDevice);
+    QueueFamilyIndices indices = findQueueFamiles(vulkan->physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -485,7 +483,7 @@ void VkEngine::createLogicalDevice()
 
     createInfo.enabledLayerCount = 0;
 
-    CheckResult(vkCreateDevice(vulkan->vkphysicalDevice, &createInfo, nullptr, &vulkan->device));
+    CheckResult(vkCreateDevice(vulkan->physicalDevice, &createInfo, nullptr, &vulkan->device));
 
     vkGetDeviceQueue(vulkan->device, indices.graphicsFamily.value(), 0, &vulkan->graphicsQueue);
     vkGetDeviceQueue(vulkan->device, indices.presentFamily.value(), 0, &vulkan->presentQueue);
@@ -494,7 +492,7 @@ void VkEngine::createLogicalDevice()
 void VkEngine::createAllocator()
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = vulkan->vkphysicalDevice;
+    allocatorInfo.physicalDevice = vulkan->physicalDevice;
     allocatorInfo.device = vulkan->device;
 
     CheckResult(vmaCreateAllocator(&allocatorInfo, &vulkan->allocator));
@@ -502,7 +500,7 @@ void VkEngine::createAllocator()
 
 void VkEngine::createSwapChain()
 {
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vulkan->vkphysicalDevice);
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vulkan->physicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -516,7 +514,7 @@ void VkEngine::createSwapChain()
 
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = vulkan->vksurface;
+    createInfo.surface = vulkan->surface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -524,7 +522,7 @@ void VkEngine::createSwapChain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = findQueueFamiles(vulkan->vkphysicalDevice);
+    QueueFamilyIndices indices = findQueueFamiles(vulkan->physicalDevice);
     uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily)
@@ -693,7 +691,7 @@ void VkEngine::createFramebuffers()
 
 void VkEngine::createCommandPool()
 {
-    QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(vulkan->vkphysicalDevice);
+    QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(vulkan->physicalDevice);
 
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -787,10 +785,7 @@ std::vector<const char *> VkEngine::getRequiredExtensions()
 
 VkSampleCountFlagBits VkEngine::getMaxUsableSampleCount()
 {
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    vkGetPhysicalDeviceProperties(vulkan->vkphysicalDevice, &physicalDeviceProperties);
-
-    VkSampleCountFlags counts = std::min(physicalDeviceProperties.limits.framebufferColorSampleCounts, physicalDeviceProperties.limits.framebufferDepthSampleCounts);
+    VkSampleCountFlags counts = std::min(vulkan->physicalDeviceProperties.limits.framebufferColorSampleCounts, vulkan->physicalDeviceProperties.limits.framebufferDepthSampleCounts);
     if (counts & VK_SAMPLE_COUNT_64_BIT)
     {
         return VK_SAMPLE_COUNT_64_BIT;
@@ -866,7 +861,7 @@ VkFormat VkEngine::findSupportedFormat(const std::vector<VkFormat> &candidates, 
     for (VkFormat format : candidates)
     {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(vulkan->vkphysicalDevice, format, &props);
+        vkGetPhysicalDeviceFormatProperties(vulkan->physicalDevice, format, &props);
 
         if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
         {

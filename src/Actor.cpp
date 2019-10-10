@@ -142,6 +142,7 @@ void Actor::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
+
 void Actor::createUniformBuffers()
 {
     uniformBuffers.resize(vulkan->swapChainImages.size());

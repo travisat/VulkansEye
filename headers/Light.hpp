@@ -10,8 +10,10 @@
 
 struct UniformLightObject
 {
-    glm::vec3 position;
-    glm::vec3 color;
+    glm::vec3 position[2];
+    glm::vec3 color[2];
+    float lumens[2];
+    float numlights = 2;
     float exposure = 4.5f;
     float gamma = 2.2f;
 };

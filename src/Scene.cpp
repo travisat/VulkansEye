@@ -122,8 +122,14 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ubo.cameraPosition = player->position * -1.0f;
 
     UniformLightObject ulo{};
-    ulo.position = lights[0].position;
-    ulo.color = lights[0].color;
+    ulo.position[0] = lights[0].position;
+    ulo.color[0] = lights[0].color;
+    ulo.lumens[0] = lights[0].lumens;
+    ulo.position[1] = lights[1].position;
+    ulo.color[1] = lights[1].color;
+    ulo.lumens[1] = lights[1].lumens;
+
+    ulo.numlights = 2;
     ulo.gamma = gamma;
     ulo.exposure = exposure;
 
@@ -131,8 +137,9 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
 
     for (auto &actor : actors)
     {
-        ubo.model = glm::translate(ubo.model, actor.position);
+        ubo.model = glm::translate(glm::mat4(1.0f), actor.position);
         ubo.model = glm::scale(ubo.model, actor.scale);
+
         actor.updateUniformBuffer(currentImage, ubo, ulo);
     }
 }

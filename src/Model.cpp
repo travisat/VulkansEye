@@ -26,17 +26,16 @@ void Model::loadMesh()
 
 void Model::loadMaterial()
 {
-    loadImage(config->diffusePath, config->imageType, diffuse, VK_FORMAT_R8G8B8A8_UNORM, diffuseSampler);
-    loadImage(config->normalPath, config->imageType, normal, VK_FORMAT_R8G8B8A8_UNORM, normalSampler);
-    loadImage(config->roughnessPath, config->imageType, roughness, VK_FORMAT_R8G8B8A8_UNORM, roughnessSampler);
-    loadImage(config->metallicPath, config->imageType, metallic, VK_FORMAT_R8G8B8A8_UNORM, metallicSampler);
-    loadImage(config->aoPath, config->imageType, ambientOcclusion, VK_FORMAT_R8G8B8A8_UNORM, aoSampler);
+    loadImage(config->material.diffusePath, config->material.imageType, diffuse, diffuseSampler);
+    loadImage(config->material.normalPath, config->material.imageType, normal, normalSampler);
+    loadImage(config->material.roughnessPath, config->material.imageType, roughness, roughnessSampler);
+    loadImage(config->material.metallicPath, config->material.imageType, metallic, metallicSampler);
+    loadImage(config->material.aoPath, config->material.imageType, ambientOcclusion, aoSampler);
 }
 
-void Model::loadImage(const std::string &path, ImageType type, Image &image, VkFormat format, VkSampler &sampler)
+void Model::loadImage(const std::string &path, ImageType type, Image &image, VkSampler &sampler)
 {
     image.vulkan = vulkan;
-    image.format = format;
     image.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     image.type = ImageType::png;

@@ -6,6 +6,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 model;
     vec3 campos;
+    vec2 tileSize;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;

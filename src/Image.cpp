@@ -11,7 +11,6 @@ Image::~Image()
     if (imageView)
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
-        Trace("Destroyed ", name, " imageView at ", Timer::systemTime());
     }
 }
 
@@ -41,16 +40,37 @@ void Image::loadFile(std::string path)
         Trace("Uknown ImageType for ", name, " attempting to load using stb_image at ", Timer::systemTime());
         loadSTB(path);
     }
-    Trace("Loaded ", name, " at ", Timer::systemTime());
+    Trace("Loaded ", name, " with format of ", format, " at ", Timer::systemTime());
 }
 
 void Image::loadSTB(std::string path)
 {
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
-    stbi_uc *pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    size = width * height * STBI_rgb_alpha;
+    int32_t defaultChannels = 4;
+    format = VK_FORMAT_R8G8B8A8_UNORM;
 
+    stbi_info(path.c_str(), &width, &height, &channels);
+
+    if (channels == 1 && vulkan->checkFormat(VK_FORMAT_R8_UNORM))
+    {
+        defaultChannels = 1;
+        format = VK_FORMAT_R8_UNORM;
+    }
+    else if (channels == 2 && vulkan->checkFormat(VK_FORMAT_R8G8_UNORM))
+    {
+        defaultChannels = 2;
+        format = VK_FORMAT_R8G8_UNORM;
+    }
+    else if (channels == 3 && vulkan->checkFormat(VK_FORMAT_R8G8B8_UNORM))
+    {
+        defaultChannels = 3;
+        format = VK_FORMAT_R8G8B8_UNORM;
+    }
+
+    stbi_uc *pixels = stbi_load(path.c_str(), &width, &height, &channels, defaultChannels);
+    channels = defaultChannels;
+    size = width * height * channels;
     assert(pixels);
 
     Buffer stagingBuffer{};
@@ -89,6 +109,7 @@ void Image::loadTextureCube(std::string path)
     //load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(path));
     assert(!texCube.empty());
+    auto f = texCube.format();
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -173,7 +194,6 @@ void Image::allocate()
     allocInfo.usage = memUsage;
 
     CheckResult(vmaCreateImage(vulkan->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr));
-    Trace("Allocated ", name, " at ", Timer::systemTime());
 }
 
 void Image::deallocate()
@@ -186,7 +206,6 @@ void Image::deallocate()
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
     }
-    Trace("Deallocated ", name, " at ", Timer::systemTime());
 }
 
 void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
@@ -202,7 +221,6 @@ void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectF
     viewInfo.subresourceRange.layerCount = layerCount;
 
     CheckResult(vkCreateImageView(vulkan->device, &viewInfo, nullptr, &imageView));
-    Trace("Created imageview for ", name, " at ", Timer::systemTime());
 }
 
 void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
@@ -231,7 +249,6 @@ void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
         &region);
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
-    Trace("Copied data from ", buffer.name, " to ", name, " at ", Timer::systemTime());
 }
 
 void Image::resize(int width, int height, int channels, int layers)
@@ -249,7 +266,7 @@ void Image::generateMipmaps()
 {
 
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(vulkan->vkphysicalDevice, format, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(vulkan->physicalDevice, format, &formatProperties);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
     {
@@ -416,7 +433,6 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     layout = newLayout;
-    Trace("Transitioned layout of ", name, " at ", Timer::systemTime());
 }
 
 bool Image::hasStencilComponent(VkFormat format)

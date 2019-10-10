@@ -5,6 +5,7 @@ void Stage::create()
 {
    //TODO implement using path to load model
     name = config->name;
+    scale = config->scale;
 
     model.vulkan = vulkan;
     model.config = &config->modelConfig;

@@ -32,18 +32,23 @@ enum class ImageType
     kmg
 };
 
-struct ModelConfig
+struct MaterialConfig
 {
-    uint32_t index;
-    std::string name = "Unknown Model";
     ImageType imageType;
-    ModelType modelType; //Todo load textures through obj
-    std::string objPath = "";
     std::string diffusePath = "resources/textures/default/diffuse.png";
     std::string normalPath = "resources/textures/default/normal.png";
     std::string roughnessPath = "resources/textures/default/roughness.png";
     std::string metallicPath = "resources/textures/default/metallic.png";
     std::string aoPath = "resources/textures/default/ao.png";
+};
+
+struct ModelConfig
+{
+    uint32_t index;
+    std::string name = "Unknown Model";
+    ModelType modelType; //Todo load textures through obj
+    std::string objPath = "";
+    MaterialConfig material;    
 };
 
 struct ActorConfig
@@ -78,6 +83,7 @@ struct StageConfig
 {
     uint32_t index;
     std::string name = "Unknown Stage";
+    glm::vec3 scale = glm::vec3(1.0f);
     ModelConfig modelConfig;
 };
 

@@ -29,21 +29,30 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     SceneConfig config;
     config.backdrop = {"resources/backdrop/nebula.dds"};
 
+
+    MaterialConfig pavingStones;
+    pavingStones.imageType = ImageType::jpg;
+    pavingStones.diffusePath = "resources/textures/pavingstones/PavingStones45_col.jpg";
+    pavingStones.normalPath = "resources/textures/pavingstones/PavingStones45_nrm.jpg";
+    pavingStones.roughnessPath = "resources/textures/pavingstones/PavingStones45_rgh.jpg";
+    pavingStones.aoPath = "resources/textures/pavingstones/PavingStones45_AO.jpg";
+
+    MaterialConfig wood16;
+    wood16.imageType = ImageType::jpg;
+    wood16.diffusePath = "resources/textures/wood16/diffuse.jpg";
+    wood16.normalPath = "resources/textures/wood16/normal.jpg";
+    wood16.roughnessPath = "resources/textures/wood16/roughness.jpg";
+
     ModelConfig stageModel;    
     stageModel.modelType = ModelType::obj;
     stageModel.objPath = "resources/stage/floor.obj";
-    stageModel.imageType = ImageType::jpg;
-    stageModel.diffusePath = "resources/textures/pavingstones/PavingStones45_col.jpg";
-    stageModel.normalPath = "resources/textures/pavingstones/PavingStones45_nrm.jpg";
-    stageModel.roughnessPath = "resources/textures/pavingstones/PavingStones45_rgh.jpg";
-    stageModel.aoPath = "resources/textures/pavingstones/PavingStones45_AO.jpg";
-    //stageModel.metallicPath = "resources/textures/brick/metallic.jpg";
+    stageModel.material = pavingStones;
+    
 
     StageConfig stageConfig;
     stageConfig.index = 0;
     stageConfig.name = "floor";
     stageConfig.modelConfig = stageModel;
-    
     config.stageConfig = stageConfig;
     
     PlayerConfig playerConfig;
@@ -55,29 +64,32 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     
     config.playerConfig = playerConfig;
 
-    const float p = 10.0f;
     LightConfig light0;
     light0.name = "light0";
     light0.index = 0;
     light0.position = {4.0f, 10.0f, 5.0f};
     light0.color = {1.0f, 1.0f, 1.0f};
-    config.lights = {light0};
+    light0.lumens = 1600.0f;
+    LightConfig light1;
+    light1.name = "lantern";
+    light1.index = 1;
+    light1.position = {0.0f, 1.7f, 0.0f};
+    light1.color = {1.0f, 1.0f, 1.0f};
+    light1.lumens = 400.0f;
+    config.lights = {light0, light1};
 
     ModelConfig tableModel;
     tableModel.index = 0;
     tableModel.name = "Table";
-    tableModel.imageType = ImageType::jpg;
-    tableModel.diffusePath = "resources/textures/wood16/diffuse.jpg";
-    tableModel.normalPath = "resources/textures/wood16/normal.jpg";
-    tableModel.roughnessPath = "resources/textures/wood16/roughness.jpg";
     tableModel.modelType = ModelType::obj;
     tableModel.objPath = "resources/models/table.obj";
+    tableModel.material = wood16;
 
     ActorConfig table;
     table.index = 0;
     table.name = "table Model";
     table.position = glm::vec3(4.0f, 0.0f, 5.0f);
-    table.scale = glm::vec3(0.25f);
+    table.scale = glm::vec3(0.2f);
     table.modelConfig = tableModel;
 
     config.actors = {table};
