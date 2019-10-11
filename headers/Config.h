@@ -68,6 +68,7 @@ struct LightConfig
     glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
+    ModelConfig modelConfig;
 };
 
 struct PlayerConfig

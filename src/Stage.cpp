@@ -3,7 +3,7 @@
 
 void Stage::create()
 {
-   //TODO implement using path to load model
+    //TODO implement using path to load model
     name = config->name;
     scale = config->scale;
 
@@ -51,11 +51,6 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
-        VkDescriptorBufferInfo lightInfo = {};
-        lightInfo.buffer = uniformLights[i].buffer;
-        lightInfo.offset = 0;
-        lightInfo.range = sizeof(UniformLightObject);
-
         VkDescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         diffuseInfo.imageView = model.diffuse.imageView;
@@ -81,7 +76,9 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         aoInfo.imageView = model.ambientOcclusion.imageView;
         aoInfo.sampler = model.aoSampler;
 
-        std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
+        std::vector<VkWriteDescriptorSet> descriptorWrites = {};
+        descriptorWrites.resize(6 + numLights);
+
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
@@ -92,51 +89,61 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstBinding = 2;
         descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo = &lightInfo;
+        descriptorWrites[1].pImageInfo = &diffuseInfo;
 
         descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[2].dstSet = descriptorSets[i];
-        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstBinding = 3;
         descriptorWrites[2].dstArrayElement = 0;
         descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pImageInfo = &diffuseInfo;
+        descriptorWrites[2].pImageInfo = &normalInfo;
 
         descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[3].dstSet = descriptorSets[i];
-        descriptorWrites[3].dstBinding = 3;
+        descriptorWrites[3].dstBinding = 4;
         descriptorWrites[3].dstArrayElement = 0;
         descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[3].descriptorCount = 1;
-        descriptorWrites[3].pImageInfo = &normalInfo;
+        descriptorWrites[3].pImageInfo = &roughnessInfo;
 
         descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[4].dstSet = descriptorSets[i];
-        descriptorWrites[4].dstBinding = 4;
+        descriptorWrites[4].dstBinding = 5;
         descriptorWrites[4].dstArrayElement = 0;
         descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pImageInfo = &roughnessInfo;
+        descriptorWrites[4].pImageInfo = &metallicInfo;
 
         descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[5].dstSet = descriptorSets[i];
-        descriptorWrites[5].dstBinding = 5;
+        descriptorWrites[5].dstBinding = 6;
         descriptorWrites[5].dstArrayElement = 0;
         descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &metallicInfo;
+        descriptorWrites[5].pImageInfo = &aoInfo;
 
-        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[6].dstSet = descriptorSets[i];
-        descriptorWrites[6].dstBinding = 6;
-        descriptorWrites[6].dstArrayElement = 0;
-        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[6].descriptorCount = 1;
-        descriptorWrites[6].pImageInfo = &aoInfo;
+        std::vector<VkDescriptorBufferInfo> lightInfo = {};
+        lightInfo.resize(numLights);
+
+        for (int32_t j = 0; j < numLights; j++)
+        {
+            lightInfo[j].buffer = uniformLights[i].buffer;
+            lightInfo[j].offset = j * sizeof(UniformShaderObject);
+            lightInfo[j].range = sizeof(UniformShaderObject);
+
+            descriptorWrites[6 + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[6 + j].dstSet = descriptorSets[i];
+            descriptorWrites[6 + j].dstBinding = 1;
+            descriptorWrites[6 + j].dstArrayElement = j;
+            descriptorWrites[6 + j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[6 + j].descriptorCount = 1;
+            descriptorWrites[6 + j].pBufferInfo = lightInfo.data();
+        }
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -158,12 +165,12 @@ void Stage::createUniformBuffers()
         uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformLights[i].name = name + " ULO";
-        uniformLights[i].resize(sizeof(UniformLightObject));
+        uniformLights[i].resize(sizeof(UniformShaderObject) * numLights);
     }
 }
 
-void Stage::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, UniformLightObject &ulo)
+void Stage::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, const UniformShaderObject *uso)
 {
-    uniformBuffers[currentImage].update(ubo);
-    uniformLights[currentImage].update(ulo);
+    uniformBuffers[currentImage].update(ubo, sizeof(UniformBufferObject));
+    uniformLights[currentImage].update(uso, sizeof(UniformShaderObject) * numLights);
 }

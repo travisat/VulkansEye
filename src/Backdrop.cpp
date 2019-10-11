@@ -98,7 +98,7 @@ void Backdrop::createUniformBuffers()
         ubo.view = player->view;
 
         //store and add
-        buffer.update(ubo);
+        buffer.update(ubo, sizeof(UniformBufferObject));
     }
 }
 
@@ -108,7 +108,7 @@ void Backdrop::updateUniformBuffer(uint32_t currentImage)
 
     ubo.projection = player->perspective;
     ubo.view = player->view;
-    uniformBuffers[currentImage].update(ubo);
+    uniformBuffers[currentImage].update(ubo, sizeof(UniformBufferObject));
 }
 
 void Backdrop::createDescriptorPool()

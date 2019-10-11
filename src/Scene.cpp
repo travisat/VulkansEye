@@ -42,7 +42,7 @@ void Scene::createStage()
 
 void Scene::createLights()
 {
-    lights.resize(config->lights.size());
+    lights.resize(numLights);
     for (auto &lightConfig : config->lights)
     {
         lights[lightConfig.index].config = &lightConfig;
@@ -119,28 +119,26 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ubo.model = glm::mat4(1.0f);
     ubo.projection = player->perspective;
     ubo.view = player->view;
-    ubo.cameraPosition = player->position * -1.0f;
+    ubo.eyeposition = -1.0f * player->position;
 
-    UniformLightObject ulo{};
-    ulo.position[0] = lights[0].position;
-    ulo.color[0] = lights[0].color;
-    ulo.lumens[0] = lights[0].lumens;
-    ulo.position[1] = lights[1].position;
-    ulo.color[1] = lights[1].color;
-    ulo.lumens[1] = lights[1].lumens;
+    UniformShaderObject uso[numLights];
+    for (int32_t i = 0; i < numLights; ++i)
+    {
+        uso[i].position = lights[i].position;
+        uso[i].color = lights[i].color;
+        uso[i].lumens = lights[i].lumens;
+        uso[i].gamma = gamma;
+        uso[i].exposure = exposure;
+    }
 
-    ulo.numlights = 2;
-    ulo.gamma = gamma;
-    ulo.exposure = exposure;
-
-    stage.updateUniformBuffer(currentImage, ubo, ulo);
+    stage.updateUniformBuffer(currentImage, ubo, uso);
 
     for (auto &actor : actors)
     {
         ubo.model = glm::translate(glm::mat4(1.0f), actor.position);
         ubo.model = glm::scale(ubo.model, actor.scale);
 
-        actor.updateUniformBuffer(currentImage, ubo, ulo);
+        actor.updateUniformBuffer(currentImage, ubo, uso);
     }
 }
 
@@ -150,7 +148,7 @@ void Scene::createDescriptorPool()
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = numUniformBuffers() * numSwapChainImages;
+    poolSizes[0].descriptorCount = (numUniformBuffers() + numShaderBuffers() * numLights) * numSwapChainImages;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
 
@@ -158,7 +156,7 @@ void Scene::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = std::max(numUniformBuffers(), numImageSamplers()) * numSwapChainImages;
+    poolInfo.maxSets = (numUniformBuffers() + numShaderBuffers() + numImageSamplers()) * numSwapChainImages;
 
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
 }
@@ -169,13 +167,13 @@ void Scene::createDescriptorSetLayouts()
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutBinding uloLayoutBinding = {};
     uloLayoutBinding.binding = 1;
     uloLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uloLayoutBinding.descriptorCount = 1;
+    uloLayoutBinding.descriptorCount = numLights;
     uloLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     uloLayoutBinding.pImmutableSamplers = nullptr;
 

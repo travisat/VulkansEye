@@ -5,23 +5,16 @@
 //https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
 //https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
 
-layout(binding = 0) uniform UniformBufferObject {
-    mat4 proj;
-    mat4 view;
-    mat4 model;
-    vec3 campos;
-	vec2 texScale;
-} ubo;
+const int numLights = 2;
 
-layout(binding = 1) uniform UniformLightObject
+layout(binding = 1) uniform UniformShaderObject
 {
-    vec3 position[2];
-    vec3 color[2];
-	float lumens[2];
-	float numlights;
-    float exposure;
+    vec3 position;
+	vec3 color;
+	float lumens;
+	float exposure;
     float gamma;
-} ulo;
+} uso[numLights];
 
 layout(binding = 2) uniform sampler2D diffuseMap;
 layout(binding = 3) uniform sampler2D normalMap;
@@ -32,6 +25,8 @@ layout(binding = 6) uniform sampler2D aoMap;
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
+layout(location = 3) in vec3 eyePosition;
+layout(location = 4) in mat4 view;
 
 layout(location = 0) out vec4 outColor;
 
@@ -106,20 +101,12 @@ vec3 specularReflection(vec3 reflectance0, vec3 reflectance90, float VdotH)
 
 // This calculates the specular geometric attenuation (aka G()),
 // where rougher material will reflect less light back to the viewer.
-float GeometrySchlickGGX(float NdotV, float k)
-{
-    float nom = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-    return nom / denom;
-}
-
 float geometricOcclusion(float NdotL, float NdotV, float roughness)
 {
-	float alpha = roughness * roughness;
-	float k = ((alpha + 1.0) * (alpha + 1.0)) / 8;
-	float ggxL = GeometrySchlickGGX(NdotL, k);
-	float ggxV= GeometrySchlickGGX(NdotV, k);
-	return ggxL * ggxV;
+	float r = roughness * roughness; //alpha rougness
+	float attenuationL = 2.0 * NdotL / (NdotL + sqrt(r * r + (1.0 - r * r) * (NdotL * NdotL)));
+	float attenuationV = 2.0 * NdotV / (NdotV + sqrt(r * r + (1.0 - r * r) * (NdotV * NdotV)));
+	return attenuationL * attenuationV;
 }
 
 // The following equation(s) model the distribution of microfacet normals across the area being drawn (aka D())
@@ -129,15 +116,14 @@ float microfacetDistribution(float NdotH, float roughness)
 {
 	float alpha = roughness * roughness;
 	float alphaSq = alpha * alpha;
-	//float f = (NdotH * alphaSq - NdotH) * NdotH + 1.0;
 	float nom = alphaSq;
-	float denom = (NdotH * (alphaSq - 1.0) + 1.0);
+	float denom = (NdotH * alphaSq - NdotH) * NdotH + 1.0;
 	denom = M_PI * denom * denom;
 	return nom / denom;
 }
 
 void main() {
-	vec3 localCamPos = ubo.campos;
+	vec3 localCamPos = eyePosition;
 
     float roughness = texture(roughnessMap, inUV).r;
     float metallic = texture(metallicMap, inUV).r;
@@ -158,20 +144,24 @@ void main() {
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
 	vec3 directLighting = vec3(0.0);
-	//for (int i = 1; i < 2; ++i){
-		//vec3 lightPos = ulo.position[1];
-		vec3 lightPos = ubo.campos;
-		vec3 lightcolor = ulo.color[0];
-		float lumens = ulo.lumens[0];
+	//for (int i = 0; i < numLights; ++i)
+	//{
+		//vec3 lightPos = uso[0].position;
+		//vec3 lightcolor = uso[0].color;
+		//float lumens = uso[0].lumens;
+   		vec3 lightPos = vec3( view * vec4(0.0, 10, 0.0, 1.0));
+		vec3 localPos = vec3( view * vec4(inPosition, 1.0));
+		vec3 lightcolor = vec3(1.0, 1.0, 1.0);
+		float lumens = 10.0;
 		
-		vec3 L = normalize(lightPos - inPosition);     // Vector from surface point to light
+		vec3 L = normalize(lightPos - position);     // Vector from surface point to light
 		vec3 H = normalize(L+V);                        // Half vector between l and v
    
-	    float NdotL = max(0.0, dot(N, L)); //cos angle between normal and light direction
-		float NdotV = max(0.001, abs(dot(N, V))); //cos angle between nornal and view direction
-		float NdotH = max(0.001, dot(N, H)); //cos angle between normal and half vector
-		float LdotH = max(0.001, dot(L, H)); //cos angle between light direction and half vector
-		float VdotH = max(0.001, dot(V, H)); //cos angle between view angle and half vector
+	    float NdotL = clamp(dot(N, L), 0.001, 1.0); //cos angle between normal and light direction
+		float NdotV = clamp(dot(N, V), 0.001, 1.0); //cos angle between nornal and view direction
+		float NdotH = clamp(dot(N, H), 0.0, 1.0); //cos angle between normal and half vector
+		float LdotH = clamp(dot(L, H), 0.0, 1.0); //cos angle between light direction and half vector
+		float VdotH = clamp(dot(V, H), 0.0, 1.0); //cos angle between view angle and half vector
 
 	    vec3 F = specularReflection(specularEnvironmentR0, specularEnvironmentR90, VdotH); 
 	    float D = microfacetDistribution(NdotH, roughness);
@@ -183,17 +173,18 @@ void main() {
 	    vec3 diffuseContrib = (1.0 - F) * lambertianDiffuse(diffuseColor);
 	    vec3 specContrib = F * G * D / max(4.0 * NdotL * NdotV, 0.001);
 
-		float intensity = lumens * lumens;
-		lightcolor = lightcolor * intensity;
+		//float distance = length(lightPos - inPosition);
+		//float intensity = lumens / (distance * distance);
+		lightcolor = lightcolor * lumens;
 
 		directLighting += NdotL * lightcolor * (diffuseContrib + specContrib);
-//}
+	//}
 
 	const float u_OcclusionStrength = 1.0f;
 	vec3 ambientLight = vec3(0.04) * baseColor;
 	ambientLight = mix(ambientLight, ambientLight * ambientOcclusion, u_OcclusionStrength);
 
-    vec3 color = directLighting + ambientLight;
+    vec3 color = directLighting;// + ambientLight;
 
     outColor = vec4(color, 1.0);
 } 

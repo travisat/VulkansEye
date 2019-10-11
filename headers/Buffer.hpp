@@ -59,9 +59,8 @@ public:
 
     //updates buffer to contents in T
     template <typename T>
-    void update(T t)
+    void update(T t, size_t s)
     {
-        size_t s = sizeof(t);
         if (s != size)
         {
             allocate(s);

@@ -8,17 +8,20 @@
 
 #include "Config.h"
 
-struct UniformLightObject
+#include "Actor.hpp"
+
+static const int numLights = 2;
+
+struct UniformShaderObject
 {
-    glm::vec3 position[2];
-    glm::vec3 color[2];
-    float lumens[2];
-    float numlights = 2;
+    glm::vec3 position;
+    glm::vec3 color;
+    float lumens;
     float exposure = 4.5f;
     float gamma = 2.2f;
 };
 
-class Light
+class Light : public Actor
 {
 public:
     LightConfig *config;
@@ -29,6 +32,7 @@ public:
     glm::vec3 color;
     float lumens = 0;
     float temperature = 0;
+    Model model;
 
     void load();
 

@@ -73,7 +73,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     LightConfig light1;
     light1.name = "lantern";
     light1.index = 1;
-    light1.position = {0.0f, 1.7f, 0.0f};
+    light1.position = {0.0f, 2.7f, 0.0f};
     light1.color = {1.0f, 1.0f, 1.0f};
     light1.lumens = 400.0f;
     config.lights = {light0, light1};
