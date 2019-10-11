@@ -8,7 +8,8 @@
 
 #include "Config.h"
 
-#include "Actor.hpp"
+//#include "Actor.hpp"
+//#include "Model.hpp"
 
 static const int numLights = 2;
 
@@ -21,7 +22,7 @@ struct UniformShaderObject
     float gamma = 2.2f;
 };
 
-class Light : public Actor
+class Light 
 {
 public:
     LightConfig *config;
@@ -32,7 +33,6 @@ public:
     glm::vec3 color;
     float lumens = 0;
     float temperature = 0;
-    Model model;
 
     void load();
 

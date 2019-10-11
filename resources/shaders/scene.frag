@@ -154,7 +154,7 @@ void main() {
 		vec3 lightcolor = vec3(1.0, 1.0, 1.0);
 		float lumens = 10.0;
 		
-		vec3 L = normalize(lightPos - position);     // Vector from surface point to light
+		vec3 L = normalize(lightPos - localPos);     // Vector from surface point to light
 		vec3 H = normalize(L+V);                        // Half vector between l and v
    
 	    float NdotL = clamp(dot(N, L), 0.001, 1.0); //cos angle between normal and light direction
