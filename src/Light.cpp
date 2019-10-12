@@ -5,6 +5,6 @@ void Light::load()
 {
     name = config->name;
     position = config->position;
-    color = config->color;
+    temperature = config->temperature;
     lumens = config->lumens;
 }

@@ -43,11 +43,17 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     wood16.normalPath = "resources/textures/wood16/normal.jpg";
     wood16.roughnessPath = "resources/textures/wood16/roughness.jpg";
 
+    MaterialConfig metal06;
+    metal06.imageType = ImageType::jpg;
+    metal06.diffusePath = "resources/textures/metal06/diffuse.jpg";
+    metal06.normalPath = "resources/textures/metal06/normal.jpg";
+    metal06.roughnessPath = "resources/textures/metal06/roughness.jpg";
+    metal06.metallicPath = "resources/textures/metal06/metallic.jpg";
+
     ModelConfig stageModel;    
     stageModel.modelType = ModelType::obj;
     stageModel.objPath = "resources/stage/floor.obj";
     stageModel.material = pavingStones;
-    
 
     StageConfig stageConfig;
     stageConfig.index = 0;
@@ -67,16 +73,16 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     LightConfig light0;
     light0.name = "light0";
     light0.index = 0;
-    light0.position = {4.0f, 10.0f, 5.0f};
-    light0.color = {1.0f, 1.0f, 1.0f};
+    light0.position = {0.0f, 3.0f, 0.0f};
+    light0.temperature = 2500.0f;
     light0.lumens = 1600.0f;
     LightConfig light1;
     light1.name = "lantern";
     light1.index = 1;
     light1.position = {0.0f, 2.7f, 0.0f};
-    light1.color = {1.0f, 1.0f, 1.0f};
+    light1.temperature = 2500.0f;
     light1.lumens = 400.0f;
-    config.lights = {light0, light1};
+    config.lights = {light0};
 
     ModelConfig tableModel;
     tableModel.index = 0;
@@ -85,14 +91,28 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     tableModel.objPath = "resources/models/table.obj";
     tableModel.material = wood16;
 
+    ModelConfig lightSphere;
+    lightSphere.index = 0;
+    lightSphere.name = "sphere";
+    lightSphere.modelType = ModelType::obj;
+    lightSphere.objPath = "resources/models/sphere.obj";
+    lightSphere.material = metal06;
+
+    ActorConfig light;
+    light.index = 1;
+    light.name = "globe light";
+    light.position = {4.0f, 1.0f, 5.0f};
+    light.scale = glm::vec3(0.4f);
+    light.modelConfig = lightSphere;
+
     ActorConfig table;
     table.index = 0;
     table.name = "table Model";
     table.position = glm::vec3(4.0f, 0.0f, 5.0f);
-    table.scale = glm::vec3(0.2f);
+    table.scale = glm::vec3(1.0f);
     table.modelConfig = tableModel;
 
-    config.actors = {table};
+    config.actors = {table, light};
 
     //setup player
     player.height = config.playerConfig.height;

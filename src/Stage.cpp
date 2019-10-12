@@ -77,7 +77,7 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         aoInfo.sampler = model.aoSampler;
 
         std::vector<VkWriteDescriptorSet> descriptorWrites = {};
-        descriptorWrites.resize(6 + numLights);
+        descriptorWrites.resize(7);
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -127,23 +127,18 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[5].descriptorCount = 1;
         descriptorWrites[5].pImageInfo = &aoInfo;
 
-        std::vector<VkDescriptorBufferInfo> lightInfo = {};
-        lightInfo.resize(numLights);
+        VkDescriptorBufferInfo lightInfo = {};
+        lightInfo.buffer = uniformLights[i].buffer;
+        lightInfo.offset = 0;
+        lightInfo.range = sizeof(UniformShaderObject);
 
-        for (int32_t j = 0; j < numLights; j++)
-        {
-            lightInfo[j].buffer = uniformLights[i].buffer;
-            lightInfo[j].offset = j * sizeof(UniformShaderObject);
-            lightInfo[j].range = sizeof(UniformShaderObject);
-
-            descriptorWrites[6 + j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[6 + j].dstSet = descriptorSets[i];
-            descriptorWrites[6 + j].dstBinding = 1;
-            descriptorWrites[6 + j].dstArrayElement = j;
-            descriptorWrites[6 + j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[6 + j].descriptorCount = 1;
-            descriptorWrites[6 + j].pBufferInfo = lightInfo.data();
-        }
+        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[6].dstSet = descriptorSets[i];
+        descriptorWrites[6].dstBinding = 1;
+        descriptorWrites[6].dstArrayElement =0;
+        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[6].descriptorCount = 1;
+        descriptorWrites[6].pBufferInfo = &lightInfo;
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -169,8 +164,8 @@ void Stage::createUniformBuffers()
     }
 }
 
-void Stage::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, const UniformShaderObject *uso)
+void Stage::updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, const UniformShaderObject &uso)
 {
     uniformBuffers[currentImage].update(ubo, sizeof(UniformBufferObject));
-    uniformLights[currentImage].update(uso, sizeof(UniformShaderObject) * numLights);
+    uniformLights[currentImage].update(uso, sizeof(UniformShaderObject));
 }

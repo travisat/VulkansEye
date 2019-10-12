@@ -11,15 +11,13 @@
 //#include "Actor.hpp"
 //#include "Model.hpp"
 
-static const int numLights = 2;
+static const int numLights = 1;
 
 struct UniformShaderObject
 {
-    glm::vec3 position;
-    glm::vec3 color;
-    float lumens;
-    float exposure = 4.5f;
-    float gamma = 2.2f;
+    alignas(16) glm::vec3 position;
+    alignas(16) float lumens;
+    alignas(16) float temperature;
 };
 
 class Light 

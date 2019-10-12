@@ -64,11 +64,9 @@ struct LightConfig
 {
     uint32_t index;
     std::string name = "Unknown Light";
-    glm::vec3 color;
     glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
-    ModelConfig modelConfig;
 };
 
 struct PlayerConfig

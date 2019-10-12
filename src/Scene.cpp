@@ -119,17 +119,11 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     ubo.model = glm::mat4(1.0f);
     ubo.projection = player->perspective;
     ubo.view = player->view;
-    ubo.eyeposition = -1.0f * player->position;
 
-    UniformShaderObject uso[numLights];
-    for (int32_t i = 0; i < numLights; ++i)
-    {
-        uso[i].position = lights[i].position;
-        uso[i].color = lights[i].color;
-        uso[i].lumens = lights[i].lumens;
-        uso[i].gamma = gamma;
-        uso[i].exposure = exposure;
-    }
+    UniformShaderObject uso;
+    uso.position = lights[0].position;
+    uso.temperature = lights[0].temperature;
+    uso.lumens = lights[0].lumens;
 
     stage.updateUniformBuffer(currentImage, ubo, uso);
 
@@ -173,7 +167,7 @@ void Scene::createDescriptorSetLayouts()
     VkDescriptorSetLayoutBinding uloLayoutBinding = {};
     uloLayoutBinding.binding = 1;
     uloLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uloLayoutBinding.descriptorCount = numLights;
+    uloLayoutBinding.descriptorCount = 1;
     uloLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     uloLayoutBinding.pImmutableSamplers = nullptr;
 
