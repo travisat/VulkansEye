@@ -8,6 +8,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
+#include <json.hpp>
+using json = nlohmann::json;
+
 enum class ModelType
 {
     unknown,
@@ -95,4 +98,11 @@ struct SceneConfig
     std::vector<PointLightConfig> pointLights{};
     std::string backdrop = "";
     std::vector<ActorConfig> actors;
+};
+
+class Config
+{
+public:
+    void loadSceneConfig(std::string path, SceneConfig &sceneConfig); //load config from path to sceneConfig
+    void saveSceneConfig(const SceneConfig &sceneConfig, std::string path); //save sceneConfig to path
 };

@@ -93,6 +93,10 @@ add_library(glfw STATIC IMPORTED)
 set_property(TARGET glfw PROPERTY IMPORTED_LOCATION "${GLFW}/lib-vc2019/glfw3.lib")
 target_link_libraries(VulkansEye glfw)
 
+# Compiler specific stuff
+IF(MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+ENDIF(MSVC)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
