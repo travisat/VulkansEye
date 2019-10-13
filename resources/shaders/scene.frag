@@ -1,7 +1,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-//using source from
 //[0] https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
 //[1] https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
 //[2] https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
@@ -12,11 +11,12 @@
 
 const int numLights = 1;
 
-layout(binding = 1) uniform UniformShaderObject
+layout(binding = 1) uniform UniformLight
 {
-    vec3 lightPosition;
+    vec3 position;
 	float lumens;
-} uso;
+	float temperature;
+} uLight[numLights];
 
 layout(binding = 2) uniform sampler2D diffuseMap;
 layout(binding = 3) uniform sampler2D normalMap;
@@ -161,7 +161,7 @@ vec3 ColorTemperatureToRGB(float temperatureInKelvins)
 
 //[6]
 float getSquareFalloffAttenuation(float distanceSquare, float lumens) {
-    float factor = distanceSquare * (1 / (lumens));
+    float factor = distanceSquare * (1 / lumens);
     float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
     // We would normally divide by the square distance here
     // but we do it at the call site
@@ -184,9 +184,10 @@ void main() {
 	vec3 N = getNormal();
 	vec3 V = normalize(-inPosition);   // Vector from camera (origin) to surface
 
-	vec3 lightPos = vec3(4.0, 2.4, 5.0);
-	float lumens = 800.0;
-	float temperature = 7000.0;
+
+	vec3 lightPos = uLight[0].position;
+	float lumens = uLight[0].lumens;
+	float temperature = uLight[0].temperature;
 	
 	vec3 lightcolor = ColorTemperatureToRGB(temperature); 
 	vec3 lightVector = lightPos - inPosition; //vector from light to survace
@@ -195,11 +196,9 @@ void main() {
 	lightcolor = lightcolor * intensity;
 
 	vec3 L = normalize(lightVector);     // Vector from light to surface
-
 	vec3 BDRFoutput = BRDF(N, V, L, baseColor, roughness, metallic);
 	vec3 luminance = BDRFoutput * lightcolor;
 
 	vec3 finalColor = luminance * ambientOcclusion;
-
     outColor = vec4(finalColor, 1.0);
 } 

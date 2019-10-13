@@ -11,7 +11,7 @@
 
 #include <vulkan/vulkan.h>
 
-struct UniformBufferObject
+struct UniformBuffer
 {
     alignas(16) glm::mat4 projection;
     alignas(16) glm::mat4 view;

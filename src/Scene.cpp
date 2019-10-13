@@ -115,24 +115,24 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
 {
     backdrop.updateUniformBuffer(currentImage);
 
-    UniformBufferObject ubo{};
-    ubo.model = glm::mat4(1.0f);
-    ubo.projection = player->perspective;
-    ubo.view = player->view;
+    uBuffer.model = glm::mat4(1.0f);
+    uBuffer.projection = player->perspective;
+    uBuffer.view = player->view;
 
-    UniformShaderObject uso;
-    uso.position = lights[0].position;
-    uso.temperature = lights[0].temperature;
-    uso.lumens = lights[0].lumens;
+    uLight.position = glm::vec3(4.0f, 2.4f, 5.0f);
+    uLight.temperature = 4000.0f;
+    uLight.lumens = 800.0f;
 
-    stage.updateUniformBuffer(currentImage, ubo, uso);
+    stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
+    stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 
     for (auto &actor : actors)
     {
-        ubo.model = glm::translate(glm::mat4(1.0f), actor.position);
-        ubo.model = glm::scale(ubo.model, actor.scale);
+        uBuffer.model = glm::translate(glm::mat4(1.0f), actor.position);
+        uBuffer.model = glm::scale(uBuffer.model, actor.scale);
 
-        actor.updateUniformBuffer(currentImage, ubo, uso);
+        actor.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
+        actor.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
     }
 }
 
@@ -157,19 +157,19 @@ void Scene::createDescriptorPool()
 
 void Scene::createDescriptorSetLayouts()
 {
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding uBufferLayoutBinding = {};
+    uBufferLayoutBinding.binding = 0;
+    uBufferLayoutBinding.descriptorCount = 1;
+    uBufferLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uBufferLayoutBinding.pImmutableSamplers = nullptr;
+    uBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    VkDescriptorSetLayoutBinding uloLayoutBinding = {};
-    uloLayoutBinding.binding = 1;
-    uloLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uloLayoutBinding.descriptorCount = 1;
-    uloLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    uloLayoutBinding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding uLightLayoutBinding = {};
+    uLightLayoutBinding.binding = 1;
+    uLightLayoutBinding.descriptorCount = 1;
+    uLightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uLightLayoutBinding.pImmutableSamplers = nullptr;
+    uLightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding diffuseLayoutBinding = {};
     diffuseLayoutBinding.binding = 2;
@@ -206,7 +206,7 @@ void Scene::createDescriptorSetLayouts()
     aoLayoutBinding.pImmutableSamplers = nullptr;
     aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 7> bindings = {uboLayoutBinding, uloLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, metallicLayoutBinding, aoLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 7> bindings = {uBufferLayoutBinding, uLightLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, metallicLayoutBinding, aoLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

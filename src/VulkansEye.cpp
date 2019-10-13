@@ -73,9 +73,9 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     LightConfig light0;
     light0.name = "light0";
     light0.index = 0;
-    light0.position = {0.0f, 3.0f, 0.0f};
-    light0.temperature = 2500.0f;
-    light0.lumens = 1600.0f;
+    light0.position = {4.0f, 2.4f, 5.0f};
+    light0.temperature = 4000.0f;
+    light0.lumens = 800.0f;
     LightConfig light1;
     light1.name = "lantern";
     light1.index = 1;

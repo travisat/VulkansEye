@@ -59,7 +59,7 @@ public:
 
     //updates buffer to contents in T
     template <typename T>
-    void update(T t, size_t s)
+    void update(T *t, size_t s)
     {
         if (s != size)
         {
@@ -67,7 +67,7 @@ public:
         }
         void *data;
         vmaMapMemory(vulkan->allocator, allocation, &data);
-        memcpy(data, &t, s);
+        memcpy(data, t, s);
         vmaUnmapMemory(vulkan->allocator, allocation);
     };
 

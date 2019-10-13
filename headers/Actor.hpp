@@ -27,7 +27,5 @@ public:
     void create();
     void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
     void createUniformBuffers();
-    void updateUniformBuffer(uint32_t currentImage, UniformBufferObject &ubo, UniformShaderObject &uso);
-
 private:
 };

@@ -49,8 +49,8 @@ public:
     uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 5); };
 
 private:
-    float gamma = 4.5f;
-    float exposure = 2.2f;
+    UniformBuffer uBuffer;
+    UniformLight uLight;
 
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;

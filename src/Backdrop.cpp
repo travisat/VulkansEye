@@ -93,22 +93,20 @@ void Backdrop::createUniformBuffers()
         buffer.name = "Backdrop/UBO";
 
         //uniformBufferObject to store in uniformBuffer
-        UniformBufferObject ubo{};
-        ubo.projection = player->perspective;
-        ubo.view = player->view;
+        UniformBuffer uBuffer{};
+        uBuffer.projection = player->perspective;
+        uBuffer.view = player->view;
 
         //store and add
-        buffer.update(ubo, sizeof(UniformBufferObject));
+        buffer.update(&uBuffer, sizeof(UniformBuffer));
     }
 }
 
 void Backdrop::updateUniformBuffer(uint32_t currentImage)
 {
-    UniformBufferObject ubo = {};
-
-    ubo.projection = player->perspective;
-    ubo.view = player->view;
-    uniformBuffers[currentImage].update(ubo, sizeof(UniformBufferObject));
+    uBuffer.projection = player->perspective;
+    uBuffer.view = player->view;
+    uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
 }
 
 void Backdrop::createDescriptorPool()
@@ -187,7 +185,7 @@ void Backdrop::createDescriptorSets()
         VkDescriptorBufferInfo bufferInfo = {};
         bufferInfo.buffer = uniformBuffers[i].buffer;
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
+        bufferInfo.range = sizeof(UniformBuffer);
 
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

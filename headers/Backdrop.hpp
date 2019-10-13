@@ -34,6 +34,7 @@ public:
 private:
     Image cubeMap{};
     VkSampler sampler = VK_NULL_HANDLE;
+    UniformBuffer uBuffer;
 
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
  
