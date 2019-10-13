@@ -70,19 +70,19 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     
     config.playerConfig = playerConfig;
 
-    LightConfig light0;
+    PointLightConfig light0;
     light0.name = "light0";
     light0.index = 0;
     light0.position = {4.0f, 2.4f, 5.0f};
     light0.temperature = 4000.0f;
     light0.lumens = 800.0f;
-    LightConfig light1;
+    PointLightConfig light1;
     light1.name = "lantern";
     light1.index = 1;
     light1.position = {0.0f, 2.7f, 0.0f};
     light1.temperature = 2500.0f;
     light1.lumens = 400.0f;
-    config.lights = {light0};
+    config.pointLights = {light0, light1};
 
     ModelConfig tableModel;
     tableModel.index = 0;

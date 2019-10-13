@@ -8,7 +8,7 @@
 #include "Actor.hpp"
 #include "Backdrop.hpp"
 #include "Player.hpp"
-#include "Light.hpp"
+#include "PointLight.hpp"
 #include "Stage.hpp"
 #include "Config.h"
 
@@ -28,7 +28,7 @@ public:
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
     std::vector<Actor> actors;
-    std::vector<Light> lights;
+    std::vector<PointLight> pointLights;
 
     ~Scene();
 
@@ -44,14 +44,14 @@ public:
 
     // num uniform buffers per model and stage (UBO and ULO)
     uint32_t numUniformBuffers() { return static_cast<uint32_t>(actors.size() + 1); };
-    uint32_t numShaderBuffers() { return static_cast<uint32_t>((actors.size() + 1) * numLights); };
+    uint32_t numUniformLights() { return static_cast<uint32_t>(actors.size() + 1); };
     // same but for imagesamplers (diffuse, normal, roughness, metllalic, ambientOcclusion) + sampler for stage
     uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 5); };
 
 private:
     UniformBuffer uBuffer;
     UniformLight uLight;
-
+   
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
 

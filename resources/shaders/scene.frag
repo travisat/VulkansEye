@@ -9,14 +9,19 @@
 //[5] https://www.shadertoy.com/view/lsSXW1
 //[6] https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
 
-const int numLights = 1;
+const int numLights = 2;
+
+struct PointLight
+{
+    vec3 position;
+    float lumens;
+    float temperature;
+};
 
 layout(binding = 1) uniform UniformLight
 {
-    vec3 position;
-	float lumens;
-	float temperature;
-} uLight[numLights];
+     PointLight light[numLights];
+} uLight;
 
 layout(binding = 2) uniform sampler2D diffuseMap;
 layout(binding = 3) uniform sampler2D normalMap;
@@ -184,20 +189,24 @@ void main() {
 	vec3 N = getNormal();
 	vec3 V = normalize(-inPosition);   // Vector from camera (origin) to surface
 
-
-	vec3 lightPos = uLight[0].position;
-	float lumens = uLight[0].lumens;
-	float temperature = uLight[0].temperature;
+	vec3 luminance = vec3(0.0);
+	int i;
+	for (i = 0; i < numLights; ++i){
+		vec3 lightPos = uLight.light[i].position;
+		float lumens = uLight.light[i].lumens;
+		float temperature = uLight.light[i].temperature;
 	
-	vec3 lightcolor = ColorTemperatureToRGB(temperature); 
-	vec3 lightVector = lightPos - inPosition; //vector from light to survace
-	float sqrDist = dot(lightVector, lightVector);
-	float intensity = lumens  * getDistanceAttenuation(lightVector, lumens) / (4 * M_PI);
-	lightcolor = lightcolor * intensity;
+		vec3 lightcolor = ColorTemperatureToRGB(temperature); 
+		vec3 lightVector = lightPos - inPosition; //vector from light to survace
+		float sqrDist = dot(lightVector, lightVector);
+		float intensity = lumens  * getDistanceAttenuation(lightVector, lumens) / (4 * M_PI);
+		lightcolor = lightcolor * intensity;
 
-	vec3 L = normalize(lightVector);     // Vector from light to surface
-	vec3 BDRFoutput = BRDF(N, V, L, baseColor, roughness, metallic);
-	vec3 luminance = BDRFoutput * lightcolor;
+		vec3 L = normalize(lightVector);     // Vector from light to surface
+		vec3 BDRFoutput = BRDF(N, V, L, baseColor, roughness, metallic);
+
+		luminance += BDRFoutput * lightcolor;
+	}
 
 	vec3 finalColor = luminance * ambientOcclusion;
     outColor = vec4(finalColor, 1.0);

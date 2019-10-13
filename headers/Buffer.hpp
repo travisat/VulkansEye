@@ -4,7 +4,7 @@
 
 #include "Vulkan.hpp"
 #include "Vertex.h"
-#include "Light.hpp"
+#include "PointLight.hpp"
 #include "Timer.h"
 
 class Buffer

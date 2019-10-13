@@ -82,7 +82,7 @@ void Actor::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         aoInfo.imageView = model.ambientOcclusion.imageView;
         aoInfo.sampler = model.aoSampler;
 
-        std::array<VkWriteDescriptorSet, 6 + numLights> descriptorWrites = {};
+        std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -161,6 +161,6 @@ void Actor::createUniformBuffers()
         uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformLights[i].name = name + " UniformLight";
-        uniformLights[i].resize(sizeof(UniformLight) * numLights);
+        uniformLights[i].resize(sizeof(UniformLight));
     }
 }

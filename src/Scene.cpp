@@ -42,11 +42,11 @@ void Scene::createStage()
 
 void Scene::createLights()
 {
-    lights.resize(numLights);
-    for (auto &lightConfig : config->lights)
+    pointLights.resize(numLights);
+    for (auto &lightConfig : config->pointLights)
     {
-        lights[lightConfig.index].config = &lightConfig;
-        lights[lightConfig.index].load();
+        pointLights[lightConfig.index].config = &lightConfig;
+        pointLights[lightConfig.index].load();
     }
 }
 
@@ -119,10 +119,15 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     uBuffer.projection = player->perspective;
     uBuffer.view = player->view;
 
-    uLight.position = glm::vec3(4.0f, 2.4f, 5.0f);
-    uLight.temperature = 4000.0f;
-    uLight.lumens = 800.0f;
+    for (int32_t i = 0; i < numLights; ++i)
+    {
+        uLight.light[i].position = pointLights[i].light.position;
+        uLight.light[i].temperature = pointLights[i].light.temperature;
+        uLight.light[i].lumens = pointLights[i].light.lumens;
+    }
 
+    Trace("size of uniformlight ", sizeof(UniformLight));
+    Trace("sice of ulight ", sizeof(uLight));
     stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
     stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 
@@ -142,7 +147,7 @@ void Scene::createDescriptorPool()
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = (numUniformBuffers() + numShaderBuffers() * numLights) * numSwapChainImages;
+    poolSizes[0].descriptorCount = (numUniformBuffers() + numUniformLights() * numLights) * numSwapChainImages;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
 
@@ -150,7 +155,7 @@ void Scene::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = (numUniformBuffers() + numShaderBuffers() + numImageSamplers()) * numSwapChainImages;
+    poolInfo.maxSets = (numUniformBuffers() + numUniformLights() + numImageSamplers()) * numSwapChainImages;
 
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
 }

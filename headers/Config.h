@@ -60,10 +60,11 @@ struct ActorConfig
     ModelConfig modelConfig;
 };
 
-struct LightConfig
+
+struct PointLightConfig
 {
     uint32_t index;
-    std::string name = "Unknown Light";
+    std::string name = "Unknown Point Light";
     glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
@@ -91,7 +92,7 @@ struct SceneConfig
     uint32_t index;
     PlayerConfig playerConfig;
     StageConfig stageConfig;
-    std::vector<LightConfig> lights{};
+    std::vector<PointLightConfig> pointLights{};
     std::string backdrop = "";
     std::vector<ActorConfig> actors;
 };
