@@ -77,9 +77,9 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("name").get_to(config.name);
     j.at("backdrop").get_to(config.backdrop);
 
-    config.actors.resize(j["Actors"].size());
+    config.actors.resize(j["actors"].size());
     int32_t i = 0;
-    for (auto &actorconfig : j.at("Actors"))
+    for (auto &actorconfig : j.at("actors"))
     {
         config.actors[i].index = i;
         actorconfig.at("name").get_to(config.actors[i].name);
@@ -91,7 +91,7 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         actorconfig.at("model").at("normal").get_to(config.actors[i].modelConfig.normalPath);
         actorconfig.at("model").at("roughness").get_to(config.actors[i].modelConfig.roughnessPath);
         actorconfig.at("model").at("metallic").get_to(config.actors[i].modelConfig.metallicPath);
-        actorconfig.at("model").at("ambientOcclusion").get_to(config.actors[i].modelConfig.aoPath);
+        actorconfig.at("model").at("ao").get_to(config.actors[i].modelConfig.aoPath);
         actorconfig.at("model").at("displacement").get_to(config.actors[i].modelConfig.displacementPath);
         ++i;
     }
@@ -101,12 +101,12 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("stage").at("normal").get_to(config.stageConfig.modelConfig.normalPath);
     j.at("stage").at("roughness").get_to(config.stageConfig.modelConfig.roughnessPath);
     j.at("stage").at("metallic").get_to(config.stageConfig.modelConfig.metallicPath);
-    j.at("stage").at("ambientOcclusion").get_to(config.stageConfig.modelConfig.aoPath);
+    j.at("stage").at("ao").get_to(config.stageConfig.modelConfig.aoPath);
     j.at("stage").at("displacement").get_to(config.stageConfig.modelConfig.displacementPath);
 
-    config.pointLights.resize(j["Lights"].size());
+    config.pointLights.resize(j["lights"].size());
     i = 0;
-    for (auto &lightconfig : j.at("Lights"))
+    for (auto &lightconfig : j.at("lights"))
     {
         config.pointLights[i].index = i;
         lightconfig.at("name").get_to(config.pointLights[i].name);
@@ -118,13 +118,13 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         ++i;
     }
 
-    j.at("Player").at("name").get_to(config.playerConfig.name);
-    j.at("Player").at("height").get_to(config.playerConfig.height);
-    j.at("Player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
-    j.at("Player").at("position").at("x").get_to(config.playerConfig.position.x);
-    j.at("Player").at("position").at("y").get_to(config.playerConfig.position.y);
-    j.at("Player").at("position").at("z").get_to(config.playerConfig.position.z);
-    j.at("Player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
-    j.at("Player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
-    j.at("Player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
+    j.at("player").at("name").get_to(config.playerConfig.name);
+    j.at("player").at("height").get_to(config.playerConfig.height);
+    j.at("player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
+    j.at("player").at("position").at("x").get_to(config.playerConfig.position.x);
+    j.at("player").at("position").at("y").get_to(config.playerConfig.position.y);
+    j.at("player").at("position").at("z").get_to(config.playerConfig.position.z);
+    j.at("player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
+    j.at("player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
+    j.at("player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
 };

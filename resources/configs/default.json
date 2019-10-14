@@ -2,7 +2,7 @@
     "name": "default",
     "index": 0,
     "backdrop": "resources/backdrop/nebula.dds",
-    "Actors": {
+    "actors": {
         "sphere": {
             "name": "sphere",
             "position": {
@@ -15,7 +15,7 @@
                 "diffuse": "resources/materials/Metal06/diffuse.jpg",
                 "normal": "resources/materials/Metal06/normal.jpg",
                 "roughness": "resources/materials/Metal06/roughness.jpg",
-                "ambientOcclusion": "resources/materials/default/ao.png",
+                "ao": "resources/materials/default/ao.png",
                 "metallic": "resources/materials/Metal06/metallic.jpg",
                 "displacement": "resources/materials/Metal06/displacement.jpg"
             }
@@ -29,25 +29,25 @@
             },
             "model": {
                 "path": "resources/models/table.obj",
-                "diffuse": "resources/materials/Wood16/diffuse.jpg",
-                "normal": "resources/materials/Wood16/normal.jpg",
-                "roughness": "resources/materials/Wood16/roughness.jpg",
-                "ambientOcclusion": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Wood16/displacement.jpg"
+                "diffuse": "resources/materials/Metal07/Metal07_col.jpg",
+                "normal": "resources/materials/Metal07/Metal07_nrm.jpg",
+                "roughness": "resources/materials/Metal07/Metal07_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/Metal07/Metal07_met.jpg",
+                "displacement": "resources/materials/Metal07/Metal07_disp.jpg"
             }
         }
     },
     "stage": {
         "path": "resources/models/floor.obj",
-        "diffuse": "resources/materials/WoodFloor26/WoodFloor26_col.jpg",
-        "normal": "resources/materials/WoodFloor26/WoodFloor26_nrm.jpg",
-        "roughness": "resources/materials/WoodFloor26/WoodFloor26_rgh.jpg",
-        "ambientOcclusion": "resources/materials/WoodFloor26/WoodFloor26_AO.jpg",
+        "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+        "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+        "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+        "ao": "resources/materials/default/ao.png",
         "metallic": "resources/materials/default/metallic.png",
-        "displacement": "resources/materials/WoodFloor26/WoodFloor26_disp.jpg"
+        "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg"
     },
-    "Lights": {
+    "lights": {
         "lantern": {
             "name": "lantern",
             "position": {
@@ -61,15 +61,15 @@
         "tablelight": {
             "name": "tablelight",
             "position": {
-                "x": 4,
-                "y": 2.4,
+                "x": 7,
+                "y": 4.4,
                 "z": 5
             },
             "temperature": 4000,
             "lumens": 800
         }
     },
-    "Player": {
+    "player": {
         "name": "you",
         "height": 1.7,
         "fieldOfView": 60,
