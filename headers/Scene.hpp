@@ -22,9 +22,8 @@ public:
 
     //generated values
     std::string name = "Unknown";
-    Backdrop backdrop;
     Stage stage;
-   
+
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
     std::vector<Actor> actors;
@@ -51,7 +50,7 @@ public:
 private:
     UniformBuffer uBuffer;
     UniformLight uLight;
-   
+
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
 

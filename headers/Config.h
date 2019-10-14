@@ -33,7 +33,6 @@ struct ModelConfig : Config
 struct ActorConfig : Config
 {
     glm::vec3 position;
-    glm::vec3 scale;
     ModelConfig modelConfig;
 };
 
@@ -54,7 +53,7 @@ struct PlayerConfig : Config
 
 struct StageConfig : Config
 {
-    glm::vec3 scale = glm::vec3(1.0f);
+    std::string backdrop = "";
     ModelConfig modelConfig;
 };
 
@@ -63,7 +62,7 @@ struct SceneConfig : Config
     PlayerConfig playerConfig;
     StageConfig stageConfig;
     std::vector<PointLightConfig> pointLights{};
-    std::string backdrop = "";
+
     std::vector<ActorConfig> actors;
 };
 
@@ -75,7 +74,6 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
 
     j.at("index").get_to(config.index);
     j.at("name").get_to(config.name);
-    j.at("backdrop").get_to(config.backdrop);
 
     config.actors.resize(j["actors"].size());
     int32_t i = 0;
@@ -96,6 +94,7 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         ++i;
     }
 
+    j.at("stage").at("backdrop").get_to(config.stageConfig.backdrop);
     j.at("stage").at("path").get_to(config.stageConfig.modelConfig.objPath);
     j.at("stage").at("diffuse").get_to(config.stageConfig.modelConfig.diffusePath);
     j.at("stage").at("normal").get_to(config.stageConfig.modelConfig.normalPath);

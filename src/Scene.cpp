@@ -11,10 +11,9 @@ Scene::~Scene()
 
 void Scene::create()
 {
+    createStage();
     createLights();
     createActors();
-    createBackdrop();
-    createStage();
 
     createDescriptorPool();
     createDescriptorSetLayouts();
@@ -24,19 +23,11 @@ void Scene::create()
     createDescriptorSets();
 }
 
-void Scene::createBackdrop()
-{
-
-    backdrop.vulkan = vulkan;
-    backdrop.player = player;
-    backdrop.name = "Backdrop";
-    backdrop.path = config->backdrop;
-    backdrop.create();
-}
 void Scene::createStage()
 {
     stage.vulkan = vulkan;
     stage.config = &config->stageConfig;
+    stage.player = player;
     stage.create();
 }
 
@@ -63,7 +54,7 @@ void Scene::createActors()
 
 void Scene::cleanup()
 {
-    backdrop.cleanup();
+    stage.cleanup();
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
@@ -72,7 +63,7 @@ void Scene::cleanup()
 void Scene::recreate()
 {
     player->updateAspectRatio((float)vulkan->width, (float)vulkan->height);
-    backdrop.recreate();
+    stage.recreate();
     createPipelineLayout();
     createPipeline();
     createUniformBuffers();
@@ -82,7 +73,7 @@ void Scene::recreate()
 
 void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-    backdrop.draw(commandBuffer, currentImage);
+    stage.backdrop.draw(commandBuffer, currentImage);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -113,7 +104,6 @@ void Scene::createUniformBuffers()
 
 void Scene::updateUniformBuffer(uint32_t currentImage)
 {
-    backdrop.updateUniformBuffer(currentImage);
 
     uBuffer.model = glm::mat4(1.0f);
     uBuffer.projection = player->perspective;
@@ -128,6 +118,7 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
 
     uLight.light[0].position = player->position * -1.0f;
 
+    stage.backdrop.updateUniformBuffer(currentImage);
     stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
     stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 

@@ -3,6 +3,12 @@
 
 void Stage::create()
 {
+    backdrop.vulkan = vulkan;
+    backdrop.player = player;
+    backdrop.name = "Backdrop";
+    backdrop.path = config->backdrop;
+    backdrop.create();
+    
     model.vulkan = vulkan;
     model.config = &config->modelConfig;
     model.create();

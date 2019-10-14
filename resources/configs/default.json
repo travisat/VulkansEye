@@ -1,7 +1,6 @@
 {
     "name": "default",
     "index": 0,
-    "backdrop": "resources/backdrop/nebula.dds",
     "actors": {
         "sphere": {
             "name": "sphere",
@@ -39,6 +38,7 @@
         }
     },
     "stage": {
+        "backdrop": "resources/backdrop/nebula.dds",
         "path": "resources/models/floor.obj",
         "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
         "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
