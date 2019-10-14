@@ -33,10 +33,16 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     scene.config = &config;
     scene.vulkan = &vulkan;
 
-    player.height = config.playerConfig.height;
     player.setPerspective(config.playerConfig.fieldOfView, static_cast<double>(vulkan.width), static_cast<double>(vulkan.height), 0.1f, 512.0f);
     player.position = config.playerConfig.position;
     player.rotation = config.playerConfig.rotation;
+    player.height = config.playerConfig.height;
+    player.mass = config.playerConfig.mass;
+    player.jForce = config.playerConfig.jForce;
+    player.velocityMax = config.playerConfig.velocityMax;
+    player.timeToReachVMax = config.playerConfig.timeToReachVMax;
+    player.timeToStopfromVMax = config.playerConfig.timeToStopfromVMax;
+    player.mouseSensitivity = config.playerConfig.mouseSensitivity;
     player.updateView();
     scene.player = &player;
 

@@ -80,47 +80,61 @@ void Player::update(float deltaTime)
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
     camFront = glm::normalize(camFront);
 
+    float jumpingForce = 0.0f;
+
     //get rotational vector for direction to move
     glm::vec3 direction = glm::vec3(0.0f);
     if (Input::checkKeyboard(GLFW_KEY_W))
+    {
         direction += camFront * glm::vec3(1.0f, 0.0f, 1.0f); //forward with way player looking
+    }
     if (Input::checkKeyboard(GLFW_KEY_S))
+    {
         direction -= camFront * glm::vec3(1.0f, 0.0f, 1.0f); //backward .
+    }
     if (Input::checkKeyboard(GLFW_KEY_A))
+    {
         direction -= glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); //left .
+    }
     if (Input::checkKeyboard(GLFW_KEY_D))
+    {
         direction += glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); //right .
+    }
     if (Input::checkKeyboard(GLFW_KEY_SPACE))
-        direction -= glm::vec3(0.0f, 1.0f, 0.0f); //up with global axis
-    if (Input::checkKeyboard(GLFW_KEY_LEFT_SHIFT))
-        direction += glm::vec3(0.0f, 1.0f, 0.0f); //down with global axis
-
+    {
+        if (position.y == -height)
+        {
+            jumpingForce = -jForce;
+        }
+    }
     //if we have a direction to move
     force = glm::vec3(0.0f);
-
-    if (direction != glm::vec3(0.0f)) //we want to move
+    if (direction != glm::vec3(0.0f))
     {
         direction = normalize(direction);
         //turn rotational vector into force for walking
         float walkingForce = mass * (velocityMax / timeToReachVMax);
 
         force = direction * walkingForce;
-        if (glm::length(velocity) < 0.001f) //if stopped don't apply friction
+        
+        if (glm::abs(velocity.x) < 0.001f && glm::abs(velocity.z) < 0.001) //if stopped don't apply friction
         {
-            velocity = glm::vec3(0.0f);
+            velocity.x = 0.0f;
+            velocity.z = 0.0f;
         }
         else //apply friction
         {
             float internalFriction = (glm::length(velocity) / velocityMax) * walkingForce; //internal friction, our legs only move so fast
-            force = force - (internalFriction * normalize(velocity));
+            force -= internalFriction * normalize(velocity);
         }
     }
-    else
+    else if (position.y == -height)
     { //we want to stop
         float stoppingForce = mass * (velocityMax / timeToStopfromVMax);
-        if (glm::length(velocity) < 0.001f) //we are stopped
+        if (glm::abs(velocity.x) < 0.001f && glm::abs(velocity.z) < 0.001) //if stopped don't apply friction
         {
-            velocity = glm::vec3(0.0f);
+            velocity.x = 0.0f;
+            velocity.z = 0.0f;
         }
         else //apply stopping force
         {
@@ -129,12 +143,22 @@ void Player::update(float deltaTime)
         }
     }
 
-    //apply force to acceleration
+    force.y = jumpingForce;
+
     acceleration = force / mass;
+    if (position.y < -height)
+    {
+        acceleration.y += 9.8f;
+    }
     //apply acceleration to velocity
-    velocity = velocity + (deltaTime * acceleration);
+    velocity += deltaTime * acceleration;
     //apply velocity to position
-    position = position + velocity * deltaTime;
+    position += velocity * deltaTime;
+    if (position.y > -height)
+    {
+        position.y = -height;
+        velocity.y = 0.0f;
+    }
 
     updateView();
 }

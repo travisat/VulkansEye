@@ -82,7 +82,13 @@
     "player": {
         "name": "you",
         "height": 1.7,
-        "fieldOfView": 60,
+        "mass": 100,
+        "velocityMax": 6.0,
+        "timeToReachVMax": 0.6,
+        "timeToStopFromVMax": 0.1,
+        "jForce": 28000,
+        "mouseSensitivity": 33.4,
+        "fieldOfView": 70,
         "position": {
             "x": 0,
             "y": -1.7,

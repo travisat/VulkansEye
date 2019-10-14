@@ -23,21 +23,21 @@ public:
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 velocity = glm::vec3(0.0f);
     glm::vec3 acceleration = glm::vec3(0.0f);
-   
+    glm::vec3 force = glm::vec3(0.0f);
+
     glm::mat4 perspective;
     glm::mat4 view;
 
-    glm::vec3 force = glm::vec3(0.0f);
-
-    
-    float height = 1.75;//m
-    float mass = 100;//kg
+    float height;
+    float mass;   //kg
+    float jForce;;
 
     //force applied while walking
-    float velocityMax = 6.0f; //m/s  also people in games don't walk normal up this a bit
-    float timeToReachVMax = 0.6f; //s
-    float timeToStopfromVMax = 0.1f; //s
-    
+    float velocityMax;        //m/s  also people in games don't walk normal up this a bit
+    float timeToReachVMax;    //s
+    float timeToStopfromVMax; //s
+
+    float mouseSensitivity = 33.4f;
 
     void update(float deltaTime);
 
@@ -59,11 +59,9 @@ private:
     double windowHeight;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
-    float mouseSensitivity = 31.4f;
-   
+
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
-
 };
 
 } //namespace tat

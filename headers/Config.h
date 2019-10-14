@@ -49,10 +49,16 @@ struct PointLightConfig : Config
 
 struct PlayerConfig : Config
 {
-    float fieldOfView = 60.0f;
+    float fieldOfView;
     glm::vec3 position;
     glm::vec3 rotation;
     float height; //meters 1.0f == 1m
+    float mass;
+    float jForce;
+    float mouseSensitivity;
+    float velocityMax;
+    float timeToReachVMax;
+    float timeToStopfromVMax;
 };
 
 struct StageConfig : Config
@@ -126,6 +132,12 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
 
     j.at("player").at("name").get_to(config.playerConfig.name);
     j.at("player").at("height").get_to(config.playerConfig.height);
+    j.at("player").at("mass").get_to(config.playerConfig.mass);
+    j.at("player").at("velocityMax").get_to(config.playerConfig.velocityMax);
+    j.at("player").at("timeToReachVMax").get_to(config.playerConfig.timeToReachVMax);
+    j.at("player").at("timeToStopFromVMax").get_to(config.playerConfig.timeToStopfromVMax);
+    j.at("player").at("jForce").get_to(config.playerConfig.jForce);
+    j.at("player").at("mouseSensitivity").get_to(config.playerConfig.mouseSensitivity);
     j.at("player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
     j.at("player").at("position").at("x").get_to(config.playerConfig.position.x);
     j.at("player").at("position").at("y").get_to(config.playerConfig.position.y);
