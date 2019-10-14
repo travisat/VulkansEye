@@ -1,5 +1,8 @@
 #include "PointLight.hpp"
 
+namespace tat
+{
+
 void PointLight::load()
 {
     name = config->name;
@@ -7,3 +10,5 @@ void PointLight::load()
     light.temperature = config->temperature;
     light.lumens = config->lumens;
 }
+
+} //namespace tat

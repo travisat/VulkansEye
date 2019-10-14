@@ -13,7 +13,7 @@ int main()
 {
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-    VulkansEye app;
+    tat::VulkansEye app;
     try
     {
         app.init(WIDTH, HEIGHT);

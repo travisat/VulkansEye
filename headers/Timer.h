@@ -8,6 +8,9 @@
 #include <chrono>
 #include <ctime>
 
+namespace tat
+{
+
 class Timer
 {
 public:
@@ -58,3 +61,5 @@ private:
         return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     }
 };
+
+} //namespace tat

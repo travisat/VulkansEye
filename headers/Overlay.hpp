@@ -12,6 +12,9 @@
 
 //sourced from https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
 
+namespace tat
+{
+
 // Options and values to display/toggle from the UI
 struct UISettings
 {
@@ -88,3 +91,5 @@ private:
     void createPipelineLayout();
     void createPipeline();
 };
+
+} //namespace tat

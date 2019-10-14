@@ -1,6 +1,9 @@
 #include "Model.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 Model::~Model()
 {
     vkDestroySampler(vulkan->device, diffuseSampler, nullptr);
@@ -63,3 +66,5 @@ void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)
 
     CheckResult(vkCreateSampler(vulkan->device, &imageSamplerInfo, nullptr, &sampler));
 }
+
+} //namespace tat

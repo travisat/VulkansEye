@@ -1,6 +1,9 @@
 #include "Buffer.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 Buffer::~Buffer()
 {
    deallocate(); 
@@ -62,3 +65,5 @@ void Buffer::copyTo(Buffer &destination)
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
     //Trace("Copied ", name, " to ", destination.name, " at ", Timer::systemTime());
 }
+
+} //namespace tat

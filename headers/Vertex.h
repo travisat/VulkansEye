@@ -11,6 +11,9 @@
 
 #include <vulkan/vulkan.h>
 
+namespace tat
+{
+
 struct UniformBuffer
 {
     alignas(16) glm::mat4 projection;
@@ -74,12 +77,14 @@ struct Vertex
     }
 };
 
+} //namespace tat
+
 namespace std
 {
 template <>
-struct hash<Vertex>
+struct hash<tat::Vertex>
 {
-    size_t operator()(Vertex const &vertex) const
+    size_t operator()(tat::Vertex const &vertex) const
     {
         return (hash<glm::vec3>()(vertex.position) ^
                 hash<glm::vec2>()(vertex.UV) ^

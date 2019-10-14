@@ -13,6 +13,9 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
+namespace tat
+{
+
 struct Config
 {
     int32_t index = 0;
@@ -131,3 +134,5 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
     j.at("player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
 };
+
+} //namespace tat

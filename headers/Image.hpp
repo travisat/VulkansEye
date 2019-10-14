@@ -6,6 +6,9 @@
 #include "Vulkan.hpp"
 #include "Buffer.hpp"
 
+namespace tat
+{
+
 class Image
 {
 public:
@@ -56,3 +59,5 @@ private:
 
       bool hasStencilComponent(VkFormat format);
 };
+
+} //namespace tat

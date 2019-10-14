@@ -6,6 +6,9 @@
 #include "Buffer.hpp"
 #include "Model.hpp"
 
+namespace tat
+{
+
 class Actor
 {
 public:
@@ -32,3 +35,5 @@ public:
     void createUniformBuffers();
 private:
 };
+
+} //namespace tat

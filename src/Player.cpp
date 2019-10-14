@@ -1,6 +1,9 @@
 #include "Player.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 void Player::updateView()
 {
 
@@ -135,3 +138,5 @@ void Player::update(float deltaTime)
 
     updateView();
 }
+
+} //namespace tat

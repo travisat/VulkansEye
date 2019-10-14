@@ -1,6 +1,9 @@
 #include "Backdrop.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 Backdrop::~Backdrop()
 {
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
@@ -323,3 +326,5 @@ void Backdrop::createPipeline()
     vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
+
+} //namespace tat

@@ -8,6 +8,9 @@
 #include "Scene.hpp"
 #include "Overlay.hpp"
 
+namespace tat
+{
+
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 static bool framebufferResized = false;
@@ -101,3 +104,5 @@ private:
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device);
     bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
 };
+
+} //namespace tat

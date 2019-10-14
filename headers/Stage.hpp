@@ -9,6 +9,9 @@
 #include "Backdrop.hpp"
 #include "Player.hpp"
 
+namespace tat
+{
+
 class Stage
 {
 public:
@@ -35,3 +38,5 @@ public:
 
 private:
 };
+
+} //namespace tat

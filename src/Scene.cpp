@@ -1,6 +1,9 @@
 #include "Scene.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 Scene::~Scene()
 {
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
@@ -410,3 +413,5 @@ void Scene::createPipeline()
     vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
     vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
+
+} //namespace tat

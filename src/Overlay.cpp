@@ -1,6 +1,9 @@
 #include "Overlay.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 Overlay::~Overlay()
 {
     ImGui::DestroyContext();
@@ -484,3 +487,5 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
         vertexOffset += cmd_list->VtxBuffer.Size;
     }
 }
+
+} //namespace tat

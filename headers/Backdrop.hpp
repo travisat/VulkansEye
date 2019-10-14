@@ -5,6 +5,9 @@
 #include "Player.hpp"
 #include "Timer.h"
 
+namespace tat
+{
+
 class Backdrop
 {
 public:
@@ -45,3 +48,5 @@ private:
     void createDescriptorSets();
     void createPipeline();
 };
+
+} //namespace tat

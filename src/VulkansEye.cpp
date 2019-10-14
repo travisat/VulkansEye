@@ -1,6 +1,9 @@
 #include "VulkansEye.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 void VulkansEye::init(uint32_t width, uint32_t height)
 {
     vulkan.name = "Vulkans Eye";
@@ -106,3 +109,5 @@ void VulkansEye::cleanup()
     glfwDestroyWindow(vulkan.window);
     glfwTerminate();
 }
+
+} //namespace tat

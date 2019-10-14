@@ -8,6 +8,9 @@
 
 #include "Config.h"
 
+namespace tat
+{
+
 static const int numLights = 2;
 
 struct uPointLight
@@ -35,3 +38,5 @@ public:
 
 private:
 };
+
+} //namespace tat

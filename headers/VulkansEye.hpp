@@ -4,6 +4,9 @@
 #include "Overlay.hpp"
 #include "Timer.h"
 
+namespace tat
+{
+
 class VulkansEye
 {
 public:
@@ -28,3 +31,5 @@ private:
         framebufferResized = true;
     };
 };
+
+} //namespace tat

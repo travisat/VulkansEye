@@ -8,6 +8,9 @@
 
 #include "Input.hpp"
 
+namespace tat
+{
+
 const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,
                      0.0f, -1.0f, 0.0f, 0.0f,
                      0.0f, 0.0f, 0.5f, 0.0f,
@@ -62,3 +65,5 @@ private:
     void translate(glm::vec3 delta);
 
 };
+
+} //namespace tat

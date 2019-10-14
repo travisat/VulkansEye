@@ -12,6 +12,9 @@
 #include "Stage.hpp"
 #include "Config.h"
 
+namespace tat
+{
+
 class Scene
 {
 public:
@@ -69,3 +72,5 @@ private:
     void createUniformBuffers();
     void createDescriptorSets();
 };
+
+} //namespace tat

@@ -7,9 +7,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData)
 {
-    Trace("Validation: ", pCallbackData->pMessage);
+    tat::Trace("Validation: ", pCallbackData->pMessage);
     return VK_FALSE;
 };
+
+namespace tat
+{
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
 {
@@ -882,3 +885,5 @@ VkFormat VkEngine::findDepthFormat()
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
+
+} //namespace tat

@@ -1,6 +1,9 @@
 #include "Stage.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 void Stage::create()
 {
     backdrop.vulkan = vulkan;
@@ -212,3 +215,5 @@ void Stage::createUniformBuffers()
         uniformLights[i].resize(sizeof(UniformLight));
     }
 }
+
+} //namespace tat

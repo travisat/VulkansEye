@@ -7,6 +7,9 @@
 #include "PointLight.hpp"
 #include "Timer.h"
 
+namespace tat
+{
+
 class Buffer
 {
 public:
@@ -86,3 +89,5 @@ private:
 
     bool ismapped = false;
 };
+
+} //namespace tat

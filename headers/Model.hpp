@@ -10,6 +10,9 @@
 
 #include "Image.hpp"
 
+namespace tat
+{
+
 static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)
 {
     tinyobj::attrib_t attrib;
@@ -84,3 +87,5 @@ private:
     void loadMaterial();
     void loadImage(const std::string &path, Image &image, VkSampler &sampler);
 };
+
+} //namespace tat

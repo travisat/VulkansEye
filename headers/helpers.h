@@ -11,6 +11,8 @@
 
 //These need to be templated functions
 
+namespace tat {
+
 template <typename... Args>
 void Trace(Args &&... args)
 {
@@ -32,3 +34,5 @@ T CheckResult(T result)
     }
     return result;
 }
+
+} //namespace tat

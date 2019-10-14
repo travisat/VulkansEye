@@ -10,8 +10,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+
 // Input.h (the actual callback class for glfwSetMouseButtonCallback)
 //Singleton as there can only be one Input and Input should never be locked
+
+namespace tat
+{
 
 class Input
 {
@@ -129,3 +133,5 @@ private:
     Input(Input const &);          // prevent copies
     void operator=(Input const &); // prevent assignments
 };
+
+} //namespace tat

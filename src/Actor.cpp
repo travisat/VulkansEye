@@ -1,6 +1,9 @@
 #include "Actor.hpp"
 #include "helpers.h"
 
+namespace tat
+{
+
 void Actor::create()
 {
     //TODO implement using path to load model
@@ -213,3 +216,5 @@ void Actor::createUniformBuffers()
         uniformLights[i].resize(sizeof(UniformLight));
     }
 }
+
+}//namespace tat
