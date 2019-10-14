@@ -3,10 +3,6 @@
 
 void Stage::create()
 {
-    //TODO implement using path to load model
-    name = config->name;
-    scale = config->scale;
-
     model.vulkan = vulkan;
     model.config = &config->modelConfig;
     model.create();
@@ -152,13 +148,11 @@ void Stage::createUniformBuffers()
         uniformBuffers[i].vulkan = vulkan;
         uniformBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        uniformBuffers[i].name = name + " UBO";
         uniformBuffers[i].resize(sizeof(UniformBuffer));
 
         uniformLights[i].vulkan = vulkan;
         uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        uniformLights[i].name = name + " ULO";
         uniformLights[i].resize(sizeof(UniformLight));
     }
 }

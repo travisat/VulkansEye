@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -11,88 +13,53 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
-enum class ModelType
+struct Config
 {
-    unknown,
-    obj,
-    gltf
+    int32_t index = 0;
+    std::string name = "none";
 };
 
-enum class ImageType
+struct ModelConfig : Config
 {
-    unknown,
-    png, //stb_image.h types
-    jpg,
-    bmp,
-    psd,
-    tga,
-    gif,
-    hdr,
-    pic,
-    pnm,
-    dds, //gli types
-    ktx,
-    kmg
+    std::string objPath;
+    std::string diffusePath;
+    std::string normalPath;
+    std::string roughnessPath;
+    std::string metallicPath;
+    std::string aoPath;
+    std::string displacementPath;
 };
 
-struct MaterialConfig
+struct ActorConfig : Config
 {
-    ImageType imageType;
-    std::string diffusePath = "resources/textures/default/diffuse.png";
-    std::string normalPath = "resources/textures/default/normal.png";
-    std::string roughnessPath = "resources/textures/default/roughness.png";
-    std::string metallicPath = "resources/textures/default/metallic.png";
-    std::string aoPath = "resources/textures/default/ao.png";
-};
-
-struct ModelConfig
-{
-    uint32_t index;
-    std::string name = "Unknown Model";
-    ModelType modelType; //Todo load textures through obj
-    std::string objPath = "";
-    MaterialConfig material;    
-};
-
-struct ActorConfig
-{
-    uint32_t index;
-    std::string name = "Unknown Actor";
     glm::vec3 position;
     glm::vec3 scale;
     ModelConfig modelConfig;
 };
 
-
-struct PointLightConfig
+struct PointLightConfig : Config
 {
-    uint32_t index;
-    std::string name = "Unknown Point Light";
     glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
 };
 
-struct PlayerConfig
+struct PlayerConfig : Config
 {
-    std::string name = "Unknown Player";
     float fieldOfView = 60.0f;
     glm::vec3 position;
     glm::vec3 rotation;
     float height; //meters 1.0f == 1m
 };
 
-struct StageConfig
+struct StageConfig : Config
 {
-    uint32_t index;
-    std::string name = "Unknown Stage";
     glm::vec3 scale = glm::vec3(1.0f);
     ModelConfig modelConfig;
 };
 
-struct SceneConfig
+struct SceneConfig : Config
 {
-    uint32_t index;
     PlayerConfig playerConfig;
     StageConfig stageConfig;
     std::vector<PointLightConfig> pointLights{};
@@ -100,9 +67,64 @@ struct SceneConfig
     std::vector<ActorConfig> actors;
 };
 
-class Config
+static void loadSceneConfig(std::string path, SceneConfig &config)
 {
-public:
-    void loadSceneConfig(std::string path, SceneConfig &sceneConfig); //load config from path to sceneConfig
-    void saveSceneConfig(const SceneConfig &sceneConfig, std::string path); //save sceneConfig to path
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    j.at("index").get_to(config.index);
+    j.at("name").get_to(config.name);
+    j.at("backdrop").get_to(config.backdrop);
+
+    config.actors.resize(j["Actors"].size());
+    int32_t i = 0;
+    for (auto &actorconfig : j.at("Actors"))
+    {
+        config.actors[i].index = i;
+        actorconfig.at("name").get_to(config.actors[i].name);
+        actorconfig.at("position").at("x").get_to(config.actors[i].position.x);
+        actorconfig.at("position").at("y").get_to(config.actors[i].position.y);
+        actorconfig.at("position").at("z").get_to(config.actors[i].position.z);
+        actorconfig.at("model").at("path").get_to(config.actors[i].modelConfig.objPath);
+        actorconfig.at("model").at("diffuse").get_to(config.actors[i].modelConfig.diffusePath);
+        actorconfig.at("model").at("normal").get_to(config.actors[i].modelConfig.normalPath);
+        actorconfig.at("model").at("roughness").get_to(config.actors[i].modelConfig.roughnessPath);
+        actorconfig.at("model").at("metallic").get_to(config.actors[i].modelConfig.metallicPath);
+        actorconfig.at("model").at("ambientOcclusion").get_to(config.actors[i].modelConfig.aoPath);
+        actorconfig.at("model").at("displacement").get_to(config.actors[i].modelConfig.displacementPath);
+        ++i;
+    }
+
+    j.at("stage").at("path").get_to(config.stageConfig.modelConfig.objPath);
+    j.at("stage").at("diffuse").get_to(config.stageConfig.modelConfig.diffusePath);
+    j.at("stage").at("normal").get_to(config.stageConfig.modelConfig.normalPath);
+    j.at("stage").at("roughness").get_to(config.stageConfig.modelConfig.roughnessPath);
+    j.at("stage").at("metallic").get_to(config.stageConfig.modelConfig.metallicPath);
+    j.at("stage").at("ambientOcclusion").get_to(config.stageConfig.modelConfig.aoPath);
+    j.at("stage").at("displacement").get_to(config.stageConfig.modelConfig.displacementPath);
+
+    config.pointLights.resize(j["Lights"].size());
+    i = 0;
+    for (auto &lightconfig : j.at("Lights"))
+    {
+        config.pointLights[i].index = i;
+        lightconfig.at("name").get_to(config.pointLights[i].name);
+        lightconfig.at("position").at("x").get_to(config.pointLights[i].position.x);
+        lightconfig.at("position").at("y").get_to(config.pointLights[i].position.y);
+        lightconfig.at("position").at("z").get_to(config.pointLights[i].position.z);
+        lightconfig.at("temperature").get_to(config.pointLights[i].temperature);
+        lightconfig.at("lumens").get_to(config.pointLights[i].lumens);
+        ++i;
+    }
+
+    j.at("Player").at("name").get_to(config.playerConfig.name);
+    j.at("Player").at("height").get_to(config.playerConfig.height);
+    j.at("Player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
+    j.at("Player").at("position").at("x").get_to(config.playerConfig.position.x);
+    j.at("Player").at("position").at("y").get_to(config.playerConfig.position.y);
+    j.at("Player").at("position").at("z").get_to(config.playerConfig.position.z);
+    j.at("Player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
+    j.at("Player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
+    j.at("Player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
 };

@@ -126,15 +126,14 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
         uLight.light[i].lumens = pointLights[i].light.lumens;
     }
 
-    Trace("size of uniformlight ", sizeof(UniformLight));
-    Trace("sice of ulight ", sizeof(uLight));
+    uLight.light[0].position = player->position * -1.0f;
+
     stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
     stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 
     for (auto &actor : actors)
     {
         uBuffer.model = glm::translate(glm::mat4(1.0f), actor.position);
-        uBuffer.model = glm::scale(uBuffer.model, actor.scale);
 
         actor.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
         actor.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));

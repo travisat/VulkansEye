@@ -13,13 +13,11 @@ public:
     tat::Vulkan *vulkan = nullptr;
     StageConfig *config;
 
-    std::string name;
     Model model;
     Buffer vertexBuffer;
     Buffer indexBuffer;
     std::vector<Buffer> uniformBuffers;
     std::vector<Buffer> uniformLights;
-    glm::vec3 scale = glm::vec3(1.0f);
 
     std::vector<VkDescriptorSet> descriptorSets;
 

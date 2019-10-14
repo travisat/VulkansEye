@@ -1,0 +1,87 @@
+{
+    "name": "default",
+    "index": 0,
+    "backdrop": "resources/backdrop/nebula.dds",
+    "Actors": {
+        "sphere": {
+            "name": "sphere",
+            "position": {
+                "x": 4.0,
+                "y": 1.0,
+                "z": 5.0
+            },
+            "model": {
+                "path": "resources/models/sphere.obj",
+                "diffuse": "resources/materials/Metal06/diffuse.jpg",
+                "normal": "resources/materials/Metal06/normal.jpg",
+                "roughness": "resources/materials/Metal06/roughness.jpg",
+                "ambientOcclusion": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/Metal06/metallic.jpg",
+                "displacement": "resources/materials/Metal06/displacement.jpg"
+            }
+        },
+        "table": {
+            "name": "table",
+            "position": {
+                "x": 4.0,
+                "y": 0.0,
+                "z": 5.0
+            },
+            "model": {
+                "path": "resources/models/table.obj",
+                "diffuse": "resources/materials/Wood16/diffuse.jpg",
+                "normal": "resources/materials/Wood16/normal.jpg",
+                "roughness": "resources/materials/Wood16/roughness.jpg",
+                "ambientOcclusion": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Wood16/displacement.jpg"
+            }
+        }
+    },
+    "stage": {
+        "path": "resources/models/floor.obj",
+        "diffuse": "resources/materials/WoodFloor26/WoodFloor26_col.jpg",
+        "normal": "resources/materials/WoodFloor26/WoodFloor26_nrm.jpg",
+        "roughness": "resources/materials/WoodFloor26/WoodFloor26_rgh.jpg",
+        "ambientOcclusion": "resources/materials/WoodFloor26/WoodFloor26_AO.jpg",
+        "metallic": "resources/materials/default/metallic.png",
+        "displacement": "resources/materials/WoodFloor26/WoodFloor26_disp.jpg"
+    },
+    "Lights": {
+        "lantern": {
+            "name": "lantern",
+            "position": {
+                "x": 0,
+                "y": 2.7,
+                "z": 0
+            },
+            "temperature": 2500,
+            "lumens": 600
+        },
+        "tablelight": {
+            "name": "tablelight",
+            "position": {
+                "x": 4,
+                "y": 2.4,
+                "z": 5
+            },
+            "temperature": 4000,
+            "lumens": 800
+        }
+    },
+    "Player": {
+        "name": "you",
+        "height": 1.7,
+        "fieldOfView": 60,
+        "position": {
+            "x": 0,
+            "y": -1.7,
+            "z": 0
+        },
+        "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        }
+    }
+}

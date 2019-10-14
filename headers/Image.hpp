@@ -24,7 +24,6 @@ public:
       VkDeviceSize size = 0;
       VkImageView imageView = VK_NULL_HANDLE;
 
-      ImageType type = ImageType::unknown;
       int width = 0;
       int height = 0;
       int channels = 4; //rgba
@@ -38,7 +37,8 @@ public:
       //create VkImage allocation
       void allocate();
 
-      void loadFile(std::string path);
+      void loadSTB(std::string path); //use stb_image.h to load most normal image formats
+      void loadGLI(std::string path); //use gli to load texture (dds/ktx/kmg) files)
       void loadTextureCube(std::string path);
 
       void copyFrom(const Buffer &buffer, uint32_t layerCount = 1);
@@ -53,9 +53,6 @@ public:
 private:
       //destroy VkImage and VkImageView if they exist
       void deallocate();
-
-      void loadSTB(std::string path); //use stb_image.h to load most normal image formats
-      void loadGLI(std::string path); //use gli to load texture (dds/ktx/kmg) files)
 
       bool hasStencilComponent(VkFormat format);
 };

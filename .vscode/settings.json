@@ -82,7 +82,8 @@
         "xtr1common": "cpp",
         "pointers": "cpp",
         "*.mm": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "gsl_util": "cpp"
     },
     "C_Cpp.configurationWarnings": "Disabled"
 }

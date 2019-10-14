@@ -80,5 +80,5 @@ public:
 private:
     void loadMesh();
     void loadMaterial();
-    void loadImage(const std::string &path, ImageType type, Image &image, VkSampler &sampler);
+    void loadImage(const std::string &path, Image &image, VkSampler &sampler);
 };

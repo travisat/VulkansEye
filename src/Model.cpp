@@ -26,20 +26,19 @@ void Model::loadMesh()
 
 void Model::loadMaterial()
 {
-    loadImage(config->material.diffusePath, config->material.imageType, diffuse, diffuseSampler);
-    loadImage(config->material.normalPath, config->material.imageType, normal, normalSampler);
-    loadImage(config->material.roughnessPath, config->material.imageType, roughness, roughnessSampler);
-    loadImage(config->material.metallicPath, config->material.imageType, metallic, metallicSampler);
-    loadImage(config->material.aoPath, config->material.imageType, ambientOcclusion, aoSampler);
+    loadImage(config->diffusePath, diffuse, diffuseSampler);
+    loadImage(config->normalPath, normal, normalSampler);
+    loadImage(config->roughnessPath, roughness, roughnessSampler);
+    loadImage(config->metallicPath, metallic, metallicSampler);
+    loadImage(config->aoPath, ambientOcclusion, aoSampler);
 }
 
-void Model::loadImage(const std::string &path, ImageType type, Image &image, VkSampler &sampler)
+void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)
 {
     image.vulkan = vulkan;
     image.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image.type = ImageType::png;
-    image.loadFile(path);
+    image.loadSTB(path);
 
     image.generateMipmaps();
     image.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);

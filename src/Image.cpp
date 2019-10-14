@@ -14,39 +14,11 @@ Image::~Image()
     }
 }
 
-void Image::loadFile(std::string path)
-{
-    name = path;
-
-    switch (type)
-    {
-    case ImageType::png:
-    case ImageType::jpg:
-    case ImageType::bmp:
-    case ImageType::psd:
-    case ImageType::tga:
-    case ImageType::gif:
-    case ImageType::hdr:
-    case ImageType::pic:
-    case ImageType::pnm:
-        loadSTB(path);
-        break;
-    case ImageType::dds:
-    case ImageType::ktx:
-    case ImageType::kmg:
-        loadGLI(path);
-        break;
-    default:
-        Trace("Uknown ImageType for ", name, " attempting to load using stb_image at ", Timer::systemTime());
-        loadSTB(path);
-    }
-    Trace("Loaded ", name, " with format of ", format, " at ", Timer::systemTime());
-}
-
 void Image::loadSTB(std::string path)
 {
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
+    name = path;
     int32_t defaultChannels = 4;
     format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -94,17 +66,6 @@ void Image::loadGLI(std::string path)
 void Image::loadTextureCube(std::string path)
 {
     name = path;
-
-    //only handle gli implementations right now
-    switch (type)
-    {
-    case ImageType::dds:
-    case ImageType::ktx:
-    case ImageType::kmg:
-        break;
-    default:
-        Trace("Unknown ImageType for ", name, " attempting to load anyway");
-    }
 
     //load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(path));
