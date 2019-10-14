@@ -18,6 +18,19 @@ struct UniformBuffer
     alignas(16) glm::mat4 model;
 };
 
+struct TessControl
+{
+    float tessLevel = 64.0f;
+};
+
+struct TessEval
+{
+    glm::mat4 projection;
+    glm::mat4 model;
+    float tessAlpha = 1.0f;
+    float tessStrength = 0.5f;
+};
+
 struct Vertex
 {
     glm::vec3 position;

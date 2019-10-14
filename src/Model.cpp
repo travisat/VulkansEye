@@ -8,6 +8,7 @@ Model::~Model()
     vkDestroySampler(vulkan->device, roughnessSampler, nullptr);
     vkDestroySampler(vulkan->device, metallicSampler, nullptr);
     vkDestroySampler(vulkan->device, aoSampler, nullptr);
+    vkDestroySampler(vulkan->device, dispSampler, nullptr);
 }
 
 void Model::create()
@@ -30,7 +31,8 @@ void Model::loadMaterial()
     loadImage(config->normalPath, normal, normalSampler);
     loadImage(config->roughnessPath, roughness, roughnessSampler);
     loadImage(config->metallicPath, metallic, metallicSampler);
-    loadImage(config->aoPath, ambientOcclusion, aoSampler);
+    loadImage(config->aoPath, ao, aoSampler);
+    loadImage(config->displacementPath, displacement, dispSampler);
 }
 
 void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)

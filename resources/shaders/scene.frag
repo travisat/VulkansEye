@@ -18,16 +18,16 @@ struct PointLight
     float temperature;
 };
 
-layout(binding = 1) uniform UniformLight
+layout(binding = 4) uniform UniformLight
 {
      PointLight light[numLights];
 } uLight;
 
-layout(binding = 2) uniform sampler2D diffuseMap;
-layout(binding = 3) uniform sampler2D normalMap;
-layout(binding = 4) uniform sampler2D metallicMap;
-layout(binding = 5) uniform sampler2D roughnessMap;
-layout(binding = 6) uniform sampler2D aoMap;
+layout(binding = 5) uniform sampler2D diffuseMap;
+layout(binding = 6) uniform sampler2D normalMap;
+layout(binding = 7) uniform sampler2D metallicMap;
+layout(binding = 8) uniform sampler2D roughnessMap;
+layout(binding = 9) uniform sampler2D aoMap;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;

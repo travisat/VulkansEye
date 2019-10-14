@@ -43,13 +43,16 @@ public:
 
     // num uniform buffers per model and stage (UBO and ULO)
     uint32_t numUniformBuffers() { return static_cast<uint32_t>(actors.size() + 1); };
+    uint32_t numTessBuffers() { return static_cast<uint32_t>((actors.size() + 1) * 2); };
     uint32_t numUniformLights() { return static_cast<uint32_t>(actors.size() + 1); };
     // same but for imagesamplers (diffuse, normal, roughness, metllalic, ambientOcclusion) + sampler for stage
-    uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 5); };
+    uint32_t numImageSamplers() { return static_cast<uint32_t>((actors.size() + 1) * 6); };
 
 private:
     UniformBuffer uBuffer;
     UniformLight uLight;
+    TessControl uTessControl;
+    TessEval uTessEval;
 
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;

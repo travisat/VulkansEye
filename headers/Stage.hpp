@@ -21,6 +21,8 @@ public:
     Buffer vertexBuffer;
     Buffer indexBuffer;
     std::vector<Buffer> uniformBuffers;
+    std::vector<Buffer> tessControlBuffers;
+    std::vector<Buffer> tessEvalBuffers;
     std::vector<Buffer> uniformLights;
 
     std::vector<VkDescriptorSet> descriptorSets;

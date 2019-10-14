@@ -33,6 +33,7 @@ struct ModelConfig : Config
 struct ActorConfig : Config
 {
     glm::vec3 position;
+    glm::vec3 rotation;
     ModelConfig modelConfig;
 };
 
@@ -84,6 +85,9 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         actorconfig.at("position").at("x").get_to(config.actors[i].position.x);
         actorconfig.at("position").at("y").get_to(config.actors[i].position.y);
         actorconfig.at("position").at("z").get_to(config.actors[i].position.z);
+        actorconfig.at("rotation").at("x").get_to(config.actors[i].rotation.x);
+        actorconfig.at("rotation").at("y").get_to(config.actors[i].rotation.y);
+        actorconfig.at("rotation").at("z").get_to(config.actors[i].rotation.z);
         actorconfig.at("model").at("path").get_to(config.actors[i].modelConfig.objPath);
         actorconfig.at("model").at("diffuse").get_to(config.actors[i].modelConfig.diffusePath);
         actorconfig.at("model").at("normal").get_to(config.actors[i].modelConfig.normalPath);

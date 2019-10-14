@@ -9,43 +9,53 @@
                 "y": 1.0,
                 "z": 5.0
             },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
             "model": {
                 "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Metal06/diffuse.jpg",
-                "normal": "resources/materials/Metal06/normal.jpg",
-                "roughness": "resources/materials/Metal06/roughness.jpg",
+                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
+                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
+                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
                 "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/Metal06/metallic.jpg",
-                "displacement": "resources/materials/Metal06/displacement.jpg"
+                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
+                "displacement": "resources/materials/Metal11/Metal11_disp.jpg"
             }
         },
-        "table": {
+        "wall1": {
             "name": "table",
             "position": {
                 "x": 4.0,
                 "y": 0.0,
                 "z": 5.0
             },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
             "model": {
                 "path": "resources/models/table.obj",
-                "diffuse": "resources/materials/Metal07/Metal07_col.jpg",
-                "normal": "resources/materials/Metal07/Metal07_nrm.jpg",
-                "roughness": "resources/materials/Metal07/Metal07_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/Metal07/Metal07_met.jpg",
-                "displacement": "resources/materials/Metal07/Metal07_disp.jpg"
+                "diffuse": "resources/materials/Rock14/Rock14_col.jpg",
+                "normal": "resources/materials/Rock14/Rock14_nrm.jpg",
+                "roughness": "resources/materials/Rock14/Rock14_rgh.jpg",
+                "ao": "resources/materials/Rock14/Rock14_AO.jpg",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Rock14/Rock14_disp.jpg"
             }
         }
     },
     "stage": {
         "backdrop": "resources/backdrop/nebula.dds",
         "path": "resources/models/floor.obj",
-        "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-        "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-        "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-        "ao": "resources/materials/default/ao.png",
+        "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
+        "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
+        "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
+        "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
         "metallic": "resources/materials/default/metallic.png",
-        "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg"
+        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg"
     },
     "lights": {
         "lantern": {
@@ -55,8 +65,8 @@
                 "y": 2.7,
                 "z": 0
             },
-            "temperature": 2500,
-            "lumens": 600
+            "temperature": 4500,
+            "lumens": 400
         },
         "tablelight": {
             "name": "tablelight",
@@ -66,7 +76,7 @@
                 "z": 5
             },
             "temperature": 4000,
-            "lumens": 800
+            "lumens": 1200
         }
     },
     "player": {

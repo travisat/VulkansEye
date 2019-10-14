@@ -109,6 +109,8 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     uBuffer.projection = player->perspective;
     uBuffer.view = player->view;
 
+    uTessEval.projection = player->perspective;
+
     for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = pointLights[i].light.position;
@@ -118,15 +120,25 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
 
     uLight.light[0].position = player->position * -1.0f;
 
+    uTessEval.model = uBuffer.model;
     stage.backdrop.updateUniformBuffer(currentImage);
     stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
+    stage.tessControlBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
+    stage.tessEvalBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
     stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 
     for (auto &actor : actors)
     {
         uBuffer.model = glm::translate(glm::mat4(1.0f), actor.position);
+        uBuffer.model = glm::rotate(uBuffer.model, glm::radians(actor.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        uBuffer.model = glm::rotate(uBuffer.model, glm::radians(actor.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        uBuffer.model = glm::rotate(uBuffer.model, glm::radians(actor.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        uTessEval.model = uBuffer.model;
 
         actor.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
+        actor.tessControlBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
+        actor.tessEvalBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
         actor.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
     }
 }
@@ -137,7 +149,7 @@ void Scene::createDescriptorPool()
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = (numUniformBuffers() + numUniformLights() * numLights) * numSwapChainImages;
+    poolSizes[0].descriptorCount = (numUniformBuffers() + +numTessBuffers() + numUniformLights() * numLights) * numSwapChainImages;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
 
@@ -145,7 +157,7 @@ void Scene::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = (numUniformBuffers() + numUniformLights() + numImageSamplers()) * numSwapChainImages;
+    poolInfo.maxSets = (numUniformBuffers() + numTessBuffers() + numUniformLights() + numImageSamplers() * numLights) * numSwapChainImages;
 
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
 }
@@ -159,49 +171,80 @@ void Scene::createDescriptorSetLayouts()
     uBufferLayoutBinding.pImmutableSamplers = nullptr;
     uBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+    VkDescriptorSetLayoutBinding uTessControlLayoutBinding = {};
+    uTessControlLayoutBinding.binding = 1;
+    uTessControlLayoutBinding.descriptorCount = 1;
+    uTessControlLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uTessControlLayoutBinding.pImmutableSamplers = nullptr;
+    uTessControlLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+
+    VkDescriptorSetLayoutBinding uTessEvalLayoutBinding = {};
+    uTessEvalLayoutBinding.binding = 2;
+    uTessEvalLayoutBinding.descriptorCount = 1;
+    uTessEvalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uTessEvalLayoutBinding.pImmutableSamplers = nullptr;
+    uTessEvalLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
+    VkDescriptorSetLayoutBinding dispLayoutBinding = {};
+    dispLayoutBinding.binding = 3;
+    dispLayoutBinding.descriptorCount = 1;
+    dispLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dispLayoutBinding.pImmutableSamplers = nullptr;
+    dispLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+
     VkDescriptorSetLayoutBinding uLightLayoutBinding = {};
-    uLightLayoutBinding.binding = 1;
+    uLightLayoutBinding.binding = 4;
     uLightLayoutBinding.descriptorCount = 1;
     uLightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uLightLayoutBinding.pImmutableSamplers = nullptr;
     uLightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding diffuseLayoutBinding = {};
-    diffuseLayoutBinding.binding = 2;
+    diffuseLayoutBinding.binding = 5;
     diffuseLayoutBinding.descriptorCount = 1;
     diffuseLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     diffuseLayoutBinding.pImmutableSamplers = nullptr;
     diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding normalLayoutBinding = {};
-    normalLayoutBinding.binding = 3;
+    normalLayoutBinding.binding = 6;
     normalLayoutBinding.descriptorCount = 1;
     normalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     normalLayoutBinding.pImmutableSamplers = nullptr;
     normalLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding roughnessLayoutBinding = {};
-    roughnessLayoutBinding.binding = 4;
+    roughnessLayoutBinding.binding = 7;
     roughnessLayoutBinding.descriptorCount = 1;
     roughnessLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     roughnessLayoutBinding.pImmutableSamplers = nullptr;
     roughnessLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding metallicLayoutBinding = {};
-    metallicLayoutBinding.binding = 5;
+    metallicLayoutBinding.binding = 8;
     metallicLayoutBinding.descriptorCount = 1;
     metallicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     metallicLayoutBinding.pImmutableSamplers = nullptr;
     metallicLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding aoLayoutBinding = {};
-    aoLayoutBinding.binding = 6;
+    aoLayoutBinding.binding = 9;
     aoLayoutBinding.descriptorCount = 1;
     aoLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     aoLayoutBinding.pImmutableSamplers = nullptr;
     aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::array<VkDescriptorSetLayoutBinding, 7> bindings = {uBufferLayoutBinding, uLightLayoutBinding, diffuseLayoutBinding, normalLayoutBinding, roughnessLayoutBinding, metallicLayoutBinding, aoLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 10> bindings =
+        {uBufferLayoutBinding,
+         uTessControlLayoutBinding,
+         uTessEvalLayoutBinding,
+         dispLayoutBinding,
+         uLightLayoutBinding,
+         diffuseLayoutBinding,
+         normalLayoutBinding,
+         roughnessLayoutBinding,
+         metallicLayoutBinding,
+         aoLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -235,9 +278,13 @@ void Scene::createPipeline()
 {
     auto vertShaderCode = tat::readFile("resources/shaders/scene.vert.spv");
     auto fragShaderCode = tat::readFile("resources/shaders/scene.frag.spv");
+    auto tessControlShaderCode = tat::readFile("resources/shaders/displacement.tesc.spv");
+    auto tessEvalShaderCode = tat::readFile("resources/shaders/displacement.tese.spv");
 
     VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
+    VkShaderModule tessControlShaderModule = vulkan->createShaderModule(tessControlShaderCode);
+    VkShaderModule tessEvalShaderModule = vulkan->createShaderModule(tessEvalShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -251,7 +298,23 @@ void Scene::createPipeline()
     fragShaderStageInfo.module = fragShaderModule;
     fragShaderStageInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+    VkPipelineShaderStageCreateInfo tessControlShaderStageInfo = {};
+    tessControlShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    tessControlShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    tessControlShaderStageInfo.module = tessControlShaderModule;
+    tessControlShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo tessEvalShaderStageInfo = {};
+    tessEvalShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    tessEvalShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    tessEvalShaderStageInfo.module = tessEvalShaderModule;
+    tessEvalShaderStageInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] =
+        {vertShaderStageInfo,
+         fragShaderStageInfo,
+         tessControlShaderStageInfo,
+         tessEvalShaderStageInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -277,6 +340,10 @@ void Scene::createPipeline()
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.pDynamicStates = dynamicStateEnables.data();
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+
+    VkPipelineTessellationStateCreateInfo tessellationState {};
+    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
+    tessellationState.patchControlPoints = 3;
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -332,6 +399,7 @@ void Scene::createPipeline()
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.pTessellationState = &tessellationState;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = vulkan->renderPass;
     pipelineInfo.subpass = 0;
