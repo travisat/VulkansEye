@@ -5,6 +5,7 @@
 #include <glm/gtx/matrix_transform_2d.hpp>
 
 #include "Vulkan.hpp"
+#include "Pipeline.hpp"
 #include "Actor.hpp"
 #include "Backdrop.hpp"
 #include "Player.hpp"
@@ -19,7 +20,7 @@ class Scene
 {
 public:
     //config values
-    tat::Vulkan *vulkan = nullptr;
+    Vulkan *vulkan = nullptr;
     SceneConfig *config = nullptr;
     Player *player = nullptr;
 
@@ -27,8 +28,7 @@ public:
     std::string name = "Unknown";
     Stage stage;
 
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
+    Pipeline pipeline;
     std::vector<Actor> actors;
     std::vector<PointLight> pointLights;
 
@@ -68,7 +68,6 @@ private:
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createPipeline();
-    void createPipelineLayout();
     void createUniformBuffers();
     void createDescriptorSets();
 };

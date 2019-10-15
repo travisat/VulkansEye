@@ -16,8 +16,8 @@ ${CMAKE_SOURCE_DIR}/../../Libraries/glfw-3.3.bin.WIN64
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag
-${CMAKE_SOURCE_DIR}/resources/shaders/skybox.vert
-${CMAKE_SOURCE_DIR}/resources/shaders/skybox.frag
+${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert
+${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tesc
@@ -27,8 +27,8 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tese
 set(COMPILED_SHADERS
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/skybox.vert.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/skybox.frag.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tesc.spv
@@ -39,6 +39,7 @@ set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/VkEngine.cpp
+${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Actor.cpp

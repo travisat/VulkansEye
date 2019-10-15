@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pipeline.hpp"
 #include "Image.hpp"
 #include "Buffer.hpp"
 #include "Player.hpp"
@@ -31,16 +32,14 @@ public:
     Player *player = nullptr;
     std::string path;
 
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-
 private:
     Image cubeMap{};
     VkSampler sampler = VK_NULL_HANDLE;
     UniformBuffer uBuffer;
 
+    Pipeline pipeline;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
- 
+
     void loadCubeMap();
     void createDescriptorPool();
     void createDescriptorSetLayouts();
