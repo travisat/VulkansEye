@@ -12,6 +12,10 @@ namespace tat
 class Backdrop
 {
 public:
+    Vulkan *vulkan = nullptr;
+    Player *player = nullptr;
+    std::string path;
+
     ~Backdrop();
 
     void create();
@@ -25,12 +29,6 @@ public:
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Buffer> uniformBuffers;
     VkDescriptorPool descriptorPool;
-
-    tat::Vulkan *vulkan = nullptr;
-    std::string name = "Uknown";
-
-    Player *player = nullptr;
-    std::string path;
 
 private:
     Image cubeMap{};

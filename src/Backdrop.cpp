@@ -22,19 +22,29 @@ void Backdrop::create()
     createDescriptorSets();
 }
 
+void Backdrop::cleanup()
+{
+    pipeline.cleanup();
+    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+}
+
+void Backdrop::recreate()
+{
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorPool();
+    createDescriptorSets();
+}
+
 void Backdrop::loadCubeMap()
 {
     cubeMap.vulkan = vulkan;
-    cubeMap.format = VK_FORMAT_B8G8R8A8_UNORM;
     cubeMap.tiling = VK_IMAGE_TILING_OPTIMAL;
     cubeMap.numSamples = VK_SAMPLE_COUNT_1_BIT;
     cubeMap.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    cubeMap.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-
     cubeMap.loadTextureCube(path);
 
-    //convert image so shaders can use it
     cubeMap.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
 
     VkSamplerCreateInfo samplerInfo = {};
@@ -49,29 +59,10 @@ void Backdrop::loadCubeMap()
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
     samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
-
-    if (vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create texture sampler");
-    }
+    CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
 
     cubeMap.createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
-}
-
-void Backdrop::cleanup()
-{
-    pipeline.cleanup();
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
-}
-
-void Backdrop::recreate()
-{
-    createPipeline();
-    createUniformBuffers();
-    createDescriptorPool();
-    createDescriptorSets();
 }
 
 void Backdrop::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
@@ -89,14 +80,10 @@ void Backdrop::createUniformBuffers()
         buffer.vulkan = vulkan;
         buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        buffer.name = "Backdrop/UBO";
 
-        //uniformBufferObject to store in uniformBuffer
         UniformBuffer uBuffer{};
         uBuffer.projection = player->perspective;
         uBuffer.view = player->view;
-
-        //store and add
         buffer.update(&uBuffer, sizeof(UniformBuffer));
     }
 }
@@ -123,14 +110,9 @@ void Backdrop::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    if (vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create descriptor pool");
-    }
-    Trace("Created ", name, " descriptor pool at ", Timer::systemTime());
+    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -156,10 +138,7 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create skybox descriptor set layout");
-    }
+    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout));
 }
 
 void Backdrop::createDescriptorSets()
@@ -172,11 +151,7 @@ void Backdrop::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets.resize(vulkan->swapChainImages.size());
-    if (vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-    {
-
-        throw std::runtime_error("Failed to allocate skybox descriptorsets");
-    }
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {

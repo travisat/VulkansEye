@@ -60,11 +60,9 @@ void Overlay::createBuffers()
     vertexBuffer.flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     vertexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    vertexBuffer.name = "overlay vertex buffer";
     indexBuffer.flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     indexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    indexBuffer.name = "overlay index buffer";
 }
 
 void Overlay::createFont()
@@ -90,9 +88,7 @@ void Overlay::createFont()
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "overlay font image staging buffer";
-
-    stagingBuffer.load(gsl::make_span(fontData, fontData + static_cast<uint32_t>(uploadSize)));
+    stagingBuffer.update(fontData, uploadSize);
 
     fontImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 

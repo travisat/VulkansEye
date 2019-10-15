@@ -140,8 +140,8 @@ void Pipeline::createDefault()
 
 void Pipeline::createBackdrop()
 {
-    auto vertShaderCode = tat::readFile(vertShaderPath);
-    auto fragShaderCode = tat::readFile(fragShaderPath);
+    auto vertShaderCode = readFile(vertShaderPath);
+    auto fragShaderCode = readFile(fragShaderPath);
 
     VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);

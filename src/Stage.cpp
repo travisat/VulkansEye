@@ -8,7 +8,6 @@ void Stage::create()
 {
     backdrop.vulkan = vulkan;
     backdrop.player = player;
-    backdrop.name = "Backdrop";
     backdrop.path = config->backdrop;
     backdrop.create();
     
@@ -21,20 +20,17 @@ void Stage::create()
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "scene staging buffer";
 
-    stagingBuffer.load(model.vertices);
+    stagingBuffer.update(model.vertices);
     vertexBuffer.vulkan = vulkan;
     vertexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    vertexBuffer.name = "scene/vertex";
     stagingBuffer.copyTo(vertexBuffer);
 
-    stagingBuffer.load(model.indices);
+    stagingBuffer.update(model.indices);
     indexBuffer.vulkan = vulkan;
     indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    indexBuffer.name = "scene/index";
     stagingBuffer.copyTo(indexBuffer);
 }
 

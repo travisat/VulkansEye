@@ -9,7 +9,6 @@ Image::~Image()
     if (image)
     {
         vmaDestroyImage(vulkan->allocator, image, allocation);
-        Trace("Deallocated ", name, " at ", Timer::systemTime());
     }
     if (imageView)
     {
@@ -52,8 +51,7 @@ void Image::loadSTB(std::string path)
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.name = "image staging buffer";
-    stagingBuffer.load(gsl::make_span(pixels, pixels + size));
+    stagingBuffer.update(pixels, size);
 
     stbi_image_free(pixels);
 
@@ -73,22 +71,20 @@ void Image::loadTextureCube(std::string path)
     //load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(path));
     assert(!texCube.empty());
-    auto f = texCube.format();
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.name = "image staging buffer";
-    //convert void * from texCube.data() to bytes * which is what texCube.size() provides size in
-    const std::byte *byteBuffer = (std::byte *)texCube.data();
-    stagingBuffer.load(gsl::make_span(byteBuffer, byteBuffer + texCube.size()));
+    stagingBuffer.update(texCube.data(), texCube.size());
 
     //allocate space in VkImage for buffer to go
     width = texCube.extent().x;
     height = texCube.extent().y;
     mipLevels = static_cast<uint32_t>(texCube.levels());
     layers = 6;
+    format = static_cast<VkFormat>(texCube.format());
+    flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     allocate();
 
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
@@ -133,7 +129,6 @@ void Image::loadTextureCube(std::string path)
         bufferCopyRegions.data());
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
-    Trace("Loaded ", name, " at ", Timer::systemTime());
 }
 
 void Image::allocate()
