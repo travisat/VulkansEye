@@ -7,22 +7,25 @@ namespace tat
 {
 class Pipeline
 {
-    public:
+public:
     Vulkan *vulkan;
     VkDescriptorSetLayout descriptorSetLayout;
     std::string vertShaderPath;
     std::string fragShaderPath;
     std::string tescShaderPath;
     std::string teseShaderPath;
-    
+
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
-    
+
     ~Pipeline();
     void cleanup();
-    void createDefaultPipeline();
+
     void createScenePipeline();
     void createBackdropPipeline();
+
+private:
+    void createDefaultPipeline();
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -35,7 +38,7 @@ class Pipeline
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamicState{};
-    VkPipelineTessellationStateCreateInfo tessellationState {};
+    VkPipelineTessellationStateCreateInfo tessellationState{};
     VkPipelineViewportStateCreateInfo viewportState = {};
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
     VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -43,6 +46,5 @@ class Pipeline
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
-
 };
 } // namespace tat
