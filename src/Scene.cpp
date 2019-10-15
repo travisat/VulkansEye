@@ -121,8 +121,8 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     uTessEval.model = uBuffer.model;
     stage.backdrop.updateUniformBuffer(currentImage);
     stage.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
-    stage.tessControlBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
-    stage.tessEvalBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
+    stage.tescBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
+    stage.teseBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
     stage.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
 
     for (auto &actor : actors)
@@ -135,8 +135,8 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
         uTessEval.model = uBuffer.model;
 
         actor.uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
-        actor.tessControlBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
-        actor.tessEvalBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
+        actor.tescBuffers[currentImage].update(&uTessControl, sizeof(TessControl));
+        actor.teseBuffers[currentImage].update(&uTessEval, sizeof(TessEval));
         actor.uniformLights[currentImage].update(&uLight, sizeof(UniformLight));
     }
 }

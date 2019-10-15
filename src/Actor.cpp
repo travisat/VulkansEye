@@ -53,12 +53,12 @@ void Actor::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         bufferInfo.range = sizeof(UniformBuffer);
 
         VkDescriptorBufferInfo tessControlInfo = {};
-        tessControlInfo.buffer = tessControlBuffers[i].buffer;
+        tessControlInfo.buffer = tescBuffers[i].buffer;
         tessControlInfo.offset = 0;
         tessControlInfo.range = sizeof(TessControl);
 
         VkDescriptorBufferInfo tessEvalInfo = {};
-        tessEvalInfo.buffer = tessEvalBuffers[i].buffer;
+        tessEvalInfo.buffer = teseBuffers[i].buffer;
         tessEvalInfo.offset = 0;
         tessEvalInfo.range = sizeof(TessEval);
 
@@ -187,8 +187,8 @@ void Actor::createUniformBuffers()
 {
     uniformBuffers.resize(vulkan->swapChainImages.size());
     uniformLights.resize(vulkan->swapChainImages.size());
-    tessControlBuffers.resize(vulkan->swapChainImages.size());
-    tessEvalBuffers.resize(vulkan->swapChainImages.size());
+    tescBuffers.resize(vulkan->swapChainImages.size());
+    teseBuffers.resize(vulkan->swapChainImages.size());
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
@@ -197,15 +197,15 @@ void Actor::createUniformBuffers()
         uniformBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformBuffers[i].resize(sizeof(UniformBuffer));
 
-        tessControlBuffers[i].vulkan = vulkan;
-        tessControlBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        tessControlBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        tessControlBuffers[i].resize(sizeof(TessControl));
+        tescBuffers[i].vulkan = vulkan;
+        tescBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        tescBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        tescBuffers[i].resize(sizeof(TessControl));
 
-        tessEvalBuffers[i].vulkan = vulkan;
-        tessEvalBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        tessEvalBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        tessEvalBuffers[i].resize(sizeof(TessEval));
+        teseBuffers[i].vulkan = vulkan;
+        teseBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        teseBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        teseBuffers[i].resize(sizeof(TessEval));
 
         uniformLights[i].vulkan = vulkan;
         uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
