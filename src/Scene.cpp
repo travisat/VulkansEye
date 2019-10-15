@@ -270,7 +270,7 @@ void Scene::createPipeline()
     pipeline.fragShaderPath = "resources/shaders/scene.frag.spv";
     pipeline.tescShaderPath = "resources/shaders/displacement.tesc.spv";
     pipeline.teseShaderPath = "resources/shaders/displacement.tese.spv";
-    pipeline.createDefault();
+    pipeline.createScenePipeline();
 }
 
 } //namespace tat

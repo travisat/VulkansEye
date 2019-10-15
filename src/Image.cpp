@@ -58,6 +58,7 @@ void Image::loadSTB(std::string path)
     allocate();
     transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyFrom(stagingBuffer);
+    Trace("Loaded ", path, " at ", Timer::systemTime());
 }
 
 void Image::loadGLI(std::string path)
@@ -129,6 +130,7 @@ void Image::loadTextureCube(std::string path)
         bufferCopyRegions.data());
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
+    Trace("Loaded ", path, " at ", Timer::systemTime());
 }
 
 void Image::allocate()
@@ -311,7 +313,6 @@ void Image::generateMipmaps()
                          1, &barrier);
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
-    Trace("Generated mipmaps for ", name, " at ", Timer::systemTime());
 }
 
 void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount)

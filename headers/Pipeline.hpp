@@ -20,8 +20,9 @@ class Pipeline
     
     ~Pipeline();
     void cleanup();
-    void createDefault();
-    void createBackdrop();
+    void createDefaultPipeline();
+    void createScenePipeline();
+    void createBackdropPipeline();
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -42,5 +43,6 @@ class Pipeline
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
+
 };
 } // namespace tat

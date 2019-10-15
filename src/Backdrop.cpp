@@ -193,7 +193,7 @@ void Backdrop::createPipeline()
     pipeline.descriptorSetLayout = descriptorSetLayout;
     pipeline.vertShaderPath = "resources/shaders/backdrop.vert.spv";
     pipeline.fragShaderPath = "resources/shaders/backdrop.frag.spv";
-    pipeline.createBackdrop();
+    pipeline.createBackdropPipeline();
 }
 
 } //namespace tat
