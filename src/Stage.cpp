@@ -181,6 +181,7 @@ void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
+
 void Stage::createUniformBuffers()
 {
     uniformBuffers.resize(vulkan->swapChainImages.size());
