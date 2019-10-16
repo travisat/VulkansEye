@@ -1,56 +1,54 @@
 #pragma once
 
-#include "Pipeline.hpp"
-#include "Image.hpp"
 #include "Buffer.hpp"
+#include "Image.hpp"
+#include "Pipeline.hpp"
 #include "Player.hpp"
 #include "Timer.h"
 
-namespace tat
-{
 
-struct UniformBuffer
-{
-    alignas(16) glm::mat4 projection;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 model;
+namespace tat {
+
+struct UniformBuffer {
+  alignas(16) glm::mat4 projection;
+  alignas(16) glm::mat4 view;
+  alignas(16) glm::mat4 model;
 };
 
-class Backdrop
-{
+class Backdrop {
 public:
-    Vulkan *vulkan = nullptr;
-    Player *player = nullptr;
-    std::string path;
+  Vulkan *vulkan = nullptr;
+  Player *player = nullptr;
+  std::string path;
 
-    ~Backdrop();
+  ~Backdrop();
 
-    void create();
-    void cleanup();
-    void recreate();
+  void create();
+  void cleanup();
+  void recreate();
 
-    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+  void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
 
-    void update(uint32_t currentImage);
+  void update(uint32_t currentImage);
 
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<Buffer> uniformBuffers;
-    VkDescriptorPool descriptorPool;
+  std::vector<VkDescriptorSet> descriptorSets;
+  std::vector<Buffer> uniformBuffers;
+  VkDescriptorPool descriptorPool;
 
 private:
-    Image cubeMap{};
-    VkSampler sampler = VK_NULL_HANDLE;
-    UniformBuffer uBuffer;
+  Image cubeMap{};
+  VkSampler sampler = VK_NULL_HANDLE;
+  UniformBuffer uBuffer;
 
-    Pipeline pipeline;
-    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+  Pipeline pipeline;
+  VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 
-    void loadCubeMap();
-    void createDescriptorPool();
-    void createDescriptorSetLayouts();
-    void createUniformBuffers();
-    void createDescriptorSets();
-    void createPipeline();
+  void loadCubeMap();
+  void createDescriptorPool();
+  void createDescriptorSetLayouts();
+  void createUniformBuffers();
+  void createDescriptorSets();
+  void createPipeline();
 };
 
-} //namespace tat
+} // namespace tat

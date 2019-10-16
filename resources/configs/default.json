@@ -90,7 +90,7 @@
                 "y": -2.0,
                 "z": 0
             },
-            "temperature": 4500,
+            "temperature": 6400,
             "lumens": 1500
         },
         "tablelight": {
@@ -100,7 +100,7 @@
                 "y": -4.4,
                 "z": 5
             },
-            "temperature": 5000,
+            "temperature": 6400,
             "lumens": 2600
         }
     },

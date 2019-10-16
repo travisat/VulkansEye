@@ -8,35 +8,32 @@
 
 #include "Config.h"
 
-namespace tat
-{
+namespace tat {
 
 static const int numLights = 2;
 
-struct uPointLight
-{
-    glm::vec3 position;
-    alignas(4) float lumens;
-    alignas(4) float temperature;
-    glm::vec3 buffer = glm::vec3(0.0f); //sizeof struct in uniform buffer must be divisible by 16
+struct uPointLight {
+  glm::vec3 position;
+  alignas(4) float lumens;
+  alignas(4) float temperature;
+  glm::vec3 buffer = glm::vec3(
+      0.0f); // sizeof struct in uniform buffer must be divisible by 16
 };
 
-struct UniformLight
-{
-    uPointLight light[numLights];
+struct UniformLight {
+  uPointLight light[numLights];
 };
 
-class PointLight 
-{
+class PointLight {
 public:
-    PointLightConfig *config;
+  PointLightConfig *config;
 
-    uint32_t id;
-    std::string name;
-    uPointLight light {};
-    void load();
+  uint32_t id;
+  std::string name;
+  uPointLight light{};
+  void load();
 
 private:
 };
 
-} //namespace tat
+} // namespace tat

@@ -3,12 +3,12 @@
 #include <optional>
 #include <set>
 
-#include "Vulkan.hpp"
-#include "Scene.hpp"
 #include "Overlay.hpp"
+#include "Scene.hpp"
+#include "Vulkan.hpp"
 
-namespace tat
-{
+
+namespace tat {
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -26,82 +26,84 @@ const bool enableValidationLayers = true;
 const std::vector<const char *> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-struct SwapChainSupportDetails
-{
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
+struct QueueFamilyIndices {
+  std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
 
-    bool isComplete()
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
+  bool isComplete() {
+    return graphicsFamily.has_value() && presentFamily.has_value();
+  }
 };
 
-class VkEngine
-{
+class VkEngine {
 public:
-    tat::Vulkan *vulkan = nullptr;
-    Scene *scene;
-    Overlay *overlay;
+  tat::Vulkan *vulkan = nullptr;
+  Scene *scene;
+  Overlay *overlay;
 
-    ~VkEngine();
-    void init();
-    void drawFrame();
+  ~VkEngine();
+  void init();
+  void drawFrame();
 
 private:
-    Image colorImage{};
-    Image depthImage{};
-    std::vector<VkFramebuffer> swapChainFramebuffers{};
+  Image colorImage{};
+  Image depthImage{};
+  std::vector<VkFramebuffer> swapChainFramebuffers{};
 
-    VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+  VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
-    std::vector<VkCommandBuffer> commandBuffers{};
+  std::vector<VkCommandBuffer> commandBuffers{};
 
-    std::vector<VkSemaphore> presentFinishedSemaphores{};
-    std::vector<VkSemaphore> renderFinishedSemaphores{};
-    std::vector<VkFence> waitFences{};
-   
-    void createCommandBuffers();
-    void recordCommandBuffers();
+  std::vector<VkSemaphore> presentFinishedSemaphores{};
+  std::vector<VkSemaphore> renderFinishedSemaphores{};
+  std::vector<VkFence> waitFences{};
 
-    void resizeWindow();
+  void createCommandBuffers();
+  void recordCommandBuffers();
 
-    void createInstance();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-    void setupDebugMessenger();
-    void createSurface();
-    void pickPhysicalDevice();
-    void createLogicalDevice();
-    void createAllocator();
-    void createSwapChain();
-    void createImageViews();
-    void createRenderPass();
-    void createFramebuffers();
-    void createCommandPool();
-    void createColorResources();
-    void createDepthResources();
+  void resizeWindow();
+
+  void createInstance();
+  void populateDebugMessengerCreateInfo(
+      VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+  void setupDebugMessenger();
+  void createSurface();
+  void pickPhysicalDevice();
+  void createLogicalDevice();
+  void createAllocator();
+  void createSwapChain();
+  void createImageViews();
+  void createRenderPass();
+  void createFramebuffers();
+  void createCommandPool();
+  void createColorResources();
+  void createDepthResources();
   //  void createDescriptorSetLayouts();
-    void createSyncObjects();
+  void createSyncObjects();
 
-    std::vector<const char *> getRequiredExtensions();
-    VkSampleCountFlagBits getMaxUsableSampleCount();
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth, uint32_t windowHeight);
-    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-    VkFormat VkEngine::findDepthFormat();
+  std::vector<const char *> getRequiredExtensions();
+  VkSampleCountFlagBits getMaxUsableSampleCount();
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR> &availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(
+      const std::vector<VkPresentModeKHR> &availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities,
+                              uint32_t windowWidth, uint32_t windowHeight);
+  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
+                               VkImageTiling tiling,
+                               VkFormatFeatureFlags features);
+  VkFormat VkEngine::findDepthFormat();
 
-    bool isDeviceSuitable(VkPhysicalDevice const &device);
-    QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device);
-    bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
+  bool isDeviceSuitable(VkPhysicalDevice const &device);
+  QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device);
+  bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
 };
 
-} //namespace tat
+} // namespace tat
