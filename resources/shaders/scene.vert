@@ -10,7 +10,7 @@ layout(location = 1) out vec3 outNormal;
 
 
 void main() {
-    outUV = inUV * 3.0;
+    outUV = inUV;
     outNormal = inNormal;
     gl_Position = vec4(inPosition, 1.0);
 }

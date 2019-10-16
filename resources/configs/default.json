@@ -15,9 +15,9 @@
                 "z": 0
             },
             "scale": {
-                "x": 3.0,
-                "y": 3.0,
-                "z": 3.0
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
             },
             "model": {
                 "path": "resources/models/sphere.obj",
@@ -28,8 +28,9 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
                 "tesselation": {
-                    "level": 64,
-                    "strength": 0.01
+                    "level": 128,
+                    "strength": 0.1,
+                    "alpha": 0.33
                 }
             }
         },
@@ -59,8 +60,9 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
                 "tesselation": {
-                    "level": 64,
-                    "strength": 0.01
+                    "level": 128,
+                    "strength": 0.001,
+                    "alpha": 0.03
                 }
             }
         }
@@ -75,8 +77,9 @@
         "metallic": "resources/materials/default/metallic.png",
         "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
         "tesselation": {
-            "level": 128,
-            "strength": 0.05
+            "level": 256,
+            "strength": 0.01,
+            "alpha": 0.33
         }
     },
     "lights": {

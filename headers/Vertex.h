@@ -26,6 +26,7 @@ struct TessEval
     glm::mat4 view;
     glm::mat4 model;
     float tessStrength = 0.1f;
+    float tessAlpha = 0.3f;
 };
 
 struct Vertex
