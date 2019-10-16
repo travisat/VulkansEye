@@ -6,13 +6,12 @@ layout (binding = 1) uniform UBO
 	mat4 projection;
 	mat4 view;
 	mat4 model;
-	float tessAlpha;
 	float tessStrength;
 } ubo; 
 
 layout (binding = 2) uniform sampler2D displacementMap; 
 
-layout(triangles) in;
+layout(triangles, equal_spacing, cw) in;
 
 layout (location = 0) in vec2 inUV[];
 layout (location = 1) in vec3 inNormal[];
@@ -33,14 +32,14 @@ vec3 lerp3Dvec3(vec3 v0, vec3 v1, vec3 v2)
 
 vec2 lerp3Dvec2(vec2 v0, vec2 v1, vec2 v2)
 {
-	return gl_TessCoord.x * v0 + gl_TessCoord.y * v1 + gl_TessCoord.z * v2;
+	return vec2(gl_TessCoord.x) * v0 + vec2(gl_TessCoord.y) * v1 + vec2(gl_TessCoord.z) * v2;
 }
 
 void main()
 {
 	gl_Position = lerp3Dvec4(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position); 
 	outUV = lerp3Dvec2(inUV[0], inUV[1], inUV[2]);
-	outNormal = lerp3Dvec3(inNormal[0], inNormal[1], inNormal[2]); 
+	outNormal = lerp3Dvec3(inNormal[0], inNormal[1], inNormal[2]);
 				
 	gl_Position.xyz += normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).a, 0.0) * ubo.tessStrength);
 				

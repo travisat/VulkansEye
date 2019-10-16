@@ -32,6 +32,7 @@ public:
     void create();
     void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
     void createUniformBuffers();
+
 private:
 };
 

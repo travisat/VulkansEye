@@ -79,6 +79,9 @@ public:
     VkSampler aoSampler;
     VkSampler dispSampler;
 
+    TessControl uTessControl = {};
+    TessEval uTessEval = {};
+
     ~Model();
     void create();
 

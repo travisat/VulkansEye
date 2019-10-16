@@ -31,7 +31,7 @@ public:
 
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
 
-    void updateUniformBuffer(uint32_t currentImage);
+    void update(uint32_t currentImage);
 
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<Buffer> uniformBuffers;

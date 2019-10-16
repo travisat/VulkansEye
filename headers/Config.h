@@ -31,12 +31,15 @@ struct ModelConfig : Config
     std::string metallicPath;
     std::string aoPath;
     std::string displacementPath;
+    float tessLevel;
+    float tessStregth;
 };
 
 struct ActorConfig : Config
 {
     glm::vec3 position;
     glm::vec3 rotation;
+    glm::vec3 scale;
     ModelConfig modelConfig;
 };
 
@@ -73,9 +76,6 @@ struct SceneConfig : Config
     StageConfig stageConfig;
     std::vector<PointLightConfig> pointLights{};
     std::vector<ActorConfig> actors;
-    float tessLevel;
-    float tessAlpha;
-    float tessStregth;
 };
 
 static void loadSceneConfig(std::string path, SceneConfig &config)
@@ -99,6 +99,9 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         actorconfig.at("rotation").at("x").get_to(config.actors[i].rotation.x);
         actorconfig.at("rotation").at("y").get_to(config.actors[i].rotation.y);
         actorconfig.at("rotation").at("z").get_to(config.actors[i].rotation.z);
+        actorconfig.at("scale").at("x").get_to(config.actors[i].scale.x);
+        actorconfig.at("scale").at("y").get_to(config.actors[i].scale.y);
+        actorconfig.at("scale").at("z").get_to(config.actors[i].scale.z);
         actorconfig.at("model").at("path").get_to(config.actors[i].modelConfig.objPath);
         actorconfig.at("model").at("diffuse").get_to(config.actors[i].modelConfig.diffusePath);
         actorconfig.at("model").at("normal").get_to(config.actors[i].modelConfig.normalPath);
@@ -106,6 +109,8 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         actorconfig.at("model").at("metallic").get_to(config.actors[i].modelConfig.metallicPath);
         actorconfig.at("model").at("ao").get_to(config.actors[i].modelConfig.aoPath);
         actorconfig.at("model").at("displacement").get_to(config.actors[i].modelConfig.displacementPath);
+        actorconfig.at("model").at("tesselation").at("level").get_to(config.actors[i].modelConfig.tessLevel);
+        actorconfig.at("model").at("tesselation").at("strength").get_to(config.actors[i].modelConfig.tessStregth);
         ++i;
     }
 
@@ -117,6 +122,8 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("stage").at("metallic").get_to(config.stageConfig.modelConfig.metallicPath);
     j.at("stage").at("ao").get_to(config.stageConfig.modelConfig.aoPath);
     j.at("stage").at("displacement").get_to(config.stageConfig.modelConfig.displacementPath);
+    j.at("stage").at("tesselation").at("level").get_to(config.stageConfig.modelConfig.tessLevel);
+    j.at("stage").at("tesselation").at("strength").get_to(config.stageConfig.modelConfig.tessStregth);
 
     config.pointLights.resize(j["lights"].size());
     i = 0;
@@ -147,10 +154,6 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
     j.at("player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
     j.at("player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
-
-    j.at("tesselation").at("level").get_to(config.tessLevel);
-    j.at("tesselation").at("strength").get_to(config.tessStregth);
-    j.at("tesselation").at("alpha").get_to(config.tessAlpha);
 };
 
 } //namespace tat

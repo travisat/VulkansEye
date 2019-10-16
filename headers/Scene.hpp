@@ -39,7 +39,7 @@ public:
 
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
 
-    void updateUniformBuffer(uint32_t currentImage);
+    void update(uint32_t currentImage);
 
     uint32_t numActors() { return static_cast<uint32_t>(actors.size()); };
 
@@ -51,9 +51,7 @@ public:
 
 private:
     UniformLight uLight = {};
-    TessControl uTessControl = {};
-    TessEval uTessEval = {};
-
+    
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
 

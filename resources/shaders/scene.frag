@@ -50,17 +50,17 @@ vec3 SRGBtoLINEAR(vec3 srgbIn)
 //[0]
 // Find the normal for this fragment, pulling from a predefined normal map
 // or from the interpolated mesh normal and tangent attributes.
-vec3 getNormal()
+vec3 getNormal(vec3 position, vec3 normal)
 {
 	// Perturb normal, see http://www.thetenthplanet.de/archives/1180
 	vec3 tangentNormal = texture(normalMap, inUV).xyz * 2.0 - 1.0;
 
-	vec3 q1 = dFdx(inPosition);
-	vec3 q2 = dFdy(inPosition);
+	vec3 q1 = dFdx(position);
+	vec3 q2 = dFdy(position);
 	vec2 st1 = dFdx(inUV);
 	vec2 st2 = dFdy(inUV);
 
-	vec3 N = normalize(inNormal);
+	vec3 N = normalize(normal);
 	vec3 T = normalize(q1 * st2.t - q2 * st1.t);
 	vec3 B = normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
@@ -120,7 +120,7 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
 	//diffuse brdf
 	// Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
     // and mix in diffuse retro-reflection based on roughness
-	float f90 = 0.5 + 2.0 * LdotH * LdotH * roughness * roughness;
+	float f90 = 0.5 + 2.0 * NdotL * NdotL * roughness * roughness;
 	vec3 f0 = vec3 (1.0f, 1.0f, 1.0f);
 	float FL = fresnelSchlick(f0, f90, NdotL).r;
 	float FV = fresnelSchlick(f0, f90, NdotV).r;
@@ -130,11 +130,11 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
 	f0 = mix(vec3(0.04), baseColor, metallic); //mix color based off metallic
 	float reflectance = max(max(f0.r, f0.g), f0.b);
 	f90 = clamp(reflectance * 25.0, 0.0, 1.0);
-	vec3 F = fresnelSchlick(f0, f90, LdotH); 
+	vec3 F = fresnelSchlick(f0, f90, VdotH); 
     float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
 	float D = ndfGGX(NdotH, roughness); //microfacet distribution 
 	vec3 specularContrib = (G * F * D);
-	vec3 diffuseContrib =  (1.0 - F) * ( baseColor  * (1 - metallic));
+	vec3 diffuseContrib =  (1.0 - F) * (Fd * baseColor  * (1 - metallic));
 
 	return (diffuseContrib + specularContrib) / M_PI;
 }
@@ -182,27 +182,30 @@ float getDistanceAttenuation(vec3 posToLight, float lumens) {
 }
 
 void main() {
+	vec3 position = inPosition;// * vec3(1.0, -1.0, 1.0);
+	vec3 normal = inNormal;// * vec3(1.0, -1.0, 1.0);
+
     float roughness = texture(roughnessMap, inUV).r;
     float metallic = texture(metallicMap, inUV).r;
 	float ambientOcclusion = texture(aoMap, inUV).r;
     vec3 baseColor = SRGBtoLINEAR(texture(diffuseMap, inUV).rgb);
-	vec3 N = getNormal();
-	vec3 V = normalize(-inPosition);   // Vector from camera (origin) to surface
+	
+	vec3 N = getNormal(position, normal);
+	vec3 V = normalize(position);   // Vector from surface to camera(origin)
 
 	vec3 luminance = vec3(0.0);
-	int i;
-	for (i = 0; i < numLights; ++i){
+	for (int i = 0; i < numLights; ++i){
 		vec3 lightPos = uLight.light[i].position;
 		float lumens = uLight.light[i].lumens;
 		float temperature = uLight.light[i].temperature;
 	
 		vec3 lightcolor = ColorTemperatureToRGB(temperature); 
-		vec3 lightVector = lightPos - inPosition; //vector from light to survace
+		vec3 lightVector = position - lightPos; //vector from surface to light
 		float sqrDist = dot(lightVector, lightVector);
 		float intensity = lumens  * getDistanceAttenuation(lightVector, lumens) / (4 * M_PI);
 		lightcolor = lightcolor * intensity;
 
-		vec3 L = normalize(lightVector);     // Vector from light to surface
+		vec3 L = normalize(lightVector);     
 		vec3 BDRFoutput = BRDF(N, V, L, baseColor, roughness, metallic);
 
 		luminance += BDRFoutput * lightcolor;

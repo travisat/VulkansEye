@@ -90,7 +90,7 @@ void Backdrop::createUniformBuffers()
     }
 }
 
-void Backdrop::updateUniformBuffer(uint32_t currentImage)
+void Backdrop::update(uint32_t currentImage)
 {
     uBuffer.projection = player->perspective;
     uBuffer.view = player->view;

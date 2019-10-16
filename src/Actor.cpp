@@ -10,6 +10,7 @@ void Actor::create()
     name = config->name;
     position = config->position;
     rotation = config->rotation;
+    scale = config->scale;
 
     model.vulkan = vulkan;
     model.config = &config->modelConfig;

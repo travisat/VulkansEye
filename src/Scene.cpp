@@ -12,9 +12,6 @@ Scene::~Scene()
 
 void Scene::create()
 {
-    uTessControl.tessLevel = config->tessLevel;
-    uTessEval.tessStrength = config->tessStregth;
-    uTessEval.tessAlpha = config->tessAlpha;
     createStage();
     createLights();
     createActors();
@@ -31,6 +28,7 @@ void Scene::createStage()
     stage.vulkan = vulkan;
     stage.config = &config->stageConfig;
     stage.player = player;
+
     stage.create();
 }
 
@@ -74,6 +72,21 @@ void Scene::recreate()
 
 void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
+    VkViewport viewport{};
+    viewport.width = (float)vulkan->width;
+    viewport.height = (float)vulkan->height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.extent = vulkan->swapChainExtent;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    
+    vkCmdSetLineWidth(commandBuffer, 1.0f);
+
     stage.backdrop.draw(commandBuffer, currentImage);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
@@ -103,9 +116,9 @@ void Scene::createUniformBuffers()
     }
 }
 
-void Scene::updateUniformBuffer(uint32_t currentImage)
+void Scene::update(uint32_t currentImage)
 {
-    stage.backdrop.updateUniformBuffer(currentImage);
+    stage.backdrop.update(currentImage);
     for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = pointLights[i].light.position;
@@ -115,24 +128,26 @@ void Scene::updateUniformBuffer(uint32_t currentImage)
     uLight.light[0].position.x = -player->position.x;
     uLight.light[0].position.z = -player->position.z;
 
+    stage.model.uTessEval.projection = player->perspective;
+    stage.model.uTessEval.view = player->view;
+    stage.model.uTessEval.model = glm::mat4(1.0f);
 
-    uTessEval.projection = player->perspective;
-    uTessEval.view = player->view;
-    uTessEval.model = glm::mat4(1.0f);
-
+    stage.tescBuffers[currentImage].update(&stage.model.uTessControl, sizeof(stage.model.uTessControl));
+    stage.teseBuffers[currentImage].update(&stage.model.uTessEval, sizeof(stage.model.uTessEval));
     stage.uniformLights[currentImage].update(&uLight, sizeof(uLight));
-    stage.tescBuffers[currentImage].update(&uTessControl, sizeof(uTessControl));
-    stage.teseBuffers[currentImage].update(&uTessEval, sizeof(uTessEval));
 
     for (auto &actor : actors)
     {
-        uTessEval.model = glm::translate(glm::mat4(1.0f), actor.position);
-        uTessEval.model = glm::rotate(uTessEval.model, glm::radians(actor.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        uTessEval.model = glm::rotate(uTessEval.model, glm::radians(actor.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        uTessEval.model = glm::rotate(uTessEval.model, glm::radians(actor.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        actor.model.uTessEval.projection = player->perspective;
+        actor.model.uTessEval.view = player->view;
+        actor.model.uTessEval.model = glm::translate(glm::mat4(1.0f), actor.position);
+        actor.model.uTessEval.model = glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        actor.model.uTessEval.model = glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        actor.model.uTessEval.model = glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        actor.model.uTessEval.model = glm::scale(actor.model.uTessEval.model, actor.scale);
 
-        actor.tescBuffers[currentImage].update(&uTessControl, sizeof(uTessControl));
-        actor.teseBuffers[currentImage].update(&uTessEval, sizeof(uTessEval));
+        actor.tescBuffers[currentImage].update(&actor.model.uTessControl, sizeof(actor.model.uTessControl));
+        actor.teseBuffers[currentImage].update(&actor.model.uTessEval, sizeof(actor.model.uTessEval));
         actor.uniformLights[currentImage].update(&uLight, sizeof(uLight));
     }
 }

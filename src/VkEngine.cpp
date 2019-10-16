@@ -116,32 +116,16 @@ void VkEngine::recordCommandBuffers()
     {
         renderPassInfo.framebuffer = swapChainFramebuffers[i];
 
-        VkCommandBuffer currentCB = commandBuffers[i];
+        VkCommandBuffer commandBuffer = commandBuffers[i];
 
-        CheckResult(vkBeginCommandBuffer(currentCB, &beginInfo));
-        vkCmdBeginRenderPass(currentCB, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        CheckResult(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        VkViewport viewport{};
-        viewport.width = (float)vulkan->width;
-        viewport.height = (float)vulkan->height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(currentCB, 0, 1, &viewport);
+        scene->draw(commandBuffer, i);
+        overlay->draw(commandBuffer, i);
 
-        VkRect2D scissor{};
-        scissor.extent = vulkan->swapChainExtent;
-        scissor.offset.x = 0;
-        scissor.offset.y = 0;
-        vkCmdSetScissor(currentCB, 0, 1, &scissor);
-
-        scene->draw(currentCB, i);
-        //scene->backdrop.draw(currentCB, i);
-
-        overlay->draw(currentCB, i);
-
-        vkCmdEndRenderPass(currentCB);
-
-        CheckResult(vkEndCommandBuffer(currentCB));
+        vkCmdEndRenderPass(commandBuffer);
+        CheckResult(vkEndCommandBuffer(commandBuffer));
     }
 }
 
@@ -173,7 +157,7 @@ void VkEngine::drawFrame()
         CheckResult(result);
     }
 
-    scene->updateUniformBuffer(currentBuffer);
+    scene->update(currentBuffer);
 
     const VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submitInfo = {};

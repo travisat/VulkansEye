@@ -26,7 +26,6 @@ public:
     std::vector<Buffer> tescBuffers;
     std::vector<Buffer> teseBuffers;
     std::vector<Buffer> uniformLights;
-
     std::vector<VkDescriptorSet> descriptorSets;
 
     void create();

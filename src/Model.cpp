@@ -16,6 +16,8 @@ Model::~Model()
 
 void Model::create()
 {
+    uTessControl.tessLevel = config->tessLevel;
+    uTessEval.tessStrength = config->tessStregth;
     loadMesh();
     loadMaterial();
 }

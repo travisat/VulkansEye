@@ -6,25 +6,34 @@
             "name": "sphere",
             "position": {
                 "x": 4.0,
-                "y": 1.0,
-                "z": 5.0
+                "y": 2.0,
+                "z": 0.0
             },
             "rotation": {
                 "x": 0,
                 "y": 0,
                 "z": 0
             },
+            "scale": {
+                "x": 3.0,
+                "y": 3.0,
+                "z": 3.0
+            },
             "model": {
                 "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
-                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
-                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
+                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
                 "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
-                "displacement": "resources/materials/Metal11/Metal11_disp.jpg"
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+                "tesselation": {
+                    "level": 64,
+                    "strength": 0.0001
+                }
             }
         },
-        "wall1": {
+        "table": {
             "name": "table",
             "position": {
                 "x": 4.0,
@@ -36,14 +45,23 @@
                 "y": 0,
                 "z": 0
             },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
             "model": {
                 "path": "resources/models/table.obj",
-                "diffuse": "resources/materials/Rock14/Rock14_col.jpg",
-                "normal": "resources/materials/Rock14/Rock14_nrm.jpg",
-                "roughness": "resources/materials/Rock14/Rock14_rgh.jpg",
-                "ao": "resources/materials/Rock14/Rock14_AO.jpg",
+                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
                 "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Rock14/Rock14_disp.jpg"
+                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+                "tesselation": {
+                    "level": 64,
+                    "strength": 0.01
+                }
             }
         }
     },
@@ -55,18 +73,22 @@
         "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
         "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
         "metallic": "resources/materials/default/metallic.png",
-        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg"
+        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
+        "tesselation": {
+            "level": 128,
+            "strength": 0.1
+        }
     },
     "lights": {
         "lantern": {
             "name": "lantern",
             "position": {
                 "x": 0,
-                "y": -2.7,
+                "y": -2.0,
                 "z": 0
             },
             "temperature": 4500,
-            "lumens": 400
+            "lumens": 1500
         },
         "tablelight": {
             "name": "tablelight",
@@ -75,8 +97,8 @@
                 "y": -4.4,
                 "z": 5
             },
-            "temperature": 4000,
-            "lumens": 3200
+            "temperature": 5000,
+            "lumens": 2600
         }
     },
     "player": {
@@ -91,7 +113,7 @@
         "fieldOfView": 70,
         "position": {
             "x": 0,
-            "y": -1.7,
+            "y": 0,
             "z": 0
         },
         "rotation": {
@@ -99,10 +121,5 @@
             "y": 0,
             "z": 0
         }
-    },
-    "tesselation": {
-        "level": 64,
-        "alpha": 1.0,
-        "strength": 0.01
     }
 }

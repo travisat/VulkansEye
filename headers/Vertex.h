@@ -25,7 +25,6 @@ struct TessEval
     glm::mat4 projection;
     glm::mat4 view;
     glm::mat4 model;
-    float tessAlpha = 1.0f;
     float tessStrength = 0.1f;
 };
 
