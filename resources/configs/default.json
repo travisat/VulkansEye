@@ -6,8 +6,8 @@
             "name": "sphere",
             "position": {
                 "x": 4.0,
-                "y": 2.0,
-                "z": 0.0
+                "y": 1.0,
+                "z": 5.0
             },
             "rotation": {
                 "x": 0,
@@ -15,9 +15,9 @@
                 "z": 0
             },
             "scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "x": 0.3,
+                "y": 0.3,
+                "z": 0.3
             },
             "model": {
                 "path": "resources/models/sphere.obj",
@@ -26,12 +26,7 @@
                 "roughness": "resources/materials/WoodFloor20/WoodFloor20_rgh.jpg",
                 "ao": "resources/materials/WoodFloor20/WoodFloor20_AO.jpg",
                 "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg",
-                "tesselation": {
-                    "level": 256,
-                    "strength": 0,
-                    "alpha": 0.03
-                }
+                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg"
             }
         },
         "table": {
@@ -58,12 +53,7 @@
                 "roughness": "resources/materials/WoodFloor20/WoodFloor20_rgh.jpg",
                 "ao": "resources/materials/WoodFloor20/WoodFloor20_AO.jpg",
                 "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg",
-                "tesselation": {
-                    "level": 128,
-                    "strength": 0,
-                    "alpha": 0.03
-                }
+                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg"
             }
         }
     },
@@ -75,12 +65,7 @@
         "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
         "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
         "metallic": "resources/materials/default/metallic.png",
-        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
-        "tesselation": {
-            "level": 256,
-            "strength": 0.01,
-            "alpha": 0.33
-        }
+        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg"
     },
     "lights": {
         "lantern": {

@@ -3,7 +3,6 @@
 #include "Vertex.h"
 #include "Vulkan.hpp"
 
-
 namespace tat {
 class Pipeline {
 public:
@@ -35,7 +34,6 @@ private:
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   std::vector<VkDynamicState> dynamicStateEnables = {};
   VkPipelineDynamicStateCreateInfo dynamicState = {};
-  VkPipelineTessellationStateCreateInfo tessellationState{};
   VkPipelineViewportStateCreateInfo viewportState = {};
   VkPipelineRasterizationStateCreateInfo rasterizer = {};
   VkPipelineMultisampleStateCreateInfo multisampling = {};

@@ -28,9 +28,6 @@ struct ModelConfig : Config {
   std::string metallicPath;
   std::string aoPath;
   std::string displacementPath;
-  float tessLevel;
-  float tessStregth;
-  float tessAlpha;
 };
 
 struct ActorConfig : Config {
@@ -110,18 +107,6 @@ static void loadSceneConfig(std::string path, SceneConfig &config) {
     actorconfig.at("model")
         .at("displacement")
         .get_to(config.actors[i].modelConfig.displacementPath);
-    actorconfig.at("model")
-        .at("tesselation")
-        .at("level")
-        .get_to(config.actors[i].modelConfig.tessLevel);
-    actorconfig.at("model")
-        .at("tesselation")
-        .at("strength")
-        .get_to(config.actors[i].modelConfig.tessStregth);
-    actorconfig.at("model")
-        .at("tesselation")
-        .at("alpha")
-        .get_to(config.actors[i].modelConfig.tessAlpha);
     ++i;
   }
 
@@ -140,18 +125,6 @@ static void loadSceneConfig(std::string path, SceneConfig &config) {
   j.at("stage")
       .at("displacement")
       .get_to(config.stageConfig.modelConfig.displacementPath);
-  j.at("stage")
-      .at("tesselation")
-      .at("level")
-      .get_to(config.stageConfig.modelConfig.tessLevel);
-  j.at("stage")
-      .at("tesselation")
-      .at("strength")
-      .get_to(config.stageConfig.modelConfig.tessStregth);
-  j.at("stage")
-      .at("tesselation")
-      .at("alpha")
-      .get_to(config.stageConfig.modelConfig.tessAlpha);
 
   config.pointLights.resize(j["lights"].size());
   i = 0;

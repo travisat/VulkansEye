@@ -24,14 +24,15 @@ struct PointLight {
   float temperature;
 };
 
-layout(binding = 3) uniform UniformLight { PointLight light[numLights]; }
+layout(binding = 1) uniform UniformLight { PointLight light[numLights]; }
 uLight;
 
-layout(binding = 4) uniform sampler2D diffuseMap;
-layout(binding = 5) uniform sampler2D normalMap;
-layout(binding = 6) uniform sampler2D metallicMap;
-layout(binding = 7) uniform sampler2D roughnessMap;
-layout(binding = 8) uniform sampler2D aoMap;
+layout(binding = 2) uniform sampler2D diffuseMap;
+layout(binding = 3) uniform sampler2D normalMap;
+layout(binding = 4) uniform sampler2D metallicMap;
+layout(binding = 5) uniform sampler2D roughnessMap;
+layout(binding = 6) uniform sampler2D aoMap;
+layout(binding = 7) uniform sampler2D dispMap;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
@@ -108,7 +109,7 @@ float SmithGGXCorrelated(float NdotL, float NdotV, float roughness) {
 float ndfGGX(float NdotH, float roughness) {
   float alpha = roughness * roughness;
   float alphaSq = alpha * alpha;
-  float f = (NdotH * alphaSq - NdotH) * NdotH + 1;
+  float f = (NdotH * alphaSq - NdotH) * NdotH + 1.0;
   return alphaSq / (f * f);
 }
 
@@ -117,8 +118,8 @@ float ndfGGX(float NdotH, float roughness) {
 vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness,
           float metallic) {
 
-  float NdotL = clamp(dot(N, L), 0.0, 1.0);
-  float NdotV = clamp(abs(dot(N, V)), 0.001, 1.0);
+  float NdotL = clamp(dot(N, L), 0.00001, 1.0);
+  float NdotV = clamp(abs(dot(N, V)), 0.00001, 1.0);
   vec3 H = normalize(L + V);
   float NdotH = clamp(dot(N, H), 0.0, 1.0);
   float LdotH = clamp(dot(L, H), 0.0, 1.0);
@@ -141,7 +142,7 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness,
   float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
   float D = ndfGGX(NdotH, roughness); // microfacet distribution
   vec3 specularContrib = (F * G * D);
-  vec3 diffuseContrib = (Fd * baseColor * (1 - metallic));
+  vec3 diffuseContrib = (1.0 - F) * (Fd * baseColor * (1 - metallic));
 
   return (specularContrib + diffuseContrib) / PI;
 }
@@ -176,7 +177,7 @@ vec3 kelvinToRGB(float kelvin) {
 //[6]
 float getSquareFalloffAttenuation(float distanceSquare, float lumens) {
   float factor = distanceSquare / lumens;
-  float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
+  float smoothFactor = 1.0 - factor * factor;
   // We would normally divide by the square distance here
   // but we do it at the call site
   return smoothFactor * smoothFactor;
@@ -209,7 +210,7 @@ void main() {
     float temperature = uLight.light[i].temperature;
 
     vec3 lightVector = position - lightPos; // vector from surface to light
-    float intensity = lumens * getDistanceAttenuation(lightVector, lumens)   / (4.0 * PI);
+    float intensity = (lumens  / (4.0 * PI)) * getDistanceAttenuation(lightVector, lumens);
     vec3 lightcolor = kelvinToRGB(temperature) * intensity;
 
     vec3 L = normalize(lightVector);

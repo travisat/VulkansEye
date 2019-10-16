@@ -121,38 +121,33 @@ void Scene::update(uint32_t currentImage) {
   uLight.light[0].position.x = -player->position.x;
   uLight.light[0].position.z = -player->position.z;
 
-  stage.model.uTessEval.projection = player->perspective;
-  stage.model.uTessEval.view = player->view;
-  stage.model.uTessEval.model = glm::mat4(1.0f);
+  stage.model.uBuffer.projection = player->perspective;
+  stage.model.uBuffer.view = player->view;
+  stage.model.uBuffer.model = glm::mat4(1.0f);
 
-  stage.tescBuffers[currentImage].update(&stage.model.uTessControl,
-                                         sizeof(stage.model.uTessControl));
-  stage.teseBuffers[currentImage].update(&stage.model.uTessEval,
-                                         sizeof(stage.model.uTessEval));
+  stage.uniformBuffers[currentImage].update(&stage.model.uBuffer,
+                                            sizeof(UniformBuffer));
   stage.uniformLights[currentImage].update(&uLight, sizeof(uLight));
 
   for (auto &actor : actors) {
-    actor.model.uTessEval.projection = player->perspective;
-    actor.model.uTessEval.view = player->view;
-    actor.model.uTessEval.model =
-        glm::translate(glm::mat4(1.0f), actor.position);
-    actor.model.uTessEval.model =
-        glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.x),
+    actor.model.uBuffer.projection = player->perspective;
+    actor.model.uBuffer.view = player->view;
+    actor.model.uBuffer.model = glm::translate(glm::mat4(1.0f), actor.position);
+    actor.model.uBuffer.model =
+        glm::rotate(actor.model.uBuffer.model, glm::radians(actor.rotation.x),
                     glm::vec3(1.0f, 0.0f, 0.0f));
-    actor.model.uTessEval.model =
-        glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.y),
+    actor.model.uBuffer.model =
+        glm::rotate(actor.model.uBuffer.model, glm::radians(actor.rotation.y),
                     glm::vec3(0.0f, 1.0f, 0.0f));
-    actor.model.uTessEval.model =
-        glm::rotate(actor.model.uTessEval.model, glm::radians(actor.rotation.z),
+    actor.model.uBuffer.model =
+        glm::rotate(actor.model.uBuffer.model, glm::radians(actor.rotation.z),
                     glm::vec3(0.0f, 0.0f, 1.0f));
-    actor.model.uTessEval.model =
-        glm::scale(actor.model.uTessEval.model, actor.scale);
+    actor.model.uBuffer.model =
+        glm::scale(actor.model.uBuffer.model, actor.scale);
 
-    actor.tescBuffers[currentImage].update(&actor.model.uTessControl,
-                                           sizeof(actor.model.uTessControl));
-    actor.teseBuffers[currentImage].update(&actor.model.uTessEval,
-                                           sizeof(actor.model.uTessEval));
     actor.uniformLights[currentImage].update(&uLight, sizeof(uLight));
+    actor.uniformBuffers[currentImage].update(&actor.model.uBuffer,
+                                              sizeof(UniformBuffer));
   }
 }
 
@@ -180,38 +175,22 @@ void Scene::createDescriptorPool() {
 }
 
 void Scene::createDescriptorSetLayouts() {
-  VkDescriptorSetLayoutBinding uTessControlLayoutBinding = {};
-  uTessControlLayoutBinding.binding = 0;
-  uTessControlLayoutBinding.descriptorCount = 1;
-  uTessControlLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uTessControlLayoutBinding.pImmutableSamplers = nullptr;
-  uTessControlLayoutBinding.stageFlags =
-      VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-
-  VkDescriptorSetLayoutBinding uTessEvalLayoutBinding = {};
-  uTessEvalLayoutBinding.binding = 1;
-  uTessEvalLayoutBinding.descriptorCount = 1;
-  uTessEvalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uTessEvalLayoutBinding.pImmutableSamplers = nullptr;
-  uTessEvalLayoutBinding.stageFlags =
-      VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-
-  VkDescriptorSetLayoutBinding dispLayoutBinding = {};
-  dispLayoutBinding.binding = 2;
-  dispLayoutBinding.descriptorCount = 1;
-  dispLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-  dispLayoutBinding.pImmutableSamplers = nullptr;
-  dispLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+  VkDescriptorSetLayoutBinding uBufferLayoutBinding = {};
+  uBufferLayoutBinding.binding = 0;
+  uBufferLayoutBinding.descriptorCount = 1;
+  uBufferLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uBufferLayoutBinding.pImmutableSamplers = nullptr;
+  uBufferLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
   VkDescriptorSetLayoutBinding uLightLayoutBinding = {};
-  uLightLayoutBinding.binding = 3;
+  uLightLayoutBinding.binding = 1;
   uLightLayoutBinding.descriptorCount = 1;
   uLightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   uLightLayoutBinding.pImmutableSamplers = nullptr;
   uLightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VkDescriptorSetLayoutBinding diffuseLayoutBinding = {};
-  diffuseLayoutBinding.binding = 4;
+  diffuseLayoutBinding.binding = 2;
   diffuseLayoutBinding.descriptorCount = 1;
   diffuseLayoutBinding.descriptorType =
       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -219,7 +198,7 @@ void Scene::createDescriptorSetLayouts() {
   diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VkDescriptorSetLayoutBinding normalLayoutBinding = {};
-  normalLayoutBinding.binding = 5;
+  normalLayoutBinding.binding = 3;
   normalLayoutBinding.descriptorCount = 1;
   normalLayoutBinding.descriptorType =
       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -227,7 +206,7 @@ void Scene::createDescriptorSetLayouts() {
   normalLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VkDescriptorSetLayoutBinding roughnessLayoutBinding = {};
-  roughnessLayoutBinding.binding = 6;
+  roughnessLayoutBinding.binding = 4;
   roughnessLayoutBinding.descriptorCount = 1;
   roughnessLayoutBinding.descriptorType =
       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -235,7 +214,7 @@ void Scene::createDescriptorSetLayouts() {
   roughnessLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VkDescriptorSetLayoutBinding metallicLayoutBinding = {};
-  metallicLayoutBinding.binding = 7;
+  metallicLayoutBinding.binding = 5;
   metallicLayoutBinding.descriptorCount = 1;
   metallicLayoutBinding.descriptorType =
       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -243,16 +222,23 @@ void Scene::createDescriptorSetLayouts() {
   metallicLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VkDescriptorSetLayoutBinding aoLayoutBinding = {};
-  aoLayoutBinding.binding = 8;
+  aoLayoutBinding.binding = 6;
   aoLayoutBinding.descriptorCount = 1;
   aoLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   aoLayoutBinding.pImmutableSamplers = nullptr;
   aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  std::array<VkDescriptorSetLayoutBinding, 9> bindings = {
-      uTessControlLayoutBinding, uTessEvalLayoutBinding, dispLayoutBinding,
-      uLightLayoutBinding,       diffuseLayoutBinding,   normalLayoutBinding,
-      roughnessLayoutBinding,    metallicLayoutBinding,  aoLayoutBinding};
+  VkDescriptorSetLayoutBinding dispLayoutBinding = {};
+  dispLayoutBinding.binding = 7;
+  dispLayoutBinding.descriptorCount = 1;
+  dispLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  dispLayoutBinding.pImmutableSamplers = nullptr;
+  dispLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  std::array<VkDescriptorSetLayoutBinding, 8> bindings = {
+      uBufferLayoutBinding, uLightLayoutBinding,    diffuseLayoutBinding,
+      normalLayoutBinding,  roughnessLayoutBinding, metallicLayoutBinding,
+      aoLayoutBinding,      dispLayoutBinding};
 
   VkDescriptorSetLayoutCreateInfo layoutInfo = {};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

@@ -22,8 +22,7 @@ public:
   Model model;
   Buffer vertexBuffer;
   Buffer indexBuffer;
-  std::vector<Buffer> tescBuffers;
-  std::vector<Buffer> teseBuffers;
+  std::vector<Buffer> uniformBuffers;
   std::vector<Buffer> uniformLights;
   std::vector<VkDescriptorSet> descriptorSets;
 

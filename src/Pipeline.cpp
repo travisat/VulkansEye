@@ -93,15 +93,9 @@ void Pipeline::createScenePipeline() {
 
   auto vertShaderCode = readFile(vertShaderPath);
   auto fragShaderCode = readFile(fragShaderPath);
-  auto tessControlShaderCode = readFile(tescShaderPath);
-  auto tessEvalShaderCode = readFile(teseShaderPath);
 
   VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
   VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
-  VkShaderModule tessControlShaderModule =
-      vulkan->createShaderModule(tessControlShaderCode);
-  VkShaderModule tessEvalShaderModule =
-      vulkan->createShaderModule(tessEvalShaderCode);
 
   vertShaderStageInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -115,21 +109,8 @@ void Pipeline::createScenePipeline() {
   fragShaderStageInfo.module = fragShaderModule;
   fragShaderStageInfo.pName = "main";
 
-  tessControlShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  tessControlShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-  tessControlShaderStageInfo.module = tessControlShaderModule;
-  tessControlShaderStageInfo.pName = "main";
-
-  tessEvalShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  tessEvalShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-  tessEvalShaderStageInfo.module = tessEvalShaderModule;
-  tessEvalShaderStageInfo.pName = "main";
-
   VkPipelineShaderStageCreateInfo shaderStages[] = {
-      vertShaderStageInfo, fragShaderStageInfo, tessControlShaderStageInfo,
-      tessEvalShaderStageInfo};
+      vertShaderStageInfo, fragShaderStageInfo};
 
   auto bindingDescription = Vertex::getBindingDescription();
   vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -140,22 +121,13 @@ void Pipeline::createScenePipeline() {
       static_cast<uint32_t>(attributeDescrption.size());
   vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-  tessellationState.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-  tessellationState.patchControlPoints = 3;
-
-  inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-
-  pipelineInfo.stageCount = 4;
+  pipelineInfo.stageCount = 2;
   pipelineInfo.pStages = shaderStages;
-  pipelineInfo.pTessellationState = &tessellationState;
   CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1,
                                         &pipelineInfo, nullptr, &pipeline));
 
   vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
   vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
-  vkDestroyShaderModule(vulkan->device, tessControlShaderModule, nullptr);
-  vkDestroyShaderModule(vulkan->device, tessEvalShaderModule, nullptr);
 }
 
 void Pipeline::createBackdropPipeline() {

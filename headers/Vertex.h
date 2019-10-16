@@ -13,16 +13,10 @@
 
 namespace tat {
 
-struct TessControl {
-  float tessLevel = 64.0f;
-};
-
-struct TessEval {
-  glm::mat4 projection;
-  glm::mat4 view;
-  glm::mat4 model;
-  float tessStrength = 0.1f;
-  float tessAlpha = 0.3f;
+struct UniformBuffer {
+  alignas(16) glm::mat4 projection;
+  alignas(16) glm::mat4 view;
+  alignas(16) glm::mat4 model;
 };
 
 struct Vertex {

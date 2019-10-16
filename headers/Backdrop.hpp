@@ -6,14 +6,7 @@
 #include "Player.hpp"
 #include "Timer.h"
 
-
 namespace tat {
-
-struct UniformBuffer {
-  alignas(16) glm::mat4 projection;
-  alignas(16) glm::mat4 view;
-  alignas(16) glm::mat4 model;
-};
 
 class Backdrop {
 public:
