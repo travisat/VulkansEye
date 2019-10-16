@@ -116,7 +116,7 @@ float ndfGGX(float NdotH, float roughness) {
 // Creates diffusiion brdf and specular brdf and combines them
 vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness,
           float metallic) {
-  float NdotL = clamp(dot(N, L), 0.0,
+  float NdotL = clamp(dot(N, L), 0.00001,
                       1.0); // cos angle between normal and light direction
   float NdotV = clamp(abs(dot(N, V)), 0.00001,
                       1.0); // cos angle between nornal and view direction
