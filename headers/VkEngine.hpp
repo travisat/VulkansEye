@@ -2,7 +2,6 @@
 
 #include <optional>
 #include <set>
-#include <gsl/span>
 
 #include "Vulkan.hpp"
 #include "Scene.hpp"

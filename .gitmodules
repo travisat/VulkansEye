@@ -16,6 +16,3 @@
 [submodule "external/vma"]
 	path = external/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-[submodule "external/GSL"]
-	path = external/GSL
-	url = https://github.com/Microsoft/GSL
