@@ -21,16 +21,16 @@
             },
             "model": {
                 "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
+                "diffuse": "resources/materials/WoodFloor20/WoodFloor20_col.jpg",
+                "normal": "resources/materials/WoodFloor20/WoodFloor20_nrm.jpg",
+                "roughness": "resources/materials/WoodFloor20/WoodFloor20_rgh.jpg",
+                "ao": "resources/materials/WoodFloor20/WoodFloor20_AO.jpg",
                 "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg",
                 "tesselation": {
-                    "level": 128,
-                    "strength": 0.1,
-                    "alpha": 0.33
+                    "level": 256,
+                    "strength": 0,
+                    "alpha": 0.03
                 }
             }
         },
@@ -53,15 +53,15 @@
             },
             "model": {
                 "path": "resources/models/table.obj",
-                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
+                "diffuse": "resources/materials/WoodFloor20/WoodFloor20_col.jpg",
+                "normal": "resources/materials/WoodFloor20/WoodFloor20_nrm.jpg",
+                "roughness": "resources/materials/WoodFloor20/WoodFloor20_rgh.jpg",
+                "ao": "resources/materials/WoodFloor20/WoodFloor20_AO.jpg",
                 "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+                "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg",
                 "tesselation": {
                     "level": 128,
-                    "strength": 0.001,
+                    "strength": 0,
                     "alpha": 0.03
                 }
             }
@@ -87,7 +87,7 @@
             "name": "lantern",
             "position": {
                 "x": 0,
-                "y": -2.0,
+                "y": -2.7,
                 "z": 0
             },
             "temperature": 6400,
@@ -97,7 +97,7 @@
             "name": "tablelight",
             "position": {
                 "x": 4,
-                "y": -4.4,
+                "y": -2.4,
                 "z": 5
             },
             "temperature": 6400,
