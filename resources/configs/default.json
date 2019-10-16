@@ -29,7 +29,7 @@
                 "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
                 "tesselation": {
                     "level": 64,
-                    "strength": 0.0001
+                    "strength": 0.01
                 }
             }
         },
@@ -76,7 +76,7 @@
         "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
         "tesselation": {
             "level": 128,
-            "strength": 0.1
+            "strength": 0.05
         }
     },
     "lights": {

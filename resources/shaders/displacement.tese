@@ -41,7 +41,7 @@ void main()
 	outUV = lerp3Dvec2(inUV[0], inUV[1], inUV[2]);
 	outNormal = lerp3Dvec3(inNormal[0], inNormal[1], inNormal[2]);
 				
-	gl_Position.xyz += normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).a, 0.0) * ubo.tessStrength);
+	gl_Position.xyz += normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).r, 0.0) * ubo.tessStrength);
 				
 	outPosition = (gl_Position).xyz;
 		
