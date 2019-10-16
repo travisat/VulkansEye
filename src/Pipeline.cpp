@@ -29,6 +29,10 @@ void Pipeline::createDefaultPipeline()
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+    dynamicStateEnables = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR};
+
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.pDynamicStates = dynamicStateEnables.data();
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
@@ -123,7 +127,7 @@ void Pipeline::createScenePipeline()
          fragShaderStageInfo,
          tessControlShaderStageInfo,
          tessEvalShaderStageInfo};
-    
+
     auto bindingDescription = Vertex::getBindingDescription();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -132,10 +136,12 @@ void Pipeline::createScenePipeline()
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
+    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
     tessellationState.patchControlPoints = 3;
 
-    pipelineInfo.stageCount = 2;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+
+    pipelineInfo.stageCount = 4;
     pipelineInfo.pStages = shaderStages;
     pipelineInfo.pTessellationState = &tessellationState;
     CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));

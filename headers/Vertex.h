@@ -14,12 +14,6 @@
 namespace tat
 {
 
-struct UniformBuffer
-{
-    alignas(16) glm::mat4 projection;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 model;
-};
 
 struct TessControl
 {
@@ -29,9 +23,10 @@ struct TessControl
 struct TessEval
 {
     glm::mat4 projection;
+    glm::mat4 view;
     glm::mat4 model;
     float tessAlpha = 1.0f;
-    float tessStrength = 0.5f;
+    float tessStrength = 0.1f;
 };
 
 struct Vertex

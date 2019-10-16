@@ -62,7 +62,7 @@
             "name": "lantern",
             "position": {
                 "x": 0,
-                "y": 2.7,
+                "y": -2.7,
                 "z": 0
             },
             "temperature": 4500,
@@ -71,12 +71,12 @@
         "tablelight": {
             "name": "tablelight",
             "position": {
-                "x": 7,
-                "y": 4.4,
+                "x": 4,
+                "y": -4.4,
                 "z": 5
             },
             "temperature": 4000,
-            "lumens": 1200
+            "lumens": 3200
         }
     },
     "player": {
@@ -99,5 +99,10 @@
             "y": 0,
             "z": 0
         }
+    },
+    "tesselation": {
+        "level": 64,
+        "alpha": 1.0,
+        "strength": 0.01
     }
 }

@@ -72,8 +72,10 @@ struct SceneConfig : Config
     PlayerConfig playerConfig;
     StageConfig stageConfig;
     std::vector<PointLightConfig> pointLights{};
-
     std::vector<ActorConfig> actors;
+    float tessLevel;
+    float tessAlpha;
+    float tessStregth;
 };
 
 static void loadSceneConfig(std::string path, SceneConfig &config)
@@ -145,6 +147,10 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
     j.at("player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
     j.at("player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
+
+    j.at("tesselation").at("level").get_to(config.tessLevel);
+    j.at("tesselation").at("strength").get_to(config.tessStregth);
+    j.at("tesselation").at("alpha").get_to(config.tessAlpha);
 };
 
 } //namespace tat

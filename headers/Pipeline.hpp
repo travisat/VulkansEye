@@ -34,10 +34,8 @@ private:
     VkPipelineShaderStageCreateInfo tessEvalShaderStageInfo = {};
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-    std::vector<VkDynamicState> dynamicStateEnables = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dynamicState{};
+    std::vector<VkDynamicState> dynamicStateEnables = {};
+    VkPipelineDynamicStateCreateInfo dynamicState = {};
     VkPipelineTessellationStateCreateInfo tessellationState{};
     VkPipelineViewportStateCreateInfo viewportState = {};
     VkPipelineRasterizationStateCreateInfo rasterizer = {};

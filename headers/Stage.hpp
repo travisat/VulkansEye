@@ -23,7 +23,6 @@ public:
     Model model;
     Buffer vertexBuffer;
     Buffer indexBuffer;
-    std::vector<Buffer> uniformBuffers;
     std::vector<Buffer> tescBuffers;
     std::vector<Buffer> teseBuffers;
     std::vector<Buffer> uniformLights;

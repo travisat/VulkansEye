@@ -80,11 +80,13 @@ void Backdrop::createUniformBuffers()
         buffer.vulkan = vulkan;
         buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        buffer.resize(sizeof(UniformBuffer));
 
         UniformBuffer uBuffer{};
         uBuffer.projection = player->perspective;
         uBuffer.view = player->view;
-        buffer.update(&uBuffer, sizeof(UniformBuffer));
+        memcpy(buffer.mapped, &uBuffer, sizeof(uBuffer));
     }
 }
 
@@ -92,7 +94,7 @@ void Backdrop::updateUniformBuffer(uint32_t currentImage)
 {
     uBuffer.projection = player->perspective;
     uBuffer.view = player->view;
-    uniformBuffers[currentImage].update(&uBuffer, sizeof(UniformBuffer));
+    memcpy(uniformBuffers[currentImage].mapped, &uBuffer, sizeof(uBuffer));
 }
 
 void Backdrop::createDescriptorPool()
