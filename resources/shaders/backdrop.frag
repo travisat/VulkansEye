@@ -10,6 +10,5 @@ layout(location = 0) out vec4 outColor;
 void main() {
 
   vec3 color = texture(cubeSampler, eyePosition).rgb;
-  // vec3 color = vec3(0.5f, 0.5f, 0.5f);
   outColor = vec4(color, 1.0);
 }
