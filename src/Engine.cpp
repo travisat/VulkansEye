@@ -49,11 +49,8 @@ void Engine::init()
     createAllocator();
 
     createSwapChain();
-    createImageViews();
     createRenderPass();
     createCommandPool();
-    createColorResources();
-    createDepthResources();
     createFramebuffers();
     createSyncObjects();
 
@@ -70,10 +67,6 @@ Engine::~Engine()
     {
         DestroyDebugUtilsMessengerEXT(vulkan->instance, debugMessenger, nullptr);
     }
-    for (auto framebuffer : swapChainFramebuffers)
-    {
-        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
-    }
     vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -86,7 +79,7 @@ Engine::~Engine()
 
 void Engine::createCommandBuffers()
 {
-    commandBuffers.resize(swapChainFramebuffers.size());
+    commandBuffers.resize(swapChainFbs.size());
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -117,7 +110,7 @@ void Engine::recordCommandBuffers()
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
+        renderPassInfo.framebuffer = swapChainFbs[i].framebuffer;
 
         VkCommandBuffer commandBuffer = commandBuffers[i];
 
@@ -234,9 +227,9 @@ void Engine::updateWindow()
 
     vkDeviceWaitIdle(vulkan->device);
 
-    for (auto framebuffer : swapChainFramebuffers)
+    for (auto& framebuffer : swapChainFbs)
     {
-        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+        framebuffer.cleanup();
     }
 
     vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
@@ -252,7 +245,6 @@ void Engine::updateWindow()
                          commandBuffers.data());
 
     createSwapChain();
-    createImageViews();
     createRenderPass();
     createFramebuffers();
     createCommandBuffers();
@@ -280,9 +272,9 @@ void Engine::resizeWindow()
     vulkan->width = width;
     vulkan->height = height;
 
-    for (auto framebuffer : swapChainFramebuffers)
+    for (auto& framebuffer : swapChainFbs)
     {
-        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+        framebuffer.cleanup();
     }
 
     vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
@@ -301,12 +293,7 @@ void Engine::resizeWindow()
     overlay->cleanup();
 
     createSwapChain();
-    createImageViews();
     createRenderPass();
-    colorImage.resize(width, height);
-    colorImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-    depthImage.resize(width, height);
-    depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
     createFramebuffers();
 
     scene->recreate();
@@ -613,10 +600,7 @@ void Engine::createSwapChain()
 
     vulkan->swapChainImageFormat = surfaceFormat.format;
     vulkan->swapChainExtent = extent;
-}
 
-void Engine::createImageViews()
-{
     vulkan->swapChainImageViews.resize(vulkan->swapChainImages.size());
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
@@ -663,7 +647,7 @@ void Engine::createRenderPass()
     colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depthAttachment = {};
-    depthAttachment.format = findDepthFormat();
+    depthAttachment.format = vulkan->findDepthFormat();
     depthAttachment.samples = vulkan->msaaSamples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -729,23 +713,14 @@ void Engine::createRenderPass()
 
 void Engine::createFramebuffers()
 {
-    swapChainFramebuffers.resize(vulkan->swapChainImageViews.size());
-
+    swapChainFbs.resize(vulkan->swapChainImageViews.size());
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
     {
-        std::array<VkImageView, 3> attachments = {colorImage.imageView, depthImage.imageView,
-                                                  vulkan->swapChainImageViews[i]};
-
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = vulkan->renderPass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = vulkan->swapChainExtent.width;
-        framebufferInfo.height = vulkan->swapChainExtent.height;
-        framebufferInfo.layers = 1;
-
-        CheckResult(vkCreateFramebuffer(vulkan->device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]));
+        swapChainFbs[i].vulkan = vulkan;
+        swapChainFbs[i].width = vulkan->swapChainExtent.width;
+        swapChainFbs[i].height = vulkan->swapChainExtent.height;
+        swapChainFbs[i].attachments = {vulkan->swapChainImageViews[i]};
+        swapChainFbs[i].create();
     }
 }
 
@@ -758,44 +733,6 @@ void Engine::createCommandPool()
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
     CheckResult(vkCreateCommandPool(vulkan->device, &poolInfo, nullptr, &vulkan->commandPool));
-}
-
-void Engine::createColorResources()
-{
-    VkFormat colorFormat = vulkan->swapChainImageFormat;
-
-    colorImage.vulkan = vulkan;
-    colorImage.format = colorFormat;
-    colorImage.numSamples = vulkan->msaaSamples;
-    colorImage.imageUsage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    colorImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    colorImage.width = vulkan->swapChainExtent.width;
-    colorImage.height = vulkan->swapChainExtent.height;
-
-    colorImage.allocate();
-
-    colorImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-
-    colorImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-}
-
-void Engine::createDepthResources()
-{
-    VkFormat depthFormat = findDepthFormat();
-
-    depthImage.vulkan = vulkan;
-    depthImage.format = depthFormat;
-    depthImage.numSamples = vulkan->msaaSamples;
-    depthImage.imageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    depthImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    depthImage.width = vulkan->swapChainExtent.width;
-    depthImage.height = vulkan->swapChainExtent.height;
-
-    depthImage.allocate();
-
-    depthImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void Engine::createSyncObjects()
@@ -917,32 +854,6 @@ VkExtent2D Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities
 
         return actualExtent;
     }
-}
-
-VkFormat Engine::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                     VkFormatFeatureFlags features)
-{
-    for (VkFormat format : candidates)
-    {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(vulkan->physicalDevice, format, &props);
-
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
-        {
-            return format;
-        }
-        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
-        {
-            return format;
-        }
-    }
-    throw std::runtime_error("Failed to find supported format");
-}
-
-VkFormat Engine::findDepthFormat()
-{
-    return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                               VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 } // namespace tat

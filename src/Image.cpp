@@ -55,9 +55,10 @@ void Image::loadSTB(std::string path)
 
     stbi_image_free(pixels);
 
+    layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     allocate();
-    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyFrom(stagingBuffer);
+    generateMipmaps();
     Trace("Loaded ", path, " at ", Timer::systemTime());
 }
 
@@ -84,6 +85,8 @@ void Image::loadTextureCube(std::string path)
     layers = 6;
     format = static_cast<VkFormat>(texCube.format());
     flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     allocate();
 
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
@@ -119,11 +122,12 @@ void Image::loadTextureCube(std::string path)
     subresourceRange.layerCount = 6;
 
     // copy gli loaded texture to image using regious created
-    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
     vkCmdCopyBufferToImage(commandBuffer, stagingBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(bufferCopyRegions.size()), bufferCopyRegions.data());
 
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
+
+    transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     Trace("Loaded ", path, " at ", Timer::systemTime());
 }
 
@@ -149,6 +153,8 @@ void Image::allocate()
     allocInfo.usage = memUsage;
 
     CheckResult(vmaCreateImage(vulkan->allocator, &imageInfo, &allocInfo, &image, &allocation, nullptr));
+    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, layout);
+    createImageView();
 }
 
 void Image::deallocate()
@@ -163,7 +169,7 @@ void Image::deallocate()
     }
 }
 
-void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount)
+void Image::createImageView()
 {
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -172,14 +178,14 @@ void Image::createImageView(VkImageViewType viewType, VkImageAspectFlags aspectF
     viewInfo.format = format;
     viewInfo.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B,
                            VK_COMPONENT_SWIZZLE_A};
-    viewInfo.subresourceRange = {aspectFlags, 0, 1, 0, 1};
+    viewInfo.subresourceRange = {aspect, 0, 1, 0, 1};
     viewInfo.subresourceRange.levelCount = mipLevels;
-    viewInfo.subresourceRange.layerCount = layerCount;
+    viewInfo.subresourceRange.layerCount = layers;
 
     CheckResult(vkCreateImageView(vulkan->device, &viewInfo, nullptr, &imageView));
 }
 
-void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
+void Image::copyFrom(const Buffer &buffer)
 {
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
 
@@ -191,7 +197,7 @@ void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = layerCount;
+    region.imageSubresource.layerCount = layers;
 
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
@@ -201,15 +207,20 @@ void Image::copyFrom(const Buffer &buffer, uint32_t layerCount)
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
 }
 
-void Image::resize(int width, int height, int channels, int layers)
+void Image::resize(int width, int height)
 {
-    deallocate();
-    this->width = width;
-    this->height = height;
-    this->channels = channels;
-    this->layers = layers;
-    allocate();
-    transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, layout);
+    if (this->width != width || this->height != height)
+    {
+        if (imageView)
+        {
+            vkDestroyImageView(vulkan->device, imageView, nullptr);
+            imageView = VK_NULL_HANDLE;
+        }
+        deallocate();
+        this->width = width;
+        this->height = height;
+        allocate();
+    }
 }
 
 void Image::generateMipmaps()
@@ -291,7 +302,7 @@ void Image::generateMipmaps()
     CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
 }
 
-void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount)
+void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
 
@@ -320,7 +331,7 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = layerCount;
+    barrier.subresourceRange.layerCount = layers;
 
     VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;

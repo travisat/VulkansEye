@@ -71,11 +71,8 @@ void Overlay::createFont()
     fontImage.vulkan = vulkan;
     fontImage.imageUsage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    fontImage.width = texWidth;
-    fontImage.height = texHeight;
-    fontImage.allocate();
-
-    fontImage.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+    fontImage.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    fontImage.resize(texWidth, texHeight);
 
     // Staging buffers for font data upload
     Buffer stagingBuffer;
@@ -83,8 +80,6 @@ void Overlay::createFont()
     stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     stagingBuffer.update(fontData, uploadSize);
-
-    fontImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     // Copy buffer data to font image
     VkCommandBuffer copyCmd = vulkan->beginSingleTimeCommands();

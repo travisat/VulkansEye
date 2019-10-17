@@ -40,6 +40,7 @@ ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
+${CMAKE_SOURCE_DIR}/src/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Actor.cpp

@@ -45,8 +45,6 @@ void Backdrop::loadCubeMap()
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap.loadTextureCube(path);
 
-    cubeMap.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
-
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -61,8 +59,6 @@ void Backdrop::loadCubeMap()
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
-
-    cubeMap.createImageView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT, 6);
 }
 
 void Backdrop::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)

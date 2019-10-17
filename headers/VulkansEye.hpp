@@ -7,6 +7,12 @@
 namespace tat
 {
 
+enum class DisplayMode
+{
+  cursor = 0,
+  nocursor = 1 
+};
+
 class VulkansEye
 {
   public:
@@ -19,6 +25,8 @@ class VulkansEye
     Scene scene;
     Player player;
     Overlay overlay;
+
+    DisplayMode displayMode = DisplayMode::nocursor;
 
     void cleanup();
     void mainLoop();

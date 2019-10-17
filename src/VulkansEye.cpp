@@ -26,6 +26,9 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     glfwSetKeyCallback(vulkan.window, &Input::keyCallback);
     glfwSetMouseButtonCallback(vulkan.window, &Input::mouseButtonCallback);
     glfwSetCursorPosCallback(vulkan.window, &Input::cursorPosCallback);
+    glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    displayMode = DisplayMode::nocursor;
 
     // load scene config
     SceneConfig config;
@@ -77,7 +80,7 @@ void VulkansEye::mainLoop()
     {
         float now = Timer::getCount();
         float deltaTime = now - lastFrameTime;
-            //std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
+        // std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         lastFrameTime = now;
 
         ImGuiIO &io = ImGui::GetIO();
@@ -85,7 +88,7 @@ void VulkansEye::mainLoop()
         io.DeltaTime = deltaTime;
         overlay.newFrame();
         overlay.updateBuffers();
-        
+
         glfwPollEvents();
         handleInput();
 
@@ -98,26 +101,28 @@ void VulkansEye::mainLoop()
 
 void VulkansEye::handleInput()
 {
-    if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
+    if (Input::wasKeyReleased(GLFW_KEY_F1))
     {
-        if (!player.mouseMode)
+        if (displayMode == DisplayMode::cursor)
         {
             glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             player.mouseMode = true;
+            displayMode = DisplayMode::nocursor;
+        }
+        else if (displayMode == DisplayMode::nocursor)
+        {
+            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            player.mouseMode = false;
+            displayMode = DisplayMode::cursor;
         }
     }
-    else
-    {
-        glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        player.mouseMode = false;
-    }
-    if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
+    if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
         std::cerr << "Pressed Escape.  Closing." << std::endl;
         glfwSetWindowShouldClose(vulkan.window, true);
     }
-    if (Input::checkKeyboard(GLFW_KEY_F3))
+    if (Input::wasKeyReleased(GLFW_KEY_F3))
     {
         vulkan.showOverlay = !vulkan.showOverlay;
         vulkan.updateCommandBuffer = true;

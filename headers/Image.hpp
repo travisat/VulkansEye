@@ -23,6 +23,8 @@ class Image
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
     VkImageCreateFlags flags = 0;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
 
     VkDeviceSize size = 0;
     VkImageView imageView = VK_NULL_HANDLE;
@@ -35,26 +37,23 @@ class Image
 
     ~Image();
 
-    // create VkImage allocation
-    void allocate();
-
     void loadSTB(std::string path); // use stb_image.h to load most normal image formats
     void loadGLI(std::string path); // use gli to load texture (dds/ktx/kmg)
                                     // files)
     void loadTextureCube(std::string path);
 
-    void copyFrom(const Buffer &buffer, uint32_t layerCount = 1);
-    void resize(int width, int height, int channels = 4, int layers = 1);
-
-    void createImageView(VkImageViewType viewType, VkImageAspectFlags aspectFlags, uint32_t layerCount = 1);
-
-    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t layerCount = 1);
+    void copyFrom(const Buffer &buffer);
+    void resize(int width, int height);
 
     void generateMipmaps();
+    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
 
   private:
+    // create VkImage allocation
+    void allocate();
     // destroy VkImage and VkImageView if they exist
     void deallocate();
+    void createImageView();
 
     bool hasStencilComponent(VkFormat format);
 };

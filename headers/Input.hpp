@@ -68,23 +68,43 @@ class Input
         if (action == GLFW_PRESS)
         {
             if (key >= 0 && key < 349)
-                keys[key] = true;
+            {
+                pressed[key] = true;
+                released[key] = false;
+            }
         }
         else if (action == GLFW_RELEASE)
         {
             if (key >= 0 && key < 349)
-                keys[key] = false;
+            {
+               pressed[key] = false;
+               released[key] = true;
+            }
         }
     }
 
-    static bool checkKeyboard(const uint32_t key)
+    static bool isKeyPressed(const uint32_t key)
     {
-        return getInstance().checkKeyboardIMPL(key);
+        return getInstance().isKeyPressedIMPL(key);
     }
 
-    bool checkKeyboardIMPL(const uint32_t key)
+    bool isKeyPressedIMPL(const uint32_t key)
     {
-        return keys[key];
+        return pressed[key];
+    }
+
+    static bool wasKeyReleased(const uint32_t key)
+    {
+        return getInstance().wasKeyReleasedIMPL(key);
+    }
+
+    bool wasKeyReleasedIMPL(const uint32_t key)
+    {
+        if (released[key]) {
+            released[key] = false;
+            return true;
+        }
+        return false;
     }
 
     static double getMouseY()
@@ -126,7 +146,8 @@ class Input
     bool mouseButtons[8] = {false};
 
     // GLFW_KEY_LAST == 348
-    bool keys[349] = {false};
+    bool pressed[349] = {false};
+    bool released[349] = {false};
 
     double mouseX;
     double mouseY;

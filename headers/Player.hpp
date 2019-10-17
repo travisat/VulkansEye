@@ -58,7 +58,7 @@ class Player
         return zFar;
     };
 
-    bool mouseMode = false;
+    bool mouseMode = true;
 
   private:
     double fieldOfView;

@@ -69,9 +69,6 @@ void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)
     image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     image.loadSTB(path);
 
-    image.generateMipmaps();
-    image.createImageView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-
     VkSamplerCreateInfo imageSamplerInfo = {};
     imageSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     imageSamplerInfo.magFilter = VK_FILTER_LINEAR;

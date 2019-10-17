@@ -85,23 +85,23 @@ void Player::update(float deltaTime)
 
     // get rotational vector for direction to move
     glm::vec3 direction = glm::vec3(0.0f);
-    if (Input::checkKeyboard(GLFW_KEY_W))
+    if (Input::isKeyPressed(GLFW_KEY_W))
     {
         direction += camFront * glm::vec3(1.0f, 0.0f, 1.0f); // forward with way player looking
     }
-    if (Input::checkKeyboard(GLFW_KEY_S))
+    if (Input::isKeyPressed(GLFW_KEY_S))
     {
         direction -= camFront * glm::vec3(1.0f, 0.0f, 1.0f); // backward .
     }
-    if (Input::checkKeyboard(GLFW_KEY_A))
+    if (Input::isKeyPressed(GLFW_KEY_A))
     {
         direction -= glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); // left .
     }
-    if (Input::checkKeyboard(GLFW_KEY_D))
+    if (Input::isKeyPressed(GLFW_KEY_D))
     {
         direction += glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); // right .
     }
-    if (Input::checkKeyboard(GLFW_KEY_SPACE))
+    if (Input::isKeyPressed(GLFW_KEY_SPACE))
     {
         if (position.y == -height)
         {

@@ -5,6 +5,7 @@
 
 #include "Overlay.hpp"
 #include "Scene.hpp"
+#include "Framebuffer.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
@@ -54,9 +55,7 @@ class Engine
     void drawFrame();
 
   private:
-    Image colorImage{};
-    Image depthImage{};
-    std::vector<VkFramebuffer> swapChainFramebuffers{};
+    std::vector<Framebuffer> swapChainFbs{};
 
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
@@ -80,13 +79,9 @@ class Engine
     void createLogicalDevice();
     void createAllocator();
     void createSwapChain();
-    void createImageViews();
     void createRenderPass();
     void createFramebuffers();
     void createCommandPool();
-    void createColorResources();
-    void createDepthResources();
-    //  void createDescriptorSetLayouts();
     void createSyncObjects();
 
     std::vector<const char *> getRequiredExtensions();
@@ -95,9 +90,6 @@ class Engine
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
                                 uint32_t windowHeight);
-    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                 VkFormatFeatureFlags features);
-    VkFormat Engine::findDepthFormat();
 
     bool isDeviceSuitable(VkPhysicalDevice const &device);
     QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);
