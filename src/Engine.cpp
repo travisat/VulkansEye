@@ -215,8 +215,50 @@ void Engine::drawFrame()
     {
         CheckResult(result);
     }
+    if (vulkan->updateCommandBuffer)
+    {
+        updateWindow();
+        vulkan->updateCommandBuffer = false;
+    }
 
     vulkan->currentImage = (vulkan->currentImage + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Engine::updateWindow()
+{
+    if (!vulkan->prepared)
+    {
+        return;
+    }
+    vulkan->prepared = false;
+
+    vkDeviceWaitIdle(vulkan->device);
+
+    for (auto framebuffer : swapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+    }
+
+    vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+
+    for (auto imageView : vulkan->swapChainImageViews)
+    {
+        vkDestroyImageView(vulkan->device, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(vulkan->device, vulkan->swapChain, nullptr);
+
+    vkFreeCommandBuffers(vulkan->device, vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()),
+                         commandBuffers.data());
+
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+    createFramebuffers();
+    createCommandBuffers();
+    vkDeviceWaitIdle(vulkan->device);
+
+    vulkan->prepared = true;
 }
 
 void Engine::resizeWindow()
@@ -273,8 +315,8 @@ void Engine::resizeWindow()
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
 
-    Trace("Resized window to ", width, "x", height, " at ", Timer::systemTime());
     vulkan->prepared = true;
+    Trace("Resized window to ", width, "x", height, " at ", Timer::systemTime());
 }
 
 void Engine::createInstance()

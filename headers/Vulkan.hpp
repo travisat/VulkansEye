@@ -64,7 +64,7 @@ class Vulkan
     uint32_t currentImage = 0;
     bool prepared = false;
     bool showOverlay = true;
-
+    bool updateCommandBuffer = false;
 
     bool checkFormat(VkFormat format)
     {

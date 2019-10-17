@@ -69,6 +69,7 @@ class Engine
     void createCommandBuffers();
     void recordCommandBuffers();
 
+    void updateWindow();
     void resizeWindow();
 
     void createInstance();

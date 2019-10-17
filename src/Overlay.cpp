@@ -258,7 +258,7 @@ void Overlay::createPipeline()
 void Overlay::newFrame()
 {
     ImGui::NewFrame();
-    float frameTime = (float)(Timer::getCount() / 1000.0f);
+    float frameTime = Timer::getCount();
     float deltaTime = frameTime - lastFrameTime;
     lastFrameTime = frameTime;
     if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0f))

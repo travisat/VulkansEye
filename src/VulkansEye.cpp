@@ -72,23 +72,24 @@ void VulkansEye::cleanup()
 
 void VulkansEye::mainLoop()
 {
-    auto lastFrameTime = std::chrono::high_resolution_clock::now();
+    float lastFrameTime = 0.0f;
     while (!glfwWindowShouldClose(vulkan.window))
     {
-        auto deltaTime =
-            std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
-        lastFrameTime = Timer::getTime();
-
-        glfwPollEvents();
-        handleInput();
-
-        player.update(deltaTime);
+        float now = Timer::getCount();
+        float deltaTime = now - lastFrameTime;
+            //std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
+        lastFrameTime = now;
 
         ImGuiIO &io = ImGui::GetIO();
         io.DisplaySize = ImVec2((float)vulkan.width, (float)vulkan.height);
         io.DeltaTime = deltaTime;
         overlay.newFrame();
         overlay.updateBuffers();
+        
+        glfwPollEvents();
+        handleInput();
+
+        player.update(deltaTime);
 
         engine.drawFrame();
     }
@@ -119,7 +120,7 @@ void VulkansEye::handleInput()
     if (Input::checkKeyboard(GLFW_KEY_F3))
     {
         vulkan.showOverlay = !vulkan.showOverlay;
-        overlay.update = true;
+        vulkan.updateCommandBuffer = true;
     }
 }
 

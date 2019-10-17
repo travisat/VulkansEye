@@ -23,7 +23,7 @@ class Timer
         return instance;
     };
 
-    // returns milliseconts since first call of function
+    // returns seconds since first call of function
     static float getCount()
     {
         return getInstance().getCountIMPL();
@@ -46,7 +46,7 @@ class Timer
     {
         static std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
-        return std::chrono::duration<float, std::chrono::milliseconds::period>(currentTime - startTime).count();
+        return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     };
 
     std::chrono::steady_clock::time_point getTimeIMPL()
