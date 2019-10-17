@@ -195,9 +195,23 @@ void Backdrop::createPipeline()
 {
     pipeline.vulkan = vulkan;
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.vertShaderPath = "resources/shaders/backdrop.vert.spv";
-    pipeline.fragShaderPath = "resources/shaders/backdrop.frag.spv";
-    pipeline.createBackdropPipeline();
+    pipeline.loadDefaults();
+
+    auto vertShaderCode = readFile("resources/shaders/backdrop.vert.spv");
+    auto fragShaderCode = readFile("resources/shaders/backdrop.frag.spv");
+
+    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
+    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+
+    pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
+
+    pipeline.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+
+    pipeline.depthStencil.depthTestEnable = VK_FALSE;
+    pipeline.depthStencil.depthWriteEnable = VK_FALSE;
+    pipeline.depthStencil.depthCompareOp = VK_COMPARE_OP_NEVER;
+
+    pipeline.create();
 }
 
 } // namespace tat

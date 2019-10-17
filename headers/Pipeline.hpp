@@ -10,28 +10,24 @@ class Pipeline
   public:
     Vulkan *vulkan;
     VkDescriptorSetLayout descriptorSetLayout;
-    std::string vertShaderPath;
-    std::string fragShaderPath;
-    std::string tescShaderPath;
-    std::string teseShaderPath;
 
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
 
     ~Pipeline();
+    void create();
     void cleanup();
+    void loadDefaults();
 
     void createScenePipeline();
     void createBackdropPipeline();
 
-  private:
-    void createDefaultPipeline();
-
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
     VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo tessControlShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo tessEvalShaderStageInfo = {};
+    VkPipelineShaderStageCreateInfo tescShaderStageInfo = {};
+    VkPipelineShaderStageCreateInfo teseShaderStageInfo = {};
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {};
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     std::vector<VkDynamicState> dynamicStateEnables = {};
@@ -44,5 +40,7 @@ class Pipeline
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
+
+  private:
 };
 } // namespace tat

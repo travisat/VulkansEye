@@ -1,4 +1,4 @@
-#include "VkEngine.hpp"
+#include "Engine.hpp"
 #include "helpers.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -38,7 +38,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 };
 
-void VkEngine::init()
+void Engine::init()
 {
 
     createInstance();
@@ -64,7 +64,7 @@ void VkEngine::init()
     vulkan->prepared = true;
 }
 
-VkEngine::~VkEngine()
+Engine::~Engine()
 {
     if (enableValidationLayers)
     {
@@ -84,7 +84,7 @@ VkEngine::~VkEngine()
     }
 }
 
-void VkEngine::createCommandBuffers()
+void Engine::createCommandBuffers()
 {
     commandBuffers.resize(swapChainFramebuffers.size());
 
@@ -98,7 +98,7 @@ void VkEngine::createCommandBuffers()
     recordCommandBuffers();
 }
 
-void VkEngine::recordCommandBuffers()
+void Engine::recordCommandBuffers()
 {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -124,15 +124,34 @@ void VkEngine::recordCommandBuffers()
         CheckResult(vkBeginCommandBuffer(commandBuffer, &beginInfo));
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+        VkViewport viewport{};
+        viewport.width = (float)vulkan->width;
+        viewport.height = (float)vulkan->height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.extent = vulkan->swapChainExtent;
+        scissor.offset.x = 0;
+        scissor.offset.y = 0;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        vkCmdSetLineWidth(commandBuffer, 1.0f);
+
         scene->draw(commandBuffer, i);
-        overlay->draw(commandBuffer, i);
+
+        if (vulkan->showOverlay)
+        {
+            overlay->draw(commandBuffer, i);
+        }
 
         vkCmdEndRenderPass(commandBuffer);
         CheckResult(vkEndCommandBuffer(commandBuffer));
     }
 }
 
-void VkEngine::drawFrame()
+void Engine::drawFrame()
 {
     if (!vulkan->prepared)
         return;
@@ -200,7 +219,7 @@ void VkEngine::drawFrame()
     vulkan->currentImage = (vulkan->currentImage + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void VkEngine::resizeWindow()
+void Engine::resizeWindow()
 {
     if (!vulkan->prepared)
     {
@@ -258,7 +277,7 @@ void VkEngine::resizeWindow()
     vulkan->prepared = true;
 }
 
-void VkEngine::createInstance()
+void Engine::createInstance()
 {
 
     VkApplicationInfo appInfo = {};
@@ -293,7 +312,7 @@ void VkEngine::createInstance()
     CheckResult(vkCreateInstance(&createInfo, nullptr, &vulkan->instance));
 }
 
-void VkEngine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
+void Engine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -306,7 +325,7 @@ void VkEngine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoE
     createInfo.pfnUserCallback = debugCallback;
 }
 
-void VkEngine::setupDebugMessenger()
+void Engine::setupDebugMessenger()
 {
     if (!enableValidationLayers)
         return;
@@ -317,12 +336,12 @@ void VkEngine::setupDebugMessenger()
     CheckResult(CreateDebugUtilsMessengerEXT(vulkan->instance, &createInfo, nullptr, &debugMessenger));
 }
 
-void VkEngine::createSurface()
+void Engine::createSurface()
 {
     CheckResult(glfwCreateWindowSurface(vulkan->instance, vulkan->window, nullptr, &vulkan->surface));
 }
 
-void VkEngine::pickPhysicalDevice()
+void Engine::pickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vulkan->instance, &deviceCount, nullptr);
@@ -336,8 +355,8 @@ void VkEngine::pickPhysicalDevice()
     {
         if (isDeviceSuitable(device))
         {
-            vkGetPhysicalDeviceProperties(device, &vulkan->physicalDeviceProperties);
-            Trace("Physical Device: ", vulkan->physicalDeviceProperties.deviceName);
+            vkGetPhysicalDeviceProperties(device, &vulkan->properties);
+            Trace("Physical Device: ", vulkan->properties.deviceName);
             vulkan->physicalDevice = device;
             vulkan->msaaSamples = getMaxUsableSampleCount();
             break;
@@ -347,7 +366,7 @@ void VkEngine::pickPhysicalDevice()
     assert(vulkan->physicalDevice != VK_NULL_HANDLE);
 }
 
-bool VkEngine::isDeviceSuitable(VkPhysicalDevice const &device)
+bool Engine::isDeviceSuitable(VkPhysicalDevice const &device)
 {
     QueueFamilyIndices indicies = findQueueFamiles(device);
 
@@ -367,7 +386,7 @@ bool VkEngine::isDeviceSuitable(VkPhysicalDevice const &device)
            supportedFeatures.tessellationShader;
 };
 
-QueueFamilyIndices VkEngine::findQueueFamiles(VkPhysicalDevice const &device)
+QueueFamilyIndices Engine::findQueueFamiles(VkPhysicalDevice const &device)
 {
     QueueFamilyIndices indices;
 
@@ -402,7 +421,7 @@ QueueFamilyIndices VkEngine::findQueueFamiles(VkPhysicalDevice const &device)
     return indices;
 }
 
-SwapChainSupportDetails VkEngine::querySwapChainSupport(VkPhysicalDevice const &device)
+SwapChainSupportDetails Engine::querySwapChainSupport(VkPhysicalDevice const &device)
 {
     SwapChainSupportDetails details;
 
@@ -430,7 +449,7 @@ SwapChainSupportDetails VkEngine::querySwapChainSupport(VkPhysicalDevice const &
     return details;
 }
 
-bool VkEngine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device)
+bool Engine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device)
 {
     uint32_t extensionsCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
@@ -448,7 +467,7 @@ bool VkEngine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device)
     return requiredExtensions.empty();
 }
 
-void VkEngine::createLogicalDevice()
+void Engine::createLogicalDevice()
 {
     QueueFamilyIndices indices = findQueueFamiles(vulkan->physicalDevice);
 
@@ -490,7 +509,7 @@ void VkEngine::createLogicalDevice()
     vkGetDeviceQueue(vulkan->device, indices.presentFamily.value(), 0, &vulkan->presentQueue);
 }
 
-void VkEngine::createAllocator()
+void Engine::createAllocator()
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = vulkan->physicalDevice;
@@ -499,7 +518,7 @@ void VkEngine::createAllocator()
     CheckResult(vmaCreateAllocator(&allocatorInfo, &vulkan->allocator));
 }
 
-void VkEngine::createSwapChain()
+void Engine::createSwapChain()
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(vulkan->physicalDevice);
 
@@ -554,7 +573,7 @@ void VkEngine::createSwapChain()
     vulkan->swapChainExtent = extent;
 }
 
-void VkEngine::createImageViews()
+void Engine::createImageViews()
 {
     vulkan->swapChainImageViews.resize(vulkan->swapChainImages.size());
 
@@ -575,7 +594,7 @@ void VkEngine::createImageViews()
     }
 }
 
-void VkEngine::createRenderPass()
+void Engine::createRenderPass()
 {
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = vulkan->swapChainImageFormat;
@@ -666,7 +685,7 @@ void VkEngine::createRenderPass()
     CheckResult(vkCreateRenderPass(vulkan->device, &renderPassInfo, nullptr, &vulkan->renderPass));
 }
 
-void VkEngine::createFramebuffers()
+void Engine::createFramebuffers()
 {
     swapChainFramebuffers.resize(vulkan->swapChainImageViews.size());
 
@@ -688,7 +707,7 @@ void VkEngine::createFramebuffers()
     }
 }
 
-void VkEngine::createCommandPool()
+void Engine::createCommandPool()
 {
     QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(vulkan->physicalDevice);
 
@@ -699,7 +718,7 @@ void VkEngine::createCommandPool()
     CheckResult(vkCreateCommandPool(vulkan->device, &poolInfo, nullptr, &vulkan->commandPool));
 }
 
-void VkEngine::createColorResources()
+void Engine::createColorResources()
 {
     VkFormat colorFormat = vulkan->swapChainImageFormat;
 
@@ -710,7 +729,6 @@ void VkEngine::createColorResources()
     colorImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     colorImage.width = vulkan->swapChainExtent.width;
     colorImage.height = vulkan->swapChainExtent.height;
-    colorImage.name = "Color Image";
 
     colorImage.allocate();
 
@@ -719,7 +737,7 @@ void VkEngine::createColorResources()
     colorImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }
 
-void VkEngine::createDepthResources()
+void Engine::createDepthResources()
 {
     VkFormat depthFormat = findDepthFormat();
 
@@ -730,7 +748,6 @@ void VkEngine::createDepthResources()
     depthImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     depthImage.width = vulkan->swapChainExtent.width;
     depthImage.height = vulkan->swapChainExtent.height;
-    depthImage.name = "Depth Image";
 
     depthImage.allocate();
 
@@ -739,7 +756,7 @@ void VkEngine::createDepthResources()
     depthImage.transitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-void VkEngine::createSyncObjects()
+void Engine::createSyncObjects()
 {
     presentFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -766,7 +783,7 @@ void VkEngine::createSyncObjects()
     }
 }
 
-std::vector<const char *> VkEngine::getRequiredExtensions()
+std::vector<const char *> Engine::getRequiredExtensions()
 {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
@@ -782,10 +799,10 @@ std::vector<const char *> VkEngine::getRequiredExtensions()
     return extensions;
 };
 
-VkSampleCountFlagBits VkEngine::getMaxUsableSampleCount()
+VkSampleCountFlagBits Engine::getMaxUsableSampleCount()
 {
-    VkSampleCountFlags counts = std::min(vulkan->physicalDeviceProperties.limits.framebufferColorSampleCounts,
-                                         vulkan->physicalDeviceProperties.limits.framebufferDepthSampleCounts);
+    VkSampleCountFlags counts = std::min(vulkan->properties.limits.framebufferColorSampleCounts,
+                                         vulkan->properties.limits.framebufferDepthSampleCounts);
     if (counts & VK_SAMPLE_COUNT_64_BIT)
     {
         return VK_SAMPLE_COUNT_64_BIT;
@@ -814,7 +831,7 @@ VkSampleCountFlagBits VkEngine::getMaxUsableSampleCount()
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-VkSurfaceFormatKHR VkEngine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+VkSurfaceFormatKHR Engine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
 {
     for (const auto &availableFormat : availableFormats)
     {
@@ -828,7 +845,7 @@ VkSurfaceFormatKHR VkEngine::chooseSwapSurfaceFormat(const std::vector<VkSurface
     return availableFormats[0];
 }
 
-VkPresentModeKHR VkEngine::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+VkPresentModeKHR Engine::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
 {
     for (const auto &availablePresentMode : availablePresentModes)
     {
@@ -840,8 +857,8 @@ VkPresentModeKHR VkEngine::chooseSwapPresentMode(const std::vector<VkPresentMode
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VkEngine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
-                                      uint32_t windowHeight)
+VkExtent2D Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
+                                    uint32_t windowHeight)
 {
     if (capabilities.currentExtent.width != UINT32_MAX)
     {
@@ -860,8 +877,8 @@ VkExtent2D VkEngine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabiliti
     }
 }
 
-VkFormat VkEngine::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                       VkFormatFeatureFlags features)
+VkFormat Engine::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                                     VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates)
     {
@@ -880,7 +897,7 @@ VkFormat VkEngine::findSupportedFormat(const std::vector<VkFormat> &candidates, 
     throw std::runtime_error("Failed to find supported format");
 }
 
-VkFormat VkEngine::findDepthFormat()
+VkFormat Engine::findDepthFormat()
 {
     return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                                VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);

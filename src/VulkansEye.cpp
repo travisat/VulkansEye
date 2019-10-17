@@ -64,6 +64,12 @@ void VulkansEye::run()
     cleanup();
 }
 
+void VulkansEye::cleanup()
+{
+    glfwDestroyWindow(vulkan.window);
+    glfwTerminate();
+}
+
 void VulkansEye::mainLoop()
 {
     auto lastFrameTime = std::chrono::high_resolution_clock::now();
@@ -74,48 +80,47 @@ void VulkansEye::mainLoop()
         lastFrameTime = Timer::getTime();
 
         glfwPollEvents();
-
-        if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
-        {
-            if (!player.mouseMode)
-            {
-                glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                player.mouseMode = true;
-            }
-        }
-        else
-        {
-            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            player.mouseMode = false;
-        }
+        handleInput();
 
         player.update(deltaTime);
 
         ImGuiIO &io = ImGui::GetIO();
         io.DisplaySize = ImVec2((float)vulkan.width, (float)vulkan.height);
         io.DeltaTime = deltaTime;
-
         overlay.newFrame();
-
         overlay.updateBuffers();
 
         engine.drawFrame();
-        vulkan.frameCounter++;
-
-        if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
-        {
-            std::cerr << "Pressed Escape.  Closing." << std::endl;
-            glfwSetWindowShouldClose(vulkan.window, true);
-        }
     }
     vkDeviceWaitIdle(vulkan.device);
 }
 
-void VulkansEye::cleanup()
+void VulkansEye::handleInput()
 {
-    glfwDestroyWindow(vulkan.window);
-    glfwTerminate();
+    if (Input::checkMouse(GLFW_MOUSE_BUTTON_2))
+    {
+        if (!player.mouseMode)
+        {
+            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            player.mouseMode = true;
+        }
+    }
+    else
+    {
+        glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        player.mouseMode = false;
+    }
+    if (Input::checkKeyboard(GLFW_KEY_ESCAPE))
+    {
+        std::cerr << "Pressed Escape.  Closing." << std::endl;
+        glfwSetWindowShouldClose(vulkan.window, true);
+    }
+    if (Input::checkKeyboard(GLFW_KEY_F3))
+    {
+        vulkan.showOverlay = !vulkan.showOverlay;
+        overlay.update = true;
+    }
 }
 
 } // namespace tat

@@ -9,21 +9,61 @@ Pipeline::~Pipeline()
     cleanup();
 }
 
+void Pipeline::create()
+{
+    CheckResult(vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.pStages = shaderStages.data();
+    CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+}
+
 void Pipeline::cleanup()
 {
+    if (vertShaderStageInfo.module)
+        vkDestroyShaderModule(vulkan->device, vertShaderStageInfo.module, nullptr);
+    if (fragShaderStageInfo.module)
+        vkDestroyShaderModule(vulkan->device, fragShaderStageInfo.module, nullptr);
+    if (tescShaderStageInfo.module)
+        vkDestroyShaderModule(vulkan->device, tescShaderStageInfo.module, nullptr);
+    if (teseShaderStageInfo.module)
+        vkDestroyShaderModule(vulkan->device, teseShaderStageInfo.module, nullptr);
+
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
 }
 
-void Pipeline::createDefaultPipeline()
+void Pipeline::loadDefaults()
 {
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
-    CheckResult(vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.pName = "main";
+
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.pName = "main";
+
+    tescShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    tescShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    tescShaderStageInfo.pName = "main";
+
+    teseShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    teseShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    teseShaderStageInfo.pName = "main";
 
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+    vertexInputInfo.vertexBindingDescriptionCount = 0;
+    vertexInputInfo.pVertexBindingDescriptions = nullptr;
+
+    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+    tessellationState.patchControlPoints = 3;
 
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -80,112 +120,9 @@ void Pipeline::createDefaultPipeline()
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = vulkan->renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-}
-
-void Pipeline::createScenePipeline()
-{
-    createDefaultPipeline();
-
-    auto vertShaderCode = readFile(vertShaderPath);
-    auto fragShaderCode = readFile(fragShaderPath);
-    auto tessControlShaderCode = readFile(tescShaderPath);
-    auto tessEvalShaderCode = readFile(teseShaderPath);
-
-    VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
-    VkShaderModule tessControlShaderModule = vulkan->createShaderModule(tessControlShaderCode);
-    VkShaderModule tessEvalShaderModule = vulkan->createShaderModule(tessEvalShaderCode);
-
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName = "main";
-
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
-
-    tessControlShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    tessControlShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    tessControlShaderStageInfo.module = tessControlShaderModule;
-    tessControlShaderStageInfo.pName = "main";
-
-    tessEvalShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    tessEvalShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    tessEvalShaderStageInfo.module = tessEvalShaderModule;
-    tessEvalShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo,
-                                                      tessControlShaderStageInfo, tessEvalShaderStageInfo};
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-
-    auto attributeDescrption = Vertex::getAttributeDescriptions();
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
-
-    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-    tessellationState.patchControlPoints = 3;
-
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-
-    pipelineInfo.stageCount = 4;
-    pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pTessellationState = &tessellationState;
-    CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
-
-    vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
-    vkDestroyShaderModule(vulkan->device, tessControlShaderModule, nullptr);
-    vkDestroyShaderModule(vulkan->device, tessEvalShaderModule, nullptr);
-}
-
-void Pipeline::createBackdropPipeline()
-{
-    createDefaultPipeline();
-
-    auto vertShaderCode = readFile(vertShaderPath);
-    auto fragShaderCode = readFile(fragShaderPath);
-
-    VkShaderModule vertShaderModule = vulkan->createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = vulkan->createShaderModule(fragShaderCode);
-
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
-    vertShaderStageInfo.pName = "main";
-
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
-    fragShaderStageInfo.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
-
-    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
-
-    depthStencil.depthTestEnable = VK_FALSE;
-    depthStencil.depthWriteEnable = VK_FALSE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_NEVER;
-
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
-    CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
-
-    vkDestroyShaderModule(vulkan->device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(vulkan->device, vertShaderModule, nullptr);
 }
 
 } // namespace tat

@@ -2,7 +2,7 @@
 
 #include "Overlay.hpp"
 #include "Timer.h"
-#include "VkEngine.hpp"
+#include "Engine.hpp"
 
 namespace tat
 {
@@ -15,19 +15,18 @@ class VulkansEye
 
   private:
     tat::Vulkan vulkan;
-    VkEngine engine;
+    Engine engine;
     Scene scene;
     Player player;
     Overlay overlay;
 
-    void drawFrame();
-
-    void mainLoop();
     void cleanup();
+    void mainLoop();
+    void handleInput();
 
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
     {
-        auto app = reinterpret_cast<VkEngine *>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
         framebufferResized = true;
     };
 };

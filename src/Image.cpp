@@ -21,7 +21,6 @@ void Image::loadSTB(std::string path)
 {
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
-    name = path;
     int32_t defaultChannels = 4;
     format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -68,8 +67,6 @@ void Image::loadGLI(std::string path)
 
 void Image::loadTextureCube(std::string path)
 {
-    name = path;
-
     // load texture into staging buffer using gli so we can extract image
     gli::texture_cube texCube(gli::load(path));
     assert(!texCube.empty());
@@ -359,7 +356,7 @@ void Image::transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayo
     }
     else
     {
-        Trace("Unsupported Transition for ", name, " using default values at ", Timer::systemTime());
+        Trace("Unsupported Transition using default values at ", Timer::systemTime());
     }
 
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);

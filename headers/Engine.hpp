@@ -42,14 +42,14 @@ struct QueueFamilyIndices
     }
 };
 
-class VkEngine
+class Engine
 {
   public:
-    tat::Vulkan *vulkan = nullptr;
+    Vulkan *vulkan = nullptr;
     Scene *scene;
     Overlay *overlay;
 
-    ~VkEngine();
+    ~Engine();
     void init();
     void drawFrame();
 
@@ -96,7 +96,7 @@ class VkEngine
                                 uint32_t windowHeight);
     VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
                                  VkFormatFeatureFlags features);
-    VkFormat VkEngine::findDepthFormat();
+    VkFormat Engine::findDepthFormat();
 
     bool isDeviceSuitable(VkPhysicalDevice const &device);
     QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);

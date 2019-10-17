@@ -41,7 +41,7 @@ class Vulkan
     VkInstance instance;
     VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice;
-    VkPhysicalDeviceProperties physicalDeviceProperties;
+    VkPhysicalDeviceProperties properties;
     VkDevice device;
     VmaAllocator allocator;
     VkCommandPool commandPool;
@@ -50,12 +50,9 @@ class Vulkan
     VkRenderPass renderPass;
 
     VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
 
@@ -64,11 +61,10 @@ class Vulkan
     GLFWwindow *window = nullptr;
     uint32_t width = 0;
     uint32_t height = 0;
-
     uint32_t currentImage = 0;
     bool prepared = false;
-    uint32_t frameCounter = 0;
-    uint32_t lastFPS = 0;
+    bool showOverlay = true;
+
 
     bool checkFormat(VkFormat format)
     {

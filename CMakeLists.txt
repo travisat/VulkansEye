@@ -38,7 +38,7 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tese.spv
 set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
-${CMAKE_SOURCE_DIR}/src/VkEngine.cpp
+${CMAKE_SOURCE_DIR}/src/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp

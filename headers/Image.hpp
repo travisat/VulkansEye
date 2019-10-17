@@ -12,7 +12,7 @@ namespace tat
 class Image
 {
   public:
-    tat::Vulkan *vulkan = nullptr;
+    Vulkan *vulkan = nullptr;
     VkImage image = VK_NULL_HANDLE;
     VmaAllocation allocation{};
 
@@ -32,8 +32,6 @@ class Image
     int channels = 4; // rgba
     int layers = 1;
     uint32_t mipLevels = 1;
-
-    std::string name = "Unknown";
 
     ~Image();
 

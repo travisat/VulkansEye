@@ -72,21 +72,6 @@ void Scene::recreate()
 
 void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-    VkViewport viewport{};
-    viewport.width = (float)vulkan->width;
-    viewport.height = (float)vulkan->height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.extent = vulkan->swapChainExtent;
-    scissor.offset.x = 0;
-    scissor.offset.y = 0;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    vkCmdSetLineWidth(commandBuffer, 1.0f);
-
     stage.backdrop.draw(commandBuffer, currentImage);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
@@ -279,11 +264,32 @@ void Scene::createPipeline()
 {
     pipeline.vulkan = vulkan;
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.vertShaderPath = "resources/shaders/scene.vert.spv";
-    pipeline.fragShaderPath = "resources/shaders/scene.frag.spv";
-    pipeline.tescShaderPath = "resources/shaders/displacement.tesc.spv";
-    pipeline.teseShaderPath = "resources/shaders/displacement.tese.spv";
-    pipeline.createScenePipeline();
+    pipeline.loadDefaults();
+
+    auto vertShaderCode = readFile("resources/shaders/scene.vert.spv");
+    auto fragShaderCode = readFile("resources/shaders/scene.frag.spv");
+    auto tessControlShaderCode = readFile("resources/shaders/displacement.tesc.spv");
+    auto tessEvalShaderCode = readFile("resources/shaders/displacement.tese.spv");
+
+    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
+    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+    pipeline.tescShaderStageInfo.module = vulkan->createShaderModule(tessControlShaderCode);
+    pipeline.teseShaderStageInfo.module = vulkan->createShaderModule(tessEvalShaderCode);
+
+    pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo, pipeline.tescShaderStageInfo,
+                             pipeline.teseShaderStageInfo};
+
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescrption = Vertex::getAttributeDescriptions();
+    pipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
+    pipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    pipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
+    pipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
+
+    pipeline.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+
+    pipeline.pipelineInfo.pTessellationState = &pipeline.tessellationState;
+    pipeline.create();
 }
 
 } // namespace tat

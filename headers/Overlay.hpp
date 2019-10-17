@@ -7,6 +7,7 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "Player.hpp"
+#include "Pipeline.hpp"
 #include "Timer.h"
 #include "Vulkan.hpp"
 
@@ -72,8 +73,7 @@ class Overlay
 
     Image fontImage{};
 
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline;
+    Pipeline pipeline;
     VkDescriptorPool descriptorPool;
     VkDescriptorSetLayout descriptorSetLayout;
     std::vector<VkDescriptorSet> descriptorSets;
@@ -89,7 +89,6 @@ class Overlay
     void createDescriptorPool();
     void createDescriptorLayouts();
     void createDescriptorSets();
-    void createPipelineLayout();
     void createPipeline();
 };
 
