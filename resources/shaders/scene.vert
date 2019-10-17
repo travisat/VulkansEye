@@ -8,8 +8,9 @@ layout(location = 2) in vec3 inNormal;
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
 
-void main() {
-  outUV = inUV;
-  outNormal = inNormal;
-  gl_Position = vec4(inPosition, 1.0);
+void main()
+{
+    outUV = inUV;
+    outNormal = inNormal;
+    gl_Position = vec4(inPosition, 1.0);
 }

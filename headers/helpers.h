@@ -11,24 +11,27 @@
 
 // These need to be templated functions
 
-namespace tat {
+namespace tat
+{
 
-template <typename... Args> void Trace(Args &&... args) {
-  std::ostringstream stream;
-  (stream << ... << std::forward<Args>(args)) << '\n';
+template <typename... Args> void Trace(Args &&... args)
+{
+    std::ostringstream stream;
+    (stream << ... << std::forward<Args>(args)) << '\n';
 
-  OutputDebugString(stream.str().c_str());
+    OutputDebugString(stream.str().c_str());
 }
 
-template <typename T> T CheckResult(T result) {
-  if (result != 0) {
-    std::ostringstream stream;
-    stream << " Error result is " << result << " in " << __FILE__ << " at line "
-           << __LINE__ << std::endl;
-    OutputDebugString(stream.str().c_str());
-    assert(result == 0);
-  }
-  return result;
+template <typename T> T CheckResult(T result)
+{
+    if (result != 0)
+    {
+        std::ostringstream stream;
+        stream << " Error result is " << result << " in " << __FILE__ << " at line " << __LINE__ << std::endl;
+        OutputDebugString(stream.str().c_str());
+        assert(result == 0);
+    }
+    return result;
 }
 
 } // namespace tat

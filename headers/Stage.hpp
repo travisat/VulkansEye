@@ -9,32 +9,32 @@
 #include "Model.hpp"
 #include "Player.hpp"
 
+namespace tat
+{
 
-namespace tat {
+class Stage
+{
+  public:
+    tat::Vulkan *vulkan = nullptr;
+    StageConfig *config;
+    Player *player;
 
-class Stage {
-public:
-  tat::Vulkan *vulkan = nullptr;
-  StageConfig *config;
-  Player *player;
+    Backdrop backdrop;
+    std::vector<Model> models;
 
-  Backdrop backdrop;
-  Model model;
-  Buffer vertexBuffer;
-  Buffer indexBuffer;
-  std::vector<Buffer> tescBuffers;
-  std::vector<Buffer> teseBuffers;
-  std::vector<Buffer> uniformLights;
-  std::vector<VkDescriptorSet> descriptorSets;
+    void create();
+    void recreate()
+    {
+        backdrop.recreate();
+    };
+    void cleanup()
+    {
+        backdrop.cleanup();
+    };
+    void createUniformBuffers();
+    void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
 
-  void create();
-  void recreate() { backdrop.recreate(); };
-  void cleanup() { backdrop.cleanup(); };
-  void createDescriptorSets(VkDescriptorPool descriptorPool,
-                            VkDescriptorSetLayout descriptorSetLayout);
-  void createUniformBuffers();
-
-private:
+  private:
 };
 
 } // namespace tat

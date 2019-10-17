@@ -5,9 +5,9 @@
         "sphere": {
             "name": "sphere",
             "position": {
-                "x": 4.0,
-                "y": 2.0,
-                "z": 0.0
+                "x": 4,
+                "y": 2,
+                "z": 0
             },
             "rotation": {
                 "x": 0,
@@ -15,31 +15,29 @@
                 "z": 0
             },
             "scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "x": 1,
+                "y": 1,
+                "z": 1
             },
-            "model": {
-                "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
-                "tesselation": {
-                    "level": 128,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
+            "path": "resources/models/sphere.obj",
+            "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+            "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+            "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+            "ao": "resources/materials/default/ao.png",
+            "metallic": "resources/materials/default/metallic.png",
+            "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+            "tesselation": {
+                "level": 128,
+                "strength": 0.1,
+                "alpha": 0.33
             }
         },
         "table": {
             "name": "table",
             "position": {
-                "x": 4.0,
-                "y": 0.0,
-                "z": 5.0
+                "x": 4,
+                "y": 0,
+                "z": 5
             },
             "rotation": {
                 "x": 0,
@@ -47,39 +45,172 @@
                 "z": 0
             },
             "scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "x": 1,
+                "y": 1,
+                "z": 1
             },
-            "model": {
-                "path": "resources/models/table.obj",
-                "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-                "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-                "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
-                "tesselation": {
-                    "level": 128,
-                    "strength": 0.001,
-                    "alpha": 0.03
-                }
+            "path": "resources/models/table.obj",
+            "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+            "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+            "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+            "ao": "resources/materials/default/ao.png",
+            "metallic": "resources/materials/default/metallic.png",
+            "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+            "tesselation": {
+                "level": 128,
+                "strength": 0.001,
+                "alpha": 0.03
             }
         }
     },
     "stage": {
         "backdrop": "resources/backdrop/nebula.dds",
-        "path": "resources/models/floor.obj",
-        "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
-        "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
-        "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
-        "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
-        "metallic": "resources/materials/default/metallic.png",
-        "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
-        "tesselation": {
-            "level": 256,
-            "strength": 0.01,
-            "alpha": 0.33
+        "models": {
+            "floor": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "path": "resources/models/floor.obj",
+                "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
+                "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
+                "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
+                "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
+                "tesselation": {
+                    "level": 256,
+                    "strength": 0.01,
+                    "alpha": 0.33
+                }
+            },
+            "wallposx": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "path": "resources/models/wallposx.obj",
+                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
+                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
+                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
+                "tesselation": {
+                    "level": 256,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            },
+            "wallposz": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "path": "resources/models/wallposz.obj",
+                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
+                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
+                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
+                "tesselation": {
+                    "level": 256,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            },
+            "wallnegx": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "path": "resources/models/wallnegx.obj",
+                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
+                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
+                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
+                "tesselation": {
+                    "level": 256,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            },
+            "wallnegz": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "path": "resources/models/wallnegz.obj",
+                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
+                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
+                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/default/metallic.png",
+                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
+                "tesselation": {
+                    "level": 256,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            }
         }
     },
     "lights": {
@@ -101,7 +232,7 @@
                 "z": 5
             },
             "temperature": 6400,
-            "lumens": 2600
+            "lumens": 4600
         }
     },
     "player": {

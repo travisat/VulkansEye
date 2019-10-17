@@ -36,29 +36,21 @@ public:
   void create();
   void cleanup();
   void recreate();
-
   void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
-
   void update(uint32_t currentImage);
 
-  uint32_t numActors() { return static_cast<uint32_t>(actors.size()); };
-
-  // num uniform buffers per model and stage (UBO and ULO)
   uint32_t numTessBuffers() {
-    return static_cast<uint32_t>((actors.size() + 1) * 2);
+    return static_cast<uint32_t>((actors.size() + stage.models.size()) * 2);
   };
   uint32_t numUniformLights() {
-    return static_cast<uint32_t>(actors.size() + 1);
+    return static_cast<uint32_t>(actors.size() + stage.models.size());
   };
-  // same but for imagesamplers (diffuse, normal, roughness, metllalic,
-  // ambientOcclusion) + sampler for stage
   uint32_t numImageSamplers() {
-    return static_cast<uint32_t>((actors.size() + 1) * 6);
+    return static_cast<uint32_t>((actors.size() + stage.models.size()) * 6);
   };
 
 private:
   UniformLight uLight = {};
-
   VkDescriptorPool descriptorPool;
   VkDescriptorSetLayout descriptorSetLayout;
 
