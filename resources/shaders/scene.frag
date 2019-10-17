@@ -193,7 +193,7 @@ float getDistanceAttenuation(vec3 posToLight, float lumens)
     float distanceSquare = dot(posToLight, posToLight);
     float attenuation = getSquareFalloffAttenuation(distanceSquare, lumens);
     // Assume a punctual light occupies a volume of 1cm to avoid a division by 0
-    return attenuation * 1.0 / max(distanceSquare, 1e-4);
+    return attenuation * 1.0 / (max(distanceSquare, 0.00001) * 2.0 * PI);
 }
 
 void main()
@@ -217,7 +217,7 @@ void main()
         float temperature = uLight.light[i].temperature;
 
         vec3 lightVector = position - lightPos; // vector from surface to light
-        float intensity = lumens * getDistanceAttenuation(lightVector, lumens) / (4 * PI);
+        float intensity = lumens * getDistanceAttenuation(lightVector, lumens);
         vec3 lightcolor = kelvinToRGB(temperature) * intensity;
 
         vec3 L = normalize(lightVector);
