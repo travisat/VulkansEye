@@ -56,6 +56,17 @@ class Engine
 
   private:
     std::vector<Framebuffer> swapChainFbs{};
+    Image colorAttachment{};
+    Image depthAttachment{};
+    Framebuffer offscreenFb{};
+    VkSampler colorSampler;
+    struct OffscreenAttachments
+    {
+      Image diffuse{};
+      Image depth{};
+      Image position{};
+      Image normal{};
+    } offscreen;
 
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
@@ -81,6 +92,8 @@ class Engine
     void createSwapChain();
     void createRenderPass();
     void createFramebuffers();
+    void createOffscreenRenderPass();
+    void createOffscreenFramebuffer();
     void createCommandPool();
     void createSyncObjects();
 
