@@ -71,6 +71,10 @@ void Player::update(float deltaTime)
     {
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
         rotation.x += deltaMousePosition.y * mouseSensitivity;
+        if (rotation.x > 90)
+            rotation.x = 90;
+        if (rotation.x < -90)
+            rotation.x = -90;
         rotation.y += deltaMousePosition.x * mouseSensitivity;
         lastMousePosition = mousePosition;
     }
