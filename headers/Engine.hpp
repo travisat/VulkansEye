@@ -58,19 +58,12 @@ class Engine
     std::vector<Framebuffer> swapChainFbs{};
     Image colorAttachment{};
     Image depthAttachment{};
-    Framebuffer offscreenFb{};
     VkSampler colorSampler;
-    struct OffscreenAttachments
-    {
-      Image diffuse{};
-      Image depth{};
-      Image position{};
-      Image normal{};
-    } offscreen;
 
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
     std::vector<VkCommandBuffer> commandBuffers{};
+    VkCommandBuffer offscreenCommandBuffer = VK_NULL_HANDLE;
 
     std::vector<VkSemaphore> presentFinishedSemaphores{};
     std::vector<VkSemaphore> renderFinishedSemaphores{};
@@ -78,6 +71,8 @@ class Engine
 
     void createCommandBuffers();
     void recordCommandBuffers();
+
+    void createDeferredCommandBuffer();
 
     void updateWindow();
     void resizeWindow();
@@ -92,8 +87,6 @@ class Engine
     void createSwapChain();
     void createRenderPass();
     void createFramebuffers();
-    void createOffscreenRenderPass();
-    void createOffscreenFramebuffer();
     void createCommandPool();
     void createSyncObjects();
 
