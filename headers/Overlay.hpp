@@ -28,6 +28,7 @@ struct UISettings
     float lightTimer = 0.0f;
     glm::vec3 position = glm::vec3(0.0f);
     float velocity = 0.0f;
+    glm::vec3 move = glm::vec3(0.0f);
     float fps = 0.0f;
 };
 

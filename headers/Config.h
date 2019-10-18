@@ -58,7 +58,7 @@ struct PlayerConfig : Config
     glm::vec3 rotation;
     float height; // meters 1.0f == 1m
     float mass;
-    float jForce;
+    float jumpHeight;
     float mouseSensitivity;
     float velocityMax;
     float timeToReachVMax;
@@ -164,7 +164,7 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
     j.at("player").at("velocityMax").get_to(config.playerConfig.velocityMax);
     j.at("player").at("timeToReachVMax").get_to(config.playerConfig.timeToReachVMax);
     j.at("player").at("timeToStopFromVMax").get_to(config.playerConfig.timeToStopfromVMax);
-    j.at("player").at("jForce").get_to(config.playerConfig.jForce);
+    j.at("player").at("jumpHeight").get_to(config.playerConfig.jumpHeight);
     j.at("player").at("mouseSensitivity").get_to(config.playerConfig.mouseSensitivity);
     j.at("player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
     j.at("player").at("position").at("x").get_to(config.playerConfig.position.x);

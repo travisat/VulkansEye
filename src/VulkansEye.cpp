@@ -35,20 +35,11 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     loadSceneConfig("resources/configs/default.json", config);
     scene.config = &config;
     scene.vulkan = &vulkan;
-
-    player.setPerspective(config.playerConfig.fieldOfView, static_cast<double>(vulkan.width),
-                          static_cast<double>(vulkan.height), 0.1f, 512.0f);
-    player.position = config.playerConfig.position;
-    player.rotation = config.playerConfig.rotation;
-    player.height = config.playerConfig.height;
-    player.mass = config.playerConfig.mass;
-    player.jForce = config.playerConfig.jForce;
-    player.velocityMax = config.playerConfig.velocityMax;
-    player.timeToReachVMax = config.playerConfig.timeToReachVMax;
-    player.timeToStopfromVMax = config.playerConfig.timeToStopfromVMax;
-    player.mouseSensitivity = config.playerConfig.mouseSensitivity;
-    player.updateView();
     scene.player = &player;
+
+    player.config = &config.playerConfig;
+    player.vulkan = &vulkan;
+    player.create();
 
     // setup overlay
     overlay.vulkan = &vulkan;
@@ -126,6 +117,30 @@ void VulkansEye::handleInput()
     {
         vulkan.showOverlay = !vulkan.showOverlay;
         vulkan.updateCommandBuffer = true;
+    }
+
+    glm::vec2 moveDir = glm::vec2(0.0f);
+    if (Input::isKeyPressed(GLFW_KEY_W))
+    {
+        moveDir.y += 1.0f;
+    }
+    if (Input::isKeyPressed(GLFW_KEY_S))
+    {
+        moveDir.y -= 1.0f;
+    }
+    if (Input::isKeyPressed(GLFW_KEY_A))
+    {
+        moveDir.x -= 1.0f;
+    }
+    if (Input::isKeyPressed(GLFW_KEY_D))
+    {
+        moveDir.x += 1.0f;
+    }
+    player.move(moveDir);
+
+    if (Input::isKeyPressed(GLFW_KEY_SPACE))
+    {
+        player.jump();
     }
 }
 

@@ -4,6 +4,22 @@
 namespace tat
 {
 
+void Player::create()
+{
+    setPerspective(config->fieldOfView, static_cast<double>(vulkan->width),
+                          static_cast<double>(vulkan->height), 0.1f, 512.0f);
+    position = config->position;
+    rotation = config->rotation;
+    height = config->height;
+    mass = config->mass;
+    jumpVelocity = glm::sqrt(2.0f * 9.8f * config->jumpHeight);
+    velocityMax = config->velocityMax;
+    timeToReachVMax = config->timeToReachVMax;
+    timeToStopfromVMax = config->timeToStopfromVMax;
+    mouseSensitivity = config->mouseSensitivity;
+    updateView();
+}
+
 void Player::updateView()
 {
 
@@ -52,6 +68,27 @@ void Player::translate(glm::vec3 delta)
     updateView();
 }
 
+void Player::move(glm::vec2 direction)
+{
+    glm::vec3 camFront;
+    camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
+    camFront.y = sin(glm::radians(rotation.x));
+    camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
+    camFront = glm::normalize(camFront);
+
+    moveDir = glm::vec3(0.0f);
+    moveDir += direction.y * camFront * glm::vec3(1.0f, 0.0f, 1.0f);
+    moveDir += direction.x * glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Player::jump()
+{
+    if (position.y == -height)
+    {
+        velocity.y -= jumpVelocity; 
+    }
+}
+
 void Player::update(float deltaTime)
 {
 
@@ -71,56 +108,19 @@ void Player::update(float deltaTime)
     {
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
         rotation.x += deltaMousePosition.y * mouseSensitivity;
-        if (rotation.x > 90)
-            rotation.x = 90;
-        if (rotation.x < -90)
-            rotation.x = -90;
+        rotation.x = std::clamp(rotation.x, -90.0f, 90.0f);
         rotation.y += deltaMousePosition.x * mouseSensitivity;
         lastMousePosition = mousePosition;
     }
 
-    glm::vec3 camFront;
-    camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
-    camFront.y = sin(glm::radians(rotation.x));
-    camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
-    camFront = glm::normalize(camFront);
-
-    float jumpingForce = 0.0f;
-
-    // get rotational vector for direction to move
-    glm::vec3 direction = glm::vec3(0.0f);
-    if (Input::isKeyPressed(GLFW_KEY_W))
-    {
-        direction += camFront * glm::vec3(1.0f, 0.0f, 1.0f); // forward with way player looking
-    }
-    if (Input::isKeyPressed(GLFW_KEY_S))
-    {
-        direction -= camFront * glm::vec3(1.0f, 0.0f, 1.0f); // backward .
-    }
-    if (Input::isKeyPressed(GLFW_KEY_A))
-    {
-        direction -= glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); // left .
-    }
-    if (Input::isKeyPressed(GLFW_KEY_D))
-    {
-        direction += glm::cross(camFront, glm::vec3(0.0f, 1.0f, 0.0f)); // right .
-    }
-    if (Input::isKeyPressed(GLFW_KEY_SPACE))
-    {
-        if (position.y == -height)
-        {
-            jumpingForce = -jForce;
-        }
-    }
-    // if we have a direction to move
     force = glm::vec3(0.0f);
-    if (direction != glm::vec3(0.0f))
+    if (moveDir != glm::vec3(0.0f))
     {
-        direction = normalize(direction);
+        moveDir = normalize(moveDir);
         // turn rotational vector into force for walking
-        float walkingForce = mass * (velocityMax / timeToReachVMax);
+        float walkingForce = (mass * velocityMax) / (timeToReachVMax * deltaTime);
 
-        force = direction * walkingForce;
+        force = moveDir * walkingForce;
 
         if (glm::abs(velocity.x) < 0.001f && glm::abs(velocity.z) < 0.001) // if stopped don't apply friction
         {
@@ -136,7 +136,7 @@ void Player::update(float deltaTime)
     }
     else if (position.y == -height)
     { // we want to stop
-        float stoppingForce = mass * (velocityMax / timeToStopfromVMax);
+        float stoppingForce = (mass * velocityMax) / (timeToStopfromVMax * deltaTime);
         if (glm::abs(velocity.x) < 0.001f && glm::abs(velocity.z) < 0.001) // if stopped don't apply friction
         {
             velocity.x = 0.0f;
@@ -149,15 +149,15 @@ void Player::update(float deltaTime)
         }
     }
 
-    force.y = jumpingForce;
-
-    acceleration = force / mass;
+    // set acceleration
+    acceleration = deltaTime * force / mass;
+    
     if (position.y < -height)
     {
         acceleration.y += 9.8f;
     }
     // apply acceleration to velocity
-    velocity += deltaTime * acceleration;
+    velocity += acceleration * deltaTime;
     // apply velocity to position
     position += velocity * deltaTime;
     if (position.y > -height)

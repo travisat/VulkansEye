@@ -50,7 +50,7 @@ class Vulkan
     VkRenderPass renderPass;
     VkRenderPass offscreenRenderPass;
 
-    VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+    VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
     VkQueue graphicsQueue;
     VkQueue presentQueue;

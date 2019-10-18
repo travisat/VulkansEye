@@ -1,12 +1,17 @@
 #pragma once
 
+#include <algorithm>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Config.h"
+
 #include "Input.hpp"
+#include "Vulkan.hpp"
 
 namespace tat
 {
@@ -19,19 +24,25 @@ const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,  //
 class Player
 {
   public:
+    Vulkan *vulkan;
+    PlayerConfig *config;
+
+    void create();
+
     glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 velocity = glm::vec3(0.0f);
     glm::vec3 acceleration = glm::vec3(0.0f);
     glm::vec3 force = glm::vec3(0.0f);
+    glm::vec3 moveDir = glm::vec3(0.0f);
 
     glm::mat4 perspective;
     glm::mat4 view;
 
     float height;
     float mass; // kg
-    float jForce;
-    ;
+    float jumpVelocity = 3.0; //sqrt(2.0 * Gravity * heightofJump) jump of half .45m
+    float lastTime = 0.0f;
 
     // force applied while walking
     float velocityMax;        // m/s  also people in games don't walk normal up this a
@@ -42,6 +53,8 @@ class Player
     float mouseSensitivity = 33.4f;
 
     void update(float deltaTime);
+    void move(glm::vec2 direction);
+    void jump();
 
     void applyForce(glm::vec3 force);
 
@@ -66,7 +79,9 @@ class Player
     double windowWidth;
     double windowHeight;
 
-    glm::vec2 lastMousePosition = glm::vec2(0.0f, 0.0f);
+    
+
+    glm::vec2 lastMousePosition = glm::vec2(0.0f);
 
     void rotate(glm::vec3 delta);
     void translate(glm::vec3 delta);
