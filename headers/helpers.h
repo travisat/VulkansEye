@@ -5,6 +5,8 @@
 #include <windows.h>
 #endif
 
+#include <assert.h>
+
 #include <iostream>
 #include <sstream>
 #include <vulkan/vulkan.h>

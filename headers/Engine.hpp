@@ -6,6 +6,7 @@
 #include "Overlay.hpp"
 #include "Scene.hpp"
 #include "Framebuffer.hpp"
+#include "RenderPass.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
@@ -85,7 +86,6 @@ class Engine
     void createLogicalDevice();
     void createAllocator();
     void createSwapChain();
-    void createRenderPass();
     void createFramebuffers();
     void createCommandPool();
     void createSyncObjects();
