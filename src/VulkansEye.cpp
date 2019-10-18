@@ -37,6 +37,7 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     scene.vulkan = &vulkan;
     scene.player = &player;
 
+    // load player
     player.config = &config.playerConfig;
     player.vulkan = &vulkan;
     player.create();
