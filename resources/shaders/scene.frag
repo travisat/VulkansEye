@@ -10,19 +10,16 @@
 //[3]
 // https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
 //[4] https://github.com/wdas/brdf/blob/master/src/brdfs/disney.brdf
-//[5] https://www.shadertoy.com/view/lsSXW1
-//[6]
-// https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
-//[7] http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
-//[8] http://www.zombieprototypes.com/?p=210
+//[5] https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
+
 
 const int numLights = 2;
 
 struct PointLight
 {
     vec3 position;
+    vec3 color;
     float lumens;
-    float temperature;
 };
 
 layout(binding = 3) uniform UniformLight
@@ -154,30 +151,7 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
     return (diffuseContrib + specularContrib) / PI;
 }
 
-//[5],[7],[8] converts light temperurate in kelvin to RGB
-vec3 kelvinToRGB(float kelvin)
-{
-    vec3 color;
-    kelvin = clamp(kelvin, 1000.0, 40000.0) / 100.0;
-    if (kelvin <= 66.0)
-    {
-        color.r = 1.0;
-        color.g = clamp(-0.606464 - 0.001742 * (kelvin - 2.0) + 0.408173 * log(kelvin - 2.0), 0.0, 1.0);
-        if (kelvin <= 20.0)
-            color.b = 0.0;
-        else
-            color.b = clamp(-0.995193 + 0.000323 * (kelvin - 10.0) + 0.451875 * log(kelvin - 10.0), 0.0, 1.0);
-    }
-    else
-    {
-        color.r = clamp(1.374910 - 0.001742 * (kelvin - 55.0) + 0.408173 * log(kelvin - 55.0), 0.0, 1.0);
-        color.g = clamp(1.271287 - 0.00031 * (kelvin - 50.0) - 0.109708 * log(kelvin - 50.0), 0.0, 1.0);
-        color.b = 1.0;
-    }
-    return color;
-}
-
-//[6]
+//[5]
 float getSquareFalloffAttenuation(float distanceSquare, float lumens)
 {
     float factor = distanceSquare * (1 / lumens);
@@ -187,7 +161,7 @@ float getSquareFalloffAttenuation(float distanceSquare, float lumens)
     return smoothFactor * smoothFactor;
 }
 
-//[6]
+//[5]
 float getDistanceAttenuation(vec3 posToLight, float lumens)
 {
     float distanceSquare = dot(posToLight, posToLight);
@@ -214,14 +188,12 @@ void main()
     {
         vec3 lightPos = uLight.light[i].position;
         float lumens = uLight.light[i].lumens;
-        float temperature = uLight.light[i].temperature;
+        vec3 lightcolor = uLight.light[i].color;
 
         vec3 lightVector = position - lightPos; // vector from surface to light
         float intensity = lumens * getDistanceAttenuation(lightVector, lumens);
-        vec3 lightcolor = kelvinToRGB(temperature) * intensity;
-
         vec3 L = normalize(lightVector);
-        luminance += lightcolor * BRDF(N, V, L, baseColor, roughness, metallic);
+        luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
     }
 
     outColor = vec4(luminance * ambientOcclusion, 1.0);

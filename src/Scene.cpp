@@ -57,7 +57,6 @@ void Scene::cleanup()
 {
     stage.cleanup();
     pipeline.cleanup();
-    offscreenPipeline.cleanup();
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
 
@@ -111,7 +110,7 @@ void Scene::update(uint32_t currentImage)
     for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = pointLights[i].light.position;
-        uLight.light[i].temperature = pointLights[i].light.temperature;
+        uLight.light[i].color = pointLights[i].light.color;
         uLight.light[i].lumens = pointLights[i].light.lumens;
     }
     uLight.light[0].position.x = -player->position.x;
@@ -249,32 +248,6 @@ void Scene::createDescriptorSetLayouts()
     layoutInfo.pBindings = bindings.data();
 
     CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout));
-
-    //offscreen layout
-
-    VkDescriptorSetLayoutBinding offscreenVertexLayoutBinding = {};
-    offscreenVertexLayoutBinding.binding = 0;
-    offscreenVertexLayoutBinding.descriptorCount = 1;
-    offscreenVertexLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    offscreenVertexLayoutBinding.pImmutableSamplers = nullptr;
-    offscreenVertexLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding offscreenFragmentLayoutBinding = {};
-    offscreenFragmentLayoutBinding.binding = 1;
-    offscreenFragmentLayoutBinding.descriptorCount = 1;
-    offscreenFragmentLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    offscreenFragmentLayoutBinding.pImmutableSamplers = nullptr;
-    offscreenFragmentLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> offscreenBindings = {offscreenVertexLayoutBinding,
-                                                                     offscreenFragmentLayoutBinding};
-
-    VkDescriptorSetLayoutCreateInfo offscreenLayoutInfo = {};
-    offscreenLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    offscreenLayoutInfo.bindingCount = static_cast<uint32_t>(offscreenBindings.size());
-    offscreenLayoutInfo.pBindings = offscreenBindings.data();
-
-    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &offscreenLayoutInfo, nullptr, &offscreenLayout));
 }
 
 void Scene::createDescriptorSets()
@@ -317,37 +290,6 @@ void Scene::createPipelines()
 
     pipeline.pipelineInfo.pTessellationState = &pipeline.tessellationState;
     pipeline.create();
-
-    //offscreenPipeline
-
-    offscreenPipeline.vulkan = vulkan;
-    offscreenPipeline.descriptorSetLayout = offscreenLayout;
-    offscreenPipeline.loadDefaults();
-
-    auto offscreenVertShaderCode = readFile("resources/shaders/offscreen.vert");
-    auto offscreenFragShaderCode = readFile("resources/shaders/offscreen.frag");
-    offscreenPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(offscreenVertShaderCode);
-    offscreenPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(offscreenFragShaderCode);
-
-    offscreenPipeline.shaderStages = {offscreenPipeline.vertShaderStageInfo, offscreenPipeline.fragShaderStageInfo};
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescrption = Vertex::getAttributeDescriptions();
-    offscreenPipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    offscreenPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    offscreenPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
-    offscreenPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
-
-     // Push constants for cubeMap
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pushConstantRange.size = sizeof(glm::mat4);
-    pushConstantRange.offset = 0;
-
-    offscreenPipeline.pipelineLayoutInfo.pushConstantRangeCount = 1;
-    offscreenPipeline.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-    offscreenPipeline.create();
 }
 
 } // namespace tat

@@ -28,7 +28,6 @@ public:
   std::string name = "Unknown";
   Stage stage;
   Pipeline pipeline;
-  Pipeline offscreenPipeline;
   std::vector<Actor> actors;
   std::vector<PointLight> pointLights;
 

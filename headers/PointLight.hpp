@@ -15,10 +15,10 @@ static const int numLights = 2;
 
 struct uPointLight
 {
-    glm::vec3 position;
-    alignas(4) float lumens;
-    alignas(4) float temperature;
-    glm::vec3 buffer = glm::vec3(0.0f); // sizeof struct in uniform buffer must be divisible by 16
+   glm::vec3 position;
+   float buffer;
+   glm::vec3 color;
+   float lumens;
 };
 
 struct UniformLight
@@ -37,6 +37,7 @@ class PointLight
     void load();
 
   private:
+    glm::vec3 kelvinToRGB(float kelvin);
 };
 
 } // namespace tat
