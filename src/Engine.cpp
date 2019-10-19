@@ -50,6 +50,7 @@ void Engine::init()
 
     createSwapChain();
     createRenderPass(vulkan->renderPass, vulkan);
+    createOffscreenRenderPass(vulkan->offscreenRenderPass, vulkan);
     createCommandPool();
     createFramebuffers();
     createSyncObjects();
@@ -233,6 +234,7 @@ void Engine::updateWindow()
     }
 
     vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+    vkDestroyRenderPass(vulkan->device, vulkan->offscreenRenderPass, nullptr);
 
     for (auto imageView : vulkan->swapChainImageViews)
     {
@@ -246,6 +248,7 @@ void Engine::updateWindow()
 
     createSwapChain();
     createRenderPass(vulkan->renderPass, vulkan);
+    createOffscreenRenderPass(vulkan->offscreenRenderPass, vulkan);
     createFramebuffers();
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
@@ -278,6 +281,7 @@ void Engine::resizeWindow()
     }
 
     vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+    vkDestroyRenderPass(vulkan->device, vulkan->offscreenRenderPass, nullptr);
 
     for (auto imageView : vulkan->swapChainImageViews)
     {
@@ -294,6 +298,7 @@ void Engine::resizeWindow()
 
     createSwapChain();
     createRenderPass(vulkan->renderPass, vulkan);
+    createOffscreenRenderPass(vulkan->offscreenRenderPass, vulkan);
     createFramebuffers();
 
     scene->recreate();

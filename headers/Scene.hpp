@@ -28,6 +28,7 @@ public:
   std::string name = "Unknown";
   Stage stage;
   Pipeline pipeline;
+  Pipeline offscreenPipeline;
   std::vector<Actor> actors;
   std::vector<PointLight> pointLights;
 
@@ -53,6 +54,7 @@ private:
   UniformLight uLight = {};
   VkDescriptorPool descriptorPool;
   VkDescriptorSetLayout descriptorSetLayout;
+  VkDescriptorSetLayout offscreenLayout;
 
   void createLights();
   void createActors();
@@ -61,7 +63,7 @@ private:
 
   void createDescriptorPool();
   void createDescriptorSetLayouts();
-  void createPipeline();
+  void createPipelines();
   void createUniformBuffers();
   void createDescriptorSets();
 };
