@@ -38,7 +38,7 @@ layout(location = 2) in vec3 inNormal;
 
 layout(location = 0) out vec4 outColor;
 
-const float PI = 3.141592653589793;
+const float PI = 3.1415926;
 
 //[0] and [2]
 // convert from srgb color profile to linear color profile
@@ -114,83 +114,75 @@ float ndfGGX(float NdotH, float roughness)
 }
 
 //[0],[2],[4]
-// Creates diffusiion brdf and specular brdf and combines them
 vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metallic)
 {
-    float NdotL = clamp(dot(N, L), 0.00001,
-                        1.0); // cos angle between normal and light direction
-    float NdotV = clamp(abs(dot(N, V)), 0.00001,
-                        1.0); // cos angle between nornal and view direction
+    // cos angle between normal and light direction
+    float NdotL = clamp(dot(N, L), 0.00001, 1.0);
+    // cos angle between nornal and view direction
+    float NdotV = clamp(abs(dot(N, V)), 0.00001, 1.0);
+    // half vector
     vec3 H = normalize(L + V);
-    float NdotH = clamp(dot(N, H), 0.0, 1.0); // cos angle between normal and half vector
-    float LdotH = clamp(dot(L, H), 0.0,
-                        1.0); // cos angle between light direction and half vector
+    // cos angle between normal and half vector
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    // cos angle between light direction and half vector
+    float LdotH = clamp(dot(L, H), 0.0, 1.0);
+    // cos angle between view direction and half vector
     float VdotH = clamp(dot(V, H), 0.0, 1.0);
 
-    // diffuse brdf
+    // Diffuse brdf
     // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
-    // and mix in diffuse retro-reflection based on roughness
+    // mix in diffuse retro-reflection based on roughness
     float f90 = 0.5 + 2.0 * NdotL * NdotL * roughness * roughness;
     vec3 f0 = vec3(1.0f, 1.0f, 1.0f);
     float FL = fresnelSchlick(f0, f90, NdotL).r;
     float FV = fresnelSchlick(f0, f90, NdotV).r;
-    float Fd = FL * FV;
+    float Fd = FL * FV * (1 - metallic);
 
-    // specular brdf
+    // Specular brdf
     f0 = mix(vec3(0.04), baseColor, metallic); // mix color based off metallic
     float reflectance = max(max(f0.r, f0.g), f0.b);
     f90 = clamp(reflectance * 25.0, 0.0, 1.0);
     vec3 F = fresnelSchlick(f0, f90, VdotH);
     float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
     float D = ndfGGX(NdotH, roughness); // microfacet distribution
-    vec3 specularContrib = (G * F * D);
-    vec3 diffuseContrib = (1.0 - F) * (Fd * baseColor * (1 - metallic));
 
-    return (diffuseContrib + specularContrib) / PI;
+    // vec3 diffuseContrib = (1.0 - F) * Fd * baseColor
+    // vec3 specularContrib = G * F * D
+    return ((1.0 - F) * Fd * baseColor + G * F * D) / PI;
 }
 
 //[5]
-float getSquareFalloffAttenuation(float distanceSquare, float lumens)
+float getDistanceAttenuation(vec3 lightVector, float lumens)
 {
-    float factor = distanceSquare * (1 / lumens);
+    float distanceSquared = dot(lightVector, lightVector);
+    float factor = distanceSquared / lumens;
     float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
-    // We would normally divide by the square distance here
-    // but we do it at the call site
-    return smoothFactor * smoothFactor;
-}
-
-//[5]
-float getDistanceAttenuation(vec3 posToLight, float lumens)
-{
-    float distanceSquare = dot(posToLight, posToLight);
-    float attenuation = getSquareFalloffAttenuation(distanceSquare, lumens);
+    float attenuation = smoothFactor * smoothFactor;
     // Assume a punctual light occupies a volume of 1cm to avoid a division by 0
-    return attenuation * 1.0 / (max(distanceSquare, 0.00001) * 4.0 * PI);
+    // 4 * PI is angle of a point light.
+    return attenuation / (4.0 * PI * max(distanceSquared, 0.00001));
 }
 
 void main()
 {
-    vec3 position = inPosition;
-    vec3 normal = inNormal;
-
-    float roughness = texture(roughnessMap, inUV).r;
-    float metallic = texture(metallicMap, inUV).r;
-    float ambientOcclusion = texture(aoMap, inUV).r;
     vec3 baseColor = convertSRGBtoLinear(texture(diffuseMap, inUV).rgb);
+    float metallic = texture(metallicMap, inUV).r;
+    float roughness = texture(roughnessMap, inUV).r;
+    float ambientOcclusion = texture(aoMap, inUV).r;
 
-    vec3 N = getNormal(position, normal);
-    vec3 V = normalize(position); // Vector from surface to camera(origin)
+    vec3 N = getNormal(inPosition, inNormal); //Normal vector
+    vec3 V = normalize(inPosition); // Vector from surface to camera(origin)
 
     vec3 luminance = vec3(0.0);
     for (int i = 0; i < numLights; ++i)
     {
         vec3 lightPos = uLight.light[i].position;
-        float lumens = uLight.light[i].lumens;
         vec3 lightcolor = uLight.light[i].color;
+        float lumens = uLight.light[i].lumens;
 
-        vec3 lightVector = position - lightPos; // vector from surface to light
+        vec3 lightVector = inPosition - lightPos;
         float intensity = lumens * getDistanceAttenuation(lightVector, lumens);
-        vec3 L = normalize(lightVector);
+        vec3 L = normalize(lightVector); // vector from surface to light
         luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
     }
 
