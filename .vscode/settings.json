@@ -83,7 +83,11 @@
         "pointers": "cpp",
         "*.mm": "cpp",
         "*.rh": "cpp",
-        "gsl_util": "cpp"
+        "gsl_util": "cpp",
+        "bitset": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "stack": "cpp"
     },
     "C_Cpp.configurationWarnings": "Disabled"
 }

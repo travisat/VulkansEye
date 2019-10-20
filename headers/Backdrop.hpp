@@ -23,17 +23,16 @@ class Backdrop
     void recreate();
 
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
-
     void update(uint32_t currentImage);
-
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<Buffer> uniformBuffers;
-    VkDescriptorPool descriptorPool;
 
   private:
     Image cubeMap{};
     VkSampler sampler = VK_NULL_HANDLE;
     UniformBuffer uBuffer;
+
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<Buffer> uniformBuffers;
+    VkDescriptorPool descriptorPool;
 
     Pipeline pipeline;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
