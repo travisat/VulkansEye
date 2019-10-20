@@ -28,10 +28,9 @@ class Player
     glm::vec3 velocity = glm::vec3(0.0f);
     glm::vec3 acceleration = glm::vec3(0.0f);
     glm::vec3 force = glm::vec3(0.0f);
-    glm::vec3 moveDir = glm::vec3(0.0f);
 
     float height; // m
-    float mass; // kg
+    float mass;   // kg
 
     glm::mat4 perspective;
     glm::mat4 view;
@@ -55,7 +54,7 @@ class Player
     double windowHeight;
 
     float jumpVelocity = 0.0f; // sqrt(2.0 * Gravity * heightofJump)
-    float lastTime = 0.0f; //s
+    float lastTime = 0.0f;     // s
 
     // force applied while walking
     float velocityMax;        // m/s
@@ -65,6 +64,7 @@ class Player
     float mouseSensitivity = 33.4f;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f);
+    glm::vec3 moveDir = glm::vec3(0.0f);
 };
 
 } // namespace tat

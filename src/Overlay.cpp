@@ -261,8 +261,8 @@ void Overlay::newFrame()
         lastUpdateTime = frameTime;
         uiSettings.position = player->position * -1.0f; // world is opposite cameras position
         uiSettings.position.y -= player->height;        // put position on ground
+        uiSettings.rotation = player->rotation;
         uiSettings.velocity = glm::length(player->velocity);
-        uiSettings.move = player->moveDir;
         uiSettings.fps = 1.0f / deltaTime;
     }
 
@@ -271,8 +271,8 @@ void Overlay::newFrame()
     ImGui::Begin(vulkan->name.c_str());
     ImGui::InputFloat("Fps", &uiSettings.fps);
     ImGui::InputFloat3("Position", &uiSettings.position.x, 2);
+    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x, 2);
     ImGui::InputFloat("Velocity", &uiSettings.velocity);
-    ImGui::InputFloat3("Move", &uiSettings.move.x, 2);
     ImGui::End();
 
     ImGui::Render();
