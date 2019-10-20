@@ -9,8 +9,6 @@
 namespace tat
 {
 
-
-
 class Backdrop
 {
   public:
