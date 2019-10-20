@@ -72,7 +72,6 @@ void VulkansEye::mainLoop()
     {
         float now = Timer::getCount();
         float deltaTime = now - lastFrameTime;
-        // std::chrono::duration<float, std::chrono::seconds::period>(Timer::getTime() - lastFrameTime).count();
         lastFrameTime = now;
 
         ImGuiIO &io = ImGui::GetIO();

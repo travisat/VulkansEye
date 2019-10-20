@@ -116,57 +116,43 @@ void Scene::update(uint32_t currentImage)
 
     for (auto  &light : pointLights)
     {
-        light.model.uTessEval.projection = player->perspective;
-        light.model.uTessEval.view = player->view;
-        light.model.uTessEval.model = glm::translate(glm::mat4(1.0f), light.model.position);
-        light.model.uTessEval.model =
-            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.x),
-                        glm::vec3(1.0f, 0.0f, 0.0f));
-        light.model.uTessEval.model =
-            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.y),
-                        glm::vec3(0.0f, 1.0f, 0.0f));
-        light.model.uTessEval.model =
-            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.z),
-                        glm::vec3(0.0f, 0.0f, 1.0f));
-        light.model.uTessEval.model =
-            glm::scale(light.model.uTessEval.model, light.model.scale);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), light.model.position);
+        model = glm::rotate(model, glm::radians(light.model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(light.model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(light.model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, light.model.scale);
+            
+        light.model.uTessEval.mvp = player->perspective * player->view * model;
 
         light.model.tescBuffers[currentImage].update(&light.model.uTessControl, sizeof(light.model.uTessControl));
         light.model.teseBuffers[currentImage].update(&light.model.uTessEval, sizeof(light.model.uTessEval));
         light.model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
     }
-   
 
-    for (auto &model : stage.models)
+    for (auto &stagemodel : stage.models)
     {
-        model.uTessEval.projection = player->perspective;
-        model.uTessEval.view = player->view;
-        model.uTessEval.model = glm::translate(glm::mat4(1.0f), model.position);
-        model.uTessEval.model =
-            glm::rotate(model.uTessEval.model, glm::radians(model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        model.uTessEval.model =
-            glm::rotate(model.uTessEval.model, glm::radians(model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model.uTessEval.model =
-            glm::rotate(model.uTessEval.model, glm::radians(model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        model.uTessEval.model = glm::scale(model.uTessEval.model, model.scale);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), stagemodel.position);
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, stagemodel.scale);
 
-        model.tescBuffers[currentImage].update(&model.uTessControl, sizeof(model.uTessControl));
-        model.teseBuffers[currentImage].update(&model.uTessEval, sizeof(model.uTessEval));
-        model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
+        stagemodel.uTessEval.mvp = player->perspective * player->view * model;
+        
+        stagemodel.tescBuffers[currentImage].update(&stagemodel.uTessControl, sizeof(stagemodel.uTessControl));
+        stagemodel.teseBuffers[currentImage].update(&stagemodel.uTessEval, sizeof(stagemodel.uTessEval));
+        stagemodel.uniformLights[currentImage].update(&uLight, sizeof(uLight));
     }
 
     for (auto &actor : actors)
     {
-        actor.model.uTessEval.projection = player->perspective;
-        actor.model.uTessEval.view = player->view;
-        actor.model.uTessEval.model = glm::translate(glm::mat4(1.0f), actor.model.position);
-        actor.model.uTessEval.model =
-            glm::rotate(actor.model.uTessEval.model, glm::radians(actor.model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        actor.model.uTessEval.model =
-            glm::rotate(actor.model.uTessEval.model, glm::radians(actor.model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        actor.model.uTessEval.model =
-            glm::rotate(actor.model.uTessEval.model, glm::radians(actor.model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        actor.model.uTessEval.model = glm::scale(actor.model.uTessEval.model, actor.model.scale);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), actor.model.position);
+        model = glm::rotate(model, glm::radians(actor.model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(actor.model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(actor.model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, actor.model.scale);
+            
+        actor.model.uTessEval.mvp = player->perspective * player->view * model;
 
         actor.model.tescBuffers[currentImage].update(&actor.model.uTessControl, sizeof(actor.model.uTessControl));
         actor.model.teseBuffers[currentImage].update(&actor.model.uTessEval, sizeof(actor.model.uTessEval));
