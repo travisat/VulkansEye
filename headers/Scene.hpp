@@ -64,7 +64,6 @@ class Scene
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createPipelines();
-    void createUniformBuffers();
     void createDescriptorSets();
 };
 

@@ -16,10 +16,9 @@ void Scene::create()
     createLights();
     createActors();
 
-    createDescriptorPool();
-    createDescriptorSetLayouts();
-    createPipelines();
-    createUniformBuffers();
+    createDescriptorPool(); //needs stage/lights/actors to know number of descriptors
+    createDescriptorSetLayouts(); //needs descriptor pool
+    createPipelines(); //needs descriptorsetlayout
     createDescriptorSets();
 }
 
@@ -66,7 +65,6 @@ void Scene::recreate()
     player->updateAspectRatio((float)vulkan->width, (float)vulkan->height);
     stage.recreate();
     createPipelines();
-    createUniformBuffers();
     createDescriptorPool();
     createDescriptorSets();
 }
@@ -104,18 +102,6 @@ void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
     }
 }
 
-void Scene::createUniformBuffers()
-{
-    stage.createUniformBuffers();
-    for (auto &actor : actors)
-    {
-        actor.model.createUniformBuffers();
-    }
-    for (auto &light : pointLights)
-    {
-        light.model.createUniformBuffers();
-    }
-}
 
 void Scene::update(uint32_t currentImage)
 {

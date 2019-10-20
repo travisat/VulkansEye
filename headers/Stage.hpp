@@ -31,7 +31,7 @@ class Stage
     {
         backdrop.cleanup();
     };
-    void createUniformBuffers();
+   
     void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
 
   private:

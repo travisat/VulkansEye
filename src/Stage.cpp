@@ -20,14 +20,6 @@ void Stage::create()
     }
 }
 
-void Stage::createUniformBuffers()
-{
-    for (auto &model : models)
-    {
-        model.createUniformBuffers();
-    }
-}
-
 void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout)
 {
     for (auto &model : models)
