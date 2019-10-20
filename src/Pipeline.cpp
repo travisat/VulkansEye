@@ -28,6 +28,8 @@ void Pipeline::cleanup()
         vkDestroyShaderModule(vulkan->device, tescShaderStageInfo.module, nullptr);
     if (teseShaderStageInfo.module)
         vkDestroyShaderModule(vulkan->device, teseShaderStageInfo.module, nullptr);
+    if (geomShaderStageInfo.module)
+        vkDestroyShaderModule(vulkan->device, geomShaderStageInfo.module, nullptr);
 
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
@@ -44,10 +46,6 @@ void Pipeline::loadDefaults()
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertShaderStageInfo.pName = "main";
 
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.pName = "main";
-
     tescShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     tescShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
     tescShaderStageInfo.pName = "main";
@@ -55,6 +53,14 @@ void Pipeline::loadDefaults()
     teseShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     teseShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     teseShaderStageInfo.pName = "main";
+
+    geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    geomShaderStageInfo.pName = "main";
+
+    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.pName = "main";
 
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexAttributeDescriptionCount = 0;

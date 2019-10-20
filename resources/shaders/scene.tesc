@@ -1,5 +1,4 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
 
 // http://onrendering.blogspot.com/2011/12/tessellation-on-gpu-curved-pn-triangles.html
 

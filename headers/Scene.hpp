@@ -1,7 +1,7 @@
 #pragma once
 
 #include <chrono>
-#include <glm/gtx/matrix_transform_2d.hpp>
+//#include <glm/gtx/matrix_transform_2d.hpp>
 #include <utility>
 
 
@@ -31,6 +31,8 @@ public:
   std::vector<Actor> actors;
   std::vector<PointLight> pointLights;
 
+  Image shadowmap;
+
   ~Scene();
 
   void create();
@@ -40,20 +42,19 @@ public:
   void update(uint32_t currentImage);
 
   uint32_t numTessBuffers() {
-    return static_cast<uint32_t>((actors.size() + stage.models.size()) * 2);
+    return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size());
   };
   uint32_t numUniformLights() {
-    return static_cast<uint32_t>(actors.size() + stage.models.size());
+    return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size()) * numLights;
   };
   uint32_t numImageSamplers() {
-    return static_cast<uint32_t>((actors.size() + stage.models.size()) * 6);
+    return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
   };
 
 private:
   UniformLight uLight = {};
   VkDescriptorPool descriptorPool;
   VkDescriptorSetLayout descriptorSetLayout;
-  VkDescriptorSetLayout offscreenLayout;
 
   void createLights();
   void createActors();

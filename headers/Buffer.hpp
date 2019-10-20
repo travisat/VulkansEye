@@ -1,6 +1,5 @@
 #pragma once
 
-#include "PointLight.hpp"
 #include "Timer.h"
 #include "Vertex.h"
 #include "Vulkan.hpp"

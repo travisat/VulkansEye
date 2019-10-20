@@ -15,24 +15,26 @@ ${CMAKE_SOURCE_DIR}/../../Libraries/glfw-3.3.bin.WIN64
 
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.tesc
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.tese
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.geom
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag
-${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tesc
-${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tese
 )
 
 set(COMPILED_SHADERS
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.tesc.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.tese.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/scene.geom.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tesc.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/displacement.tese.spv
 )
 
 set(SOURCES

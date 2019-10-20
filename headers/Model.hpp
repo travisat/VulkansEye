@@ -1,13 +1,16 @@
 #pragma once
 
+#include <assert.h>
 #include <unordered_map>
 
 #include <tiny_obj_loader.h>
+
 
 #include "Config.h"
 #include "Timer.h"
 #include "Vertex.h"
 
+#include "Buffer.hpp"
 #include "Image.hpp"
 
 namespace tat

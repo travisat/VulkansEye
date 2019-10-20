@@ -38,7 +38,8 @@ void Scene::createLights()
     for (auto &lightConfig : config->pointLights)
     {
         pointLights[lightConfig.index].config = &lightConfig;
-        pointLights[lightConfig.index].load();
+        pointLights[lightConfig.index].vulkan = vulkan;
+        pointLights[lightConfig.index].create();
     }
 }
 
@@ -93,6 +94,14 @@ void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
                                 &actor.model.descriptorSets[currentImage], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, actor.model.indexSize, 1, 0, 0, 0);
     }
+    for (auto &light : pointLights)
+    {
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &light.model.vertexBuffer.buffer, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, light.model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1,
+                                &light.model.descriptorSets[currentImage], 0, nullptr);
+        vkCmdDrawIndexed(commandBuffer, light.model.indexSize, 1, 0, 0, 0);
+    }
 }
 
 void Scene::createUniformBuffers()
@@ -101,6 +110,10 @@ void Scene::createUniformBuffers()
     for (auto &actor : actors)
     {
         actor.model.createUniformBuffers();
+    }
+    for (auto &light : pointLights)
+    {
+        light.model.createUniformBuffers();
     }
 }
 
@@ -112,9 +125,31 @@ void Scene::update(uint32_t currentImage)
         uLight.light[i].position = pointLights[i].light.position;
         uLight.light[i].color = pointLights[i].light.color;
         uLight.light[i].lumens = pointLights[i].light.lumens;
+        
     }
-    uLight.light[0].position.x = -player->position.x;
-    uLight.light[0].position.z = -player->position.z;
+
+    for (auto  &light : pointLights)
+    {
+        light.model.uTessEval.projection = player->perspective;
+        light.model.uTessEval.view = player->view;
+        light.model.uTessEval.model = glm::translate(glm::mat4(1.0f), light.model.position);
+        light.model.uTessEval.model =
+            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.x),
+                        glm::vec3(1.0f, 0.0f, 0.0f));
+        light.model.uTessEval.model =
+            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.y),
+                        glm::vec3(0.0f, 1.0f, 0.0f));
+        light.model.uTessEval.model =
+            glm::rotate(light.model.uTessEval.model, glm::radians(light.model.rotation.z),
+                        glm::vec3(0.0f, 0.0f, 1.0f));
+        light.model.uTessEval.model =
+            glm::scale(light.model.uTessEval.model, light.model.scale);
+
+        light.model.tescBuffers[currentImage].update(&light.model.uTessControl, sizeof(light.model.uTessControl));
+        light.model.teseBuffers[currentImage].update(&light.model.uTessEval, sizeof(light.model.uTessEval));
+        light.model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
+    }
+   
 
     for (auto &model : stage.models)
     {
@@ -159,7 +194,7 @@ void Scene::createDescriptorPool()
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = (numTessBuffers() + numUniformLights() * numLights) * numSwapChainImages;
+    poolSizes[0].descriptorCount = (numTessBuffers() + numUniformLights()) * numSwapChainImages;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
 
@@ -167,7 +202,7 @@ void Scene::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = (numTessBuffers() + numUniformLights() + numImageSamplers() * numLights) * numSwapChainImages;
+    poolInfo.maxSets = (numTessBuffers() + numUniformLights() + numImageSamplers()) * numSwapChainImages;
 
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
 }
@@ -258,6 +293,10 @@ void Scene::createDescriptorSets()
     {
         actor.model.createDescriptorSets(descriptorPool, descriptorSetLayout);
     }
+    for (auto &light : pointLights)
+    {
+        light.model.createDescriptorSets(descriptorPool, descriptorSetLayout);
+    }
 }
 
 void Scene::createPipelines()
@@ -267,17 +306,19 @@ void Scene::createPipelines()
     pipeline.loadDefaults();
 
     auto vertShaderCode = readFile("resources/shaders/scene.vert.spv");
+    auto tescShaderCode = readFile("resources/shaders/scene.tesc.spv");
+    auto teseShaderCode = readFile("resources/shaders/scene.tese.spv");
+    auto geomShaderCode = readFile("resources/shaders/scene.geom.spv");
     auto fragShaderCode = readFile("resources/shaders/scene.frag.spv");
-    auto tessControlShaderCode = readFile("resources/shaders/displacement.tesc.spv");
-    auto tessEvalShaderCode = readFile("resources/shaders/displacement.tese.spv");
 
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
+    pipeline.tescShaderStageInfo.module = vulkan->createShaderModule(tescShaderCode);
+    pipeline.teseShaderStageInfo.module = vulkan->createShaderModule(teseShaderCode);
+    pipeline.geomShaderStageInfo.module = vulkan->createShaderModule(geomShaderCode);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
-    pipeline.tescShaderStageInfo.module = vulkan->createShaderModule(tessControlShaderCode);
-    pipeline.teseShaderStageInfo.module = vulkan->createShaderModule(tessEvalShaderCode);
 
-    pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo, pipeline.tescShaderStageInfo,
-                             pipeline.teseShaderStageInfo};
+    pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.tescShaderStageInfo, pipeline.teseShaderStageInfo,
+                             pipeline.geomShaderStageInfo, pipeline.fragShaderStageInfo};
 
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescrption = Vertex::getAttributeDescriptions();

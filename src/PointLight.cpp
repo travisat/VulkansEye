@@ -3,12 +3,16 @@
 namespace tat
 {
 
-void PointLight::load()
+void PointLight::create()
 {
     name = config->name;
     light.position = config->position;
     light.color = kelvinToRGB(config->temperature);
     light.lumens = config->lumens;
+
+    model.vulkan = vulkan;
+    model.config = &config->model;
+    model.create();
 }
 
 // https://www.shadertoy.com/view/lsSXW1

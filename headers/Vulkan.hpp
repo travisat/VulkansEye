@@ -8,6 +8,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <vk_mem_alloc.h>
 
 #include <fstream>
@@ -16,6 +22,41 @@
 
 namespace tat
 {
+
+struct UniformBuffer
+{
+    alignas(16) glm::mat4 projection;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 model;
+};
+
+static const int numLights = 2;
+struct uPointLight
+{
+    glm::vec3 position;
+    float buffer;
+    glm::vec3 color;
+    float lumens;
+};
+
+struct UniformLight
+{
+    uPointLight light[numLights];
+};
+
+struct TessControl
+{
+    float tessLevel = 64.0f;
+};
+
+struct TessEval
+{
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 model;
+    float tessStrength = 0.1f;
+    float tessAlpha = 0.3f;
+};
 
 class Vulkan
 {

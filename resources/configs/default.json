@@ -20,15 +20,15 @@
                 "z": 1
             },
             "path": "resources/models/sphere.obj",
-            "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-            "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-            "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+            "diffuse": "resources/materials/earth/8081_earthmap4k.jpg",
+            "normal": "resources/materials/default/normal.png",
+            "roughness": "resources/materials/earth/8081_earthspec4k.jpg",
             "ao": "resources/materials/default/ao.png",
             "metallic": "resources/materials/default/metallic.png",
-            "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
+            "displacement": "resources/materials/earth/8081_earthbump4k.jpg",
             "tesselation": {
-                "level": 128,
-                "strength": 0.1,
+                "level": 16,
+                "strength": 0.03,
                 "alpha": 0.33
             }
         },
@@ -57,7 +57,7 @@
             "metallic": "resources/materials/default/metallic.png",
             "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
             "tesselation": {
-                "level": 128,
+                "level": 16,
                 "strength": 0.001,
                 "alpha": 0.03
             }
@@ -90,7 +90,7 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
                 "tesselation": {
-                    "level": 256,
+                    "level": 16,
                     "strength": 0.01,
                     "alpha": 0.33
                 }
@@ -119,7 +119,7 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
                 "tesselation": {
-                    "level": 256,
+                    "level": 16,
                     "strength": 0.1,
                     "alpha": 0.33
                 }
@@ -148,7 +148,7 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
                 "tesselation": {
-                    "level": 256,
+                    "level": 16,
                     "strength": 0.1,
                     "alpha": 0.33
                 }
@@ -177,7 +177,7 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
                 "tesselation": {
-                    "level": 256,
+                    "level": 16,
                     "strength": 0.1,
                     "alpha": 0.33
                 }
@@ -206,7 +206,7 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
                 "tesselation": {
-                    "level": 256,
+                    "level": 16,
                     "strength": 0.1,
                     "alpha": 0.33
                 }
@@ -215,24 +215,84 @@
     },
     "lights": {
         "lantern": {
-            "name": "lantern",
+            "name": "one",
             "position": {
-                "x": 0,
-                "y": -2.0,
+                "x": -3,
+                "y": -1.0,
                 "z": 0
             },
             "temperature": 6400,
-            "lumens": 1500
+            "lumens": 1500,
+            "model": {
+                "name": "sphere",
+                "position": {
+                    "x": -3,
+                    "y": 1.0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 0.05,
+                    "y": 0.05,
+                    "z": 0.05
+                },
+                "path": "resources/models/sphere.obj",
+                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
+                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
+                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
+                "displacement": "resources/materials/Metal11/Metal11_disp.jpg",
+                "tesselation": {
+                    "level": 4,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            }
         },
         "tablelight": {
-            "name": "tablelight",
+            "name": "two",
             "position": {
                 "x": 4,
-                "y": -4.4,
+                "y": -2.4,
                 "z": 5
             },
             "temperature": 6400,
-            "lumens": 1600
+            "lumens": 1600,
+            "model": {
+                "name": "sphere",
+                "position": {
+                    "x": 4,
+                    "y": 2.4,
+                    "z": 5
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "scale": {
+                    "x": 0.05,
+                    "y": 0.05,
+                    "z": 0.05
+                },
+                "path": "resources/models/sphere.obj",
+                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
+                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
+                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
+                "ao": "resources/materials/default/ao.png",
+                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
+                "displacement": "resources/materials/Metal11/Metal11_disp.jpg",
+                "tesselation": {
+                    "level": 4,
+                    "strength": 0.1,
+                    "alpha": 0.33
+                }
+            }
         }
     },
     "player": {

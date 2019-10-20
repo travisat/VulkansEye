@@ -1,5 +1,4 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
 
 //[0]
 // https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
@@ -11,7 +10,6 @@
 // https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
 //[4] https://github.com/wdas/brdf/blob/master/src/brdfs/disney.brdf
 //[5] https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
-
 
 const int numLights = 2;
 
@@ -44,7 +42,7 @@ const float PI = 3.141592653589793;
 
 //[0] and [2]
 // convert from srgb color profile to linear color profile
-// use on basecolor before using in equations
+// for converting basecolor (diffuse)
 vec3 convertSRGBtoLinear(vec3 srgbIn)
 {
     vec3 bLess = step(0.04045, srgbIn);
@@ -167,7 +165,7 @@ float getDistanceAttenuation(vec3 posToLight, float lumens)
     float distanceSquare = dot(posToLight, posToLight);
     float attenuation = getSquareFalloffAttenuation(distanceSquare, lumens);
     // Assume a punctual light occupies a volume of 1cm to avoid a division by 0
-    return attenuation * 1.0 / (max(distanceSquare, 0.00001) * 2.0 * PI);
+    return attenuation * 1.0 / (max(distanceSquare, 0.00001) * 4.0 * PI);
 }
 
 void main()

@@ -24,9 +24,10 @@ class Pipeline
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
     VkPipelineShaderStageCreateInfo tescShaderStageInfo = {};
     VkPipelineShaderStageCreateInfo teseShaderStageInfo = {};
+    VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {};
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
