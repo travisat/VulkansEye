@@ -17,9 +17,9 @@ void Scene::create()
     createActors();
 
     createDescriptorPool(); //needs stage/lights/actors to know number of descriptors
-    createDescriptorSetLayouts(); //needs descriptor pool
+    createDescriptorSetLayouts(); 
+    createDescriptorSets(); //needs descriptorsetLayout and descriptorpool
     createPipelines(); //needs descriptorsetlayout
-    createDescriptorSets();
 }
 
 void Scene::createStage()
@@ -64,9 +64,9 @@ void Scene::recreate()
 {
     player->updateAspectRatio((float)vulkan->width, (float)vulkan->height);
     stage.recreate();
-    createPipelines();
     createDescriptorPool();
     createDescriptorSets();
+    createPipelines();
 }
 
 void Scene::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
