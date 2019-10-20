@@ -19,9 +19,6 @@ class Pipeline
     void cleanup();
     void loadDefaults();
 
-    void createScenePipeline();
-    void createBackdropPipeline();
-
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
     VkPipelineShaderStageCreateInfo tescShaderStageInfo = {};
