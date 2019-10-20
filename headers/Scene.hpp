@@ -1,9 +1,7 @@
 #pragma once
 
 #include <chrono>
-//#include <glm/gtx/matrix_transform_2d.hpp>
 #include <utility>
-
 
 #include "Actor.hpp"
 #include "Backdrop.hpp"
@@ -14,58 +12,60 @@
 #include "Stage.hpp"
 #include "Vulkan.hpp"
 
+namespace tat
+{
 
-namespace tat {
+class Scene
+{
+  public:
+    Vulkan *vulkan = nullptr;
+    SceneConfig *config = nullptr;
+    Player *player = nullptr;
+    std::string name = "Unknown";
 
-class Scene {
-public:
-  // config values
-  Vulkan *vulkan = nullptr;
-  SceneConfig *config = nullptr;
-  Player *player = nullptr;
+    ~Scene();
 
-  // generated values
-  std::string name = "Unknown";
-  Stage stage;
-  Pipeline pipeline;
-  std::vector<Actor> actors;
-  std::vector<PointLight> pointLights;
+    void create();
+    void cleanup();
+    void recreate();
+    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void update(uint32_t currentImage);
 
-  Image shadowmap;
+    uint32_t numTessBuffers()
+    {
+        return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size());
+    };
+    uint32_t numUniformLights()
+    {
+        return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size()) * numLights;
+    };
+    uint32_t numImageSamplers()
+    {
+        return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
+    };
 
-  ~Scene();
+  private:
+    UniformLight uLight = {};
+    VkDescriptorPool descriptorPool;
+    VkDescriptorSetLayout descriptorSetLayout;
 
-  void create();
-  void cleanup();
-  void recreate();
-  void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
-  void update(uint32_t currentImage);
+    Stage stage;
+    Pipeline pipeline;
+    std::vector<Actor> actors;
+    std::vector<PointLight> pointLights;
 
-  uint32_t numTessBuffers() {
-    return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size());
-  };
-  uint32_t numUniformLights() {
-    return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size()) * numLights;
-  };
-  uint32_t numImageSamplers() {
-    return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
-  };
+    Image shadowmap;
 
-private:
-  UniformLight uLight = {};
-  VkDescriptorPool descriptorPool;
-  VkDescriptorSetLayout descriptorSetLayout;
+    void createLights();
+    void createActors();
+    void createBackdrop();
+    void createStage();
 
-  void createLights();
-  void createActors();
-  void createBackdrop();
-  void createStage();
-
-  void createDescriptorPool();
-  void createDescriptorSetLayouts();
-  void createPipelines();
-  void createUniformBuffers();
-  void createDescriptorSets();
+    void createDescriptorPool();
+    void createDescriptorSetLayouts();
+    void createPipelines();
+    void createUniformBuffers();
+    void createDescriptorSets();
 };
 
 } // namespace tat
