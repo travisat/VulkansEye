@@ -10,7 +10,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-// Input.h (the actual callback class for glfwSetMouseButtonCallback)
 // Singleton as there can only be one Input and Input should never be locked
 
 namespace tat
@@ -143,7 +142,7 @@ class Input
     }
 
     // GLFW_MOUSE_BUTTON_LAST = 8
-    bool mouseButtons[8] = {false};
+    bool mouseButtons[9] = {false};
 
     // GLFW_KEY_LAST == 348
     bool pressed[349] = {false};
