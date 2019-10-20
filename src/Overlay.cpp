@@ -275,20 +275,6 @@ void Overlay::newFrame()
     ImGui::InputFloat3("Move", &uiSettings.move.x, 2);
     ImGui::End();
 
-    /*
-        ImGui::SetNextWindowSize(ImVec2(550, 380), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Example settings");
-        ImGui::Checkbox("Render models", &uiSettings.displayModels);
-        ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
-        ImGui::Checkbox("Display background", &uiSettings.displayBackground);
-        ImGui::Checkbox("Animate light", &uiSettings.animateLight);
-        ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
-        ImGui::End();
-        ImGui::SetNextWindowSize(ImVec2(400, 380), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
-  */
-    // ImGui::ShowDemoWindow();
     ImGui::Render();
 }
 

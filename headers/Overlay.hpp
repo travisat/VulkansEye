@@ -18,12 +18,6 @@ namespace tat
 // Options and values to display/toggle from the UI
 struct UISettings
 {
-    bool displayModels = true;
-    bool displayLogos = true;
-    bool displayBackground = true;
-    bool animateLight = false;
-    float lightSpeed = 0.25f;
-    float lightTimer = 0.0f;
     glm::vec3 position = glm::vec3(0.0f);
     float velocity = 0.0f;
     glm::vec3 move = glm::vec3(0.0f);
