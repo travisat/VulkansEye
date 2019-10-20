@@ -56,18 +56,6 @@ void Player::updateAspectRatio(double width, double height)
     perspective = clip * perspective;
 }
 
-void Player::rotate(glm::vec3 delta)
-{
-    this->rotation += delta;
-    updateView();
-}
-
-void Player::translate(glm::vec3 delta)
-{
-    this->position += delta;
-    updateView();
-}
-
 void Player::move(glm::vec2 direction)
 {
     glm::vec3 camFront;

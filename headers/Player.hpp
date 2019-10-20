@@ -73,12 +73,7 @@ class Player
     double windowWidth;
     double windowHeight;
 
-    
-
     glm::vec2 lastMousePosition = glm::vec2(0.0f);
-
-    void rotate(glm::vec3 delta);
-    void translate(glm::vec3 delta);
 };
 
 } // namespace tat
