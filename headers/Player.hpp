@@ -30,21 +30,11 @@ class Player
     glm::vec3 force = glm::vec3(0.0f);
     glm::vec3 moveDir = glm::vec3(0.0f);
 
+    float height; // m
+    float mass; // kg
+
     glm::mat4 perspective;
     glm::mat4 view;
-
-    float height;
-    float mass; // kg
-    float jumpVelocity = 3.0; //sqrt(2.0 * Gravity * heightofJump) jump of half .45m
-    float lastTime = 0.0f;
-
-    // force applied while walking
-    float velocityMax;        // m/s  also people in games don't walk normal up this a
-                              // bit
-    float timeToReachVMax;    // s
-    float timeToStopfromVMax; // s
-
-    float mouseSensitivity = 33.4f;
 
     void update(float deltaTime);
     void move(glm::vec2 direction);
@@ -54,16 +44,7 @@ class Player
 
     void updateView();
 
-    void setPerspective(double fieldOfView, double windowWidth, double windowHeight, double zNear, double zFar);
     void updateAspectRatio(double windowWidth, double windowHeight);
-    double getNearClip()
-    {
-        return zNear;
-    };
-    double getFarClip()
-    {
-        return zFar;
-    };
 
     bool mouseMode = true;
 
@@ -72,6 +53,16 @@ class Player
     double zNear, zFar;
     double windowWidth;
     double windowHeight;
+
+    float jumpVelocity = 0.0f; // sqrt(2.0 * Gravity * heightofJump)
+    float lastTime = 0.0f; //s
+
+    // force applied while walking
+    float velocityMax;        // m/s
+    float timeToReachVMax;    // s
+    float timeToStopfromVMax; // s
+
+    float mouseSensitivity = 33.4f;
 
     glm::vec2 lastMousePosition = glm::vec2(0.0f);
 };
