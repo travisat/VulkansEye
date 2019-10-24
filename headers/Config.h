@@ -22,6 +22,12 @@ struct Config
     std::string name = "none";
 };
 
+struct VulkanConfig : Config
+{
+    float zNear;
+    float zFar;
+};
+
 struct ModelConfig : Config
 {
     glm::vec3 position;
@@ -49,7 +55,6 @@ struct PointLightConfig : Config
     glm::vec3 position;
     float temperature = 0;
     float lumens = 0;
-    ModelConfig model;
 };
 
 struct PlayerConfig : Config
@@ -74,6 +79,7 @@ struct StageConfig : Config
 
 struct SceneConfig : Config
 {
+    VulkanConfig vulkanConfig;
     PlayerConfig playerConfig;
     StageConfig stageConfig;
     std::vector<PointLightConfig> pointLights{};
@@ -88,6 +94,9 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
 
     j.at("index").get_to(config.index);
     j.at("name").get_to(config.name);
+
+    j.at("vulkan").at("zNear").get_to(config.vulkanConfig.zNear);
+    j.at("vulkan").at("zFar").get_to(config.vulkanConfig.zFar);
 
     config.actors.resize(j["actors"].size());
     int32_t i = 0;
@@ -156,26 +165,6 @@ static void loadSceneConfig(std::string path, SceneConfig &config)
         lightconfig.at("position").at("z").get_to(config.pointLights[i].position.z);
         lightconfig.at("temperature").get_to(config.pointLights[i].temperature);
         lightconfig.at("lumens").get_to(config.pointLights[i].lumens);
-
-        lightconfig.at("model").at("position").at("x").get_to(config.pointLights[i].model.position.x);
-        lightconfig.at("model").at("position").at("y").get_to(config.pointLights[i].model.position.y);
-        lightconfig.at("model").at("position").at("z").get_to(config.pointLights[i].model.position.z);
-        lightconfig.at("model").at("rotation").at("x").get_to(config.pointLights[i].model.rotation.x);
-        lightconfig.at("model").at("rotation").at("y").get_to(config.pointLights[i].model.rotation.y);
-        lightconfig.at("model").at("rotation").at("z").get_to(config.pointLights[i].model.rotation.z);
-        lightconfig.at("model").at("scale").at("x").get_to(config.pointLights[i].model.scale.x);
-        lightconfig.at("model").at("scale").at("y").get_to(config.pointLights[i].model.scale.y);
-        lightconfig.at("model").at("scale").at("z").get_to(config.pointLights[i].model.scale.z);
-        lightconfig.at("model").at("path").get_to(config.pointLights[i].model.objPath);
-        lightconfig.at("model").at("diffuse").get_to(config.pointLights[i].model.diffusePath);
-        lightconfig.at("model").at("normal").get_to(config.pointLights[i].model.normalPath);
-        lightconfig.at("model").at("roughness").get_to(config.pointLights[i].model.roughnessPath);
-        lightconfig.at("model").at("metallic").get_to(config.pointLights[i].model.metallicPath);
-        lightconfig.at("model").at("ao").get_to(config.pointLights[i].model.aoPath);
-        lightconfig.at("model").at("displacement").get_to(config.pointLights[i].model.displacementPath);
-        lightconfig.at("model").at("tesselation").at("level").get_to(config.pointLights[i].model.tessLevel);
-        lightconfig.at("model").at("tesselation").at("strength").get_to(config.pointLights[i].model.tessStregth);
-        lightconfig.at("model").at("tesselation").at("alpha").get_to(config.pointLights[i].model.tessAlpha);
         ++i;
     }
 

@@ -23,12 +23,15 @@ class Scene
     Player *player = nullptr;
     std::string name = "Unknown";
 
+    Image shadow;
+
     ~Scene();
 
     void create();
     void cleanup();
     void recreate();
-    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
     uint32_t numTessBuffers()
@@ -46,25 +49,35 @@ class Scene
 
   private:
     UniformLight uLight = {};
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool colorPool;
+    VkDescriptorSetLayout colorLayout;
+    VkDescriptorPool shadowPool;
+    VkDescriptorSetLayout shadowLayout;
 
     Stage stage;
-    Pipeline pipeline;
+    Pipeline colorPipeline;
     std::vector<Actor> actors;
     std::vector<PointLight> pointLights;
 
-    Image shadowmap;
+    Pipeline shadowPipeline;
+    
+    VkSampler shadowSampler;
 
+    void createShadow();
     void createLights();
     void createActors();
     void createBackdrop();
     void createStage();
 
-    void createDescriptorPool();
-    void createDescriptorSetLayouts();
-    void createPipelines();
-    void createDescriptorSets();
+    void createColorPool();
+    void createColorLayouts();
+    void createColorPipeline();
+    void createColorSets();
+
+    void createShadowPool();
+    void createShadowLayouts();
+    void createShadowPipeline();
+    void createShadowSets();
 };
 
 } // namespace tat

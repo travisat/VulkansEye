@@ -17,7 +17,7 @@ class Pipeline
     ~Pipeline();
     void create();
     void cleanup();
-    void loadDefaults();
+    void loadDefaults(VkRenderPass renderPass);
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};

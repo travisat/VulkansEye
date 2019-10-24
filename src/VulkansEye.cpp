@@ -33,6 +33,10 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     // load scene config
     SceneConfig config;
     loadSceneConfig("resources/configs/default.json", config);
+
+    vulkan.zNear = config.vulkanConfig.zNear;
+    vulkan.zFar = config.vulkanConfig.zFar;
+
     scene.config = &config;
     scene.vulkan = &vulkan;
     scene.player = &player;

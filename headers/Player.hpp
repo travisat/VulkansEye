@@ -43,15 +43,15 @@ class Player
 
     void updateView();
 
-    void updateAspectRatio(double windowWidth, double windowHeight);
+    void updateAspectRatio(float windowWidth, float windowHeight);
 
     bool mouseMode = true;
 
   private:
-    double fieldOfView;
-    double zNear, zFar;
-    double windowWidth;
-    double windowHeight;
+    float fieldOfView;
+
+    float windowWidth;
+    float windowHeight;
 
     float jumpVelocity = 0.0f; // sqrt(2.0 * Gravity * heightofJump)
     float lastTime = 0.0f;     // s

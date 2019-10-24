@@ -7,8 +7,6 @@ namespace tat
 void Player::create()
 {
     fieldOfView = config->fieldOfView;
-    zNear = 0.1f;
-    zFar = 512.0f;
     position = config->position;
     rotation = config->rotation;
     height = config->height;
@@ -18,7 +16,7 @@ void Player::create()
     timeToReachVMax = config->timeToReachVMax;
     timeToStopfromVMax = config->timeToStopfromVMax;
     mouseSensitivity = config->mouseSensitivity;
-    updateAspectRatio(static_cast<double>(vulkan->width), static_cast<double>(vulkan->height));
+    updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
     updateView();
 }
 
@@ -37,11 +35,11 @@ void Player::updateView()
     view = rotationMatrix * translationMatrix;
 }
 
-void Player::updateAspectRatio(double width, double height)
+void Player::updateAspectRatio(float width, float height)
 {
     this->windowWidth = width;
     this->windowHeight = height;
-    perspective = glm::perspective(glm::radians(fieldOfView), (width / height), zNear, zFar);
+    perspective = glm::perspective(glm::radians(fieldOfView), (width / height), vulkan->zNear, vulkan->zFar);
     // convert to vulkan
     perspective = clip * perspective;
 }

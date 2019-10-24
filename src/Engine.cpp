@@ -49,13 +49,16 @@ void Engine::init()
     createAllocator();
 
     createSwapChain();
-    createRenderPass(vulkan->renderPass, vulkan);
+    createShadowPass(vulkan);
+    createColorPass(vulkan);
     createCommandPool();
-    createFramebuffers();
-    createSyncObjects();
 
     scene->create();
     overlay->create();
+
+    createShadowFramebuffers();
+    createColorFramebuffers();
+    createSyncObjects();
 
     createCommandBuffers();
     vulkan->prepared = true;
@@ -77,6 +80,88 @@ Engine::~Engine()
     }
 }
 
+void Engine::renderShadows(VkCommandBuffer commandBuffer, int32_t currentImage)
+{
+    VkViewport viewport{};
+    viewport.width = 1024;
+    viewport.height = 1024;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.extent.width = 1024;
+    scissor.extent.height = 1024;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    vkCmdSetLineWidth(commandBuffer, 1.0f);
+
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo shadowPassInfo = {};
+    shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    shadowPassInfo.renderPass = vulkan->shadowPass;
+    shadowPassInfo.renderArea.offset = {0, 0};
+    shadowPassInfo.renderArea.extent.width = 1024;
+    shadowPassInfo.renderArea.extent.height = 1024;
+    shadowPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    shadowPassInfo.pClearValues = clearValues.data();
+    shadowPassInfo.framebuffer = shadowFbs[currentImage].framebuffer;
+
+    vkCmdBeginRenderPass(commandBuffer, &shadowPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    scene->drawShadow(commandBuffer, currentImage);
+    vkCmdEndRenderPass(commandBuffer);
+}
+
+void Engine::renderColors(VkCommandBuffer commandBuffer, int32_t currentImage)
+{
+    VkViewport viewport{};
+    viewport.width = (float)vulkan->width;
+    viewport.height = (float)vulkan->height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.extent = vulkan->swapChainExtent;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    vkCmdSetLineWidth(commandBuffer, 1.0f);
+
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 0.0f};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo colorPassInfo = {};
+    colorPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    colorPassInfo.renderPass = vulkan->colorPass;
+    colorPassInfo.renderArea.offset = {0, 0};
+    colorPassInfo.renderArea.extent = vulkan->swapChainExtent;
+    colorPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    colorPassInfo.pClearValues = clearValues.data();
+    colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer;
+
+    scene->shadow.transitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkCmdBeginRenderPass(commandBuffer, &colorPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    scene->drawColor(commandBuffer, currentImage);
+    if (vulkan->showOverlay)
+    {
+        overlay->draw(commandBuffer, currentImage);
+    }
+    vkCmdEndRenderPass(commandBuffer);
+
+    scene->shadow.transitionImageLayout(commandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
 void Engine::createCommandBuffers()
 {
     commandBuffers.resize(swapChainFbs.size());
@@ -88,58 +173,21 @@ void Engine::createCommandBuffers()
     allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
     CheckResult(vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()));
-    recordCommandBuffers();
-}
-
-void Engine::recordCommandBuffers()
-{
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    std::array<VkClearValue, 2> clearValues = {};
-    clearValues[0].color = {0.0f, 0.0f, 0.0f, 0.0f};
-    clearValues[1].depthStencil = {1.0f, 0};
-
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = vulkan->renderPass;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = vulkan->swapChainExtent;
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
-        renderPassInfo.framebuffer = swapChainFbs[i].framebuffer;
 
         VkCommandBuffer commandBuffer = commandBuffers[i];
-
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         CheckResult(vkBeginCommandBuffer(commandBuffer, &beginInfo));
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        VkViewport viewport{};
-        viewport.width = (float)vulkan->width;
-        viewport.height = (float)vulkan->height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        // draw shadows
+        renderShadows(commandBuffer, i);
 
-        VkRect2D scissor{};
-        scissor.extent = vulkan->swapChainExtent;
-        scissor.offset.x = 0;
-        scissor.offset.y = 0;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        // draw colors
+        renderColors(commandBuffer, i);
 
-        vkCmdSetLineWidth(commandBuffer, 1.0f);
-
-        scene->draw(commandBuffer, i);
-
-        if (vulkan->showOverlay)
-        {
-            overlay->draw(commandBuffer, i);
-        }
-
-        vkCmdEndRenderPass(commandBuffer);
         CheckResult(vkEndCommandBuffer(commandBuffer));
     }
 }
@@ -232,7 +280,7 @@ void Engine::updateWindow()
         framebuffer.cleanup();
     }
 
-    vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+    vkDestroyRenderPass(vulkan->device, vulkan->colorPass, nullptr);
 
     for (auto imageView : vulkan->swapChainImageViews)
     {
@@ -245,8 +293,8 @@ void Engine::updateWindow()
                          commandBuffers.data());
 
     createSwapChain();
-    createRenderPass(vulkan->renderPass, vulkan);
-    createFramebuffers();
+    createColorPass(vulkan);
+    createColorFramebuffers();
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
 
@@ -277,7 +325,7 @@ void Engine::resizeWindow()
         framebuffer.cleanup();
     }
 
-    vkDestroyRenderPass(vulkan->device, vulkan->renderPass, nullptr);
+    vkDestroyRenderPass(vulkan->device, vulkan->colorPass, nullptr);
 
     for (auto imageView : vulkan->swapChainImageViews)
     {
@@ -293,11 +341,12 @@ void Engine::resizeWindow()
     overlay->cleanup();
 
     createSwapChain();
-    createRenderPass(vulkan->renderPass, vulkan);
-    createFramebuffers();
+    createColorPass(vulkan);
 
     scene->recreate();
     overlay->recreate();
+
+    createColorFramebuffers();
 
     createCommandBuffers();
     vkDeviceWaitIdle(vulkan->device);
@@ -519,6 +568,7 @@ void Engine::createLogicalDevice()
     deviceFeatures.sampleRateShading = VK_TRUE;
     deviceFeatures.tessellationShader = VK_TRUE;
     deviceFeatures.geometryShader = VK_TRUE;
+    deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -621,20 +671,46 @@ void Engine::createSwapChain()
     }
 }
 
-void Engine::createFramebuffers()
+void Engine::createShadowFramebuffers()
 {
-    VkFormat colorFormat = vulkan->swapChainImageFormat;
+    shadowDepth.vulkan = vulkan;
+    shadowDepth.layers = 6;
+    shadowDepth.format = vulkan->findDepthFormat();
+    shadowDepth.numSamples = VK_SAMPLE_COUNT_1_BIT;
+    shadowDepth.imageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    shadowDepth.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    shadowDepth.aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+    shadowDepth.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    shadowDepth.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    shadowDepth.resize(1024, 1024);
+
+    shadowFbs.resize(vulkan->swapChainImageViews.size());
+
+    for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
+    {
+        shadowFbs[i].vulkan = vulkan;
+        shadowFbs[i].renderPass = vulkan->shadowPass;
+        shadowFbs[i].width = 1024;
+        shadowFbs[i].height = 1024;
+        shadowFbs[i].layers = 6;
+        shadowFbs[i].attachments = {scene->shadow.imageView, shadowDepth.imageView};
+        shadowFbs[i].create();
+    }
+}
+
+void Engine::createColorFramebuffers()
+{
     colorAttachment.vulkan = vulkan;
-    colorAttachment.format = colorFormat;
+    colorAttachment.format = vulkan->swapChainImageFormat;
     colorAttachment.numSamples = vulkan->msaaSamples;
     colorAttachment.imageUsage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     colorAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.resize(vulkan->swapChainExtent.width, vulkan->swapChainExtent.height);
 
-    VkFormat depthFormat = vulkan->findDepthFormat();
     depthAttachment.vulkan = vulkan;
-    depthAttachment.format = depthFormat;
+    depthAttachment.format = vulkan->findDepthFormat();
     depthAttachment.numSamples = vulkan->msaaSamples;
     depthAttachment.imageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     depthAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -647,7 +723,7 @@ void Engine::createFramebuffers()
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
     {
         swapChainFbs[i].vulkan = vulkan;
-        swapChainFbs[i].renderPass = vulkan->renderPass;
+        swapChainFbs[i].renderPass = vulkan->colorPass;
         swapChainFbs[i].width = vulkan->swapChainExtent.width;
         swapChainFbs[i].height = vulkan->swapChainExtent.height;
         swapChainFbs[i].attachments = {colorAttachment.imageView, depthAttachment.imageView,

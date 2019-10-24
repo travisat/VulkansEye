@@ -70,11 +70,9 @@ class Model
     std::vector<uint32_t> indices;
     Buffer vertexBuffer;
     Buffer indexBuffer;
-    std::vector<Buffer> tescBuffers;
-    std::vector<Buffer> teseBuffers;
-    std::vector<Buffer> uniformLights;
-    std::vector<VkDescriptorSet> descriptorSets;
-    // material properties
+    
+    //color pipeline
+    std::vector<VkDescriptorSet> colorSets;
     Image diffuse;
     Image normal;
     Image roughness;
@@ -87,13 +85,26 @@ class Model
     VkSampler metallicSampler;
     VkSampler aoSampler;
     VkSampler dispSampler;
-
+    std::vector<Buffer> tescBuffers;
+    std::vector<Buffer> teseBuffers;
+    std::vector<Buffer> uniformLights;
     TessControl uTessControl = {};
     TessEval uTessEval = {};
 
+
+    //shadow pipeline
+    std::vector<VkDescriptorSet> shadowSets;
+    Image *shadow;
+    VkSampler shadowSampler;
+    Buffer shadowBuffer;
+    Buffer uniformBuffer;
+    shadowTransforms uShadow = {};
+    UniformBuffer uBuffer = {};
+
     ~Model();
     void create();
-    void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
+    void createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
+    void createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
     void createUniformBuffers();
 
   private:

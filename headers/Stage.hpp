@@ -22,6 +22,9 @@ class Stage
     Backdrop backdrop;
     std::vector<Model> models;
 
+    Image *shadow;
+    VkSampler shadowSampler;
+
     void create();
     void recreate()
     {
@@ -32,7 +35,8 @@ class Stage
         backdrop.cleanup();
     };
    
-    void createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout);
+    void createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
+    void createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
 
   private:
 };

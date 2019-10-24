@@ -35,7 +35,7 @@ void Pipeline::cleanup()
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
 }
 
-void Pipeline::loadDefaults()
+void Pipeline::loadDefaults(VkRenderPass renderPass)
 {
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -126,7 +126,7 @@ void Pipeline::loadDefaults()
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.renderPass = vulkan->renderPass;
+    pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 }

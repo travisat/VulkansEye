@@ -14,10 +14,12 @@ ${CMAKE_SOURCE_DIR}/../../Libraries/glfw-3.3.bin.WIN64
 )
 
 set(SHADERS 
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.geom
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tesc
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tese
-${CMAKE_SOURCE_DIR}/resources/shaders/scene.geom
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag
@@ -26,6 +28,9 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag
 )
 
 set(COMPILED_SHADERS
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.geom.spv
+${CMAKE_SOURCE_DIR}/resources/shaders/shadow.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tesc.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tese.spv

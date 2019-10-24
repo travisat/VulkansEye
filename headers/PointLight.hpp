@@ -16,7 +16,6 @@ class PointLight
     uint32_t id;
     std::string name;
     uPointLight light{};
-    Model model;
     void create();
 
   private:

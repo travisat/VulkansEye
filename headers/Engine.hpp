@@ -56,6 +56,9 @@ class Engine
     void drawFrame();
 
   private:
+    std::vector<Framebuffer> shadowFbs{};
+    Image shadowColor{};
+    Image shadowDepth{};
     std::vector<Framebuffer> swapChainFbs{};
     Image colorAttachment{};
     Image depthAttachment{};
@@ -64,16 +67,16 @@ class Engine
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
     std::vector<VkCommandBuffer> commandBuffers{};
-    VkCommandBuffer offscreenCommandBuffer = VK_NULL_HANDLE;
 
     std::vector<VkSemaphore> presentFinishedSemaphores{};
     std::vector<VkSemaphore> renderFinishedSemaphores{};
     std::vector<VkFence> waitFences{};
 
     void createCommandBuffers();
-    void recordCommandBuffers();
+    //void recordColorCommandBuffers();
 
-    void createDeferredCommandBuffer();
+    void renderShadows(VkCommandBuffer commandBuffer, int32_t currentImage);
+    void renderColors(VkCommandBuffer commandBuffer, int32_t currentImage);
 
     void updateWindow();
     void resizeWindow();
@@ -86,7 +89,8 @@ class Engine
     void createLogicalDevice();
     void createAllocator();
     void createSwapChain();
-    void createFramebuffers();
+    void createColorFramebuffers();
+    void createShadowFramebuffers();
     void createCommandPool();
     void createSyncObjects();
 

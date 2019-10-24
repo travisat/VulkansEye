@@ -12,6 +12,8 @@ void Actor::create()
 
     model.vulkan = vulkan;
     model.config = &config->model;
+    model.shadow = shadow;
+    model.shadowSampler = shadowSampler;
     model.create();
 }
 

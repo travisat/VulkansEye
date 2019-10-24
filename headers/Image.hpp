@@ -42,11 +42,13 @@ class Image
                                     // files)
     void loadTextureCube(std::string path);
 
+    void copyFrom(VkCommandBuffer commandBuffer, const Buffer &buffer);
     void copyFrom(const Buffer &buffer);
     void resize(int width, int height);
 
     void generateMipmaps();
     void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
 
   private:
     // create VkImage allocation

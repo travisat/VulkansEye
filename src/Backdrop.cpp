@@ -57,7 +57,6 @@ void Backdrop::loadCubeMap()
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
 }
 
@@ -191,7 +190,7 @@ void Backdrop::createPipeline()
 {
     pipeline.vulkan = vulkan;
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults();
+    pipeline.loadDefaults(vulkan->colorPass);
 
     auto vertShaderCode = readFile("resources/shaders/backdrop.vert.spv");
     auto fragShaderCode = readFile("resources/shaders/backdrop.frag.spv");

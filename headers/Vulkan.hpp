@@ -25,23 +25,23 @@ namespace tat
 
 struct UniformBuffer
 {
-    alignas(16) glm::mat4 projection;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 projection {};
+    alignas(16) glm::mat4 view {};
+    alignas(16) glm::mat4 model {};
 };
 
-static const int numLights = 2;
+static const int numLights = 1;
 struct uPointLight
 {
-    glm::vec3 position;
-    float buffer;
-    glm::vec3 color;
-    float lumens;
+    glm::vec3 position {};
+    float buffer = 0.0f;
+    glm::vec3 color {};
+    float lumens = 0.0f;
 };
 
 struct UniformLight
 {
-    uPointLight light[numLights];
+    uPointLight light[numLights] {};
 };
 
 struct TessControl
@@ -51,9 +51,14 @@ struct TessControl
 
 struct TessEval
 {
-    glm::mat4 mvp;
+    glm::mat4 mvp {};
     float tessStrength = 0.1f;
     float tessAlpha = 0.3f;
+};
+
+struct shadowTransforms
+{
+    glm::mat4 faces[6] {};
 };
 
 class Vulkan
@@ -61,7 +66,8 @@ class Vulkan
   public:
     ~Vulkan()
     {
-        vkDestroyRenderPass(device, renderPass, nullptr);
+        vkDestroyRenderPass(device, colorPass, nullptr);
+        vkDestroyRenderPass(device, shadowPass, nullptr);
         for (auto imageView : swapChainImageViews)
         {
             vkDestroyImageView(device, imageView, nullptr);
@@ -86,7 +92,9 @@ class Vulkan
     VkCommandPool commandPool;
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages{};
-    VkRenderPass renderPass;
+
+    VkRenderPass colorPass;
+    VkRenderPass shadowPass;
 
     VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
@@ -101,6 +109,8 @@ class Vulkan
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t currentImage = 0;
+    float zNear = 0.1f;
+    float zFar = 1024.0f;
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;

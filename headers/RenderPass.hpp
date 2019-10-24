@@ -7,8 +7,8 @@
 namespace tat
 {
 
-void createRenderPass(VkRenderPass &renderPass, Vulkan *vulkan);
-void createOffscreenRenderPass(VkRenderPass &renderPass, Vulkan *vulkan);
+void createColorPass(Vulkan *vulkan);
+void createShadowPass(Vulkan *vulkan);
 
 
 } // namespace tat

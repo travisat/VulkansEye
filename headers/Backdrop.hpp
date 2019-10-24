@@ -25,6 +25,9 @@ class Backdrop
     void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
+    Image *shadowMap;
+    VkSampler shadowSampler;
+
   private:
     Image cubeMap{};
     VkSampler sampler = VK_NULL_HANDLE;

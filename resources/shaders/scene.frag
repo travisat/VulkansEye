@@ -11,7 +11,7 @@
 //[4] https://github.com/wdas/brdf/blob/master/src/brdfs/disney.brdf
 //[5] https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
 
-const int numLights = 2;
+const int numLights = 1;
 
 struct PointLight
 {
@@ -26,11 +26,12 @@ layout(binding = 3) uniform UniformLight
 }
 uLight;
 
-layout(binding = 4) uniform sampler2D diffuseMap;
-layout(binding = 5) uniform sampler2D normalMap;
-layout(binding = 6) uniform sampler2D metallicMap;
-layout(binding = 7) uniform sampler2D roughnessMap;
-layout(binding = 8) uniform sampler2D aoMap;
+layout(binding = 4) uniform samplerCube shadowMap;
+layout(binding = 5) uniform sampler2D diffuseMap;
+layout(binding = 6) uniform sampler2D normalMap;
+layout(binding = 7) uniform sampler2D metallicMap;
+layout(binding = 8) uniform sampler2D roughnessMap;
+layout(binding = 9) uniform sampler2D aoMap;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
@@ -163,6 +164,16 @@ float getDistanceAttenuation(vec3 lightVector, float lumens)
     return attenuation / (4.0 * PI * max(distanceSquared, 0.00001));
 }
 
+//https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
+float shadowCalc(vec3 lightVec)
+{
+    float closestDepth = texture(shadowMap, lightVec).r;
+    float currentDepth = length(lightVec);
+    float bias = 0.15;
+    float shadow = (currentDepth <= closestDepth + bias) ? 0.9 : 0.0;
+    return 1.0 - shadow;
+}
+
 void main()
 {
     vec3 baseColor = convertSRGBtoLinear(texture(diffuseMap, inUV).rgb);
@@ -185,6 +196,6 @@ void main()
         vec3 L = normalize(lightVector); // vector from surface to light
         luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
     }
-
-    outColor = vec4(luminance * ambientOcclusion, 1.0);
+    float shadow = shadowCalc(inPosition - uLight.light[0].position);
+    outColor = vec4(shadow * luminance * ambientOcclusion, 1.0);
 }

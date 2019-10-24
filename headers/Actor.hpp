@@ -15,6 +15,8 @@ class Actor
     // config values
     tat::Vulkan *vulkan = nullptr;
     ActorConfig *config;
+    Image *shadow;
+    VkSampler shadowSampler;
 
     // generated values
     std::string name = "Unknown Actor";

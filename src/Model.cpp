@@ -23,7 +23,7 @@ void Model::create()
     uTessEval.tessStrength = config->tessStregth;
     uTessEval.tessAlpha = config->tessAlpha;
     createUniformBuffers();
-    
+
     loadMesh();
     loadMaterial();
 }
@@ -90,17 +90,17 @@ void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)
     CheckResult(vkCreateSampler(vulkan->device, &imageSamplerInfo, nullptr, &sampler));
 }
 
-void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout)
+void Model::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
+    colorSets.resize(vulkan->swapChainImages.size());
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, colorSets.data()));
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
         VkDescriptorBufferInfo tessControlInfo = {};
@@ -122,6 +122,11 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         lightInfo.buffer = uniformLights[i].buffer;
         lightInfo.offset = 0;
         lightInfo.range = sizeof(UniformLight);
+
+        VkDescriptorImageInfo shadowInfo = {};
+        shadowInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        shadowInfo.imageView = shadow->imageView;
+        shadowInfo.sampler = shadowSampler;
 
         VkDescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -148,10 +153,10 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         aoInfo.imageView = ao.imageView;
         aoInfo.sampler = aoSampler;
 
-        std::array<VkWriteDescriptorSet, 9> descriptorWrites = {};
+        std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstSet = colorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -159,7 +164,7 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[0].pBufferInfo = &tessControlInfo;
 
         descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstSet = colorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -167,7 +172,7 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[1].pBufferInfo = &tessEvalInfo;
 
         descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = descriptorSets[i];
+        descriptorWrites[2].dstSet = colorSets[i];
         descriptorWrites[2].dstBinding = 2;
         descriptorWrites[2].dstArrayElement = 0;
         descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -175,7 +180,7 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[2].pImageInfo = &dispInfo;
 
         descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[3].dstSet = descriptorSets[i];
+        descriptorWrites[3].dstSet = colorSets[i];
         descriptorWrites[3].dstBinding = 3;
         descriptorWrites[3].dstArrayElement = 0;
         descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -183,44 +188,115 @@ void Model::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSe
         descriptorWrites[3].pBufferInfo = &lightInfo;
 
         descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[4].dstSet = descriptorSets[i];
+        descriptorWrites[4].dstSet = colorSets[i];
         descriptorWrites[4].dstBinding = 4;
         descriptorWrites[4].dstArrayElement = 0;
         descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pImageInfo = &diffuseInfo;
+        descriptorWrites[4].pImageInfo = &shadowInfo;
 
         descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[5].dstSet = descriptorSets[i];
+        descriptorWrites[5].dstSet = colorSets[i];
         descriptorWrites[5].dstBinding = 5;
         descriptorWrites[5].dstArrayElement = 0;
         descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[5].descriptorCount = 1;
-        descriptorWrites[5].pImageInfo = &normalInfo;
+        descriptorWrites[5].pImageInfo = &diffuseInfo;
 
         descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[6].dstSet = descriptorSets[i];
+        descriptorWrites[6].dstSet = colorSets[i];
         descriptorWrites[6].dstBinding = 6;
         descriptorWrites[6].dstArrayElement = 0;
         descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[6].descriptorCount = 1;
-        descriptorWrites[6].pImageInfo = &roughnessInfo;
+        descriptorWrites[6].pImageInfo = &normalInfo;
 
         descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[7].dstSet = descriptorSets[i];
+        descriptorWrites[7].dstSet = colorSets[i];
         descriptorWrites[7].dstBinding = 7;
         descriptorWrites[7].dstArrayElement = 0;
         descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[7].descriptorCount = 1;
-        descriptorWrites[7].pImageInfo = &metallicInfo;
+        descriptorWrites[7].pImageInfo = &roughnessInfo;
 
         descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[8].dstSet = descriptorSets[i];
+        descriptorWrites[8].dstSet = colorSets[i];
         descriptorWrites[8].dstBinding = 8;
         descriptorWrites[8].dstArrayElement = 0;
         descriptorWrites[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[8].descriptorCount = 1;
-        descriptorWrites[8].pImageInfo = &aoInfo;
+        descriptorWrites[8].pImageInfo = &metallicInfo;
+
+        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[9].dstSet = colorSets[i];
+        descriptorWrites[9].dstBinding = 9;
+        descriptorWrites[9].dstArrayElement = 0;
+        descriptorWrites[9].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[9].descriptorCount = 1;
+        descriptorWrites[9].pImageInfo = &aoInfo;
+
+        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
+                               0, nullptr);
+    }
+}
+
+void Model::createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
+{
+    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    shadowSets.resize(vulkan->swapChainImages.size());
+    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, shadowSets.data()));
+    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    {
+
+        VkDescriptorBufferInfo uboInfo = {};
+        uboInfo.buffer = uniformBuffer.buffer;
+        uboInfo.offset = 0;
+        uboInfo.range = sizeof(uniformBuffer);
+
+        VkDescriptorBufferInfo shadowInfo = {};
+        shadowInfo.buffer = shadowBuffer.buffer;
+        shadowInfo.offset = 0;
+        shadowInfo.range = sizeof(shadowTransforms);
+
+        VkDescriptorBufferInfo lightInfo = {};
+        lightInfo.buffer = uniformLights[0].buffer;
+        lightInfo.offset = 0;
+        lightInfo.range = sizeof(UniformLight);
+
+        VkWriteDescriptorSet uboSet{};
+        uboSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        uboSet.dstSet = shadowSets[i];
+        uboSet.dstBinding = 0;
+        uboSet.dstArrayElement = 0;
+        uboSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboSet.descriptorCount = 1;
+        uboSet.pBufferInfo = &uboInfo;
+
+        VkWriteDescriptorSet shadow{};
+        shadow.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        shadow.dstSet = shadowSets[i];
+        shadow.dstBinding = 1;
+        shadow.dstArrayElement = 0;
+        shadow.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        shadow.descriptorCount = 1;
+        shadow.pBufferInfo = &shadowInfo;
+
+        VkWriteDescriptorSet light{};
+        light.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        light.dstSet = shadowSets[i];
+        light.dstBinding = 2;
+        light.dstArrayElement = 0;
+        light.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        light.descriptorCount = 1;
+        light.pBufferInfo = &lightInfo;
+
+        std::vector<VkWriteDescriptorSet> descriptorWrites = {uboSet, shadow, light};
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
                                0, nullptr);
@@ -250,5 +326,15 @@ void Model::createUniformBuffers()
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformLights[i].resize(sizeof(UniformLight));
     }
+
+    shadowBuffer.vulkan = vulkan;
+    shadowBuffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    shadowBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    shadowBuffer.resize(sizeof(shadowTransforms));
+
+    uniformBuffer.vulkan = vulkan;
+    uniformBuffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    uniformBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    uniformBuffer.resize(sizeof(UniformBuffer));
 }
 } // namespace tat

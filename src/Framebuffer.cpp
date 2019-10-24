@@ -19,7 +19,7 @@ void Framebuffer::create()
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = width;
     framebufferInfo.height = height;
-    framebufferInfo.layers = 1;
+    framebufferInfo.layers = layers;
     CheckResult(vkCreateFramebuffer(vulkan->device, &framebufferInfo, nullptr, &framebuffer));
 }
 

@@ -16,15 +16,25 @@ void Stage::create()
     {
         models[model.index].config = &model;
         models[model.index].vulkan = vulkan;
+        models[model.index].shadow = shadow;
+        models[model.index].shadowSampler = shadowSampler;
         models[model.index].create();
     }
 }
 
-void Stage::createDescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorLayout)
+void Stage::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
 {
     for (auto &model : models)
     {
-        model.createDescriptorSets(descriptorPool, descriptorLayout);
+        model.createColorSets(pool, layout);
+    }
+}
+
+void Stage::createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
+{
+    for (auto &model : models)
+    {
+        model.createShadowSets(pool, layout);
     }
 }
 

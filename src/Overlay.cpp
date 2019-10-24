@@ -186,7 +186,7 @@ void Overlay::createPipeline()
 {
     pipeline.vulkan = vulkan;
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults();
+    pipeline.loadDefaults(vulkan->colorPass);
 
     // Push constants for UI rendering parameters
     VkPushConstantRange pushConstantRange = {};

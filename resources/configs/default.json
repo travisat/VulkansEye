@@ -1,43 +1,17 @@
 {
     "name": "default",
     "index": 0,
+    "vulkan": {
+        "zNear": 0.1,
+        "zFar": 1024.0
+    },
     "actors": {
-        "sphere": {
-            "name": "sphere",
-            "position": {
-                "x": 4,
-                "y": 2,
-                "z": 0
-            },
-            "rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-            },
-            "scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
-            },
-            "path": "resources/models/sphere.obj",
-            "diffuse": "resources/materials/earth/8081_earthmap4k.jpg",
-            "normal": "resources/materials/default/normal.png",
-            "roughness": "resources/materials/earth/8081_earthspec4k.jpg",
-            "ao": "resources/materials/default/ao.png",
-            "metallic": "resources/materials/default/metallic.png",
-            "displacement": "resources/materials/earth/8081_earthbump4k.jpg",
-            "tesselation": {
-                "level": 16,
-                "strength": 0.03,
-                "alpha": 0.33
-            }
-        },
         "table": {
             "name": "table",
             "position": {
-                "x": 4,
+                "x": 0,
                 "y": 0,
-                "z": 5
+                "z": 0
             },
             "rotation": {
                 "x": 0,
@@ -57,8 +31,8 @@
             "metallic": "resources/materials/default/metallic.png",
             "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
             "tesselation": {
-                "level": 16,
-                "strength": 0.001,
+                "level": 1,
+                "strength": 0,
                 "alpha": 0.03
             }
         }
@@ -90,124 +64,8 @@
                 "metallic": "resources/materials/default/metallic.png",
                 "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
                 "tesselation": {
-                    "level": 16,
-                    "strength": 0.01,
-                    "alpha": 0.33
-                }
-            },
-            "wallposx": {
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "path": "resources/models/wallposx.obj",
-                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
-                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
-                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
-                "tesselation": {
-                    "level": 16,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
-            },
-            "wallposz": {
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "path": "resources/models/wallposz.obj",
-                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
-                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
-                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
-                "tesselation": {
-                    "level": 16,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
-            },
-            "wallnegx": {
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "path": "resources/models/wallnegx.obj",
-                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
-                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
-                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
-                "tesselation": {
-                    "level": 16,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
-            },
-            "wallnegz": {
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "path": "resources/models/wallnegz.obj",
-                "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
-                "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
-                "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg",
-                "tesselation": {
-                    "level": 16,
-                    "strength": 0.1,
+                    "level": 1,
+                    "strength": 0,
                     "alpha": 0.33
                 }
             }
@@ -217,82 +75,12 @@
         "lantern": {
             "name": "one",
             "position": {
-                "x": -3,
-                "y": -1.0,
-                "z": 0
+                "x": 1,
+                "y": -4.4,
+                "z": 1
             },
             "temperature": 6400,
-            "lumens": 1500,
-            "model": {
-                "name": "sphere",
-                "position": {
-                    "x": -3,
-                    "y": 1.0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 0.05,
-                    "y": 0.05,
-                    "z": 0.05
-                },
-                "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
-                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
-                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
-                "displacement": "resources/materials/Metal11/Metal11_disp.jpg",
-                "tesselation": {
-                    "level": 4,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
-            }
-        },
-        "tablelight": {
-            "name": "two",
-            "position": {
-                "x": 4,
-                "y": -2.4,
-                "z": 5
-            },
-            "temperature": 6400,
-            "lumens": 1600,
-            "model": {
-                "name": "sphere",
-                "position": {
-                    "x": 4,
-                    "y": 2.4,
-                    "z": 5
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 0.05,
-                    "y": 0.05,
-                    "z": 0.05
-                },
-                "path": "resources/models/sphere.obj",
-                "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
-                "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
-                "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
-                "ao": "resources/materials/default/ao.png",
-                "metallic": "resources/materials/Metal11/Metal11_met.jpg",
-                "displacement": "resources/materials/Metal11/Metal11_disp.jpg",
-                "tesselation": {
-                    "level": 4,
-                    "strength": 0.1,
-                    "alpha": 0.33
-                }
-            }
+            "lumens": 2500
         }
     },
     "player": {
