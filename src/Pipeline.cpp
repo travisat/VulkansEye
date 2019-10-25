@@ -20,16 +20,26 @@ void Pipeline::create()
 
 void Pipeline::cleanup()
 {
-    if (vertShaderStageInfo.module)
+    if (vertShaderStageInfo.module != nullptr)
+    {
         vkDestroyShaderModule(vulkan->device, vertShaderStageInfo.module, nullptr);
-    if (fragShaderStageInfo.module)
+    }
+    if (fragShaderStageInfo.module != nullptr)
+    {
         vkDestroyShaderModule(vulkan->device, fragShaderStageInfo.module, nullptr);
-    if (tescShaderStageInfo.module)
+    }
+    if (tescShaderStageInfo.module != nullptr)
+    {
         vkDestroyShaderModule(vulkan->device, tescShaderStageInfo.module, nullptr);
-    if (teseShaderStageInfo.module)
+    }
+    if (teseShaderStageInfo.module != nullptr)
+    {
         vkDestroyShaderModule(vulkan->device, teseShaderStageInfo.module, nullptr);
-    if (geomShaderStageInfo.module)
+    }
+    if (geomShaderStageInfo.module != nullptr)
+    {
         vkDestroyShaderModule(vulkan->device, geomShaderStageInfo.module, nullptr);
+    }
 
     vkDestroyPipeline(vulkan->device, pipeline, nullptr);
     vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
@@ -88,7 +98,7 @@ void Pipeline::loadDefaults(VkRenderPass renderPass)
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
+    rasterizer.lineWidth = 1.0F;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
@@ -105,10 +115,10 @@ void Pipeline::loadDefaults(VkRenderPass renderPass)
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    colorBlending.blendConstants[0] = 0.0F;
+    colorBlending.blendConstants[1] = 0.0F;
+    colorBlending.blendConstants[2] = 0.0F;
+    colorBlending.blendConstants[3] = 0.0F;
 
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;

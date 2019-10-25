@@ -34,7 +34,6 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tesc.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.tese.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/scene.geom.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag.spv
@@ -100,7 +99,7 @@ target_include_directories(VulkansEye
 
 add_library(vulkan STATIC IMPORTED)
 set_property(TARGET vulkan PROPERTY IMPORTED_LOCATION "${VULKAN}/lib/vulkan-1.lib")
-target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR)
+target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(VulkansEye vulkan)
 
 add_library(glfw STATIC IMPORTED)

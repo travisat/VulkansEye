@@ -52,12 +52,11 @@ void Scene::createShadow()
     shadowSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     shadowSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     shadowSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadowSamplerInfo.maxAnisotropy = 1.0f;
+    shadowSamplerInfo.maxAnisotropy = 1.0F;
     shadowSamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     shadowSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    shadowSamplerInfo.minLod = 0.0f;
+    shadowSamplerInfo.minLod = 0.0F;
     shadowSamplerInfo.maxLod = static_cast<float>(shadow.mipLevels);
-
 
     CheckResult(vkCreateSampler(vulkan->device, &shadowSamplerInfo, nullptr, &shadowSampler));
 
@@ -109,8 +108,8 @@ void Scene::cleanup()
 
 void Scene::recreate()
 {
-    player->updateAspectRatio((float)vulkan->width, (float)vulkan->height);
-   
+    player->updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
+
     stage.recreate();
     createColorPool();
     createColorSets();
@@ -123,10 +122,10 @@ void Scene::drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage)
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipeline);
 
-    VkDeviceSize offsets[1] = {0};
+    std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : stage.models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
                                 &model.colorSets[currentImage], 0, nullptr);
@@ -134,7 +133,7 @@ void Scene::drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage)
     }
     for (auto &actor : actors)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, actor.model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
                                 &actor.model.colorSets[currentImage], 0, nullptr);
@@ -146,10 +145,10 @@ void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);
 
-    VkDeviceSize offsets[1] = {0};
+    std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : stage.models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipelineLayout, 0, 1,
                                 &model.shadowSets[currentImage], 0, nullptr);
@@ -157,7 +156,7 @@ void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
     }
     for (auto &actor : actors)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, actor.model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipelineLayout, 0, 1,
                                 &actor.model.shadowSets[currentImage], 0, nullptr);
@@ -176,43 +175,45 @@ void Scene::update(uint32_t currentImage)
         uLight.light[i].lumens = pointLights[i].light.lumens;
     }
 
-    //clip converts perspective to vulkan
-    glm::mat4 shadowPerspective = clip * glm::perspective(glm::radians(90.0f), 1.0f, vulkan->zNear, vulkan->zFar);
+    // clip converts perspective to vulkan
+    glm::mat4 shadowPerspective = clip * glm::perspective(glm::radians(90.0F), 1.0F, vulkan->zNear, vulkan->zFar);
 
-    glm::vec3 lightPos = pointLights[0].light.position * glm::vec3(-1.0f, -1.0f, -1.0f);
+    glm::vec3 lightPos = pointLights[0].light.position;
     glm::mat4 shadowView = glm::translate(glm::mat4(1.0), lightPos);
 
-    //rotate then multiply view by projection
-    //https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
-    std::vector<glm::mat4> shadowVP; 
+    // rotate then multiply view by projection
+    // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
+    std::vector<glm::mat4> shadowVP;
     shadowVP.resize(6);
     // POSITIVE_X
-    shadowVP[0] = glm::rotate(shadowView, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    shadowVP[0] = glm::rotate(shadowVP[0], glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    shadowVP[0] = glm::rotate(shadowView, glm::radians(90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
+    // shadowVP[0] = glm::rotate(shadowVP[0], glm::radians(180.0f),
+    // glm::vec3(1.0f, 0.0f, 0.0f));
     shadowVP[0] = shadowPerspective * shadowVP[0];
     // NEGATIVE_X
-    shadowVP[1] = glm::rotate(shadowView, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    shadowVP[1] = glm::rotate(shadowVP[1], glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    shadowVP[1] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
+    // shadowVP[1] = glm::rotate(shadowVP[1], glm::radians(180.0f),
+    // glm::vec3(1.0f, 0.0f, 0.0f));
     shadowVP[1] = shadowPerspective * shadowVP[1];
     // POSITIVE_Y
-    shadowVP[2] = glm::rotate(shadowView, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    shadowVP[2] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
     shadowVP[2] = shadowPerspective * shadowVP[2];
     // NEGATIVE_Y
-    shadowVP[3] = glm::rotate(shadowView, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    shadowVP[3] = glm::rotate(shadowView, glm::radians(90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
     shadowVP[3] = shadowPerspective * shadowVP[3];
     // POSITIVE_Z
-    shadowVP[4] = glm::rotate(shadowView, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    shadowVP[4] = glm::rotate(shadowView, glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
     shadowVP[4] = shadowPerspective * shadowVP[4];
     // NEGATIVE_Z
-    shadowVP[5] =glm::rotate(shadowView, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    shadowVP[5] = glm::rotate(shadowView, glm::radians(180.0F), glm::vec3(0.0F, 0.0F, 1.0F));
     shadowVP[5] = shadowPerspective * shadowVP[5];
 
     for (auto &stagemodel : stage.models)
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), stagemodel.position);
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 model = glm::translate(glm::mat4(1.0F), stagemodel.position);
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
         model = glm::scale(model, stagemodel.scale);
 
         stagemodel.uTessEval.mvp = player->perspective * player->view * model;
@@ -228,10 +229,10 @@ void Scene::update(uint32_t currentImage)
 
     for (auto &actor : actors)
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), actor.model.position);
-        model = glm::rotate(model, glm::radians(actor.model.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(actor.model.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(actor.model.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 model = glm::translate(glm::mat4(1.0F), actor.model.position);
+        model = glm::rotate(model, glm::radians(actor.model.rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
+        model = glm::rotate(model, glm::radians(actor.model.rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
+        model = glm::rotate(model, glm::radians(actor.model.rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
         model = glm::scale(model, actor.model.scale);
 
         actor.model.uTessEval.mvp = player->perspective * player->view * model;
@@ -247,7 +248,7 @@ void Scene::update(uint32_t currentImage)
 
 void Scene::createColorPool()
 {
-    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -393,7 +394,7 @@ void Scene::createColorPipeline()
 
 void Scene::createShadowPool()
 {
-    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
     std::array<VkDescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -404,7 +405,7 @@ void Scene::createShadowPool()
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = 3 * numTessBuffers() * numSwapChainImages;
-    
+
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &shadowPool));
 }
 
@@ -476,8 +477,8 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    //shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    //shadowPipeline.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+    // shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    shadowPipeline.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
 
     shadowPipeline.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 

@@ -5,17 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Launch",
-            "type": "cppvsdbg",
+            "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/VulkansEye.exe",
-            "args": [],
-            "symbolSearchPath": "https://msdl.microsoft.com/download/symbol",
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false 
-
+            "name": "Launch Program",
+            "program": "${command:cmake.launchTargetPath}",
+            "cwd": "${workspaceRoot}",
+            "terminal":"integrated"
         }
     ]
 }

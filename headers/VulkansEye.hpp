@@ -32,10 +32,9 @@ class VulkansEye
     void mainLoop();
     void handleInput();
 
-    static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
+    static void framebufferResizeCallback(GLFWwindow *window, int  /*width*/, int  /*height*/)
     {
         auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
-        framebufferResized = true;
     };
 };
 

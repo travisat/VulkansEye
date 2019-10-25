@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vulkan/vulkan_core.h"
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -19,6 +20,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <array>
 
 namespace tat
 {
@@ -34,31 +36,31 @@ static const int numLights = 1;
 struct uPointLight
 {
     glm::vec3 position {};
-    float buffer = 0.0f;
+    float buffer = 0.0F;
     glm::vec3 color {};
-    float lumens = 0.0f;
+    float lumens = 0.0F;
 };
 
 struct UniformLight
 {
-    uPointLight light[numLights] {};
+    std::array<uPointLight, numLights> light {};
 };
 
 struct TessControl
 {
-    float tessLevel = 64.0f;
+    float tessLevel = 64.0F;
 };
 
 struct TessEval
 {
     glm::mat4 mvp {};
-    float tessStrength = 0.1f;
-    float tessAlpha = 0.3f;
+    float tessStrength = 0.1F;
+    float tessAlpha = 0.3F;
 };
 
 struct shadowTransforms
 {
-    glm::mat4 faces[6] {};
+    std::array<glm::mat4, 6> faces {};
 };
 
 class Vulkan
@@ -109,20 +111,20 @@ class Vulkan
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t currentImage = 0;
-    float zNear = 0.1f;
-    float zFar = 1024.0f;
+    float zNear = 0.1F;
+    float zFar = 1024.0F;
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;
 
-    bool checkFormat(VkFormat format)
+    auto checkFormat(VkFormat format) -> bool
     {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
-        return props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+        return (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != VK_FALSE;
     };
 
-    VkCommandBuffer beginSingleTimeCommands()
+    auto beginSingleTimeCommands() -> VkCommandBuffer
     {
         VkCommandBufferAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -143,7 +145,7 @@ class Vulkan
         return commandBuffer;
     };
 
-    VkResult endSingleTimeCommands(VkCommandBuffer commandBuffer)
+    auto endSingleTimeCommands(VkCommandBuffer commandBuffer) -> VkResult
     {
         VkResult result = vkEndCommandBuffer(commandBuffer);
 
@@ -158,7 +160,7 @@ class Vulkan
         return result;
     };
 
-    VkShaderModule createShaderModule(const std::vector<char> &code)
+    auto createShaderModule(const std::vector<char> &code) -> VkShaderModule
     {
         VkShaderModuleCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -173,8 +175,8 @@ class Vulkan
         return shaderModule;
     }
 
-    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                 VkFormatFeatureFlags features)
+    auto findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                                 VkFormatFeatureFlags features) -> VkFormat
     {
         for (VkFormat format : candidates)
         {
@@ -185,7 +187,7 @@ class Vulkan
             {
                 return format;
             }
-            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
             {
                 return format;
             }
@@ -193,14 +195,14 @@ class Vulkan
         throw std::runtime_error("Failed to find supported format");
     }
 
-    VkFormat findDepthFormat()
+    auto findDepthFormat() -> VkFormat
     {
         return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                                    VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 };
 
-static std::vector<char> readFile(const std::string &filename)
+static auto readFile(const std::string &filename) -> std::vector<char>
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 

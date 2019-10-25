@@ -5,7 +5,9 @@
 #include <windows.h>
 #endif
 
+#include <array>
 #include <iostream>
+
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -18,7 +20,10 @@ namespace tat
 class Input
 {
   public:
-    static Input &getInstance() // Singleton is accessed via getInstance()
+    Input(Input const &) = delete;          // prevent copies
+    void operator=(Input const &) = delete; // prevent assignments
+
+    static auto getInstance() -> Input & // Singleton is accessed via getInstance()
     {
         static Input instance; // lazy singleton, instantiated on first use
         return instance;
@@ -32,17 +37,21 @@ class Input
         getInstance().mouseButtonCallbackImpl(window, button, action, mods);
     }
 
-    void mouseButtonCallbackImpl(GLFWwindow *window, int button, int action, int mods)
+    void mouseButtonCallbackImpl(GLFWwindow * /*window*/, int button, int action, int /*mods*/)
     {
         if (action == GLFW_PRESS)
         {
             if (button >= 0 && button < 8)
+            {
                 mouseButtons[button] = true;
+            }
         }
         else if (action == GLFW_RELEASE)
         {
             if (button >= 0 && button < 8)
+            {
                 mouseButtons[button] = false;
+            }
         }
     }
 
@@ -51,7 +60,7 @@ class Input
         getInstance().cursorPosCallbackIMPL(window, xpos, ypos);
     }
 
-    void cursorPosCallbackIMPL(GLFWwindow *window, double xpos, double ypos)
+    void cursorPosCallbackIMPL(GLFWwindow * /*window*/, double xpos, double ypos)
     {
         mouseX = xpos;
         mouseY = ypos;
@@ -62,7 +71,7 @@ class Input
         getInstance().keyCallbackImpl(window, key, scancode, action, mods);
     }
 
-    void keyCallbackImpl(GLFWwindow *window, int key, int scancode, int action, int mods)
+    void keyCallbackImpl(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
     {
         if (action == GLFW_PRESS)
         {
@@ -76,83 +85,79 @@ class Input
         {
             if (key >= 0 && key < 349)
             {
-               pressed[key] = false;
-               released[key] = true;
+                pressed[key] = false;
+                released[key] = true;
             }
         }
     }
 
-    static bool isKeyPressed(const uint32_t key)
+    static auto isKeyPressed(const uint32_t key) -> bool
     {
         return getInstance().isKeyPressedIMPL(key);
     }
 
-    bool isKeyPressedIMPL(const uint32_t key)
+    auto isKeyPressedIMPL(const uint32_t key) -> bool
     {
         return pressed[key];
     }
 
-    static bool wasKeyReleased(const uint32_t key)
+    static auto wasKeyReleased(const uint32_t key) -> bool
     {
         return getInstance().wasKeyReleasedIMPL(key);
     }
 
-    bool wasKeyReleasedIMPL(const uint32_t key)
+    auto wasKeyReleasedIMPL(const uint32_t key) -> bool
     {
-        if (released[key]) {
+        if (released[key])
+        {
             released[key] = false;
             return true;
         }
         return false;
     }
 
-    static double getMouseY()
+    static auto getMouseY() -> double
     {
         return getInstance().getMouseYIMPL();
     }
 
-    double getMouseYIMPL()
+    auto getMouseYIMPL() -> double
     {
         return mouseY;
     }
 
-    static double getMouseX()
+    static auto getMouseX() -> double
     {
         return getInstance().getMouseXIMPL();
     }
 
-    double getMouseXIMPL()
+    auto getMouseXIMPL() -> double
     {
         return mouseX;
     }
 
-    static bool checkMouse(uint32_t button)
+    static auto checkMouse(uint32_t button) -> bool
     {
         return getInstance().checkMouseIMPL(button);
     }
 
-    bool checkMouseIMPL(uint32_t button)
+    auto checkMouseIMPL(uint32_t button) -> bool
     {
         return mouseButtons[button];
     }
 
   private:
-    Input(void) // private constructor necessary to allow only 1 instance
-    {
-    }
+    Input() = default; // private constructor necessary to allow only 1 instance
 
     // GLFW_MOUSE_BUTTON_LAST = 8
-    bool mouseButtons[9] = {false};
+    std::array<bool, 9> mouseButtons = {false};
 
     // GLFW_KEY_LAST == 348
-    bool pressed[349] = {false};
-    bool released[349] = {false};
+    std::array<bool, 349> pressed = {false};
+    std::array<bool, 349> released = {false};
 
-    double mouseX;
-    double mouseY;
-
-    Input(Input const &);          // prevent copies
-    void operator=(Input const &); // prevent assignments
+    double mouseX{};
+    double mouseY{};
 };
 
 } // namespace tat

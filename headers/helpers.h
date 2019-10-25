@@ -5,8 +5,7 @@
 #include <windows.h>
 #endif
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <vulkan/vulkan.h>
@@ -24,7 +23,7 @@ template <typename... Args> void Trace(Args &&... args)
     OutputDebugString(stream.str().c_str());
 }
 
-template <typename T> T CheckResult(T result)
+template <typename T> auto CheckResult(T result) -> T
 {
     if (result != 0)
     {

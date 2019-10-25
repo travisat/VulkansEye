@@ -20,6 +20,7 @@ void main()
 {
     vec3 position = inPosition.xyz;
     vec3 lightPos = uLight.light[0].position;
+    //lightPos *= -1.0;
 
-    outColor = distance(position, lightPos);
+    outColor = length(position - lightPos);
 }

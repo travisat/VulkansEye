@@ -17,15 +17,15 @@ void Overlay::create()
     ImGui::CreateContext();
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
-    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.6f);
-    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.0f, 0.0f, 0.0f, 0.8f);
-    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
-    style.Colors[ImGuiCol_Header] = ImVec4(0.4f, 0.4f, 0.4f, 0.4f);
-    style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0F, 0.0F, 0.0F, 0.6F);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.0F, 0.0F, 0.0F, 0.8F);
+    style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
+    style.Colors[ImGuiCol_Header] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0F, 1.0F, 1.0F, 1.0F);
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
-    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+    io.DisplayFramebufferScale = ImVec2(1.0F, 1.0F);
 
     createFont();
 
@@ -64,7 +64,8 @@ void Overlay::createFont()
 {
     ImGuiIO &io = ImGui::GetIO();
     unsigned char *fontData;
-    int texWidth, texHeight;
+    int texWidth;
+    int texHeight;
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
     VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
@@ -114,7 +115,7 @@ void Overlay::createFont()
 
 void Overlay::createDescriptorPool()
 {
-    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
     std::array<VkDescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -253,17 +254,17 @@ void Overlay::createPipeline()
 void Overlay::newFrame()
 {
     ImGui::NewFrame();
-    float frameTime = Timer::getCount();
+    float frameTime = Timer::time();
     float deltaTime = frameTime - lastFrameTime;
     lastFrameTime = frameTime;
-    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0f))
+    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0F))
     {
         lastUpdateTime = frameTime;
-        uiSettings.position = player->position * -1.0f; // world is opposite cameras position
+        uiSettings.position = player->position * -1.0F; // world is opposite cameras position
         uiSettings.position.y -= player->height;        // put position on ground
         uiSettings.rotation = player->rotation;
         uiSettings.velocity = glm::length(player->velocity);
-        uiSettings.fps = 1.0f / deltaTime;
+        uiSettings.fps = 1.0F / deltaTime;
     }
 
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
@@ -282,7 +283,7 @@ void Overlay::updateBuffers()
 {
     ImDrawData *imDrawData = ImGui::GetDrawData();
 
-    if (imDrawData)
+    if (imDrawData != nullptr)
     {
         // Note: Alignment is done inside buffer creation
         VkDeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
@@ -307,8 +308,8 @@ void Overlay::updateBuffers()
             indexCount = imDrawData->TotalIdxCount;
         }
         // Upload data
-        ImDrawVert *vtxDst = (ImDrawVert *)vertexBuffer.mapped;
-        ImDrawIdx *idxDst = (ImDrawIdx *)indexBuffer.mapped;
+        auto *vtxDst = reinterpret_cast<ImDrawVert *>(vertexBuffer.mapped);
+        auto *idxDst = reinterpret_cast<ImDrawVert *>(indexBuffer.mapped);
 
         for (int n = 0; n < imDrawData->CmdListsCount; n++)
         {
@@ -327,7 +328,7 @@ void Overlay::updateBuffers()
 
 void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-    if (!vertexBuffer.buffer || !indexBuffer.buffer)
+    if ((vertexBuffer.buffer == nullptr) || (indexBuffer.buffer == nullptr))
     {
         newFrame();
         updateBuffers();
@@ -338,8 +339,8 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
 
     // UI scale and translate via push constants
-    pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
-    pushConstBlock.translate = glm::vec2(-1.0f);
+    pushConstBlock.scale = glm::vec2(2.0F / io.DisplaySize.x, 2.0F / io.DisplaySize.y);
+    pushConstBlock.translate = glm::vec2(-1.0F);
     vkCmdPushConstants(commandBuffer, pipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock),
                        &pushConstBlock);
 
@@ -348,8 +349,8 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
     int32_t vertexOffset = 0;
     int32_t indexOffset = 0;
 
-    VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, offsets);
+    std::array<VkDeviceSize,1> offsets = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, offsets.data());
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
 
     for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)

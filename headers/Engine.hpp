@@ -14,9 +14,9 @@ namespace tat
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-static bool framebufferResized = false;
+//static bool framebufferResized = false;
 
-const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
+
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -24,7 +24,7 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
 
 struct SwapChainSupportDetails
 {
@@ -38,7 +38,7 @@ struct QueueFamilyIndices
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    bool isComplete()
+    auto isComplete() -> bool
     {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
@@ -65,6 +65,8 @@ class Engine
     VkSampler colorSampler;
 
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+    const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
+    const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     std::vector<VkCommandBuffer> commandBuffers{};
 
@@ -82,7 +84,7 @@ class Engine
     void resizeWindow();
 
     void createInstance();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+    static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
     void setupDebugMessenger();
     void createSurface();
     void pickPhysicalDevice();
@@ -94,17 +96,17 @@ class Engine
     void createCommandPool();
     void createSyncObjects();
 
-    std::vector<const char *> getRequiredExtensions();
-    VkSampleCountFlagBits getMaxUsableSampleCount();
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
-                                uint32_t windowHeight);
+    static auto getRequiredExtensions() -> std::vector<const char *>;
+    auto getMaxUsableSampleCount() -> VkSampleCountFlagBits;
+    static auto chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) -> VkSurfaceFormatKHR;
+    auto chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR;
+    static auto chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
+                                uint32_t windowHeight) -> VkExtent2D;
 
-    bool isDeviceSuitable(VkPhysicalDevice const &device);
-    QueueFamilyIndices findQueueFamiles(VkPhysicalDevice const &device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice const &device);
-    bool checkDeviceExtensionsSupport(VkPhysicalDevice const &device);
+    auto isDeviceSuitable(VkPhysicalDevice const &device) -> bool;
+    auto findQueueFamiles(VkPhysicalDevice const &device) -> QueueFamilyIndices;
+    auto querySwapChainSupport(VkPhysicalDevice const &device) -> SwapChainSupportDetails;
+    auto checkDeviceExtensionsSupport(VkPhysicalDevice const &device) -> bool;
 };
 
 } // namespace tat

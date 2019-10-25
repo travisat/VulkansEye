@@ -52,9 +52,9 @@ void Backdrop::loadCubeMap()
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.maxAnisotropy = 1.0F;
     samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.minLod = 0.0f;
+    samplerInfo.minLod = 0.0F;
     samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
@@ -96,7 +96,7 @@ void Backdrop::update(uint32_t currentImage)
 void Backdrop::createDescriptorPool()
 {
 
-    uint32_t numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
     std::array<VkDescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

@@ -1,17 +1,18 @@
 #include "Image.hpp"
 
 #include "helpers.h"
+#include "vulkan/vulkan_core.h"
 
 namespace tat
 {
 
 Image::~Image()
 {
-    if (image)
+    if (image != nullptr)
     {
         vmaDestroyImage(vulkan->allocator, image, allocation);
     }
-    if (imageView)
+    if (imageView != nullptr)
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
     }
@@ -60,10 +61,6 @@ void Image::loadSTB(std::string path)
     copyFrom(stagingBuffer);
     generateMipmaps();
     Trace("Loaded ", path, " at ", Timer::systemTime());
-}
-
-void Image::loadGLI(std::string path)
-{
 }
 
 void Image::loadTextureCube(std::string path)
@@ -159,11 +156,11 @@ void Image::allocate()
 
 void Image::deallocate()
 {
-    if (image)
+    if (image != nullptr)
     {
         vmaDestroyImage(vulkan->allocator, image, allocation);
     }
-    if (imageView)
+    if (imageView != nullptr)
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
     }
@@ -213,7 +210,7 @@ void Image::resize(int width, int height)
 {
     if (this->width != width || this->height != height)
     {
-        if (imageView)
+        if (imageView != nullptr)
         {
             vkDestroyImageView(vulkan->device, imageView, nullptr);
             imageView = VK_NULL_HANDLE;
@@ -230,7 +227,7 @@ void Image::generateMipmaps()
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(vulkan->physicalDevice, format, &formatProperties);
 
-    if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+    if ((formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == VK_FALSE)
     {
         throw std::runtime_error("texture image format does not support linear blitting");
     }
@@ -287,9 +284,13 @@ void Image::generateMipmaps()
                              nullptr, 0, nullptr, 1, &barrier);
 
         if (mipWidth > 1)
+        {
             mipWidth /= 2;
+        }
         if (mipHeight > 1)
+        {
             mipHeight /= 2;
+        }
     }
 
     barrier.subresourceRange.baseMipLevel = mipLevels - 1;
@@ -399,7 +400,7 @@ void Image::transitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout o
     layout = newLayout;
 } // namespace tat
 
-bool Image::hasStencilComponent(VkFormat format)
+auto Image::hasStencilComponent(VkFormat format) -> bool
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }

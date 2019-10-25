@@ -38,8 +38,6 @@ class Image
     ~Image();
 
     void loadSTB(std::string path); // use stb_image.h to load most normal image formats
-    void loadGLI(std::string path); // use gli to load texture (dds/ktx/kmg)
-                                    // files)
     void loadTextureCube(std::string path);
 
     void copyFrom(VkCommandBuffer commandBuffer, const Buffer &buffer);
@@ -57,7 +55,7 @@ class Image
     void deallocate();
     void createImageView();
 
-    bool hasStencilComponent(VkFormat format);
+    static auto hasStencilComponent(VkFormat format) -> bool;
 };
 
 } // namespace tat

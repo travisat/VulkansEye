@@ -10,10 +10,10 @@
 namespace tat
 {
 
-const glm::mat4 clip(1.0f, 0.0f, 0.0f, 0.0f,  //
-                     0.0f, -1.0f, 0.0f, 0.0f, //
-                     0.0f, 0.0f, 0.5f, 0.0f,  //
-                     0.0f, 0.0f, 0.5f, 1.0f); //
+const glm::mat4 clip(1.0F, 0.0F, 0.0F, 0.0F,  //
+                     0.0F, -1.0F, 0.0F, 0.0F, //
+                     0.0F, 0.0F, 0.5F, 0.0F,  //
+                     0.0F, 0.0F, 0.5F, 1.0F); //
 
 class Player
 {
@@ -23,11 +23,11 @@ class Player
 
     void create();
 
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 velocity = glm::vec3(0.0f);
-    glm::vec3 acceleration = glm::vec3(0.0f);
-    glm::vec3 force = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0F);
+    glm::vec3 position = glm::vec3(0.0F);
+    glm::vec3 velocity = glm::vec3(0.0F);
+    glm::vec3 acceleration = glm::vec3(0.0F);
+    glm::vec3 force = glm::vec3(0.0F);
 
     float height; // m
     float mass;   // kg
@@ -53,18 +53,18 @@ class Player
     float windowWidth;
     float windowHeight;
 
-    float jumpVelocity = 0.0f; // sqrt(2.0 * Gravity * heightofJump)
-    float lastTime = 0.0f;     // s
+    float jumpVelocity = 0.0F; // sqrt(2.0 * Gravity * heightofJump)
+    float lastTime = 0.0F;     // s
 
     // force applied while walking
     float velocityMax;        // m/s
     float timeToReachVMax;    // s
     float timeToStopfromVMax; // s
 
-    float mouseSensitivity = 33.4f;
+    float mouseSensitivity = 33.4F;
 
-    glm::vec2 lastMousePosition = glm::vec2(0.0f);
-    glm::vec3 moveDir = glm::vec3(0.0f);
+    glm::vec2 lastMousePosition = glm::vec2(0.0F);
+    glm::vec3 moveDir = glm::vec3(0.0F);
 };
 
 } // namespace tat

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <unordered_map>
 
 #include <tiny_obj_loader.h>
@@ -16,12 +16,13 @@
 namespace tat
 {
 
-static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)
+static void loadObj(const std::string& path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
+    std::string warn;
+    std::string err;
     std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
 
     assert(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()));
@@ -35,7 +36,7 @@ static void loadObj(std::string path, std::vector<Vertex> &vertices, std::vector
                                (attrib.vertices[3 * index.vertex_index + 1]),
                                (attrib.vertices[3 * index.vertex_index + 2])};
             vertex.UV = {attrib.texcoords[2 * index.texcoord_index + 0],
-                         1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+                         1.0F - attrib.texcoords[2 * index.texcoord_index + 1]};
             vertex.normal = {attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
                              attrib.normals[3 * index.normal_index + 2]};
 
@@ -60,9 +61,9 @@ class Model
 
     // generated values
     // mesh properties
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
+    glm::vec3 position = glm::vec3(0.0F);
+    glm::vec3 rotation = glm::vec3(0.0F);
+    glm::vec3 scale = glm::vec3(1.0F);
 
     uint32_t vertexSize = 0;
     uint32_t indexSize = 0;

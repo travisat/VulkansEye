@@ -16,6 +16,6 @@ layout(location = 0) out vec4 outPosition;
 
 void main()
 {
-    outPosition = vec4(inPosition, 1.0);
-    gl_Position = ubo.model * outPosition;
+    outPosition = ubo.model * vec4(inPosition, 1.0);
+    gl_Position = outPosition;
 }

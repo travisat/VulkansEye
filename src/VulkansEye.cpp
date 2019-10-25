@@ -71,10 +71,10 @@ void VulkansEye::cleanup()
 
 void VulkansEye::mainLoop()
 {
-    float lastFrameTime = 0.0f;
-    while (!glfwWindowShouldClose(vulkan.window))
+    float lastFrameTime = 0.0F;
+    while (glfwWindowShouldClose(vulkan.window) == 0)
     {
-        float now = Timer::getCount();
+        float now = Timer::time();
         float deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
@@ -115,7 +115,7 @@ void VulkansEye::handleInput()
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
         std::cerr << "Pressed Escape.  Closing." << std::endl;
-        glfwSetWindowShouldClose(vulkan.window, true);
+        glfwSetWindowShouldClose(vulkan.window, 1);
     }
     if (Input::wasKeyReleased(GLFW_KEY_F3))
     {
@@ -123,22 +123,22 @@ void VulkansEye::handleInput()
         vulkan.updateCommandBuffer = true;
     }
 
-    glm::vec2 moveDir = glm::vec2(0.0f);
+    auto moveDir = glm::vec2(0.0F);
     if (Input::isKeyPressed(GLFW_KEY_W))
     {
-        moveDir.y += 1.0f;
+        moveDir.y += 1.0F;
     }
     if (Input::isKeyPressed(GLFW_KEY_S))
     {
-        moveDir.y -= 1.0f;
+        moveDir.y -= 1.0F;
     }
     if (Input::isKeyPressed(GLFW_KEY_A))
     {
-        moveDir.x -= 1.0f;
+        moveDir.x -= 1.0F;
     }
     if (Input::isKeyPressed(GLFW_KEY_D))
     {
-        moveDir.x += 1.0f;
+        moveDir.x += 1.0F;
     }
     player.move(moveDir);
 

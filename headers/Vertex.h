@@ -19,7 +19,7 @@ struct Vertex
     glm::vec2 UV;
     glm::vec3 normal;
 
-    static VkVertexInputBindingDescription getBindingDescription()
+    static auto getBindingDescription() -> VkVertexInputBindingDescription
     {
         VkVertexInputBindingDescription bindingDescription = {};
         bindingDescription.binding = 0;
@@ -29,7 +29,7 @@ struct Vertex
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
+    static auto getAttributeDescriptions() -> std::array<VkVertexInputAttributeDescription, 3>
     {
         std::array<VkVertexInputAttributeDescription, 3> attributeDesriptions = {};
         attributeDesriptions[0].binding = 0;
@@ -50,7 +50,7 @@ struct Vertex
         return attributeDesriptions;
     }
 
-    bool operator==(const Vertex &other) const
+    auto operator==(const Vertex &other) const -> bool
     {
         return position == other.position && UV == other.UV && normal == other.normal;
     }
@@ -62,7 +62,7 @@ namespace std
 {
 template <> struct hash<tat::Vertex>
 {
-    size_t operator()(tat::Vertex const &vertex) const
+    auto operator()(tat::Vertex const &vertex) const -> size_t
     {
         return (hash<glm::vec3>()(vertex.position) ^ hash<glm::vec2>()(vertex.UV) ^
                 hash<glm::vec3>()(vertex.normal) << 1);

@@ -86,7 +86,7 @@ struct SceneConfig : Config
     std::vector<ActorConfig> actors;
 };
 
-static void loadSceneConfig(std::string path, SceneConfig &config)
+static void loadSceneConfig(const std::string& path, SceneConfig &config)
 {
     std::ifstream file(path);
     json j;

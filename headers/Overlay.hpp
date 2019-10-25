@@ -18,10 +18,10 @@ namespace tat
 // Options and values to display/toggle from the UI
 struct UISettings
 {
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    float velocity = 0.0f;
-    float fps = 0.0f;
+    glm::vec3 position = glm::vec3(0.0F);
+    glm::vec3 rotation = glm::vec3(0.0F);
+    float velocity = 0.0F;
+    float fps = 0.0F;
 };
 
 // ----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ class Overlay
 
     float lastFrameTime = 0;
     float lastUpdateTime = 0;
-    float updateFreqTime = 0.1f; // time between updates
+    float updateFreqTime = 0.1F; // time between updates
 
     void createBuffers();
     void createFont();

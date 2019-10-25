@@ -7,7 +7,7 @@ namespace tat
 
 void Actor::create()
 {
-    // TODO implement using path to load model
+    // TODO(travisat): implement using path to load model
     name = config->name;
 
     model.vulkan = vulkan;

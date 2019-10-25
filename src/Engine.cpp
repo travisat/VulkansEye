@@ -1,10 +1,11 @@
 #include "Engine.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan_core.h"
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                    void *pUserData)
+static VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT /*messageSeverity*/,
+                                                VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
+                                                const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *
+                                                /*pUserData*/) -> VkBool32
 {
     tat::Trace("Validation: ", pCallbackData->pMessage);
     return VK_FALSE;
@@ -13,25 +14,24 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 namespace tat
 {
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                      const VkAllocationCallbacks *pAllocator,
-                                      VkDebugUtilsMessengerEXT *pDebugMessenger)
+auto CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                  const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
+    -> VkResult
 {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
     if (func != nullptr)
     {
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
     }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
 };
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
                                    const VkAllocationCallbacks *pAllocator)
 {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
     if (func != nullptr)
     {
         func(instance, debugMessenger, pAllocator);
@@ -85,8 +85,8 @@ void Engine::renderShadows(VkCommandBuffer commandBuffer, int32_t currentImage)
     VkViewport viewport{};
     viewport.width = 1024;
     viewport.height = 1024;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
@@ -96,11 +96,11 @@ void Engine::renderShadows(VkCommandBuffer commandBuffer, int32_t currentImage)
     scissor.offset.y = 0;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdSetLineWidth(commandBuffer, 1.0f);
+    vkCmdSetLineWidth(commandBuffer, 1.0F);
 
     std::array<VkClearValue, 2> clearValues = {};
-    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-    clearValues[1].depthStencil = {1.0f, 0};
+    clearValues[0].color = {{0.0F, 0.0F, 0.0F, 1.0F}};
+    clearValues[1].depthStencil = {1.0F, 0};
 
     VkRenderPassBeginInfo shadowPassInfo = {};
     shadowPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -120,10 +120,10 @@ void Engine::renderShadows(VkCommandBuffer commandBuffer, int32_t currentImage)
 void Engine::renderColors(VkCommandBuffer commandBuffer, int32_t currentImage)
 {
     VkViewport viewport{};
-    viewport.width = (float)vulkan->width;
-    viewport.height = (float)vulkan->height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.width = static_cast<float>(vulkan->width);
+    viewport.height = static_cast<float>(vulkan->height);
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
@@ -132,11 +132,11 @@ void Engine::renderColors(VkCommandBuffer commandBuffer, int32_t currentImage)
     scissor.offset.y = 0;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdSetLineWidth(commandBuffer, 1.0f);
+    vkCmdSetLineWidth(commandBuffer, 1.0F);
 
     std::array<VkClearValue, 2> clearValues = {};
-    clearValues[0].color = {0.0f, 0.0f, 0.0f, 0.0f};
-    clearValues[1].depthStencil = {1.0f, 0};
+    clearValues[0].color = {{0.0F, 0.0F, 0.0F, 0.0F}};
+    clearValues[1].depthStencil = {1.0F, 0};
 
     VkRenderPassBeginInfo colorPassInfo = {};
     colorPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -170,7 +170,7 @@ void Engine::createCommandBuffers()
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = vulkan->commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+    allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
     CheckResult(vkAllocateCommandBuffers(vulkan->device, &allocInfo, commandBuffers.data()));
 
@@ -195,7 +195,9 @@ void Engine::createCommandBuffers()
 void Engine::drawFrame()
 {
     if (!vulkan->prepared)
+    {
         return;
+    }
 
     if (overlay->update)
     {
@@ -239,7 +241,7 @@ void Engine::drawFrame()
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext = NULL;
+    presentInfo.pNext = nullptr;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &vulkan->swapChain;
     presentInfo.pImageIndices = &currentBuffer;
@@ -252,7 +254,7 @@ void Engine::drawFrame()
         resizeWindow();
         return;
     }
-    else if (result != VK_SUCCESS)
+    if (result != VK_SUCCESS)
     {
         CheckResult(result);
     }
@@ -379,7 +381,7 @@ void Engine::createInstance()
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
         populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
+        createInfo.pNext = &debugCreateInfo;
     }
     else
     {
@@ -406,7 +408,9 @@ void Engine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT
 void Engine::setupDebugMessenger()
 {
     if (!enableValidationLayers)
+    {
         return;
+    }
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(createInfo);
@@ -444,7 +448,7 @@ void Engine::pickPhysicalDevice()
     assert(vulkan->physicalDevice != VK_NULL_HANDLE);
 }
 
-bool Engine::isDeviceSuitable(VkPhysicalDevice const &device)
+auto Engine::isDeviceSuitable(VkPhysicalDevice const &device) -> bool
 {
     QueueFamilyIndices indicies = findQueueFamiles(device);
 
@@ -460,11 +464,11 @@ bool Engine::isDeviceSuitable(VkPhysicalDevice const &device)
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-    return indicies.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy &&
-           supportedFeatures.tessellationShader;
+    return indicies.isComplete() && extensionsSupported && swapChainAdequate &&
+           (supportedFeatures.samplerAnisotropy != VK_FALSE) && (supportedFeatures.tessellationShader != 0U);
 };
 
-QueueFamilyIndices Engine::findQueueFamiles(VkPhysicalDevice const &device)
+auto Engine::findQueueFamiles(VkPhysicalDevice const &device) -> QueueFamilyIndices
 {
     QueueFamilyIndices indices;
 
@@ -477,15 +481,15 @@ QueueFamilyIndices Engine::findQueueFamiles(VkPhysicalDevice const &device)
     int i = 0;
     for (const auto &queueFamily : queueFamilies)
     {
-        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) != VK_FALSE)
         {
             indices.graphicsFamily = i;
         }
 
-        VkBool32 presentSupport = false;
+        VkBool32 presentSupport = VK_FALSE;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, vulkan->surface, &presentSupport);
 
-        if (queueFamily.queueCount > 0 && presentSupport)
+        if (queueFamily.queueCount > 0 && presentSupport != 0U)
         {
             indices.presentFamily = i;
         }
@@ -499,7 +503,7 @@ QueueFamilyIndices Engine::findQueueFamiles(VkPhysicalDevice const &device)
     return indices;
 }
 
-SwapChainSupportDetails Engine::querySwapChainSupport(VkPhysicalDevice const &device)
+auto Engine::querySwapChainSupport(VkPhysicalDevice const &device) -> SwapChainSupportDetails
 {
     SwapChainSupportDetails details;
 
@@ -527,7 +531,7 @@ SwapChainSupportDetails Engine::querySwapChainSupport(VkPhysicalDevice const &de
     return details;
 }
 
-bool Engine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device)
+auto Engine::checkDeviceExtensionsSupport(VkPhysicalDevice const &device) -> bool
 {
     uint32_t extensionsCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
@@ -552,7 +556,7 @@ void Engine::createLogicalDevice()
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-    float queuePriority = 1.0f;
+    float queuePriority = 1.0F;
     for (uint32_t queueFamily : uniqueQueueFamilies)
     {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -623,13 +627,13 @@ void Engine::createSwapChain()
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices = findQueueFamiles(vulkan->physicalDevice);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::array<uint32_t, 2> queueFamilyIndices = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily)
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
     }
     else
     {
@@ -770,7 +774,7 @@ void Engine::createSyncObjects()
     }
 }
 
-std::vector<const char *> Engine::getRequiredExtensions()
+auto Engine::getRequiredExtensions() -> std::vector<const char *>
 {
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
@@ -786,31 +790,31 @@ std::vector<const char *> Engine::getRequiredExtensions()
     return extensions;
 };
 
-VkSampleCountFlagBits Engine::getMaxUsableSampleCount()
+auto Engine::getMaxUsableSampleCount() -> VkSampleCountFlagBits
 {
     VkSampleCountFlags counts = std::min(vulkan->properties.limits.framebufferColorSampleCounts,
                                          vulkan->properties.limits.framebufferDepthSampleCounts);
-    if (counts & VK_SAMPLE_COUNT_64_BIT)
+    if ((counts & VK_SAMPLE_COUNT_64_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_64_BIT;
     }
-    if (counts & VK_SAMPLE_COUNT_32_BIT)
+    if ((counts & VK_SAMPLE_COUNT_32_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_32_BIT;
     }
-    if (counts & VK_SAMPLE_COUNT_16_BIT)
+    if ((counts & VK_SAMPLE_COUNT_16_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_16_BIT;
     }
-    if (counts & VK_SAMPLE_COUNT_8_BIT)
+    if ((counts & VK_SAMPLE_COUNT_8_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_8_BIT;
     }
-    if (counts & VK_SAMPLE_COUNT_4_BIT)
+    if ((counts & VK_SAMPLE_COUNT_4_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_4_BIT;
     }
-    if (counts & VK_SAMPLE_COUNT_2_BIT)
+    if ((counts & VK_SAMPLE_COUNT_2_BIT) != VK_FALSE)
     {
         return VK_SAMPLE_COUNT_2_BIT;
     }
@@ -818,7 +822,7 @@ VkSampleCountFlagBits Engine::getMaxUsableSampleCount()
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-VkSurfaceFormatKHR Engine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
+auto Engine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) -> VkSurfaceFormatKHR
 {
     for (const auto &availableFormat : availableFormats)
     {
@@ -832,7 +836,7 @@ VkSurfaceFormatKHR Engine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFo
     return availableFormats[0];
 }
 
-VkPresentModeKHR Engine::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes)
+auto Engine::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) -> VkPresentModeKHR
 {
     for (const auto &availablePresentMode : availablePresentModes)
     {
@@ -844,24 +848,22 @@ VkPresentModeKHR Engine::chooseSwapPresentMode(const std::vector<VkPresentModeKH
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
-                                    uint32_t windowHeight)
+auto Engine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth, uint32_t windowHeight)
+    -> VkExtent2D
 {
     if (capabilities.currentExtent.width != UINT32_MAX)
     {
         return capabilities.currentExtent;
     }
-    else
-    {
-        VkExtent2D actualExtent = {windowWidth, windowHeight};
 
-        actualExtent.width =
-            std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height =
-            std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+    VkExtent2D actualExtent = {windowWidth, windowHeight};
 
-        return actualExtent;
-    }
+    actualExtent.width =
+        std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    actualExtent.height =
+        std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+    return actualExtent;
 }
 
 } // namespace tat

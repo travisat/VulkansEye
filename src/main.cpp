@@ -9,9 +9,9 @@
 const int WIDTH = 1024;
 const int HEIGHT = 768;
 
-int main()
+auto main() -> int
 {
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
     tat::VulkansEye app;
     try

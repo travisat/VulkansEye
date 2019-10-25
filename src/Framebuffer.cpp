@@ -25,8 +25,10 @@ void Framebuffer::create()
 
 void Framebuffer::cleanup()
 {
-    if (framebuffer)
+    if (framebuffer != nullptr)
+    {
         vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+    }
 }
 
 } // namespace tat

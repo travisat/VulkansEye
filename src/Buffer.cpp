@@ -11,7 +11,7 @@ Buffer::~Buffer()
 
 void Buffer::resize(VkDeviceSize s)
 {
-    if (buffer)
+    if (buffer != nullptr)
     {
         deallocate();
     }
@@ -52,8 +52,10 @@ void Buffer::copyTo(Buffer &destination)
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
-        if (destination.buffer)
+        if (destination.buffer != nullptr)
+        {
             destination.deallocate();
+        }
         destination.allocate(size);
     }
 

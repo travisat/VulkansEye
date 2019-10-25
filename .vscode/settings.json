@@ -89,5 +89,7 @@
         "hash_set": "cpp",
         "stack": "cpp"
     },
-    "C_Cpp.configurationWarnings": "Disabled"
+    "[glsl]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    }
 }

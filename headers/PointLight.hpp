@@ -19,7 +19,7 @@ class PointLight
     void create();
 
   private:
-    glm::vec3 kelvinToRGB(float kelvin);
+    static auto kelvinToRGB(float kelvin) -> glm::vec3;
 };
 
 } // namespace tat

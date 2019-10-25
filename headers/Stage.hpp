@@ -15,7 +15,7 @@ namespace tat
 class Stage
 {
   public:
-    tat::Vulkan *vulkan = nullptr;
+    Vulkan *vulkan = nullptr;
     StageConfig *config;
     Player *player;
 

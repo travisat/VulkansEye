@@ -34,15 +34,15 @@ class Scene
     void drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
-    uint32_t numTessBuffers()
+    auto numTessBuffers() -> uint32_t
     {
         return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size());
     };
-    uint32_t numUniformLights()
+    auto numUniformLights() -> uint32_t
     {
         return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size()) * numLights;
     };
-    uint32_t numImageSamplers()
+    auto numImageSamplers() -> uint32_t
     {
         return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
     };
