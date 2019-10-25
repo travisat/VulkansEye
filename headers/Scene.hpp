@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <utility>
+#include <array>
 
 #include "Actor.hpp"
 #include "Backdrop.hpp"

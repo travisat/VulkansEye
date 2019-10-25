@@ -21,7 +21,7 @@ void main(void)
         for (int i = 0; i < 3; ++i) // for each triangle's vertices
         {
             outPosition = inPosition[i];
-            gl_Position = shadows.matrix[face] * gl_in[i].gl_Position;
+            gl_Position = shadows.matrix[face] * outPosition;
             EmitVertex();
         }
         EndPrimitive();

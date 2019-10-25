@@ -1,16 +1,17 @@
 #include <glm/gtc/constants.hpp>
 
+#include "Engine.hpp"
 #include "Overlay.hpp"
 #include "Timer.h"
-#include "Engine.hpp"
+
 
 namespace tat
 {
 
 enum class DisplayMode
 {
-  cursor = 0,
-  nocursor = 1 
+    cursor = 0,
+    nocursor = 1
 };
 
 class VulkansEye
@@ -32,10 +33,12 @@ class VulkansEye
     void mainLoop();
     void handleInput();
 
-    static void framebufferResizeCallback(GLFWwindow *window, int  /*width*/, int  /*height*/)
+    static void framebufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
     {
-        auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
+        //auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
     };
+
+    static void loadSceneConfig(const std::string &path, SceneConfig &config);
 };
 
 } // namespace tat

@@ -10,7 +10,7 @@
             "name": "Launch Program",
             "program": "${command:cmake.launchTargetPath}",
             "cwd": "${workspaceRoot}",
-            "terminal":"integrated"
+            "terminal":"console"
         }
     ]
 }

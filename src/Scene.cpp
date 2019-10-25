@@ -179,21 +179,18 @@ void Scene::update(uint32_t currentImage)
     glm::mat4 shadowPerspective = clip * glm::perspective(glm::radians(90.0F), 1.0F, vulkan->zNear, vulkan->zFar);
 
     glm::vec3 lightPos = pointLights[0].light.position;
-    glm::mat4 shadowView = glm::translate(glm::mat4(1.0), lightPos);
+    glm::mat4 shadowView = glm::translate(glm::mat4(1.0), lightPos * -1.0F);
 
     // rotate then multiply view by projection
     // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
-    std::vector<glm::mat4> shadowVP;
-    shadowVP.resize(6);
+    std::array<glm::mat4, 6> shadowVP{};
     // POSITIVE_X
     shadowVP[0] = glm::rotate(shadowView, glm::radians(90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
-    // shadowVP[0] = glm::rotate(shadowVP[0], glm::radians(180.0f),
-    // glm::vec3(1.0f, 0.0f, 0.0f));
+     shadowVP[0] = glm::rotate(shadowVP[0], glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
     shadowVP[0] = shadowPerspective * shadowVP[0];
     // NEGATIVE_X
     shadowVP[1] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
-    // shadowVP[1] = glm::rotate(shadowVP[1], glm::radians(180.0f),
-    // glm::vec3(1.0f, 0.0f, 0.0f));
+     shadowVP[1] = glm::rotate(shadowVP[1], glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
     shadowVP[1] = shadowPerspective * shadowVP[1];
     // POSITIVE_Y
     shadowVP[2] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(1.0F, 0.0F, 0.0F));

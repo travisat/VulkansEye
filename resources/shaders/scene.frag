@@ -170,8 +170,8 @@ float shadowCalc(vec3 lightVec)
     float closestDepth = texture(shadowMap, lightVec).r;
     float currentDepth = length(lightVec);
     float bias = 0.15;
-    float shadow = (currentDepth <= closestDepth + bias) ? 0.9 : 0.0;
-    return 1.0 - shadow;
+    float shadow = (currentDepth <= closestDepth + bias) ? 1.0 : 0.5;
+    return shadow;
 }
 
 void main()

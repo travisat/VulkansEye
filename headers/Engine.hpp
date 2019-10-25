@@ -14,17 +14,11 @@ namespace tat
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-//static bool framebufferResized = false;
-
-
-
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
-
-
 
 struct SwapChainSupportDetails
 {
@@ -62,7 +56,6 @@ class Engine
     std::vector<Framebuffer> swapChainFbs{};
     Image colorAttachment{};
     Image depthAttachment{};
-    VkSampler colorSampler;
 
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
     const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
