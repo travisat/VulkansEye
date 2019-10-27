@@ -1,5 +1,7 @@
 #include "Scene.hpp"
+#include "Vulkan.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan_core.h"
 
 namespace tat
 {
@@ -171,57 +173,52 @@ void Scene::update(uint32_t currentImage)
     for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = pointLights[i].light.position;
+        //uLight.light[i].position.x += glm::sin(Timer::time());
         uLight.light[i].color = pointLights[i].light.color;
         uLight.light[i].lumens = pointLights[i].light.lumens;
     }
 
+    // uLight.light[0].position = -1.F * player->position;
+
+    UniformShadow shadowmvp{};
     // clip converts perspective to vulkan
-    glm::mat4 shadowPerspective = clip * glm::perspective(glm::radians(90.0F), 1.0F, vulkan->zNear, vulkan->zFar);
+    shadowmvp.projection = glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
+    // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
+    // POSITIVE_X
+    shadowmvp.view[0] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(0.F, 1.F, 0.F));
+    shadowmvp.view[0] = glm::rotate(shadowmvp.view[0], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    // NEGATIVE_X
+    shadowmvp.view[1] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(0.F, 1.F, 0.F));
+    shadowmvp.view[1] = glm::rotate(shadowmvp.view[1], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    // POSITIVE_Y
+    shadowmvp.view[2] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(1.F, 0.F, 0.F));
+    // NEGATIVE_Y
+    shadowmvp.view[3] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(1.F, 0.F, 0.F));
+    // POSITIVE_Z
+    shadowmvp.view[4] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    // NEGATIVE_Z
+    shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
 
     glm::vec3 lightPos = pointLights[0].light.position;
-    glm::mat4 shadowView = glm::translate(glm::mat4(1.0), lightPos * -1.0F);
-
-    // rotate then multiply view by projection
-    // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
-    std::array<glm::mat4, 6> shadowVP{};
-    // POSITIVE_X
-    shadowVP[0] = glm::rotate(shadowView, glm::radians(90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
-     shadowVP[0] = glm::rotate(shadowVP[0], glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
-    shadowVP[0] = shadowPerspective * shadowVP[0];
-    // NEGATIVE_X
-    shadowVP[1] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(0.0F, 1.0F, 0.0F));
-     shadowVP[1] = glm::rotate(shadowVP[1], glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
-    shadowVP[1] = shadowPerspective * shadowVP[1];
-    // POSITIVE_Y
-    shadowVP[2] = glm::rotate(shadowView, glm::radians(-90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
-    shadowVP[2] = shadowPerspective * shadowVP[2];
-    // NEGATIVE_Y
-    shadowVP[3] = glm::rotate(shadowView, glm::radians(90.0F), glm::vec3(1.0F, 0.0F, 0.0F));
-    shadowVP[3] = shadowPerspective * shadowVP[3];
-    // POSITIVE_Z
-    shadowVP[4] = glm::rotate(shadowView, glm::radians(180.0F), glm::vec3(1.0F, 0.0F, 0.0F));
-    shadowVP[4] = shadowPerspective * shadowVP[4];
-    // NEGATIVE_Z
-    shadowVP[5] = glm::rotate(shadowView, glm::radians(180.0F), glm::vec3(0.0F, 0.0F, 1.0F));
-    shadowVP[5] = shadowPerspective * shadowVP[5];
+    shadowmvp.lightpos = glm::vec4(lightPos, 1.F);
 
     for (auto &stagemodel : stage.models)
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0F), stagemodel.position);
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
+        glm::mat4 model = glm::translate(glm::mat4(1.F), stagemodel.position);
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.F, 0.F, 0.F));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.F, 1.F, 0.F));
+        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.F, 0.F, 1.F));
         model = glm::scale(model, stagemodel.scale);
 
-        stagemodel.uTessEval.mvp = player->perspective * player->view * model;
+        stagemodel.uTessEval.model = model;
+        stagemodel.uTessEval.viewProjection = player->perspective * player->view;
 
         stagemodel.tescBuffers[currentImage].update(&stagemodel.uTessControl, sizeof(stagemodel.uTessControl));
         stagemodel.teseBuffers[currentImage].update(&stagemodel.uTessEval, sizeof(stagemodel.uTessEval));
         stagemodel.uniformLights[currentImage].update(&uLight, sizeof(uLight));
 
-        stagemodel.shadowBuffer.update(shadowVP);
-        stagemodel.uBuffer.model = glm::translate(model, lightPos);
-        stagemodel.uniformBuffer.update(&stagemodel.uBuffer, sizeof(stagemodel.uBuffer));
+        shadowmvp.model = glm::translate(model, glm::vec3(-lightPos.x, -lightPos.y, -lightPos.z));
+        stagemodel.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
     }
 
     for (auto &actor : actors)
@@ -232,14 +229,15 @@ void Scene::update(uint32_t currentImage)
         model = glm::rotate(model, glm::radians(actor.model.rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
         model = glm::scale(model, actor.model.scale);
 
-        actor.model.uTessEval.mvp = player->perspective * player->view * model;
+        actor.model.uTessEval.model = model;
+        actor.model.uTessEval.viewProjection = player->perspective * player->view;
 
         actor.model.tescBuffers[currentImage].update(&actor.model.uTessControl, sizeof(actor.model.uTessControl));
         actor.model.teseBuffers[currentImage].update(&actor.model.uTessEval, sizeof(actor.model.uTessEval));
         actor.model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
-        actor.model.shadowBuffer.update(shadowVP);
-        actor.model.uBuffer.model = glm::translate(model, lightPos);
-        actor.model.uniformBuffer.update(&actor.model.uBuffer, sizeof(actor.model.uBuffer));
+
+        shadowmvp.model = glm::translate(model, glm::vec3(-lightPos.x, -lightPos.y, -lightPos.z));
+        actor.model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
     }
 }
 
@@ -334,7 +332,7 @@ void Scene::createColorLayouts()
     aoLayoutBinding.pImmutableSamplers = nullptr;
     aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {
+    std::array<VkDescriptorSetLayoutBinding, 10> bindings = {
         uTessControlLayoutBinding, uTessEvalLayoutBinding, dispLayoutBinding,   uLightLayoutBinding,
         shadowLayoutBinding,       diffuseLayoutBinding,   normalLayoutBinding, roughnessLayoutBinding,
         metallicLayoutBinding,     aoLayoutBinding};
@@ -395,42 +393,27 @@ void Scene::createShadowPool()
 
     std::array<VkDescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 3 * numTessBuffers() * numSwapChainImages;
+    poolSizes[0].descriptorCount = numShadows() * numSwapChainImages;
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 3 * numTessBuffers() * numSwapChainImages;
+    poolInfo.maxSets = numShadows() * numSwapChainImages;
 
     CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &shadowPool));
 }
 
 void Scene::createShadowLayouts()
 {
-
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
     VkDescriptorSetLayoutBinding shadowLayoutBinding = {};
-    shadowLayoutBinding.binding = 1;
+    shadowLayoutBinding.binding = 0;
     shadowLayoutBinding.descriptorCount = 1;
     shadowLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     shadowLayoutBinding.pImmutableSamplers = nullptr;
     shadowLayoutBinding.stageFlags = VK_SHADER_STAGE_GEOMETRY_BIT;
 
-    VkDescriptorSetLayoutBinding lightLayoutBinding = {};
-    lightLayoutBinding.binding = 2;
-    lightLayoutBinding.descriptorCount = 1;
-    lightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    lightLayoutBinding.pImmutableSamplers = nullptr;
-    lightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::vector<VkDescriptorSetLayoutBinding> layouts = {uboLayoutBinding, shadowLayoutBinding, lightLayoutBinding};
+    std::array<VkDescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -474,9 +457,7 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    // shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    shadowPipeline.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
-
+    shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     shadowPipeline.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     shadowPipeline.create();

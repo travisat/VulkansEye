@@ -9,7 +9,7 @@ layout(binding = 0) uniform UniformBufferObject
 ubo;
 
 // camera is always at center of skybox
-layout(location = 0) out vec3 eyeDirection;
+layout(location = 0) out vec3 eyeDirection; 
 
 void main()
 {
@@ -17,9 +17,8 @@ void main()
     vec4 position = vec4(UV * 2.0f + -1.0f, 0.0f, 1.0f);
 
     mat4 inverseProjection = inverse(ubo.projection);
-    mat3 inversModelView = transpose(mat3(ubo.view));
-    vec3 unprojected = (inverseProjection * position).xyz;
-    eyeDirection = inversModelView * unprojected;
+    mat4 inverseModelView = transpose(ubo.view);
+    eyeDirection = vec3(inverseModelView * inverseProjection * position);
 
     gl_Position = position;
 }

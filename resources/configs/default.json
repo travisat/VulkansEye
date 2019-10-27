@@ -9,9 +9,9 @@
         "table": {
             "name": "table",
             "position": {
-                "x": 0,
+                "x": 3,
                 "y": 0,
-                "z": 0
+                "z": 4
             },
             "rotation": {
                 "x": 0,
@@ -75,12 +75,12 @@
         "lantern": {
             "name": "one",
             "position": {
-                "x": 1,
-                "y": -3.4,
-                "z": 1
+                "x": -2,
+                "y": 3.7,
+                "z": -2
             },
             "temperature": 6400,
-            "lumens": 2500
+            "lumens": 4500
         }
     },
     "player": {
@@ -92,7 +92,7 @@
         "timeToStopFromVMax": 0.1,
         "jumpHeight": 1.0,
         "mouseSensitivity": 33.4,
-        "fieldOfView": 70,
+        "fieldOfView": 67,
         "position": {
             "x": 0,
             "y": 0,

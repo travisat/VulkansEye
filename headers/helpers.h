@@ -6,8 +6,8 @@
 #endif
 
 #include <cassert>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -40,8 +40,7 @@ template <typename... Args> void Trace(Args &&... args)
 {
     std::ostringstream stream;
     (stream << ... << std::forward<Args>(args)) << '\n';
-
-    OutputDebugString(stream.str().c_str());
+    std::clog << stream.str();
 }
 
 template <typename T> auto CheckResult(T result) -> T
@@ -50,7 +49,7 @@ template <typename T> auto CheckResult(T result) -> T
     {
         std::ostringstream stream;
         stream << " Error result is " << result << " in " << __FILE__ << " at line " << __LINE__ << std::endl;
-        OutputDebugString(stream.str().c_str());
+        std::cerr << stream.str();
         assert(result == 0);
     }
     return result;

@@ -5,7 +5,6 @@
 
 #include <tiny_obj_loader.h>
 
-
 #include "Config.h"
 #include "Timer.h"
 #include "Vertex.h"
@@ -36,8 +35,8 @@ class Model
     std::vector<uint32_t> indices;
     Buffer vertexBuffer;
     Buffer indexBuffer;
-    
-    //color pipeline
+
+    // color pipeline
     std::vector<VkDescriptorSet> colorSets;
     Image diffuse;
     Image normal;
@@ -57,15 +56,13 @@ class Model
     TessControl uTessControl = {};
     TessEval uTessEval = {};
 
-
-    //shadow pipeline
+    // shadow pipeline
     std::vector<VkDescriptorSet> shadowSets;
     Image *shadow;
+    UniformShadow uShadow = {};
     VkSampler shadowSampler;
-    Buffer shadowBuffer;
-    Buffer uniformBuffer;
-    shadowTransforms uShadow = {};
-    UniformBuffer uBuffer = {};
+    std::vector<Buffer> shadowBuffers;
+   
 
     ~Model();
     void create();

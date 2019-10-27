@@ -1,15 +1,12 @@
 #version 450
 
-//[0]
-// https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
-//[1]
-// https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
-//[2]
-// https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-//[3]
-// https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
+//[0] https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
+//[1] https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
+//[2] https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+//[3] https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
 //[4] https://github.com/wdas/brdf/blob/master/src/brdfs/disney.brdf
 //[5] https://github.com/google/filament/blob/master/shaders/src/light_punctual.fs
+//[6] https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
 
 const int numLights = 1;
 
@@ -164,14 +161,29 @@ float getDistanceAttenuation(vec3 lightVector, float lumens)
     return attenuation / (4.0 * PI * max(distanceSquared, 0.00001));
 }
 
-//https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
+//[6]
+vec3 sampleOffsetDirections[20] = vec3[](
+    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1), vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1),
+    vec3(-1, 1, -1), vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0), vec3(1, 0, 1), vec3(-1, 0, 1),
+    vec3(1, 0, -1), vec3(-1, 0, -1), vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1));
+
+//[6]
 float shadowCalc(vec3 lightVec)
 {
-    float closestDepth = texture(shadowMap, lightVec).r;
-    float currentDepth = length(lightVec);
+    float shadow = 0.0;
     float bias = 0.15;
-    float shadow = (currentDepth <= closestDepth + bias) ? 1.0 : 0.5;
-    return shadow;
+    int samples = 20;
+    float viewDistance = length(inPosition);
+    float currentDepth = length(lightVec);
+     float diskRadius = (1.0 + (viewDistance / 512.0)) / 50.0;  
+    for (int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(shadowMap, lightVec + sampleOffsetDirections[i] * diskRadius).r;
+        if (currentDepth - bias > closestDepth)
+            shadow += 0.6;
+    }
+    shadow /= float(samples);
+    return 1.0 - shadow;
 }
 
 void main()
@@ -181,8 +193,8 @@ void main()
     float roughness = texture(roughnessMap, inUV).r;
     float ambientOcclusion = texture(aoMap, inUV).r;
 
-    vec3 N = getNormal(inPosition, inNormal); //Normal vector
-    vec3 V = normalize(inPosition); // Vector from surface to camera(origin)
+    vec3 N = getNormal(inPosition, inNormal); // Normal vector
+    vec3 V = normalize(inPosition);           // Vector from surface to camera(origin)
 
     vec3 luminance = vec3(0.0);
     for (int i = 0; i < numLights; ++i)

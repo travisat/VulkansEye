@@ -1,4 +1,5 @@
 #include "Model.hpp"
+#include "Vulkan.hpp"
 #include "helpers.h"
 
 namespace tat
@@ -253,50 +254,21 @@ void Model::createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout
     CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, shadowSets.data()));
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
-
-        VkDescriptorBufferInfo uboInfo = {};
-        uboInfo.buffer = uniformBuffer.buffer;
-        uboInfo.offset = 0;
-        uboInfo.range = sizeof(uniformBuffer);
-
         VkDescriptorBufferInfo shadowInfo = {};
-        shadowInfo.buffer = shadowBuffer.buffer;
+        shadowInfo.buffer = shadowBuffers[i].buffer;
         shadowInfo.offset = 0;
-        shadowInfo.range = sizeof(shadowTransforms);
-
-        VkDescriptorBufferInfo lightInfo = {};
-        lightInfo.buffer = uniformLights[0].buffer;
-        lightInfo.offset = 0;
-        lightInfo.range = sizeof(UniformLight);
-
-        VkWriteDescriptorSet uboSet{};
-        uboSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        uboSet.dstSet = shadowSets[i];
-        uboSet.dstBinding = 0;
-        uboSet.dstArrayElement = 0;
-        uboSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboSet.descriptorCount = 1;
-        uboSet.pBufferInfo = &uboInfo;
+        shadowInfo.range = sizeof(UniformShadow);
 
         VkWriteDescriptorSet shadow{};
         shadow.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         shadow.dstSet = shadowSets[i];
-        shadow.dstBinding = 1;
+        shadow.dstBinding = 0;
         shadow.dstArrayElement = 0;
         shadow.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         shadow.descriptorCount = 1;
         shadow.pBufferInfo = &shadowInfo;
 
-        VkWriteDescriptorSet light{};
-        light.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        light.dstSet = shadowSets[i];
-        light.dstBinding = 2;
-        light.dstArrayElement = 0;
-        light.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        light.descriptorCount = 1;
-        light.pBufferInfo = &lightInfo;
-
-        std::vector<VkWriteDescriptorSet> descriptorWrites = {uboSet, shadow, light};
+        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {shadow};
 
         vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
                                0, nullptr);
@@ -308,6 +280,7 @@ void Model::createUniformBuffers()
     uniformLights.resize(vulkan->swapChainImages.size());
     tescBuffers.resize(vulkan->swapChainImages.size());
     teseBuffers.resize(vulkan->swapChainImages.size());
+    shadowBuffers.resize(vulkan->swapChainImages.size());
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
@@ -325,17 +298,12 @@ void Model::createUniformBuffers()
         uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformLights[i].resize(sizeof(UniformLight));
+
+        shadowBuffers[i].vulkan = vulkan;
+        shadowBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        shadowBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        shadowBuffers[i].resize(sizeof(UniformShadow));
     }
-
-    shadowBuffer.vulkan = vulkan;
-    shadowBuffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    shadowBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    shadowBuffer.resize(sizeof(shadowTransforms));
-
-    uniformBuffer.vulkan = vulkan;
-    uniformBuffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    uniformBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    uniformBuffer.resize(sizeof(UniformBuffer));
 }
 
 void Model::loadObj(const std::string &path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)

@@ -17,32 +17,33 @@
 
 #include <vk_mem_alloc.h>
 
+#include <array>
 #include <iostream>
 #include <vector>
-#include <array>
+
 
 namespace tat
 {
 
 struct UniformBuffer
 {
-    alignas(16) glm::mat4 projection {};
-    alignas(16) glm::mat4 view {};
-    alignas(16) glm::mat4 model {};
+    alignas(16) glm::mat4 projection{};
+    alignas(16) glm::mat4 view{};
+    alignas(16) glm::mat4 model{};
 };
 
 static const int numLights = 1;
 struct uPointLight
 {
-    glm::vec3 position {};
+    glm::vec3 position{};
     float buffer = 0.0F;
-    glm::vec3 color {};
+    glm::vec3 color{};
     float lumens = 0.0F;
 };
 
 struct UniformLight
 {
-    std::array<uPointLight, numLights> light {};
+    std::array<uPointLight, numLights> light{};
 };
 
 struct TessControl
@@ -52,14 +53,18 @@ struct TessControl
 
 struct TessEval
 {
-    glm::mat4 mvp {};
+    glm::mat4 model{};
+    glm::mat4 viewProjection{};
     float tessStrength = 0.1F;
     float tessAlpha = 0.3F;
 };
 
-struct shadowTransforms
+struct UniformShadow
 {
-    std::array<glm::mat4, 6> faces {};
+    glm::mat4 model{};
+    std::array<glm::mat4, 6> view{};
+    glm::mat4 projection{};
+    glm::vec4 lightpos{};
 };
 
 class Vulkan
@@ -110,8 +115,8 @@ class Vulkan
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t currentImage = 0;
-    float zNear = 0.1F;
-    float zFar = 1024.0F;
+    float zNear = 0.01F;
+    float zFar = 512.0F;
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;
@@ -175,7 +180,7 @@ class Vulkan
     }
 
     auto findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                 VkFormatFeatureFlags features) -> VkFormat
+                             VkFormatFeatureFlags features) -> VkFormat
     {
         for (VkFormat format : candidates)
         {

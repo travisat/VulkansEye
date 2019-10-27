@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <utility>
 #include <array>
 
@@ -46,6 +47,10 @@ class Scene
     auto numImageSamplers() -> uint32_t
     {
         return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
+    };
+    auto numShadows() -> uint32_t
+    {
+      return static_cast<uint32_t>(actors.size() + stage.models.size());
     };
 
   private:
