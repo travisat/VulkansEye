@@ -457,7 +457,7 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    //shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     shadowPipeline.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     shadowPipeline.create();

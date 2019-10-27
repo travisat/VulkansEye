@@ -150,40 +150,57 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
 }
 
 //[5]
-float getDistanceAttenuation(vec3 lightVector, float lumens)
+// Calculate attenuation
+// output range [0.0 - 1.0]
+// total brightness = 1.0 ie the full color of the light is applied
+// total darkness = 0.0, no light applied
+// light never actually goes to complete darkness, but our eyes are not perfect cameras
+// so complete darkness isn't unnatural looking and its better for computing
+// input
+// lightvector is (inposition - lightposition)
+// lumens are lumens
+// angle is in steradians
+// angle for a point light = 4 * PI
+float getDistanceAttenuation(vec3 lightVector, float lumens, float angle)
 {
     float distanceSquared = dot(lightVector, lightVector);
-    float factor = distanceSquared / lumens;
-    float smoothFactor = clamp(1.0 - factor * factor, 0.0, 1.0);
-    float attenuation = smoothFactor * smoothFactor;
-    // Assume a punctual light occupies a volume of 1cm to avoid a division by 0
-    // 4 * PI is angle of a point light.
-    return attenuation / (4.0 * PI * max(distanceSquared, 0.00001));
+    //this puts light into inverted range
+    float inverseLight = (angle * distanceSquared) / lumens;
+    //square smooth and subtract from 1 to get correct range
+    float smoothLight = clamp(1.0 - inverseLight * inverseLight, 0.0, 1.0);
+    smoothLight = smoothLight * smoothLight;
+    //apply inverse square law to smoothed light to get attenuation
+    return smoothLight / (distanceSquared + 1.0);
 }
 
-//[6]
-vec3 sampleOffsetDirections[20] = vec3[](
-    vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1), vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1),
-    vec3(-1, 1, -1), vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0), vec3(1, 0, 1), vec3(-1, 0, 1),
-    vec3(1, 0, -1), vec3(-1, 0, -1), vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1));
+//[6] directions to sample in
+vec3 shadowOffsetDirections[20] = vec3[](
+    vec3(1, 1, 1), vec3(1, 1, 0), vec3(1, 1, -1), vec3(1, 0, 1), vec3(1, 0, -1), vec3(1, -1, 1), vec3(1, -1, 0),
+    vec3(1, -1, -1), vec3(0, 1, 1), vec3(0, 1, -1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(-1, 1, 1), vec3(-1, 1, 0),
+    vec3(-1, 1, -1), vec3(-1, 0, 1), vec3(-1, 0, -1), vec3(-1, -1, 1), vec3(-1, -1, 0), vec3(-1, -1, -1));
 
 //[6]
 float shadowCalc(vec3 lightVec)
 {
-    float shadow = 0.0;
-    float bias = 0.15;
-    int samples = 20;
+    float shadow = 0.0; // initialize shadow to 0
+    float bias = 0.15;  //
+    int samples = 20;   // number of samples in shadowOffsetDirections
     float viewDistance = length(inPosition);
     float currentDepth = length(lightVec);
-     float diskRadius = (1.0 + (viewDistance / 512.0)) / 50.0;  
+    // set radius to sample in based off distance from viewer
+    // make shadows closer sharper
+    // 512 is the maxlod from shadowmap so something 512 away and more will have a disc radius of 1.0
+    float diskRadius = (1.0 + (viewDistance / 512.0)) / 50.0;
     for (int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(shadowMap, lightVec + sampleOffsetDirections[i] * diskRadius).r;
+        float closestDepth = texture(shadowMap, lightVec + shadowOffsetDirections[i] * diskRadius).r;
         if (currentDepth - bias > closestDepth)
-            shadow += 0.6;
+        {
+            shadow += 0.6; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
+        }
     }
-    shadow /= float(samples);
-    return 1.0 - shadow;
+    shadow /= float(samples); // average all the samples to create shadow intensity
+    return 1.0 - shadow;      // sub from 1.0 here instead of later
 }
 
 void main()
@@ -204,7 +221,7 @@ void main()
         float lumens = uLight.light[i].lumens;
 
         vec3 lightVector = inPosition - lightPos;
-        float intensity = lumens * getDistanceAttenuation(lightVector, lumens);
+        float intensity = lumens * getDistanceAttenuation(lightVector, lumens, 4 * PI);
         vec3 L = normalize(lightVector); // vector from surface to light
         luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
     }
