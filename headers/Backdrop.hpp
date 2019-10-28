@@ -26,11 +26,9 @@ class Backdrop
     void update(uint32_t currentImage);
 
     Image *shadowMap;
-    VkSampler shadowSampler;
 
   private:
     Image cubeMap{};
-    VkSampler sampler = VK_NULL_HANDLE;
     UniformBuffer uBuffer;
 
     std::vector<VkDescriptorSet> descriptorSets;

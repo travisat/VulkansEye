@@ -5,6 +5,7 @@
 
 #include "Buffer.hpp"
 #include "Vulkan.hpp"
+#include "vulkan/vulkan_core.h"
 
 namespace tat
 {
@@ -14,6 +15,7 @@ class Image
   public:
     Vulkan *vulkan = nullptr;
     VkImage image = VK_NULL_HANDLE;
+    VkSampler sampler = VK_NULL_HANDLE;
     VmaAllocation allocation{};
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -25,6 +27,19 @@ class Image
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+
+    VkFilter magFilter = VK_FILTER_LINEAR;
+    VkFilter minFilter = VK_FILTER_LINEAR;
+    VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkBool32 anistropyEnable = VK_TRUE;
+    float maxAnisotropy = 16.F;
+    VkBorderColor borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    VkBool32 unnormalizedCoordinates = VK_FALSE;
+    VkBool32 compareEnable = VK_FALSE;
+    VkCompareOp compareOp = VK_COMPARE_OP_ALWAYS;
+    VkSamplerMipmapMode mipmapLod = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
     VkDeviceSize size = 0;
     VkImageView imageView = VK_NULL_HANDLE;
@@ -39,6 +54,8 @@ class Image
 
     void loadSTB(std::string path); // use stb_image.h to load most normal image formats
     void loadTextureCube(std::string path);
+
+    void createSampler();
 
     void copyFrom(VkCommandBuffer commandBuffer, const Buffer &buffer);
     void copyFrom(const Buffer &buffer);

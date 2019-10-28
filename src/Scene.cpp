@@ -8,7 +8,6 @@ namespace tat
 
 Scene::~Scene()
 {
-    vkDestroySampler(vulkan->device, shadowSampler, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, shadowLayout, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, colorLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, colorPool, nullptr);
@@ -18,8 +17,10 @@ Scene::~Scene()
 void Scene::create()
 {
     createShadow();
-    createStage();
     createLights();
+
+    createMaterials();
+    createStage();
     createActors();
 
     createColorPool(); // needs stage/lights/actors to know number of descriptors
@@ -47,32 +48,29 @@ void Scene::createShadow()
     shadow.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     shadow.resize(1024, 1024);
 
-    VkSamplerCreateInfo shadowSamplerInfo = {};
-    shadowSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    shadowSamplerInfo.magFilter = VK_FILTER_LINEAR;
-    shadowSamplerInfo.minFilter = VK_FILTER_LINEAR;
-    shadowSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadowSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadowSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadowSamplerInfo.maxAnisotropy = 1.0F;
-    shadowSamplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    shadowSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    shadowSamplerInfo.minLod = 0.0F;
-    shadowSamplerInfo.maxLod = static_cast<float>(shadow.mipLevels);
-
-    CheckResult(vkCreateSampler(vulkan->device, &shadowSamplerInfo, nullptr, &shadowSampler));
+    shadow.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    shadow.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    shadow.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    shadow.maxAnisotropy = 1.0F;
+    shadow.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    shadow.createSampler();
 
     stage.backdrop.shadowMap = &shadow;
-    stage.backdrop.shadowSampler = shadowSampler;
+}
+
+void Scene::createMaterials()
+{
+    materials.vulkan = vulkan;
+    materials.loadConfig(config->materials);
 }
 
 void Scene::createStage()
 {
     stage.vulkan = vulkan;
-    stage.config = &config->stageConfig;
+    stage.config = &config->stage;
     stage.player = player;
+    stage.materials = &materials;
     stage.shadow = &shadow;
-    stage.shadowSampler = shadowSampler;
 
     stage.create();
 }
@@ -95,8 +93,8 @@ void Scene::createActors()
     {
         actors[actorConfig.index].config = &actorConfig;
         actors[actorConfig.index].vulkan = vulkan;
+        actors[actorConfig.index].materials = &materials;
         actors[actorConfig.index].shadow = &shadow;
-        actors[actorConfig.index].shadowSampler = shadowSampler;
         actors[actorConfig.index].create();
     }
 }
@@ -457,7 +455,7 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    //shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     shadowPipeline.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     shadowPipeline.create();

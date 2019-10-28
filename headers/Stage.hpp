@@ -5,7 +5,7 @@
 
 #include "Backdrop.hpp"
 #include "Buffer.hpp"
-#include "Image.hpp"
+#include "Materials.hpp"
 #include "Model.hpp"
 #include "Player.hpp"
 
@@ -18,12 +18,12 @@ class Stage
     Vulkan *vulkan = nullptr;
     StageConfig *config;
     Player *player;
+    Materials *materials;
 
     Backdrop backdrop;
     std::vector<Model> models;
 
     Image *shadow;
-    VkSampler shadowSampler;
 
     void create();
     void recreate()

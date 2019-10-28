@@ -3,15 +3,63 @@
     "index": 0,
     "vulkan": {
         "zNear": 0.1,
-        "zFar": 1024.0
+        "zFar": 1024.0,
+        "windowWidth": 1024,
+        "windowHeight": 768
+    },
+    "player": {
+        "height": 1.7,
+        "mass": 100,
+        "velocityMax": 6.0,
+        "timeToReachVMax": 0.6,
+        "timeToStopFromVMax": 0.1,
+        "jumpHeight": 1.0,
+        "mouseSensitivity": 33.4,
+        "fieldOfView": 67,
+        "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        }
+    },
+    "lights": {
+        "lantern": {
+            "position": {
+                "x": 1,
+                "y": 3.0,
+                "z": 1
+            },
+            "temperature": 6400,
+            "lumens": 1200
+        }
+    },
+    "materials": {
+        "concrete19": {
+            "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
+            "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
+            "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
+            "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg"
+        },
+        "pavingStones": {
+            "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
+            "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
+            "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
+            "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
+            "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg"
+        }
     },
     "actors": {
         "table": {
             "name": "table",
             "position": {
-                "x": 2,
+                "x": 3,
                 "y": 0,
-                "z": 3
+                "z": 4
             },
             "rotation": {
                 "x": 0,
@@ -23,17 +71,12 @@
                 "y": 1,
                 "z": 1
             },
-            "path": "resources/models/table.obj",
-            "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
-            "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
-            "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
-            "ao": "resources/materials/default/ao.png",
-            "metallic": "resources/materials/default/metallic.png",
-            "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg",
-            "tesselation": {
-                "level": 1,
-                "strength": 0,
-                "alpha": 0.03
+            "object": "resources/models/table.obj",
+            "material": "concrete19",
+            "tessellation": {
+                "level": 64,
+                "strength": 0.03,
+                "alpha": 0.0
             }
         }
     },
@@ -56,52 +99,14 @@
                     "y": 1,
                     "z": 1
                 },
-                "path": "resources/models/floor.obj",
-                "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
-                "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
-                "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
-                "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
-                "metallic": "resources/materials/default/metallic.png",
-                "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg",
-                "tesselation": {
-                    "level": 1,
-                    "strength": 0,
-                    "alpha": 0.33
+                "object": "resources/models/floor.obj",
+                "material": "concrete19",
+                "tessellation": {
+                    "level": 64,
+                    "strength": 0.01,
+                    "alpha": 0.0
                 }
             }
-        }
-    },
-    "lights": {
-        "lantern": {
-            "name": "one",
-            "position": {
-                "x": 1,
-                "y": 3.0,
-                "z": 1
-            },
-            "temperature": 6400,
-            "lumens": 1200
-        }
-    },
-    "player": {
-        "name": "you",
-        "height": 1.7,
-        "mass": 100,
-        "velocityMax": 6.0,
-        "timeToReachVMax": 0.6,
-        "timeToStopFromVMax": 0.1,
-        "jumpHeight": 1.0,
-        "mouseSensitivity": 33.4,
-        "fieldOfView": 67,
-        "position": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-        },
-        "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
         }
     }
 }

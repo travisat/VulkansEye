@@ -49,9 +49,10 @@ ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/RenderPass.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
+${CMAKE_SOURCE_DIR}/src/Image.cpp
+${CMAKE_SOURCE_DIR}/src/Materials.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Actor.cpp
-${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
 ${CMAKE_SOURCE_DIR}/src/Player.cpp
 ${CMAKE_SOURCE_DIR}/src/PointLight.cpp

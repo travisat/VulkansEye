@@ -1,9 +1,6 @@
-#include <glm/gtc/constants.hpp>
-
 #include "Engine.hpp"
 #include "Overlay.hpp"
 #include "Timer.h"
-
 
 namespace tat
 {
@@ -17,7 +14,7 @@ enum class DisplayMode
 class VulkansEye
 {
   public:
-    void init(uint32_t width, uint32_t height);
+    void init();
     void run();
 
   private:
@@ -38,7 +35,7 @@ class VulkansEye
         //auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
     };
 
-    static void loadSceneConfig(const std::string &path, SceneConfig &config);
+    static void loadConfig(const std::string &path, Config &config);
 };
 
 } // namespace tat

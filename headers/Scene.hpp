@@ -8,6 +8,7 @@
 #include "Actor.hpp"
 #include "Backdrop.hpp"
 #include "Config.h"
+#include "Materials.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "PointLight.hpp"
@@ -21,7 +22,7 @@ class Scene
 {
   public:
     Vulkan *vulkan = nullptr;
-    SceneConfig *config = nullptr;
+    Config *config = nullptr;
     Player *player = nullptr;
     std::string name = "Unknown";
 
@@ -60,17 +61,18 @@ class Scene
     VkDescriptorPool shadowPool;
     VkDescriptorSetLayout shadowLayout;
 
+    Materials materials {};
+
     Stage stage;
     Pipeline colorPipeline;
     std::vector<Actor> actors;
     std::vector<PointLight> pointLights;
 
     Pipeline shadowPipeline;
-    
-    VkSampler shadowSampler;
 
     void createShadow();
     void createLights();
+    void createMaterials();
     void createActors();
     void createBackdrop();
     void createStage();

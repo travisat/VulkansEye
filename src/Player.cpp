@@ -40,7 +40,6 @@ void Player::updateAspectRatio(float width, float height)
     this->windowWidth = width;
     this->windowHeight = height;
     perspective = glm::perspective(glm::radians(fieldOfView), (width / height), vulkan->zNear, vulkan->zFar);
-    // convert to vulkan
     perspective = clip * perspective;
 }
 

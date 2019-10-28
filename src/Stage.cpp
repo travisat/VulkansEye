@@ -16,8 +16,8 @@ void Stage::create()
     {
         models[model.index].config = &model;
         models[model.index].vulkan = vulkan;
+        models[model.index].materials = materials;
         models[model.index].shadow = shadow;
-        models[model.index].shadowSampler = shadowSampler;
         models[model.index].create();
     }
 }

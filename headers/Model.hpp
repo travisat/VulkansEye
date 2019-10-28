@@ -6,6 +6,7 @@
 #include <tiny_obj_loader.h>
 
 #include "Config.h"
+#include "Materials.hpp"
 #include "Timer.h"
 #include "Vertex.h"
 
@@ -21,6 +22,7 @@ class Model
     // config values
     tat::Vulkan *vulkan = nullptr;
     ModelConfig *config;
+    Materials *materials;
     std::string name = "Uknown Model";
 
     // generated values
@@ -37,19 +39,8 @@ class Model
     Buffer indexBuffer;
 
     // color pipeline
+    Material *material;
     std::vector<VkDescriptorSet> colorSets;
-    Image diffuse;
-    Image normal;
-    Image roughness;
-    Image metallic;
-    Image ao;
-    Image displacement;
-    VkSampler diffuseSampler;
-    VkSampler normalSampler;
-    VkSampler roughnessSampler;
-    VkSampler metallicSampler;
-    VkSampler aoSampler;
-    VkSampler dispSampler;
     std::vector<Buffer> tescBuffers;
     std::vector<Buffer> teseBuffers;
     std::vector<Buffer> uniformLights;
@@ -60,11 +51,8 @@ class Model
     std::vector<VkDescriptorSet> shadowSets;
     Image *shadow;
     UniformShadow uShadow = {};
-    VkSampler shadowSampler;
     std::vector<Buffer> shadowBuffers;
    
-
-    ~Model();
     void create();
     void createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
     void createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
@@ -72,8 +60,6 @@ class Model
 
   private:
     void loadMesh();
-    void loadMaterial();
-    void loadImage(const std::string &path, Image &image, VkSampler &sampler);
     static void loadObj(const std::string &path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices);
 };
 

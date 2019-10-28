@@ -1,18 +1,27 @@
 #include "VulkansEye.hpp"
+#include "Config.h"
 #include "helpers.h"
 
 namespace tat
 {
 
-void VulkansEye::init(uint32_t width, uint32_t height)
+void VulkansEye::init()
 {
-    vulkan.name = "Vulkans Eye";
-    vulkan.width = width;
-    vulkan.height = height;
-
-    // setup timers
+    // start timers
     Timer::getInstance();
+    Timer::time();
     Timer::systemTime();
+
+    // load config
+    Config config;
+    loadConfig("resources/configs/default.json", config);
+
+    // load display settings 
+    vulkan.name = config.vulkan.name;
+    vulkan.width = config.vulkan.windowWidth;
+    vulkan.height = config.vulkan.windowHeight;
+    vulkan.zNear = config.vulkan.zNear;
+    vulkan.zFar = config.vulkan.zFar;
 
     // setup glfw window
     glfwInit();
@@ -30,27 +39,21 @@ void VulkansEye::init(uint32_t width, uint32_t height)
     glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     displayMode = DisplayMode::nocursor;
 
-    // load scene config
-    SceneConfig config;
-    loadSceneConfig("resources/configs/default.json", config);
+    // create player
+    player.config = &config.player;
+    player.vulkan = &vulkan;
+    player.create();
 
-    vulkan.zNear = config.vulkanConfig.zNear;
-    vulkan.zFar = config.vulkanConfig.zFar;
-
+    // load scene
     scene.config = &config;
     scene.vulkan = &vulkan;
     scene.player = &player;
 
-    // load player
-    player.config = &config.playerConfig;
-    player.vulkan = &vulkan;
-    player.create();
-
-    // setup overlay
+    // load overlay
     overlay.vulkan = &vulkan;
     overlay.player = &player;
 
-    // setup engine
+    // start engine
     engine.vulkan = &vulkan;
     engine.scene = &scene;
     engine.overlay = &overlay;
@@ -148,103 +151,192 @@ void VulkansEye::handleInput()
     }
 }
 
-void VulkansEye::loadSceneConfig(const std::string& path, SceneConfig &config)
+void VulkansEye::loadConfig(const std::string &path, Config &config)
 {
     std::ifstream file(path);
     json j;
     file >> j;
 
-    j.at("index").get_to(config.index);
-    j.at("name").get_to(config.name);
-
-    j.at("vulkan").at("zNear").get_to(config.vulkanConfig.zNear);
-    j.at("vulkan").at("zFar").get_to(config.vulkanConfig.zFar);
-
-    config.actors.resize(j["actors"].size());
-    int32_t i = 0;
-    for (auto &actorconfig : j.at("actors"))
+    if (j.find("vulkan") != j.end())
     {
-        config.actors[i].index = i;
-        actorconfig.at("name").get_to(config.actors[i].name);
-        actorconfig.at("position").at("x").get_to(config.actors[i].model.position.x);
-        actorconfig.at("position").at("y").get_to(config.actors[i].model.position.y);
-        actorconfig.at("position").at("z").get_to(config.actors[i].model.position.z);
-        actorconfig.at("rotation").at("x").get_to(config.actors[i].model.rotation.x);
-        actorconfig.at("rotation").at("y").get_to(config.actors[i].model.rotation.y);
-        actorconfig.at("rotation").at("z").get_to(config.actors[i].model.rotation.z);
-        actorconfig.at("scale").at("x").get_to(config.actors[i].model.scale.x);
-        actorconfig.at("scale").at("y").get_to(config.actors[i].model.scale.y);
-        actorconfig.at("scale").at("z").get_to(config.actors[i].model.scale.z);
-        actorconfig.at("path").get_to(config.actors[i].model.objPath);
-        actorconfig.at("diffuse").get_to(config.actors[i].model.diffusePath);
-        actorconfig.at("normal").get_to(config.actors[i].model.normalPath);
-        actorconfig.at("roughness").get_to(config.actors[i].model.roughnessPath);
-        actorconfig.at("metallic").get_to(config.actors[i].model.metallicPath);
-        actorconfig.at("ao").get_to(config.actors[i].model.aoPath);
-        actorconfig.at("displacement").get_to(config.actors[i].model.displacementPath);
-        actorconfig.at("tesselation").at("level").get_to(config.actors[i].model.tessLevel);
-        actorconfig.at("tesselation").at("strength").get_to(config.actors[i].model.tessStregth);
-        actorconfig.at("tesselation").at("alpha").get_to(config.actors[i].model.tessAlpha);
-        ++i;
+        VulkanConfig defaultConfig{};
+        auto vulkan = j.find("vulkan").value();
+        config.vulkan.name = vulkan.value("name",defaultConfig.name);
+        config.vulkan.zNear = vulkan.value("zNear", defaultConfig.zNear);
+        config.vulkan.zFar = vulkan.value("zFar", defaultConfig.zFar);
+        config.vulkan.windowWidth = vulkan.value("windowWidth", defaultConfig.windowWidth);
+        config.vulkan.windowHeight = vulkan.value("windowHeight", defaultConfig.windowHeight);
     }
 
-    j.at("stage").at("backdrop").get_to(config.stageConfig.backdrop);
-    config.stageConfig.models.resize(j["stage"]["models"].size());
-    i = 0;
-    for (auto &stagemodel : j.at("stage").at("models"))
+    if (j.find("player") != j.end())
     {
-        config.stageConfig.models[i].index = i;
-        stagemodel.at("position").at("x").get_to(config.stageConfig.models[i].position.x);
-        stagemodel.at("position").at("y").get_to(config.stageConfig.models[i].position.y);
-        stagemodel.at("position").at("z").get_to(config.stageConfig.models[i].position.z);
-        stagemodel.at("rotation").at("x").get_to(config.stageConfig.models[i].rotation.x);
-        stagemodel.at("rotation").at("y").get_to(config.stageConfig.models[i].rotation.y);
-        stagemodel.at("rotation").at("z").get_to(config.stageConfig.models[i].rotation.z);
-        stagemodel.at("scale").at("x").get_to(config.stageConfig.models[i].scale.x);
-        stagemodel.at("scale").at("y").get_to(config.stageConfig.models[i].scale.y);
-        stagemodel.at("scale").at("z").get_to(config.stageConfig.models[i].scale.z);
-        stagemodel.at("path").get_to(config.stageConfig.models[i].objPath);
-        stagemodel.at("diffuse").get_to(config.stageConfig.models[i].diffusePath);
-        stagemodel.at("normal").get_to(config.stageConfig.models[i].normalPath);
-        stagemodel.at("roughness").get_to(config.stageConfig.models[i].roughnessPath);
-        stagemodel.at("metallic").get_to(config.stageConfig.models[i].metallicPath);
-        stagemodel.at("ao").get_to(config.stageConfig.models[i].aoPath);
-        stagemodel.at("displacement").get_to(config.stageConfig.models[i].displacementPath);
-        stagemodel.at("tesselation").at("level").get_to(config.stageConfig.models[i].tessLevel);
-        stagemodel.at("tesselation").at("strength").get_to(config.stageConfig.models[i].tessStregth);
-        stagemodel.at("tesselation").at("alpha").get_to(config.stageConfig.models[i].tessAlpha);
-        ++i;
+        PlayerConfig defaultConfig{};
+        auto player = j.find("player").value();
+        config.player.height = player.value("height", defaultConfig.height);
+        config.player.mass = player.value("mass", defaultConfig.mass);
+        config.player.velocityMax = player.value("velocityMax", defaultConfig.velocityMax);
+        config.player.timeToReachVMax = player.value("timeToReachVMax", defaultConfig.timeToReachVMax);
+        config.player.timeToStopfromVMax = player.value("timeToStopFromVMax", defaultConfig.timeToStopfromVMax);
+        config.player.jumpHeight = player.value("jumpHeight", defaultConfig.jumpHeight);
+        config.player.mouseSensitivity = player.value("mouseSensitivity", defaultConfig.mouseSensitivity);
+        config.player.fieldOfView = player.value("fieldOfView", defaultConfig.fieldOfView);
+        if (player.find("position") != player.end())
+        {
+            auto position = player.find("position").value();
+            config.player.rotation.x = position.value("x", defaultConfig.position.x);
+            config.player.position.y = position.value("y", defaultConfig.position.y);
+            config.player.position.z = position.value("z", defaultConfig.position.z);
+        }
+        if (player.find("rotation") != player.end())
+        {
+            auto rotation = player.find("rotation").value();
+            config.player.rotation.x = rotation.value("x", defaultConfig.rotation.x);
+            config.player.rotation.y = rotation.value("y", defaultConfig.rotation.y);
+            config.player.rotation.z = rotation.value("z", defaultConfig.rotation.z);
+        }
     }
 
-    config.pointLights.resize(j["lights"].size());
-    i = 0;
-    for (auto &lightconfig : j.at("lights"))
+    if (j.find("lights") == j.end())
     {
-        config.pointLights[i].index = i;
-        lightconfig.at("name").get_to(config.pointLights[i].name);
-        lightconfig.at("position").at("x").get_to(config.pointLights[i].position.x);
-        lightconfig.at("position").at("y").get_to(config.pointLights[i].position.y);
-        lightconfig.at("position").at("z").get_to(config.pointLights[i].position.z);
-        lightconfig.at("temperature").get_to(config.pointLights[i].temperature);
-        lightconfig.at("lumens").get_to(config.pointLights[i].lumens);
-        ++i;
+        config.pointLights.resize(1); // loads defaults into index 0
+    }
+    else
+    {
+        PointLightConfig defaultConfig{};
+        config.pointLights.resize(j.at("lights").size());
+        int32_t i = 0;
+        for (auto &[key, lightconfig] : j.at("lights").items())
+        {
+            config.pointLights[i].index = i;
+            config.pointLights[i].name = key;
+
+            if (lightconfig.find("position") != lightconfig.end())
+            {
+                auto position = lightconfig.find("position").value();
+                config.pointLights[i].position.x = position.value("x", defaultConfig.position.x);
+                config.pointLights[i].position.y = position.value("y", defaultConfig.position.y);
+                config.pointLights[i].position.z = position.value("z", defaultConfig.position.z);
+            }
+            config.pointLights[i].temperature = lightconfig.value("temperature", defaultConfig.temperature);
+            config.pointLights[i].lumens = lightconfig.value("lumens", defaultConfig.lumens);
+            ++i;
+        }
     }
 
-    j.at("player").at("name").get_to(config.playerConfig.name);
-    j.at("player").at("height").get_to(config.playerConfig.height);
-    j.at("player").at("mass").get_to(config.playerConfig.mass);
-    j.at("player").at("velocityMax").get_to(config.playerConfig.velocityMax);
-    j.at("player").at("timeToReachVMax").get_to(config.playerConfig.timeToReachVMax);
-    j.at("player").at("timeToStopFromVMax").get_to(config.playerConfig.timeToStopfromVMax);
-    j.at("player").at("jumpHeight").get_to(config.playerConfig.jumpHeight);
-    j.at("player").at("mouseSensitivity").get_to(config.playerConfig.mouseSensitivity);
-    j.at("player").at("fieldOfView").get_to(config.playerConfig.fieldOfView);
-    j.at("player").at("position").at("x").get_to(config.playerConfig.position.x);
-    j.at("player").at("position").at("y").get_to(config.playerConfig.position.y);
-    j.at("player").at("position").at("z").get_to(config.playerConfig.position.z);
-    j.at("player").at("rotation").at("x").get_to(config.playerConfig.rotation.x);
-    j.at("player").at("rotation").at("y").get_to(config.playerConfig.rotation.y);
-    j.at("player").at("rotation").at("z").get_to(config.playerConfig.rotation.z);
+    if (j.find("materials") == j.end())
+    {
+        config.materials.material.resize(1);
+    }
+    else
+    {
+        MaterialConfig defaultConfig{};
+        config.materials.material.resize(j.at("materials").size());
+        int32_t i = 0;
+        for (auto &[key, materialConfig] : j.at("materials").items())
+        {
+            config.materials.material[i].name = key;
+            config.materials.material[i].diffuse = materialConfig.value("diffuse", defaultConfig.diffuse);
+            config.materials.material[i].normal = materialConfig.value("normal", defaultConfig.normal);
+            config.materials.material[i].metallic = materialConfig.value("metallic", defaultConfig.metallic);
+            config.materials.material[i].roughness = materialConfig.value("roughness", defaultConfig.roughness);
+            config.materials.material[i].ao = materialConfig.value("ao", defaultConfig.ao);
+            config.materials.material[i].displacement =
+                materialConfig.value("displacement", defaultConfig.displacement);
+            ++i;
+        }
+    }
+
+    if (j.find("actors") != j.end())
+    {
+        ModelConfig defaultConfig{};
+        config.actors.resize(j["actors"].size());
+        int32_t i = 0;
+        for (auto &[key, actorconfig] : j.at("actors").items())
+        {
+            config.actors[i].index = i;
+            config.actors[i].name = key;
+            config.actors[i].model.object = actorconfig.value("object", defaultConfig.object);
+            config.actors[i].model.material = actorconfig.value("material", defaultConfig.material);
+            if (actorconfig.find("position") != actorconfig.end())
+            {
+                auto position = actorconfig.find("position").value();
+                config.actors[i].model.position.x = position.value("x", defaultConfig.position.x);
+                config.actors[i].model.position.y = position.value("y", defaultConfig.position.y);
+                config.actors[i].model.position.z = position.value("z", defaultConfig.position.z);
+            }
+            if (actorconfig.find("rotation") != actorconfig.end())
+            {
+                auto rotation = actorconfig.find("rotation").value();
+                config.actors[i].model.rotation.x = rotation.value("x", defaultConfig.rotation.x);
+                config.actors[i].model.rotation.y = rotation.value("y", defaultConfig.rotation.y);
+                config.actors[i].model.rotation.z = rotation.value("z", defaultConfig.rotation.z);
+            }
+            if (actorconfig.find("scale") != actorconfig.end())
+            {
+                auto scale = actorconfig.find("scale").value();
+                config.actors[i].model.scale.x = scale.value("x", defaultConfig.scale.x);
+                config.actors[i].model.scale.y = scale.value("y", defaultConfig.scale.y);
+                config.actors[i].model.scale.z = scale.value("z", defaultConfig.scale.z);
+            }
+            if (actorconfig.find("tessellation") != actorconfig.end())
+            {
+                auto tessellation = actorconfig.find("tessellation").value();
+                config.actors[i].model.tessLevel = tessellation.value("level", defaultConfig.tessLevel);
+                config.actors[i].model.tessStregth = tessellation.value("strength", defaultConfig.tessStregth);
+                config.actors[i].model.tessAlpha = tessellation.value("alpha", defaultConfig.tessAlpha);
+            }
+            ++i;
+        }
+    }
+
+    if (j.find("stage") != j.end())
+    {
+        auto stage = j.find("stage").value();
+
+        if (stage.find("backdrop") != stage.end())
+        {
+            config.stage.backdrop = stage.find("backdrop").value();
+        }
+
+        ModelConfig defaultConfig{};
+        config.stage.models.resize(stage["models"].size());
+        int32_t i = 0;
+        for (auto &stagemodel : stage.at("models"))
+        {
+            config.stage.models[i].index = i;
+            config.stage.models[i].object = stagemodel.value("object", defaultConfig.object);
+            config.stage.models[i].material = stagemodel.value("material", defaultConfig.material);
+            if (stagemodel.find("position") != stagemodel.end())
+            {
+                auto position = stagemodel.find("position").value();
+                config.stage.models[i].position.x = position.value("x", defaultConfig.position.x);
+                config.stage.models[i].position.y = position.value("y", defaultConfig.position.y);
+                config.stage.models[i].position.z = position.value("z", defaultConfig.position.z);
+            }
+            if (stagemodel.find("rotation") != stagemodel.end())
+            {
+                auto rotation = stagemodel.find("rotation").value();
+                config.stage.models[i].rotation.x = rotation.value("x", defaultConfig.rotation.x);
+                config.stage.models[i].rotation.y = rotation.value("y", defaultConfig.rotation.y);
+                config.stage.models[i].rotation.z = rotation.value("z", defaultConfig.rotation.z);
+            }
+            if (stagemodel.find("scale") != stagemodel.end())
+            {
+                auto scale = stagemodel.find("scale").value();
+                config.stage.models[i].scale.x = scale.value("x", defaultConfig.scale.x);
+                config.stage.models[i].scale.y = scale.value("y", defaultConfig.scale.y);
+                config.stage.models[i].scale.z = scale.value("z", defaultConfig.scale.z);
+            }
+            if (stagemodel.find("tessellation") != stagemodel.end())
+            {
+                auto tessellation = stagemodel.find("tessellation").value();
+                config.stage.models[i].tessLevel = tessellation.value("level", defaultConfig.tessLevel);
+                config.stage.models[i].tessStregth = tessellation.value("strength", defaultConfig.tessStregth);
+                config.stage.models[i].tessAlpha = tessellation.value("alpha", defaultConfig.tessAlpha);
+            }
+            ++i;
+        }
+    }
 };
 
 } // namespace tat

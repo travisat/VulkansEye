@@ -59,7 +59,7 @@ void main()
 
     // final position
     outPosition = (1.0 - ubo.tessAlpha) * barPos + ubo.tessAlpha * phongPos;
-    outPosition += normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).r, 0.0) * ubo.tessStrength);
+    outPosition -= normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).r, 0.0) * ubo.tessStrength);
     outPosition = vec3(ubo.model * vec4(outPosition, 1.0));
     gl_Position = ubo.vp * vec4(outPosition, 1.0);
 }

@@ -1,5 +1,6 @@
 #include "Image.hpp"
 
+#include "Pipeline.hpp"
 #include "helpers.h"
 #include "vulkan/vulkan_core.h"
 
@@ -8,13 +9,17 @@ namespace tat
 
 Image::~Image()
 {
-    if (image != nullptr)
+    if (image != VK_NULL_HANDLE)
     {
         vmaDestroyImage(vulkan->allocator, image, allocation);
     }
-    if (imageView != nullptr)
+    if (imageView != VK_NULL_HANDLE)
     {
         vkDestroyImageView(vulkan->device, imageView, nullptr);
+    }
+    if (sampler != VK_NULL_HANDLE)
+    {
+        vkDestroySampler(vulkan->device, sampler, nullptr);
     }
 }
 
@@ -126,6 +131,27 @@ void Image::loadTextureCube(std::string path)
 
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     Trace("Loaded ", path, " at ", Timer::systemTime());
+}
+
+void Image::createSampler()
+{
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = magFilter;
+    samplerInfo.minFilter = minFilter;
+    samplerInfo.addressModeU = addressModeU;
+    samplerInfo.addressModeV = addressModeV;
+    samplerInfo.addressModeW = addressModeW;
+    samplerInfo.anisotropyEnable = anistropyEnable;
+    samplerInfo.maxAnisotropy = maxAnisotropy;
+    samplerInfo.borderColor = borderColor;
+    samplerInfo.unnormalizedCoordinates = unnormalizedCoordinates;
+    samplerInfo.compareEnable = compareEnable;
+    samplerInfo.compareOp = compareOp;
+    samplerInfo.mipmapMode = mipmapLod;
+    samplerInfo.maxLod = static_cast<float>(mipLevels);
+
+    CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
 }
 
 void Image::allocate()

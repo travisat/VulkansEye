@@ -12,8 +12,8 @@ namespace tat
 
 const glm::mat4 clip(1.0F, 0.0F, 0.0F, 0.0F,  //
                      0.0F, -1.0F, 0.0F, 0.0F, //
-                     0.0F, 0.0F, 0.5F, 0.0F,  //
-                     0.0F, 0.0F, 0.5F, 1.0F); //
+                     0.0F, 0.0F, 1.0F, 0.0F,  //
+                     0.0F, 0.0F, 0.0F, 1.0F); //
 
 class Player
 {

@@ -58,7 +58,6 @@ class Overlay
 
   private:
     // Vulkan resources for rendering the UI
-    VkSampler sampler{};
     Buffer vertexBuffer{};
     Buffer indexBuffer{};
     int32_t vertexCount = 0;

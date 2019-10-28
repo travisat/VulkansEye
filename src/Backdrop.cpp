@@ -6,7 +6,6 @@ namespace tat
 
 Backdrop::~Backdrop()
 {
-    vkDestroySampler(vulkan->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
@@ -44,20 +43,13 @@ void Backdrop::loadCubeMap()
     cubeMap.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap.loadTextureCube(path);
-
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.maxAnisotropy = 1.0F;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.minLod = 0.0F;
-    samplerInfo.maxLod = static_cast<float>(cubeMap.mipLevels);
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    CheckResult(vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler));
+    
+    cubeMap.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cubeMap.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cubeMap.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    cubeMap.maxAnisotropy = 1.0F;
+    cubeMap.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    cubeMap.createSampler();
 }
 
 void Backdrop::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
@@ -162,7 +154,7 @@ void Backdrop::createDescriptorSets()
         VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = cubeMap.imageView;
-        imageInfo.sampler = sampler;
+        imageInfo.sampler = cubeMap.sampler;
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

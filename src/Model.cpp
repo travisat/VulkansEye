@@ -5,16 +5,6 @@
 namespace tat
 {
 
-Model::~Model()
-{
-    vkDestroySampler(vulkan->device, diffuseSampler, nullptr);
-    vkDestroySampler(vulkan->device, normalSampler, nullptr);
-    vkDestroySampler(vulkan->device, roughnessSampler, nullptr);
-    vkDestroySampler(vulkan->device, metallicSampler, nullptr);
-    vkDestroySampler(vulkan->device, aoSampler, nullptr);
-    vkDestroySampler(vulkan->device, dispSampler, nullptr);
-}
-
 void Model::create()
 {
     position = config->position;
@@ -23,18 +13,19 @@ void Model::create()
     uTessControl.tessLevel = config->tessLevel;
     uTessEval.tessStrength = config->tessStregth;
     uTessEval.tessAlpha = config->tessAlpha;
-    createUniformBuffers();
 
+    material = materials->getMaterial(config->material);
     loadMesh();
-    loadMaterial();
+
+    createUniformBuffers();
 }
 
 void Model::loadMesh()
 {
-    loadObj(config->objPath, vertices, indices);
+    loadObj(config->object, vertices, indices);
     vertexSize = static_cast<uint32_t>(vertices.size());
     indexSize = static_cast<uint32_t>(indices.size());
-    Trace("Loaded ", config->objPath, " at ", Timer::systemTime());
+    Trace("Loaded ", config->object, " at ", Timer::systemTime());
 
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
@@ -53,42 +44,6 @@ void Model::loadMesh()
     indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     stagingBuffer.copyTo(indexBuffer);
-}
-
-void Model::loadMaterial()
-{
-    loadImage(config->diffusePath, diffuse, diffuseSampler);
-    loadImage(config->normalPath, normal, normalSampler);
-    loadImage(config->roughnessPath, roughness, roughnessSampler);
-    loadImage(config->metallicPath, metallic, metallicSampler);
-    loadImage(config->aoPath, ao, aoSampler);
-    loadImage(config->displacementPath, displacement, dispSampler);
-}
-
-void Model::loadImage(const std::string &path, Image &image, VkSampler &sampler)
-{
-    image.vulkan = vulkan;
-    image.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image.loadSTB(path);
-
-    VkSamplerCreateInfo imageSamplerInfo = {};
-    imageSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    imageSamplerInfo.magFilter = VK_FILTER_LINEAR;
-    imageSamplerInfo.minFilter = VK_FILTER_LINEAR;
-    imageSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    imageSamplerInfo.anisotropyEnable = VK_TRUE;
-    imageSamplerInfo.maxAnisotropy = 16;
-    imageSamplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    imageSamplerInfo.unnormalizedCoordinates = VK_FALSE;
-    imageSamplerInfo.compareEnable = VK_FALSE;
-    imageSamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    imageSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    imageSamplerInfo.maxLod = static_cast<float>(image.mipLevels);
-
-    CheckResult(vkCreateSampler(vulkan->device, &imageSamplerInfo, nullptr, &sampler));
 }
 
 void Model::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
@@ -116,8 +71,8 @@ void Model::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
 
         VkDescriptorImageInfo dispInfo = {};
         dispInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        dispInfo.imageView = displacement.imageView;
-        dispInfo.sampler = dispSampler;
+        dispInfo.imageView = material->displacement.imageView;
+        dispInfo.sampler = material->displacement.sampler;
 
         VkDescriptorBufferInfo lightInfo = {};
         lightInfo.buffer = uniformLights[i].buffer;
@@ -127,32 +82,32 @@ void Model::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
         VkDescriptorImageInfo shadowInfo = {};
         shadowInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         shadowInfo.imageView = shadow->imageView;
-        shadowInfo.sampler = shadowSampler;
+        shadowInfo.sampler = shadow->sampler;
 
         VkDescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        diffuseInfo.imageView = diffuse.imageView;
-        diffuseInfo.sampler = diffuseSampler;
+        diffuseInfo.imageView = material->diffuse.imageView;
+        diffuseInfo.sampler = material->diffuse.sampler;
 
         VkDescriptorImageInfo normalInfo = {};
         normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        normalInfo.imageView = normal.imageView;
-        normalInfo.sampler = normalSampler;
+        normalInfo.imageView = material->normal.imageView;
+        normalInfo.sampler = material->normal.sampler;
 
         VkDescriptorImageInfo roughnessInfo = {};
         roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        roughnessInfo.imageView = roughness.imageView;
-        roughnessInfo.sampler = roughnessSampler;
+        roughnessInfo.imageView = material->roughness.imageView;
+        roughnessInfo.sampler = material->roughness.sampler;
 
         VkDescriptorImageInfo metallicInfo = {};
         metallicInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        metallicInfo.imageView = metallic.imageView;
-        metallicInfo.sampler = metallicSampler;
+        metallicInfo.imageView = material->metallic.imageView;
+        metallicInfo.sampler = material->metallic.sampler;
 
         VkDescriptorImageInfo aoInfo = {};
         aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        aoInfo.imageView = ao.imageView;
-        aoInfo.sampler = aoSampler;
+        aoInfo.imageView = material->ao.imageView;
+        aoInfo.sampler = material->ao.sampler;
 
         std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
 

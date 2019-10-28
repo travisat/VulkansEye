@@ -7,7 +7,6 @@ namespace tat
 Overlay::~Overlay()
 {
     ImGui::DestroyContext();
-    vkDestroySampler(vulkan->device, sampler, nullptr);
     vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
     vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
 }
@@ -101,16 +100,11 @@ void Overlay::createFont()
     fontImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // Font texture Sampler
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    vkCreateSampler(vulkan->device, &samplerInfo, nullptr, &sampler);
+    fontImage.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    fontImage.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    fontImage.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    fontImage.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    fontImage.createSampler();
 }
 
 void Overlay::createDescriptorPool()
@@ -167,7 +161,7 @@ void Overlay::createDescriptorSets()
         VkDescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         samplerInfo.imageView = fontImage.imageView;
-        samplerInfo.sampler = sampler;
+        samplerInfo.sampler = fontImage.sampler;
 
         std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

@@ -6,9 +6,6 @@
 
 #include "VulkansEye.hpp"
 
-const int WIDTH = 1024;
-const int HEIGHT = 768;
-
 auto main() -> int
 {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -16,7 +13,7 @@ auto main() -> int
     tat::VulkansEye app;
     try
     {
-        app.init(WIDTH, HEIGHT);
+        app.init();
         app.run();
     }
     catch (const std::exception &e)
