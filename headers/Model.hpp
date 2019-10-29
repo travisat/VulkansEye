@@ -3,10 +3,11 @@
 #include <cassert>
 #include <unordered_map>
 
-#include <tiny_obj_loader.h>
+
 
 #include "Config.h"
 #include "Materials.hpp"
+#include "Meshes.hpp"
 #include "Timer.h"
 #include "Vertex.h"
 
@@ -23,20 +24,14 @@ class Model
     tat::Vulkan *vulkan = nullptr;
     ModelConfig *config;
     Materials *materials;
+    Meshes *meshes;
     std::string name = "Uknown Model";
 
-    // generated values
     // mesh properties
+    Mesh *mesh;
     glm::vec3 position = glm::vec3(0.0F);
     glm::vec3 rotation = glm::vec3(0.0F);
     glm::vec3 scale = glm::vec3(1.0F);
-
-    uint32_t vertexSize = 0;
-    uint32_t indexSize = 0;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    Buffer vertexBuffer;
-    Buffer indexBuffer;
 
     // color pipeline
     Material *material;
@@ -59,8 +54,7 @@ class Model
     void createUniformBuffers();
 
   private:
-    void loadMesh();
-    static void loadObj(const std::string &path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices);
+    
 };
 
 } // namespace tat

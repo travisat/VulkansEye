@@ -113,6 +113,11 @@
             "displacement": "resources/materials/WoodFloor26/WoodFloor26_disp.jpg"
         }
     },
+    "meshes":{
+        "table": "resources/models/table.obj",
+        "floor": "resources/models/floor.obj",
+        "sphere": "resources/models/sphere.obj"
+    },
     "models": {
         "table": {
             "name": "table",
@@ -131,7 +136,7 @@
                 "y": 1,
                 "z": 1
             },
-            "object": "resources/models/table.obj",
+            "mesh": "table",
             "material": "Fabric01",
             "tessellation": {
                 "level": 64,
@@ -155,7 +160,7 @@
                 "y": 1,
                 "z": 1
             },
-            "object": "resources/models/floor.obj",
+            "mesh": "floor",
             "material": "WoodFloor26",
             "tessellation": {
                 "level": 64,

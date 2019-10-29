@@ -37,7 +37,7 @@ class Materials
     auto getMaterial(const std::string& name) -> Material *;
 
   private:
-    //vector of configs, use loadConfig to populate
+    //vector of configs, use loadConfigs to populate
     std::vector<MaterialConfig> configs {};
     //string index = material index
     std::map<std::string, int32_t> names {};

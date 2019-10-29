@@ -20,6 +20,7 @@ void Scene::create()
     createLights();
 
     createMaterials();
+    createMeshes();
     createBackdrop();
     createModels();
 
@@ -64,6 +65,12 @@ void Scene::createMaterials()
     materials.loadConfigs(config->materials);
 }
 
+void Scene::createMeshes()
+{
+    meshes.vulkan = vulkan;
+    meshes.loadConfigs(config->meshes);
+}
+
 void Scene::createBackdrop()
 {
     backdrop.vulkan = vulkan;
@@ -96,6 +103,7 @@ void Scene::createModels()
         models[index].config = &modelConfig;
         models[index].vulkan = vulkan;
         models[index].materials = &materials;
+        models[index].meshes = &meshes;
         models[index].shadow = &shadow;
         models[index].create();
         ++index;
@@ -128,11 +136,11 @@ void Scene::drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
+        vkCmdBindIndexBuffer(commandBuffer, model.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
                                 &model.colorSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, model.indexSize, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, model.mesh->indexSize, 1, 0, 0, 0);
     }
 }
 
@@ -143,11 +151,11 @@ void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
+        vkCmdBindIndexBuffer(commandBuffer, model.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipelineLayout, 0, 1,
                                 &model.shadowSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, model.indexSize, 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, model.mesh->indexSize, 1, 0, 0, 0);
     }
 }
 

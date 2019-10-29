@@ -9,6 +9,7 @@
 #include "Backdrop.hpp"
 #include "Config.h"
 #include "Materials.hpp"
+#include "Meshes.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "PointLight.hpp"
@@ -63,6 +64,7 @@ class Scene
 
     Backdrop backdrop;
     Materials materials{};
+    Meshes meshes{};
 
     Pipeline colorPipeline;
     std::vector<Model> models;
@@ -73,6 +75,7 @@ class Scene
     void createShadow();
     void createLights();
     void createMaterials();
+    void createMeshes();
     void createModels();
     void createBackdrop();
 

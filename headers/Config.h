@@ -58,10 +58,16 @@ struct MaterialConfig
     std::string displacement = "resources/materials/default/displacement.png";
 };
 
+struct MeshConfig
+{
+    std::string name = "cube";
+    std::string path = "resources/models/cube.obj";
+};
+
 struct ModelConfig
 {
     std::string name = "default";
-    std::string object = "resources/models/cube.obj";
+    std::string mesh = "cube";
     std::string material = "default";
     glm::vec3 position{};
     glm::vec3 rotation{};
@@ -78,6 +84,7 @@ struct Config
     std::string backdrop = "resources/backdrop/nebula.dds";
     std::vector<PointLightConfig> pointLights{};
     std::vector<MaterialConfig> materials{};
+    std::vector<MeshConfig> meshes{};
     std::vector<ModelConfig> models{};
 };
 
