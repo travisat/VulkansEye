@@ -91,9 +91,9 @@ void Scene::createModels()
 {
     models.resize(config->models.size());
     int32_t index = 0;
-    for (auto &actorConfig : config->models)
+    for (auto &modelConfig : config->models)
     {
-        models[index].config = &actorConfig;
+        models[index].config = &modelConfig;
         models[index].vulkan = vulkan;
         models[index].materials = &materials;
         models[index].shadow = &shadow;
