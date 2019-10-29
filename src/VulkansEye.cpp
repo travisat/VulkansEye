@@ -5,7 +5,7 @@
 namespace tat
 {
 
-void VulkansEye::init()
+void VulkansEye::init(const std::string &configPath)
 {
     // start timers
     Timer::getInstance();
@@ -14,7 +14,7 @@ void VulkansEye::init()
 
     // load config
     Config config;
-    loadConfig("resources/configs/default.json", config);
+    loadConfig(configPath, config);
 
     // load display settings
     vulkan.name = config.vulkan.name;

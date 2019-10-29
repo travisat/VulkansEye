@@ -4,16 +4,37 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
+#include <filesystem>
+
 #include "VulkansEye.hpp"
 
-auto main() -> int
+#define DEFAULT_CONFIG "resources/configs/default.json"
+
+auto main(int argc, char *argv[]) -> int
 {
+#ifdef WIN32
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
 
     tat::VulkansEye app;
     try
     {
-        app.init();
+        switch (argc)
+        {
+        case 0:
+        case 1:
+            app.init(DEFAULT_CONFIG);
+            break;
+        case 2:
+            if (std::filesystem::exists(argv[1]))
+            {
+                app.init(argv[1]);
+                break;
+            } // fall through if doesn't exist
+        default:
+            std::cerr << "Usage: VulkansEye [config]" << std::endl;
+            return EXIT_FAILURE;
+        }
         app.run();
     }
     catch (const std::exception &e)
@@ -22,6 +43,9 @@ auto main() -> int
         return EXIT_FAILURE;
     }
 
+#ifdef WIN32
     CoUninitialize();
+#endif
+
     return EXIT_SUCCESS;
 }

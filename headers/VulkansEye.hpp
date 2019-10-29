@@ -14,7 +14,7 @@ enum class DisplayMode
 class VulkansEye
 {
   public:
-    void init();
+    void init(const std::string &configPath);
     void run();
 
   private:

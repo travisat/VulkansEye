@@ -1,6 +1,5 @@
 {
     "name": "default",
-    "index": 0,
     "vulkan": {
         "zNear": 0.1,
         "zFar": 1024.0,
