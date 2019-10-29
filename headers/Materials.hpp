@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "Config.h"
 #include "Vulkan.hpp"
@@ -29,7 +30,7 @@ class Materials
     Vulkan *vulkan = nullptr;
 
     //copies Material configs into config vector
-    void loadConfig(const MaterialsConfig &config);
+    void loadConfigs(const std::vector<MaterialConfig> &materials);
     
     //return pointer to material with name
     //loads material if it has not been loaded yet

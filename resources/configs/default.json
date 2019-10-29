@@ -27,6 +27,7 @@
             "z": 0
         }
     },
+    "backdrop": "resources/backdrop/nebula.dds",
     "lights": {
         "lantern": {
             "position": {
@@ -39,21 +40,81 @@
         }
     },
     "materials": {
-        "concrete19": {
+        "Concrete19": {
             "diffuse": "resources/materials/Concrete19/Concrete19_col.jpg",
             "normal": "resources/materials/Concrete19/Concrete19_nrm.jpg",
             "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
             "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg"
         },
-        "pavingStones": {
+        "Fabric01": {
+            "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
+            "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
+            "roughness": "resources/materials/Fabric01/Fabric01_rgh.jpg",
+            "displacement": "resources/materials/Fabric01/Fabric01_disp.jpg"
+        },
+        "Fabric08": {
+            "diffuse": "resources/materials/Fabric08/Fabric08_col.jpg",
+            "normal": "resources/materials/Fabric08/Fabric08_nrm.jpg",
+            "roughness": "resources/materials/Fabric08/Fabric08_rgh.jpg",
+            "ao": "resources/materials/Fabric08/Fabric08_AO.jpg",
+            "displacement": "resources/materials/Fabric08/Fabric08_disp.jpg"
+        },
+        "Metal07": {
+            "diffuse": "resources/materials/Metal07/Metal07_col.jpg",
+            "normal": "resources/materials/Metal07/Metal07_nrm.jpg",
+            "metallic": "resources/materials/Metal07/Metal07_met.jpg",
+            "roughness": "resources/materials/Metal07/Metal07_rgh.jpg",
+            "displacement": "resources/materials/Metal07/Metal07_disp.jpg"
+        },
+        "Metal11": {
+            "diffuse": "resources/materials/Metal11/Metal11_col.jpg",
+            "normal": "resources/materials/Metal11/Metal11_nrm.jpg",
+            "metallic": "resources/materials/Metal11/Metal11_met.jpg",
+            "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
+            "displacement": "resources/materials/Metal11/Metal11_disp.jpg"
+        },
+        "PavingStones45": {
             "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
             "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
             "roughness": "resources/materials/PavingStones45/PavingStones45_rgh.jpg",
             "ao": "resources/materials/PavingStones45/PavingStones45_AO.jpg",
             "displacement": "resources/materials/PavingStones45/PavingStones45_disp.jpg"
+        },
+        "Rock14": {
+            "diffuse": "resources/materials/Rock14/Rock14_col.jpg",
+            "normal": "resources/materials/Rock14/Rock14_nrm.jpg",
+            "roughness": "resources/materials/Rock14/Rock14_rgh.jpg",
+            "ao": "resources/materials/Rock14/Rock14_AO.jpg",
+            "displacement": "resources/materials/Rock14/Rock14_disp.jpg"
+        },
+        "Tiles20": {
+            "diffuse": "resources/materials/Tiles20/Tiles20_col.jpg",
+            "normal": "resources/materials/Tiles20/Tiles20_nrm.jpg",
+            "roughness": "resources/materials/Tiles20/Tiles20_rgh.jpg",
+            "displacement": "resources/materials/Tiles20/Tiles20_disp.jpg"
+        },
+        "Tiles32": {
+            "diffuse": "resources/materials/Tiles32/Tiles32_col.jpg",
+            "normal": "resources/materials/Tiles32/Tiles32_nrm.jpg",
+            "roughness": "resources/materials/Tiles32/Tiles32_rgh.jpg",
+            "displacement": "resources/materials/Tiles32/Tiles32_disp.jpg"
+        },
+        "WoodFloor20": {
+            "diffuse": "resources/materials/WoodFloor20/WoodFloor20_col.jpg",
+            "normal": "resources/materials/WoodFloor20/WoodFloor20_nrm.jpg",
+            "roughness": "resources/materials/WoodFloor20/WoodFloor20_rgh.jpg",
+            "ao": "resources/materials/WoodFloor20/WoodFloor20_AO.jpg",
+            "displacement": "resources/materials/WoodFloor20/WoodFloor20_disp.jpg"
+        },
+        "WoodFloor26": {
+            "diffuse": "resources/materials/WoodFloor26/WoodFloor26_col.jpg",
+            "normal": "resources/materials/WoodFloor26/WoodFloor26_nrm.jpg",
+            "roughness": "resources/materials/WoodFloor26/WoodFloor26_rgh.jpg",
+            "ao": "resources/materials/WoodFloor26/WoodFloor26_AO.jpg",
+            "displacement": "resources/materials/WoodFloor26/WoodFloor26_disp.jpg"
         }
     },
-    "actors": {
+    "models": {
         "table": {
             "name": "table",
             "position": {
@@ -72,40 +133,35 @@
                 "z": 1
             },
             "object": "resources/models/table.obj",
-            "material": "concrete19",
+            "material": "Fabric01",
             "tessellation": {
                 "level": 64,
-                "strength": 0.03,
+                "strength": 0.02,
                 "alpha": 0.0
             }
-        }
-    },
-    "stage": {
-        "backdrop": "resources/backdrop/nebula.dds",
-        "models": {
-            "floor": {
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "scale": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "object": "resources/models/floor.obj",
-                "material": "concrete19",
-                "tessellation": {
-                    "level": 64,
-                    "strength": 0.01,
-                    "alpha": 0.0
-                }
+        },
+        "floor": {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "object": "resources/models/floor.obj",
+            "material": "WoodFloor26",
+            "tessellation": {
+                "level": 64,
+                "strength": 0.01,
+                "alpha": 0.0
             }
         }
     }

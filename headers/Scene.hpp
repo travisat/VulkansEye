@@ -1,18 +1,18 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <utility>
-#include <array>
 
-#include "Actor.hpp"
+
 #include "Backdrop.hpp"
 #include "Config.h"
 #include "Materials.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "PointLight.hpp"
-#include "Stage.hpp"
+#include "Model.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
@@ -39,19 +39,19 @@ class Scene
 
     auto numTessBuffers() -> uint32_t
     {
-        return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size());
+        return static_cast<uint32_t>(models.size() + pointLights.size());
     };
     auto numUniformLights() -> uint32_t
     {
-        return static_cast<uint32_t>(actors.size() + stage.models.size() + pointLights.size()) * numLights;
+        return static_cast<uint32_t>(models.size() + pointLights.size()) * numLights;
     };
     auto numImageSamplers() -> uint32_t
     {
-        return static_cast<uint32_t>((actors.size() + stage.models.size() + pointLights.size()) * 6);
+        return static_cast<uint32_t>((models.size() + pointLights.size()) * 6);
     };
     auto numShadows() -> uint32_t
     {
-      return static_cast<uint32_t>(actors.size() + stage.models.size());
+        return static_cast<uint32_t>(models.size());
     };
 
   private:
@@ -61,11 +61,11 @@ class Scene
     VkDescriptorPool shadowPool;
     VkDescriptorSetLayout shadowLayout;
 
-    Materials materials {};
+    Backdrop backdrop;
+    Materials materials{};
 
-    Stage stage;
     Pipeline colorPipeline;
-    std::vector<Actor> actors;
+    std::vector<Model> models;
     std::vector<PointLight> pointLights;
 
     Pipeline shadowPipeline;
@@ -73,9 +73,8 @@ class Scene
     void createShadow();
     void createLights();
     void createMaterials();
-    void createActors();
+    void createModels();
     void createBackdrop();
-    void createStage();
 
     void createColorPool();
     void createColorLayouts();

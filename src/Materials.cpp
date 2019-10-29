@@ -2,13 +2,14 @@
 
 namespace tat
 {
-void Materials::loadConfig(const MaterialsConfig &config)
+void Materials::loadConfigs(const std::vector<MaterialConfig> &materials)
 {
+    
     // resize and allow for 0 index to be default
-    configs.resize(config.material.size() + 1);
+    configs.resize(materials.size() + 1);
     collection.resize(configs.size());
     int32_t index = 1; // start at 1 because index of 0 is reserved for default
-    for (const auto& materialConfig : config.material)
+    for (const auto& materialConfig : materials)
     {
         collection[index].name = materialConfig.name;
         //insert name into map for index retrieval

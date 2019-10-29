@@ -52,12 +52,10 @@ ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Materials.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
-${CMAKE_SOURCE_DIR}/src/Actor.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
 ${CMAKE_SOURCE_DIR}/src/Player.cpp
 ${CMAKE_SOURCE_DIR}/src/PointLight.cpp
 ${CMAKE_SOURCE_DIR}/src/Scene.cpp
-${CMAKE_SOURCE_DIR}/src/Stage.cpp
 ${CMAKE_SOURCE_DIR}/src/Overlay.cpp
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp

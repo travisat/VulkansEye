@@ -20,8 +20,8 @@ void Scene::create()
     createLights();
 
     createMaterials();
-    createStage();
-    createActors();
+    createBackdrop();
+    createModels();
 
     createColorPool(); // needs stage/lights/actors to know number of descriptors
     createColorLayouts();
@@ -55,53 +55,56 @@ void Scene::createShadow()
     shadow.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     shadow.createSampler();
 
-    stage.backdrop.shadowMap = &shadow;
+    backdrop.shadowMap = &shadow;
 }
 
 void Scene::createMaterials()
 {
     materials.vulkan = vulkan;
-    materials.loadConfig(config->materials);
+    materials.loadConfigs(config->materials);
 }
 
-void Scene::createStage()
+void Scene::createBackdrop()
 {
-    stage.vulkan = vulkan;
-    stage.config = &config->stage;
-    stage.player = player;
-    stage.materials = &materials;
-    stage.shadow = &shadow;
+    backdrop.vulkan = vulkan;
+    backdrop.player = player;
+    backdrop.path = config->backdrop;
+    backdrop.shadowMap = &shadow;
 
-    stage.create();
+    backdrop.create();
 }
 
 void Scene::createLights()
 {
     pointLights.resize(numLights);
+    int32_t index = 0;
     for (auto &lightConfig : config->pointLights)
     {
-        pointLights[lightConfig.index].config = &lightConfig;
-        pointLights[lightConfig.index].vulkan = vulkan;
-        pointLights[lightConfig.index].create();
+        pointLights[index].config = &lightConfig;
+        pointLights[index].vulkan = vulkan;
+        pointLights[index].create();
+        ++index;
     }
 }
 
-void Scene::createActors()
+void Scene::createModels()
 {
-    actors.resize(config->actors.size());
-    for (auto &actorConfig : config->actors)
+    models.resize(config->models.size());
+    int32_t index = 0;
+    for (auto &actorConfig : config->models)
     {
-        actors[actorConfig.index].config = &actorConfig;
-        actors[actorConfig.index].vulkan = vulkan;
-        actors[actorConfig.index].materials = &materials;
-        actors[actorConfig.index].shadow = &shadow;
-        actors[actorConfig.index].create();
+        models[index].config = &actorConfig;
+        models[index].vulkan = vulkan;
+        models[index].materials = &materials;
+        models[index].shadow = &shadow;
+        models[index].create();
+        ++index;
     }
 }
 
 void Scene::cleanup()
 {
-    stage.cleanup();
+    backdrop.cleanup();
     colorPipeline.cleanup();
     vkDestroyDescriptorPool(vulkan->device, colorPool, nullptr);
 }
@@ -110,7 +113,7 @@ void Scene::recreate()
 {
     player->updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
 
-    stage.recreate();
+    backdrop.recreate();
     createColorPool();
     createColorSets();
     createColorPipeline();
@@ -118,26 +121,18 @@ void Scene::recreate()
 
 void Scene::drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-    stage.backdrop.draw(commandBuffer, currentImage);
+    backdrop.draw(commandBuffer, currentImage);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
-    for (auto &model : stage.models)
+    for (auto &model : models)
     {
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
                                 &model.colorSets[currentImage], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, model.indexSize, 1, 0, 0, 0);
-    }
-    for (auto &actor : actors)
-    {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, actor.model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
-                                &actor.model.colorSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, actor.model.indexSize, 1, 0, 0, 0);
     }
 }
 
@@ -146,7 +141,7 @@ void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
-    for (auto &model : stage.models)
+    for (auto &model : models)
     {
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertexBuffer.buffer, offsets.data());
         vkCmdBindIndexBuffer(commandBuffer, model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -154,24 +149,16 @@ void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
                                 &model.shadowSets[currentImage], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, model.indexSize, 1, 0, 0, 0);
     }
-    for (auto &actor : actors)
-    {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &actor.model.vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, actor.model.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipelineLayout, 0, 1,
-                                &actor.model.shadowSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, actor.model.indexSize, 1, 0, 0, 0);
-    }
 }
 
 void Scene::update(uint32_t currentImage)
 {
-    stage.backdrop.update(currentImage);
+    backdrop.update(currentImage);
 
     for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = pointLights[i].light.position;
-        //uLight.light[i].position.x += glm::sin(Timer::time());
+        // uLight.light[i].position.x += glm::sin(Timer::time());
         uLight.light[i].color = pointLights[i].light.color;
         uLight.light[i].lumens = pointLights[i].light.lumens;
     }
@@ -200,42 +187,23 @@ void Scene::update(uint32_t currentImage)
     glm::vec3 lightPos = pointLights[0].light.position;
     shadowmvp.lightpos = glm::vec4(lightPos, 1.F);
 
-    for (auto &stagemodel : stage.models)
+    for (auto &model : models)
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.F), stagemodel.position);
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        model = glm::rotate(model, glm::radians(stagemodel.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        model = glm::scale(model, stagemodel.scale);
+        glm::mat4 m = glm::translate(glm::mat4(1.F), model.position);
+        m = glm::rotate(m, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
+        m = glm::rotate(m, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
+        m = glm::rotate(m, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
+        m = glm::scale(m, model.scale);
 
-        stagemodel.uTessEval.model = model;
-        stagemodel.uTessEval.viewProjection = player->perspective * player->view;
+        model.uTessEval.model = m;
+        model.uTessEval.viewProjection = player->perspective * player->view;
 
-        stagemodel.tescBuffers[currentImage].update(&stagemodel.uTessControl, sizeof(stagemodel.uTessControl));
-        stagemodel.teseBuffers[currentImage].update(&stagemodel.uTessEval, sizeof(stagemodel.uTessEval));
-        stagemodel.uniformLights[currentImage].update(&uLight, sizeof(uLight));
+        model.tescBuffers[currentImage].update(&model.uTessControl, sizeof(model.uTessControl));
+        model.teseBuffers[currentImage].update(&model.uTessEval, sizeof(model.uTessEval));
+        model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
 
-        shadowmvp.model = glm::translate(model, glm::vec3(-lightPos.x, -lightPos.y, -lightPos.z));
-        stagemodel.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
-    }
-
-    for (auto &actor : actors)
-    {
-        glm::mat4 model = glm::translate(glm::mat4(1.0F), actor.model.position);
-        model = glm::rotate(model, glm::radians(actor.model.rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
-        model = glm::rotate(model, glm::radians(actor.model.rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
-        model = glm::rotate(model, glm::radians(actor.model.rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
-        model = glm::scale(model, actor.model.scale);
-
-        actor.model.uTessEval.model = model;
-        actor.model.uTessEval.viewProjection = player->perspective * player->view;
-
-        actor.model.tescBuffers[currentImage].update(&actor.model.uTessControl, sizeof(actor.model.uTessControl));
-        actor.model.teseBuffers[currentImage].update(&actor.model.uTessEval, sizeof(actor.model.uTessEval));
-        actor.model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
-
-        shadowmvp.model = glm::translate(model, glm::vec3(-lightPos.x, -lightPos.y, -lightPos.z));
-        actor.model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
+        shadowmvp.model = glm::translate(m, glm::vec3(-lightPos.x, -lightPos.y, -lightPos.z));
+        model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
     }
 }
 
@@ -345,11 +313,10 @@ void Scene::createColorLayouts()
 
 void Scene::createColorSets()
 {
-    stage.createColorSets(colorPool, colorLayout);
 
-    for (auto &actor : actors)
+    for (auto &model : models)
     {
-        actor.model.createColorSets(colorPool, colorLayout);
+        model.createColorSets(colorPool, colorLayout);
     }
 }
 
@@ -423,11 +390,9 @@ void Scene::createShadowLayouts()
 
 void Scene::createShadowSets()
 {
-    stage.createShadowSets(shadowPool, shadowLayout);
-
-    for (auto &actor : actors)
+    for (auto &model : models)
     {
-        actor.model.createShadowSets(shadowPool, shadowLayout);
+        model.createShadowSets(shadowPool, shadowLayout);
     }
 }
 

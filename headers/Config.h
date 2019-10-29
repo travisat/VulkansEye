@@ -28,8 +28,8 @@ struct VulkanConfig
 struct PlayerConfig
 {
     float fieldOfView = 60.F;
-    glm::vec3 position {};
-    glm::vec3 rotation {};
+    glm::vec3 position{};
+    glm::vec3 rotation{};
     float height = 1.7F; // meters 1.0f == 1m
     float mass = 100.F;
     float jumpHeight = 1.F;
@@ -41,11 +41,10 @@ struct PlayerConfig
 
 struct PointLightConfig
 {
-    int32_t index = 0;
-    std::string name = "none";
-    glm::vec3 position {};
-    float temperature = 0;
-    float lumens = 0;
+    std::string name = "default";
+    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
+    float temperature = 6400;
+    float lumens = 1600;
 };
 
 struct MaterialConfig
@@ -59,46 +58,27 @@ struct MaterialConfig
     std::string displacement = "resources/materials/default/displacement.png";
 };
 
-struct MaterialsConfig
-{
-    std::vector<MaterialConfig> material{};
-};
-
 struct ModelConfig
 {
-    int32_t index = 0;
-    std::string name = "none";
-    glm::vec3 position {};
-    glm::vec3 rotation {};
-    glm::vec3 scale {};
+    std::string name = "default";
     std::string object = "resources/models/cube.obj";
     std::string material = "default";
+    glm::vec3 position{};
+    glm::vec3 rotation{};
+    glm::vec3 scale{};
     float tessLevel = 1.F;
     float tessStregth = 0.F;
     float tessAlpha = 0.0F;
 };
 
-struct ActorConfig
-{
-    int32_t index = 0;
-    std::string name = "none";
-    ModelConfig model {};
-};
-
-struct StageConfig
-{
-    std::string backdrop = "resources/backdrop/nebula.dds";
-    std::vector<ModelConfig> models {};
-};
-
 struct Config
 {
-    VulkanConfig vulkan {};
-    PlayerConfig player {};
-    MaterialsConfig materials {};
-    StageConfig stage {};
+    VulkanConfig vulkan{};
+    PlayerConfig player{};
+    std::string backdrop = "resources/backdrop/nebula.dds";
     std::vector<PointLightConfig> pointLights{};
-    std::vector<ActorConfig> actors {};
+    std::vector<MaterialConfig> materials{};
+    std::vector<ModelConfig> models{};
 };
 
 } // namespace tat
