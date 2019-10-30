@@ -8,8 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Launch",
-            "program": "${command:cmake.launchTargetPath}",
-            "cwd": "${workspaceRoot}",
+            "program": "build/VulkansEye.exe",
         }
     ]
 }
