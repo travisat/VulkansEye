@@ -419,14 +419,14 @@
                 "z": 0
             },
             "scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
             },
             "mesh": "floortile",
             "material": "Marble03",
             "tessellation": {
-                "level": 4,
+                "level": 8,
                 "strength": 0.01,
                 "alpha": 0.0
             }
