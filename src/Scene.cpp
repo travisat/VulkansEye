@@ -176,7 +176,7 @@ void Scene::update(uint32_t currentImage)
 
     UniformShadow shadowmvp{};
     // clip converts perspective to vulkan
-    shadowmvp.projection = glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
+    shadowmvp.projection = clip * glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
     // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
     // POSITIVE_X
     shadowmvp.view[0] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(0.F, 1.F, 0.F));
@@ -425,7 +425,7 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    shadowPipeline.rasterizer.frontFace = vk::FrontFace::eClockwise;
+    //shadowPipeline.rasterizer.frontFace = vk::FrontFace::eClockwise;
     shadowPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
     shadowPipeline.create();

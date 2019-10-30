@@ -202,10 +202,10 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
     }
     else
     {
-        //set size of lights equal to numberr of lights in config
+        // set size of lights equal to numberr of lights in config
         config.pointLights.resize(j.at("lights").size());
-        //iterate over config and store value from json into config if that value exists
-        //otherwise leave the value alone from the default constructed value
+        // iterate over config and store value from json into config if that value exists
+        // otherwise leave the value alone from the default constructed value
         int32_t i = 0;
         for (auto &[key, light] : j.at("lights").items())
         {
@@ -266,42 +266,59 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
     }
     else
     {
-        config.models.resize(j.at("models").size());
-        int32_t i = 0;
         for (auto &[key, model] : j.at("models").items())
         {
-            config.models[i].name = key;
-            config.models[i].mesh = model.value("mesh", config.models[i].mesh);
-            config.models[i].material = model.value("material", config.models[i].material);
-            if (model.find("position") != model.end())
-            {
-                auto position = model.at("position");
-                config.models[i].position.x = position.value("x", config.models[i].position.x);
-                config.models[i].position.y = position.value("y", config.models[i].position.y);
-                config.models[i].position.z = position.value("z", config.models[i].position.z);
-            }
+            ModelConfig c{};
+            c.name = key;
+            c.mesh = model.value("mesh", c.mesh);
+            c.material = model.value("material", c.material);
             if (model.find("rotation") != model.end())
             {
                 auto rotation = model.at("rotation");
-                config.models[i].rotation.x = rotation.value("x", config.models[i].rotation.x);
-                config.models[i].rotation.y = rotation.value("y", config.models[i].rotation.y);
-                config.models[i].rotation.z = rotation.value("z", config.models[i].rotation.z);
+                c.rotation.x = rotation.value("x", c.rotation.x);
+                c.rotation.y = rotation.value("y", c.rotation.y);
+                c.rotation.z = rotation.value("z", c.rotation.z);
             }
             if (model.find("scale") != model.end())
             {
                 auto scale = model.at("scale");
-                config.models[i].scale.x = scale.value("x", config.models[i].scale.x);
-                config.models[i].scale.y = scale.value("y", config.models[i].scale.y);
-                config.models[i].scale.z = scale.value("z", config.models[i].scale.z);
+                c.scale.x = scale.value("x", c.scale.x);
+                c.scale.y = scale.value("y", c.scale.y);
+                c.scale.z = scale.value("z", c.scale.z);
             }
             if (model.find("tessellation") != model.end())
             {
                 auto tessellation = model.at("tessellation");
-                config.models[i].tessLevel = tessellation.value("level", config.models[i].tessLevel);
-                config.models[i].tessStregth = tessellation.value("strength", config.models[i].tessStregth);
-                config.models[i].tessAlpha = tessellation.value("alpha", config.models[i].tessAlpha);
+                c.tessLevel = tessellation.value("level", c.tessLevel);
+                c.tessStregth = tessellation.value("strength", c.tessStregth);
+                c.tessAlpha = tessellation.value("alpha", c.tessAlpha);
             }
-            ++i;
+
+            if (model.find("type") == model.end() || model.find("type").value() == "single")
+            {
+                if (model.find("position") != model.end())
+                {
+                    auto position = model.at("position");
+                    c.position.x = position.value("x", c.position.x);
+                    c.position.y = position.value("y", c.position.y);
+                    c.position.z = position.value("z", c.position.z);
+                }
+
+                config.models.push_back(c);
+            }
+            else if (model.find("type").value() == "multiple")
+            {
+                if (model.find("positions") != model.end())
+                {
+                    for (auto &position : model.at("positions"))
+                    {
+                        c.position.x = position.value("x", c.position.x);
+                        c.position.y = position.value("y", c.position.y);
+                        c.position.z = position.value("z", c.position.z);
+                        config.models.push_back(c);
+                    }
+                }
+            }
         }
     }
 };

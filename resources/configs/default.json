@@ -30,12 +30,12 @@
     "lights": {
         "lantern": {
             "position": {
-                "x": 1,
-                "y": 3.0,
-                "z": 1
+                "x": 0,
+                "y": 4.0,
+                "z": 0
             },
             "temperature": 6400,
-            "lumens": 1200
+            "lumens": 900
         }
     },
     "materials": {
@@ -72,6 +72,13 @@
             "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
             "displacement": "resources/materials/Metal11/Metal11_disp.jpg"
         },
+        "Metal28": {
+            "diffuse": "resources/materials/Metal28/Metal28_col.jpg",
+            "normal": "resources/materials/Metal28/Metal28_nrm.jpg",
+            "metallic": "resources/materials/Metal28/Metal28_met.jpg",
+            "roughness": "resources/materials/Metal28/Metal28_rgh.jpg",
+            "displacement": "resources/materials/Metal28/Metal28_disp.jpg"
+        },
         "PavingStones45": {
             "diffuse": "resources/materials/PavingStones45/PavingStones45_col.jpg",
             "normal": "resources/materials/PavingStones45/PavingStones45_nrm.jpg",
@@ -98,6 +105,12 @@
             "roughness": "resources/materials/Tiles32/Tiles32_rgh.jpg",
             "displacement": "resources/materials/Tiles32/Tiles32_disp.jpg"
         },
+        "Marble03": {
+            "diffuse": "resources/materials/Marble03/Marble03_col.jpg",
+            "normal": "resources/materials/Marble03/Marble03_nrm.jpg",
+            "roughness": "resources/materials/Marble03/Marble03_rgh.jpg",
+            "displacement": "resources/materials/Marble03/Marble03_disp.jpg"
+        },
         "WoodFloor20": {
             "diffuse": "resources/materials/WoodFloor20/WoodFloor20_col.jpg",
             "normal": "resources/materials/WoodFloor20/WoodFloor20_nrm.jpg",
@@ -111,20 +124,27 @@
             "roughness": "resources/materials/WoodFloor26/WoodFloor26_rgh.jpg",
             "ao": "resources/materials/WoodFloor26/WoodFloor26_AO.jpg",
             "displacement": "resources/materials/WoodFloor26/WoodFloor26_disp.jpg"
+        },
+        "Plaster02": {
+            "diffuse": "resources/materials/Plaster02/Plaster02_col.jpg",
+            "normal": "resources/materials/Plaster02/Plaster02_nrm.jpg",
+            "roughness": "resources/materials/Plaster02/Plaster02_rgh.jpg",
+            "displacement": "resources/materials/Plaster02/Plaster02_disp.jpg"
         }
     },
-    "meshes":{
+    "meshes": {
         "table": "resources/models/table.obj",
         "floor": "resources/models/floor.obj",
-        "sphere": "resources/models/sphere.obj"
+        "sphere": "resources/models/sphere.obj",
+        "floortile": "resources/models/floortile.obj"
     },
     "models": {
         "table": {
-            "name": "table",
+            "type": "single",
             "position": {
-                "x": 3,
+                "x": 2,
                 "y": 0,
-                "z": 4
+                "z": 2
             },
             "rotation": {
                 "x": 0,
@@ -144,12 +164,255 @@
                 "alpha": 0.0
             }
         },
-        "floor": {
-            "position": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-            },
+        "floortiles": {
+            "type": "multiple",
+            "positions": [
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": -3,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": -2,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": -1,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": 0,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": 1,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": 2,
+                    "y": 0,
+                    "z": 3
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": -3
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": -2
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": -1
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": 0
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": 1
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": 2
+                },
+                {
+                    "x": 3,
+                    "y": 0,
+                    "z": 3
+                }
+            ],
             "rotation": {
                 "x": 0,
                 "y": 0,
@@ -160,10 +423,10 @@
                 "y": 1,
                 "z": 1
             },
-            "mesh": "floor",
-            "material": "WoodFloor26",
+            "mesh": "floortile",
+            "material": "Marble03",
             "tessellation": {
-                "level": 64,
+                "level": 4,
                 "strength": 0.01,
                 "alpha": 0.0
             }

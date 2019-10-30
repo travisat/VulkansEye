@@ -226,5 +226,5 @@ void main()
         luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
     }
     float shadow = shadowCalc(inPosition - uLight.light[0].position);
-    outColor = vec4(shadow * luminance * ambientOcclusion, 1.0);
+    outColor = vec4(luminance * ambientOcclusion, 1.0);
 }
