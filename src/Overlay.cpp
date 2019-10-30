@@ -1,5 +1,6 @@
 #include "Overlay.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -7,8 +8,8 @@ namespace tat
 Overlay::~Overlay()
 {
     ImGui::DestroyContext();
-    vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Overlay::create()
@@ -46,15 +47,15 @@ void Overlay::recreate()
 void Overlay::cleanup()
 {
     pipeline.cleanup();
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+    vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Overlay::createBuffers()
 {
-    vertexBuffer.flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    vertexBuffer.flags = vk::BufferUsageFlagBits::eVertexBuffer;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     vertexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    indexBuffer.flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    indexBuffer.flags = vk::BufferUsageFlagBits::eIndexBuffer;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     indexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 }
@@ -69,41 +70,41 @@ void Overlay::createFont()
     VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
     fontImage.vulkan = vulkan;
-    fontImage.imageUsage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    fontImage.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
     fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    fontImage.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    fontImage.layout = vk::ImageLayout::eTransferDstOptimal;
     fontImage.resize(texWidth, texHeight);
 
     // Staging buffers for font data upload
     Buffer stagingBuffer;
     stagingBuffer.vulkan = vulkan;
-    stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
-    VkCommandBuffer copyCmd = vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer copyCmd = vulkan->beginSingleTimeCommands();
 
     // Copy
-    VkBufferImageCopy bufferCopyRegion = {};
-    bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::BufferImageCopy bufferCopyRegion = {};
+    bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     bufferCopyRegion.imageSubresource.layerCount = 1;
     bufferCopyRegion.imageExtent.width = texWidth;
     bufferCopyRegion.imageExtent.height = texHeight;
     bufferCopyRegion.imageExtent.depth = 1;
 
-    vkCmdCopyBufferToImage(copyCmd, stagingBuffer.buffer, fontImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                           &bufferCopyRegion);
+    copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage.image, vk::ImageLayout::eTransferDstOptimal, 1,
+                              &bufferCopyRegion);
 
     vulkan->endSingleTimeCommands(copyCmd);
 
-    fontImage.transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    fontImage.transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     // Font texture Sampler
-    fontImage.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    fontImage.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    fontImage.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    fontImage.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    fontImage.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     fontImage.createSampler();
 }
 
@@ -111,69 +112,64 @@ void Overlay::createDescriptorPool()
 {
     auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
-    std::array<VkDescriptorPoolSize, 1> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
+    poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
     poolSizes[0].descriptorCount = numSwapChainImages;
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
+    descriptorPool = vulkan->device.createDescriptorPool(poolInfo);
     // Trace("Created overlay descriptor pool at ", Timer::systemTime());
 }
 
 void Overlay::createDescriptorLayouts()
 {
-    VkDescriptorSetLayoutBinding samplerBinding = {};
+    vk::DescriptorSetLayoutBinding samplerBinding = {};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
-    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     samplerBinding.pImmutableSamplers = nullptr;
-    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    samplerBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::array<VkDescriptorSetLayoutBinding, 1> bindings = {samplerBinding};
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    std::array<vk::DescriptorSetLayoutBinding, 1> bindings = {samplerBinding};
+    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout));
+    descriptorSetLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Overlay::createDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
+    descriptorSets = vulkan->device.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {
-        VkDescriptorImageInfo samplerInfo = {};
-        samplerInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo samplerInfo = {};
+        samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         samplerInfo.imageView = fontImage.imageView;
         samplerInfo.sampler = fontImage.sampler;
 
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
-                               0, nullptr);
+        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                            nullptr);
     }
 }
 
@@ -184,8 +180,8 @@ void Overlay::createPipeline()
     pipeline.loadDefaults(vulkan->colorPass);
 
     // Push constants for UI rendering parameters
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vk::PushConstantRange pushConstantRange = {};
+    pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
     pushConstantRange.size = sizeof(PushConstBlock);
     pushConstantRange.offset = 0;
 
@@ -200,25 +196,25 @@ void Overlay::createPipeline()
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    VkVertexInputBindingDescription bindingDescription = {};
+    vk::VertexInputBindingDescription bindingDescription = {};
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(ImDrawVert);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions = {};
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].format = vk::Format::eR32G32Sfloat;
     attributeDescriptions[0].offset = offsetof(ImDrawVert, pos);
 
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].format = vk::Format::eR32G32Sfloat;
     attributeDescriptions[1].offset = offsetof(ImDrawVert, uv);
 
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R8G8B8_UNORM;
+    attributeDescriptions[2].format = vk::Format::eR8G8B8Unorm;
     attributeDescriptions[2].offset = offsetof(ImDrawVert, col);
 
     pipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -226,18 +222,16 @@ void Overlay::createPipeline()
     pipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     pipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-    pipeline.rasterizer.cullMode = VK_CULL_MODE_NONE;
+    pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eNone;
 
     // Enable blending
     pipeline.colorBlendAttachment.blendEnable = VK_TRUE;
-    pipeline.colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    pipeline.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    pipeline.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    pipeline.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    pipeline.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    pipeline.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    pipeline.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    pipeline.colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    pipeline.colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    pipeline.colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
+    pipeline.colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    pipeline.colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    pipeline.colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
@@ -280,18 +274,18 @@ void Overlay::updateBuffers()
     if (imDrawData != nullptr)
     {
         // Note: Alignment is done inside buffer creation
-        VkDeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
-        VkDeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
+        vk::DeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
+        vk::DeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
 
         // Update buffers only if vertex or index count has been changed compared to
         // current buffer size
 
-        update = (vertexBuffer.buffer == VK_NULL_HANDLE) || (vertexCount != imDrawData->TotalVtxCount) ||
-                 (indexBuffer.buffer == VK_NULL_HANDLE) || (indexCount != imDrawData->TotalIdxCount);
+        update = (!vertexBuffer.buffer) || (vertexCount != imDrawData->TotalVtxCount) || (!indexBuffer.buffer) ||
+                 (indexCount != imDrawData->TotalIdxCount);
 
         if (update)
         {
-            vkDeviceWaitIdle(vulkan->device);
+            vulkan->device.waitIdle();
 
             vertexBuffer.vulkan = vulkan;
             vertexBuffer.resize(vertexBufferSize);
@@ -320,32 +314,32 @@ void Overlay::updateBuffers()
     }
 }
 
-void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    if ((vertexBuffer.buffer == nullptr) || (indexBuffer.buffer == nullptr))
+    if ((!vertexBuffer.buffer) || (!indexBuffer.buffer))
     {
         newFrame();
         updateBuffers();
     }
     ImGuiIO &io = ImGui::GetIO();
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1,
-                            &descriptorSets[currentImage], 0, nullptr);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
+                                     &descriptorSets[currentImage], 0, nullptr);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
 
     // UI scale and translate via push constants
     pushConstBlock.scale = glm::vec2(2.0F / io.DisplaySize.x, 2.0F / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.0F);
-    vkCmdPushConstants(commandBuffer, pipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock),
-                       &pushConstBlock);
+    commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstBlock),
+                                &pushConstBlock);
 
     // Render commands
     ImDrawData *imDrawData = ImGui::GetDrawData();
     int32_t vertexOffset = 0;
     int32_t indexOffset = 0;
 
-    std::array<VkDeviceSize,1> offsets = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer.buffer, offsets.data());
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+    std::array<vk::DeviceSize, 1> offsets = {0};
+    commandBuffer.bindVertexBuffers(0, 1, &vertexBuffer.buffer, offsets.data());
+    commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint16);
 
     for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)
     {
@@ -353,13 +347,13 @@ void Overlay::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
         for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++)
         {
             const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[j];
-            VkRect2D scissorRect;
+            vk::Rect2D scissorRect;
             scissorRect.offset.x = std::max((int32_t)(pcmd->ClipRect.x), 0);
             scissorRect.offset.y = std::max((int32_t)(pcmd->ClipRect.y), 0);
             scissorRect.extent.width = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
             scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);
-            vkCmdDrawIndexed(commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
+            commandBuffer.setScissor(0, 1, &scissorRect);
+            commandBuffer.drawIndexed(pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
             indexOffset += pcmd->ElemCount;
         }
         vertexOffset += cmd_list->VtxBuffer.Size;

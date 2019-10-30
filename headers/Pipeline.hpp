@@ -9,35 +9,35 @@ class Pipeline
 {
   public:
     Vulkan *vulkan;
-    VkDescriptorSetLayout descriptorSetLayout;
+    vk::DescriptorSetLayout descriptorSetLayout;
 
-    VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
+    vk::Pipeline pipeline;
+    vk::PipelineLayout pipelineLayout;
 
     ~Pipeline();
     void create();
     void cleanup();
-    void loadDefaults(VkRenderPass renderPass);
+    void loadDefaults(vk::RenderPass renderPass);
 
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo tescShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo teseShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {};
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-    std::vector<VkDynamicState> dynamicStateEnables = {};
-    VkPipelineDynamicStateCreateInfo dynamicState = {};
-    VkPipelineTessellationStateCreateInfo tessellationState{};
-    VkPipelineViewportStateCreateInfo viewportState = {};
-    VkPipelineRasterizationStateCreateInfo rasterizer = {};
-    VkPipelineMultisampleStateCreateInfo multisampling = {};
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-    VkPipelineColorBlendStateCreateInfo colorBlending = {};
-    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-    VkGraphicsPipelineCreateInfo pipelineInfo = {};
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
+    vk::PipelineShaderStageCreateInfo tescShaderStageInfo = {};
+    vk::PipelineShaderStageCreateInfo teseShaderStageInfo = {};
+    vk::PipelineShaderStageCreateInfo geomShaderStageInfo = {};
+    vk::PipelineShaderStageCreateInfo fragShaderStageInfo = {};
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {};
+    vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
+    std::vector<vk::DynamicState> dynamicStateEnables = {};
+    vk::PipelineDynamicStateCreateInfo dynamicState = {};
+    vk::PipelineTessellationStateCreateInfo tessellationState{};
+    vk::PipelineViewportStateCreateInfo viewportState = {};
+    vk::PipelineRasterizationStateCreateInfo rasterizer = {};
+    vk::PipelineMultisampleStateCreateInfo multisampling = {};
+    vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
+    vk::PipelineColorBlendStateCreateInfo colorBlending = {};
+    vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
+    vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 
   private:
 };

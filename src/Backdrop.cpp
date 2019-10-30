@@ -1,13 +1,14 @@
 #include "Backdrop.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
 
 Backdrop::~Backdrop()
 {
-    vkDestroyDescriptorSetLayout(vulkan->device, descriptorSetLayout, nullptr);
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Backdrop::create()
@@ -24,7 +25,7 @@ void Backdrop::create()
 void Backdrop::cleanup()
 {
     pipeline.cleanup();
-    vkDestroyDescriptorPool(vulkan->device, descriptorPool, nullptr);
+    vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Backdrop::recreate()
@@ -38,26 +39,26 @@ void Backdrop::recreate()
 void Backdrop::loadCubeMap()
 {
     cubeMap.vulkan = vulkan;
-    cubeMap.tiling = VK_IMAGE_TILING_OPTIMAL;
-    cubeMap.numSamples = VK_SAMPLE_COUNT_1_BIT;
-    cubeMap.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    cubeMap.tiling = vk::ImageTiling::eOptimal;
+    cubeMap.numSamples = vk::SampleCountFlagBits::e1;
+    cubeMap.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap.loadTextureCube(path);
-    
-    cubeMap.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    cubeMap.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    cubeMap.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+    cubeMap.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    cubeMap.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    cubeMap.addressModeW = vk::SamplerAddressMode::eClampToEdge;
     cubeMap.maxAnisotropy = 1.0F;
-    cubeMap.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    cubeMap.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     cubeMap.createSampler();
 }
 
-void Backdrop::draw(VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout, 0, 1,
-                            &descriptorSets[currentImage], 0, nullptr);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
+                                     &descriptorSets[currentImage], 0, nullptr);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
+    commandBuffer.draw(3, 1, 0, 0);
 }
 
 void Backdrop::createUniformBuffers()
@@ -66,7 +67,7 @@ void Backdrop::createUniformBuffers()
     for (auto &buffer : uniformBuffers)
     {
         buffer.vulkan = vulkan;
-        buffer.flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         buffer.resize(sizeof(UniformBuffer));
@@ -90,91 +91,85 @@ void Backdrop::createDescriptorPool()
 
     auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
     poolSizes[0].descriptorCount = numSwapChainImages;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
     poolSizes[1].descriptorCount = numSwapChainImages;
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numSwapChainImages;
 
-    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &descriptorPool));
+    descriptorPool = vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Backdrop::createDescriptorSetLayouts()
 {
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
     uboLayoutBinding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding samplerLayoutBinding = {};
     samplerLayoutBinding.binding = 1;
     samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &descriptorSetLayout));
+    descriptorSetLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Backdrop::createDescriptorSets()
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, descriptorSets.data()));
+    descriptorSets =  vulkan->device.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {
 
-        VkDescriptorBufferInfo bufferInfo = {};
+        vk::DescriptorBufferInfo bufferInfo = {};
         bufferInfo.buffer = uniformBuffers[i].buffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBuffer);
 
-        VkDescriptorImageInfo imageInfo = {};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo imageInfo = {};
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         imageInfo.imageView = cubeMap.imageView;
         imageInfo.sampler = cubeMap.sampler;
 
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[1].dstSet = descriptorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
-                               0, nullptr);
+        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                            nullptr);
     }
 };
 
@@ -192,12 +187,11 @@ void Backdrop::createPipeline()
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    pipeline.rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+    pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
-    pipeline.depthStencil.depthCompareOp = VK_COMPARE_OP_NEVER;
-
+    pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
 }
 

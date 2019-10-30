@@ -4,10 +4,11 @@
 
 #include "Buffer.hpp"
 #include "Image.hpp"
-#include "Player.hpp"
 #include "Pipeline.hpp"
+#include "Player.hpp"
 #include "Timer.h"
 #include "Vulkan.hpp"
+
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -54,7 +55,7 @@ class Overlay
     void updateBuffers();
 
     // Draw current imGui frame into a command buffer
-    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
 
   private:
     // Vulkan resources for rendering the UI
@@ -66,9 +67,9 @@ class Overlay
     Image fontImage{};
 
     Pipeline pipeline;
-    VkDescriptorPool descriptorPool;
-    VkDescriptorSetLayout descriptorSetLayout;
-    std::vector<VkDescriptorSet> descriptorSets;
+    vk::DescriptorPool descriptorPool;
+    vk::DescriptorSetLayout descriptorSetLayout;
+    std::vector<vk::DescriptorSet> descriptorSets;
 
     UISettings uiSettings;
 

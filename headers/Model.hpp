@@ -13,6 +13,7 @@
 
 #include "Buffer.hpp"
 #include "Image.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -35,7 +36,7 @@ class Model
 
     // color pipeline
     Material *material;
-    std::vector<VkDescriptorSet> colorSets;
+    std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> tescBuffers;
     std::vector<Buffer> teseBuffers;
     std::vector<Buffer> uniformLights;
@@ -43,14 +44,14 @@ class Model
     TessEval uTessEval = {};
 
     // shadow pipeline
-    std::vector<VkDescriptorSet> shadowSets;
+    std::vector<vk::DescriptorSet> shadowSets;
     Image *shadow;
     UniformShadow uShadow = {};
     std::vector<Buffer> shadowBuffers;
    
     void create();
-    void createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
-    void createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout);
+    void createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
+    void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
   private:

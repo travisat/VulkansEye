@@ -22,7 +22,7 @@ class Backdrop
     void cleanup();
     void recreate();
 
-    void draw(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
     Image *shadowMap;
@@ -31,12 +31,12 @@ class Backdrop
     Image cubeMap{};
     UniformBuffer uBuffer;
 
-    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<vk::DescriptorSet> descriptorSets;
     std::vector<Buffer> uniformBuffers;
-    VkDescriptorPool descriptorPool;
+    vk::DescriptorPool descriptorPool;
 
     Pipeline pipeline;
-    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+    vk::DescriptorSetLayout descriptorSetLayout {};
 
     void loadCubeMap();
     void createDescriptorPool();

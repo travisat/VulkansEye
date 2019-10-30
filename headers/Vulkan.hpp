@@ -1,5 +1,6 @@
 #pragma once
 
+#include "helpers.h"
 #include "vulkan/vulkan_core.h"
 #ifdef WIN32
 #define NOMINMAX
@@ -8,6 +9,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan.hpp>
 
 #define GLM_FORCE_RADIANS
 #define GLM_DEPTH_ZERO_TO_ONE
@@ -20,7 +22,6 @@
 #include <array>
 #include <iostream>
 #include <vector>
-
 
 namespace tat
 {
@@ -72,44 +73,44 @@ class Vulkan
   public:
     ~Vulkan()
     {
-        vkDestroyRenderPass(device, colorPass, nullptr);
-        vkDestroyRenderPass(device, shadowPass, nullptr);
+        device.destroyRenderPass(colorPass);
+        device.destroyRenderPass(shadowPass);
         for (auto imageView : swapChainImageViews)
         {
-            vkDestroyImageView(device, imageView, nullptr);
+           device.destroyImageView(imageView);
         }
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-        vkDestroyCommandPool(device, commandPool, nullptr);
+        device.destroySwapchainKHR(swapChain);
+        device.destroyCommandPool(commandPool);
         vmaDestroyAllocator(allocator);
-        vkDestroyDevice(device, nullptr);
+        device.destroy(nullptr);
 
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-        vkDestroyInstance(instance, nullptr);
+        instance.destroySurfaceKHR(surface);
+        instance.destroy();
     };
 
     std::string name = "Unknown";
 
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice;
-    VkPhysicalDeviceProperties properties;
-    VkDevice device;
+    vk::Instance instance;
+    vk::SurfaceKHR surface;
+    vk::PhysicalDevice physicalDevice;
+    vk::PhysicalDeviceProperties properties;
+    vk::Device device;
     VmaAllocator allocator;
-    VkCommandPool commandPool;
-    VkSwapchainKHR swapChain;
-    std::vector<VkImage> swapChainImages{};
+    vk::CommandPool commandPool;
+    vk::SwapchainKHR swapChain;
+    std::vector<vk::Image> swapChainImages{};
 
-    VkRenderPass colorPass;
-    VkRenderPass shadowPass;
+    vk::RenderPass colorPass;
+    vk::RenderPass shadowPass;
 
-    VkPresentModeKHR defaultPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
+    vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
+    vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
+    vk::Queue graphicsQueue;
+    vk::Queue presentQueue;
+    vk::Format swapChainImageFormat;
+    vk::Extent2D swapChainExtent;
 
-    std::vector<VkImageView> swapChainImageViews;
+    std::vector<vk::ImageView> swapChainImageViews;
 
     GLFWwindow *window = nullptr;
     uint32_t width = 0;
@@ -121,77 +122,63 @@ class Vulkan
     bool showOverlay = true;
     bool updateCommandBuffer = false;
 
-    auto checkFormat(VkFormat format) -> bool
+    auto checkFormat(vk::Format format) -> bool
     {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
-        return (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != VK_FALSE;
+        vk::FormatProperties props = physicalDevice.getFormatProperties(format);
+        return (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) == vk::FormatFeatureFlagBits::eSampledImage;
     };
 
-    auto beginSingleTimeCommands() -> VkCommandBuffer
+    auto beginSingleTimeCommands() -> vk::CommandBuffer
     {
-        VkCommandBufferAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        vk::CommandBufferAllocateInfo allocInfo = {};
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
         allocInfo.commandPool = commandPool;
         allocInfo.commandBufferCount = 1;
 
-        VkCommandBuffer commandBuffer;
+        auto commandBuffer = device.allocateCommandBuffers(allocInfo);
 
-        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+        vk::CommandBufferBeginInfo beginInfo = {};
+        beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        commandBuffer[0].begin(beginInfo);
 
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-        return commandBuffer;
+        return commandBuffer[0];
     };
 
-    auto endSingleTimeCommands(VkCommandBuffer commandBuffer) -> VkResult
+    void endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     {
-        VkResult result = vkEndCommandBuffer(commandBuffer);
+        commandBuffer.end();
 
-        VkSubmitInfo submitInfo = {};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        vk::SubmitInfo submitInfo = {};
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(graphicsQueue);
-        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-        return result;
+        graphicsQueue.submit(submitInfo, nullptr);
+        graphicsQueue.waitIdle();
+        device.freeCommandBuffers(commandPool, 1, &commandBuffer);
     };
 
-    auto createShaderModule(const std::vector<char> &code) -> VkShaderModule
+    auto createShaderModule(const std::vector<char> &code) -> vk::ShaderModule
     {
-        VkShaderModuleCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        vk::ShaderModuleCreateInfo createInfo = {};
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create shader module!");
-        }
-        return shaderModule;
+       
+        return device.createShaderModule(createInfo, nullptr);
     }
 
-    auto findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                             VkFormatFeatureFlags features) -> VkFormat
+    auto findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
+                             const vk::FormatFeatureFlags& features) -> vk::Format
     {
-        for (VkFormat format : candidates)
+        for (vk::Format format : candidates)
         {
-            VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+            auto props = physicalDevice.getFormatProperties(format);
 
-            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+            if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features))
             {
                 return format;
             }
-            if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features))
             {
                 return format;
             }
@@ -199,10 +186,10 @@ class Vulkan
         throw std::runtime_error("Failed to find supported format");
     }
 
-    auto findDepthFormat() -> VkFormat
+    auto findDepthFormat() -> vk::Format
     {
-        return findSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                                   VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        return findSupportedFormat({vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint},
+                                   vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
     }
 };
 

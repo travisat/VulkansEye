@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 #include "Vulkan.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace tat
@@ -8,10 +9,10 @@ namespace tat
 
 Scene::~Scene()
 {
-    vkDestroyDescriptorSetLayout(vulkan->device, shadowLayout, nullptr);
-    vkDestroyDescriptorSetLayout(vulkan->device, colorLayout, nullptr);
-    vkDestroyDescriptorPool(vulkan->device, colorPool, nullptr);
-    vkDestroyDescriptorPool(vulkan->device, shadowPool, nullptr);
+    vulkan->device.destroyDescriptorSetLayout(shadowLayout);
+    vulkan->device.destroyDescriptorSetLayout(colorLayout);
+    vulkan->device.destroyDescriptorPool(colorPool);
+    vulkan->device.destroyDescriptorPool(shadowPool);
 }
 
 void Scene::create()
@@ -39,21 +40,21 @@ void Scene::createShadow()
     shadow.vulkan = vulkan;
     shadow.mipLevels = 1;
     shadow.layers = 6;
-    shadow.numSamples = VK_SAMPLE_COUNT_1_BIT;
-    shadow.format = VK_FORMAT_R32_SFLOAT;
-    shadow.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    shadow.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    shadow.imageUsage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    shadow.numSamples = vk::SampleCountFlagBits::e1;
+    shadow.format = vk::Format::eR32Sfloat;
+    shadow.layout = vk::ImageLayout::eColorAttachmentOptimal;
+    shadow.aspect = vk::ImageAspectFlagBits::eColor;
+    shadow.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadow.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    shadow.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    shadow.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    shadow.viewType = vk::ImageViewType::eCube;
     shadow.resize(1024, 1024);
 
-    shadow.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadow.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    shadow.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    shadow.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    shadow.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    shadow.addressModeW = vk::SamplerAddressMode::eClampToEdge;
     shadow.maxAnisotropy = 1.0F;
-    shadow.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    shadow.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     shadow.createSampler();
 
     backdrop.shadowMap = &shadow;
@@ -114,7 +115,7 @@ void Scene::cleanup()
 {
     backdrop.cleanup();
     colorPipeline.cleanup();
-    vkDestroyDescriptorPool(vulkan->device, colorPool, nullptr);
+    vulkan->device.destroyDescriptorPool(colorPool);
 }
 
 void Scene::recreate()
@@ -127,35 +128,35 @@ void Scene::recreate()
     createColorPipeline();
 }
 
-void Scene::drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
     backdrop.draw(commandBuffer, currentImage);
 
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipeline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, model.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, colorPipeline.pipelineLayout, 0, 1,
-                                &model.colorSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, model.mesh->indexSize, 1, 0, 0, 0);
+        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(model.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout, 0, 1,
+                                         &model.colorSets[currentImage], 0, nullptr);
+        commandBuffer.drawIndexed(model.mesh->indexSize, 1, 0, 0, 0);
     }
 }
 
-void Scene::drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipeline);
+     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
-        vkCmdBindIndexBuffer(commandBuffer, model.mesh->indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipeline.pipelineLayout, 0, 1,
-                                &model.shadowSets[currentImage], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, model.mesh->indexSize, 1, 0, 0, 0);
+        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(model.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout, 0, 1,
+                                         &model.shadowSets[currentImage], 0, nullptr);
+        commandBuffer.drawIndexed(model.mesh->indexSize, 1, 0, 0, 0);
     }
 }
 
@@ -219,104 +220,102 @@ void Scene::createColorPool()
 {
     auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
-    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
+    poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
     poolSizes[0].descriptorCount = (numTessBuffers() + numUniformLights()) * numSwapChainImages;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
     poolSizes[1].descriptorCount = numImageSamplers() * numSwapChainImages;
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = (numTessBuffers() + numUniformLights() + numImageSamplers()) * numSwapChainImages;
 
-    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &colorPool));
+    colorPool = vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createColorLayouts()
 {
-    VkDescriptorSetLayoutBinding uTessControlLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding uTessControlLayoutBinding = {};
     uTessControlLayoutBinding.binding = 0;
     uTessControlLayoutBinding.descriptorCount = 1;
-    uTessControlLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uTessControlLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     uTessControlLayoutBinding.pImmutableSamplers = nullptr;
-    uTessControlLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    uTessControlLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eTessellationControl;
 
-    VkDescriptorSetLayoutBinding uTessEvalLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding uTessEvalLayoutBinding = {};
     uTessEvalLayoutBinding.binding = 1;
     uTessEvalLayoutBinding.descriptorCount = 1;
-    uTessEvalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uTessEvalLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     uTessEvalLayoutBinding.pImmutableSamplers = nullptr;
-    uTessEvalLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    uTessEvalLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eTessellationEvaluation;
 
-    VkDescriptorSetLayoutBinding dispLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding dispLayoutBinding = {};
     dispLayoutBinding.binding = 2;
     dispLayoutBinding.descriptorCount = 1;
-    dispLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dispLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     dispLayoutBinding.pImmutableSamplers = nullptr;
-    dispLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    dispLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eTessellationEvaluation;
 
-    VkDescriptorSetLayoutBinding uLightLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding uLightLayoutBinding = {};
     uLightLayoutBinding.binding = 3;
     uLightLayoutBinding.descriptorCount = 1;
-    uLightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uLightLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     uLightLayoutBinding.pImmutableSamplers = nullptr;
-    uLightLayoutBinding.stageFlags = VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    uLightLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding shadowLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding shadowLayoutBinding = {};
     shadowLayoutBinding.binding = 4;
     shadowLayoutBinding.descriptorCount = 1;
-    shadowLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    shadowLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     shadowLayoutBinding.pImmutableSamplers = nullptr;
-    shadowLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shadowLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding diffuseLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding diffuseLayoutBinding = {};
     diffuseLayoutBinding.binding = 5;
     diffuseLayoutBinding.descriptorCount = 1;
-    diffuseLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    diffuseLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     diffuseLayoutBinding.pImmutableSamplers = nullptr;
-    diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    diffuseLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding normalLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding normalLayoutBinding = {};
     normalLayoutBinding.binding = 6;
     normalLayoutBinding.descriptorCount = 1;
-    normalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    normalLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     normalLayoutBinding.pImmutableSamplers = nullptr;
-    normalLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    normalLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding roughnessLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding roughnessLayoutBinding = {};
     roughnessLayoutBinding.binding = 7;
     roughnessLayoutBinding.descriptorCount = 1;
-    roughnessLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    roughnessLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     roughnessLayoutBinding.pImmutableSamplers = nullptr;
-    roughnessLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    roughnessLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding metallicLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding metallicLayoutBinding = {};
     metallicLayoutBinding.binding = 8;
     metallicLayoutBinding.descriptorCount = 1;
-    metallicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    metallicLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     metallicLayoutBinding.pImmutableSamplers = nullptr;
-    metallicLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    metallicLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    VkDescriptorSetLayoutBinding aoLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding aoLayoutBinding = {};
     aoLayoutBinding.binding = 9;
     aoLayoutBinding.descriptorCount = 1;
-    aoLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    aoLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     aoLayoutBinding.pImmutableSamplers = nullptr;
-    aoLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    aoLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::array<VkDescriptorSetLayoutBinding, 10> bindings = {
+    std::array<vk::DescriptorSetLayoutBinding, 10> bindings = {
         uTessControlLayoutBinding, uTessEvalLayoutBinding, dispLayoutBinding,   uLightLayoutBinding,
         shadowLayoutBinding,       diffuseLayoutBinding,   normalLayoutBinding, roughnessLayoutBinding,
         metallicLayoutBinding,     aoLayoutBinding};
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &colorLayout));
+    colorLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createColorSets()
@@ -354,7 +353,7 @@ void Scene::createColorPipeline()
     colorPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     colorPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    colorPipeline.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    colorPipeline.inputAssembly.topology = vk::PrimitiveTopology::ePatchList;
 
     colorPipeline.pipelineInfo.pTessellationState = &colorPipeline.tessellationState;
     colorPipeline.create();
@@ -364,36 +363,34 @@ void Scene::createShadowPool()
 {
     auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
 
-    std::array<VkDescriptorPoolSize, 1> poolSizes = {};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
+    poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
     poolSizes[0].descriptorCount = numShadows() * numSwapChainImages;
 
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numShadows() * numSwapChainImages;
 
-    CheckResult(vkCreateDescriptorPool(vulkan->device, &poolInfo, nullptr, &shadowPool));
+    shadowPool = vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createShadowLayouts()
 {
-    VkDescriptorSetLayoutBinding shadowLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding shadowLayoutBinding = {};
     shadowLayoutBinding.binding = 0;
     shadowLayoutBinding.descriptorCount = 1;
-    shadowLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    shadowLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     shadowLayoutBinding.pImmutableSamplers = nullptr;
-    shadowLayoutBinding.stageFlags = VK_SHADER_STAGE_GEOMETRY_BIT;
+    shadowLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eGeometry;
 
-    std::array<VkDescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
+    std::array<vk::DescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
     layoutInfo.pBindings = layouts.data();
 
-    CheckResult(vkCreateDescriptorSetLayout(vulkan->device, &layoutInfo, nullptr, &shadowLayout));
+    shadowLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createShadowSets()
@@ -428,8 +425,8 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    shadowPipeline.rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    shadowPipeline.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    shadowPipeline.rasterizer.frontFace = vk::FrontFace::eClockwise;
+    shadowPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
     shadowPipeline.create();
 }

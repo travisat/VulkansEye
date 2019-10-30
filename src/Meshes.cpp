@@ -1,5 +1,6 @@
 #include "Meshes.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -48,18 +49,18 @@ void Meshes::loadMesh(int32_t index)
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
-    stagingBuffer.flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
     stagingBuffer.update(collection[index].vertices);
     collection[index].vertexBuffer.vulkan = vulkan;
-    collection[index].vertexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    collection[index].vertexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     collection[index].vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     stagingBuffer.copyTo(collection[index].vertexBuffer);
 
     stagingBuffer.update(collection[index].indices);
     collection[index].indexBuffer.vulkan = vulkan;
-    collection[index].indexBuffer.flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    collection[index].indexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     collection[index].indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     stagingBuffer.copyTo(collection[index].indexBuffer);
 

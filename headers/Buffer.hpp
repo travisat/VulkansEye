@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "Vertex.h"
 #include "Vulkan.hpp"
+#include "vulkan/vulkan.hpp"
 #include <vcruntime.h>
 
 namespace tat
@@ -13,15 +14,16 @@ class Buffer
   public:
     // required settings
     tat::Vulkan *vulkan = nullptr;
-    VkBufferUsageFlags flags = 0;
+    vk::BufferUsageFlags flags {};
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
     VmaAllocationCreateFlags memFlags = 0;
 
     // created values
-    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::Buffer buffer {};
     void *mapped = nullptr;
 
     ~Buffer();
+
     void allocate(VkDeviceSize s);
     void deallocate();
 
@@ -72,21 +74,21 @@ class Buffer
         vmaUnmapMemory(vulkan->allocator, allocation);
     };
 
-    void resize(VkDeviceSize s);
+    void resize(vk::DeviceSize s);
     void copyTo(Buffer &destination);
-    auto getSize() -> VkDeviceSize
+    auto getSize() -> vk::DeviceSize
     {
         return size;
     };
 
-    void flush(size_t size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
+    void flush(size_t size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0)
     {
         vmaFlushAllocation(vulkan->allocator, allocation, offset, size);
     };
 
   private:
     VmaAllocation allocation{};
-    VkDeviceSize size = 0;
+    vk::DeviceSize size = 0;
 
     bool ismapped = false;
 };

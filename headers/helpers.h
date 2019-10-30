@@ -10,7 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 // These need to be templated functions
 
@@ -41,6 +41,18 @@ template <typename... Args> void Trace(Args &&... args)
     std::ostringstream stream;
     (stream << ... << std::forward<Args>(args)) << '\n';
     std::clog << stream.str();
+}
+
+inline auto CheckResult(vk::Result result) -> vk::Result
+{
+    if (result != vk::Result::eSuccess)
+    {
+        std::ostringstream stream;
+        stream << " Error result is " << result << " in " << __FILE__ << " at line " << __LINE__ << std::endl;
+        std::cerr << stream.str();
+        assert(result == vk::Result::eSuccess);
+    }
+    return result;
 }
 
 template <typename T> auto CheckResult(T result) -> T

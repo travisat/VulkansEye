@@ -5,6 +5,7 @@
 
 #include "Buffer.hpp"
 #include "Vulkan.hpp"
+#include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace tat
@@ -14,35 +15,35 @@ class Image
 {
   public:
     Vulkan *vulkan = nullptr;
-    VkImage image = VK_NULL_HANDLE;
-    VkSampler sampler = VK_NULL_HANDLE;
+    vk::Image image = nullptr;
+    vk::Sampler sampler = nullptr;
     VmaAllocation allocation{};
 
-    VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
-    VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
-    VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vk::Format format = vk::Format::eR8G8B8A8Unorm;
+    vk::ImageTiling tiling = vk::ImageTiling::eOptimal;
+    vk::SampleCountFlagBits numSamples = vk::SampleCountFlagBits::e1;
+    vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eTransferSrc;
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
-    VkImageCreateFlags flags = 0;
-    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+    vk::ImageCreateFlags flags{};
+    vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+    vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+    vk::ImageViewType viewType = vk::ImageViewType::e2D;
 
-    VkFilter magFilter = VK_FILTER_LINEAR;
-    VkFilter minFilter = VK_FILTER_LINEAR;
-    VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkBool32 anistropyEnable = VK_TRUE;
+    vk::Filter magFilter = vk::Filter::eLinear;
+    vk::Filter minFilter = vk::Filter::eLinear;
+    vk::SamplerAddressMode addressModeU = vk::SamplerAddressMode::eRepeat;
+    vk::SamplerAddressMode addressModeV = vk::SamplerAddressMode::eRepeat;
+    vk::SamplerAddressMode addressModeW = vk::SamplerAddressMode::eRepeat;
+    vk::Bool32 anistropyEnable = VK_TRUE;
     float maxAnisotropy = 16.F;
-    VkBorderColor borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    VkBool32 unnormalizedCoordinates = VK_FALSE;
-    VkBool32 compareEnable = VK_FALSE;
-    VkCompareOp compareOp = VK_COMPARE_OP_ALWAYS;
-    VkSamplerMipmapMode mipmapLod = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    vk::BorderColor borderColor = vk::BorderColor::eIntOpaqueBlack;
+    vk::Bool32 unnormalizedCoordinates = VK_FALSE;
+    vk::Bool32 compareEnable = VK_FALSE;
+    vk::CompareOp compareOp = vk::CompareOp::eAlways;
+    vk::SamplerMipmapMode mipmapLod = vk::SamplerMipmapMode::eLinear;
 
-    VkDeviceSize size = 0;
-    VkImageView imageView = VK_NULL_HANDLE;
+    vk::DeviceSize size = 0;
+    vk::ImageView imageView = nullptr;
 
     int width = 0;
     int height = 0;
@@ -57,22 +58,23 @@ class Image
 
     void createSampler();
 
-    void copyFrom(VkCommandBuffer commandBuffer, const Buffer &buffer);
+    void copyFrom(vk::CommandBuffer commandBuffer, const Buffer &buffer);
     void copyFrom(const Buffer &buffer);
     void resize(int width, int height);
 
     void generateMipmaps();
-    void transitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout);
-    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+    void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
   private:
+    std::string path;
     // create VkImage allocation
     void allocate();
     // destroy VkImage and VkImageView if they exist
     void deallocate();
     void createImageView();
 
-    static auto hasStencilComponent(VkFormat format) -> bool;
+    static auto hasStencilComponent(vk::Format format) -> bool;
 };
 
 } // namespace tat

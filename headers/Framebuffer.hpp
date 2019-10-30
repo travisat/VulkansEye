@@ -9,13 +9,13 @@ class Framebuffer
 {
 public:
     Vulkan *vulkan;
-    VkRenderPass renderPass;
+    vk::RenderPass renderPass;
     int32_t width;
     int32_t height;
     int32_t layers = 1;
 
-    VkFramebuffer framebuffer;
-    std::vector<VkImageView> attachments;
+    vk::Framebuffer framebuffer;
+    std::vector<vk::ImageView> attachments;
 
     ~Framebuffer();
     void create();

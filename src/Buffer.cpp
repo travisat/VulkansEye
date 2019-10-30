@@ -1,17 +1,21 @@
 #include "Buffer.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
 
 Buffer::~Buffer()
 {
-    deallocate();
+    if (buffer)
+    {
+        deallocate();
+    }
 }
 
 void Buffer::resize(VkDeviceSize s)
 {
-    if (buffer != nullptr)
+    if (buffer)
     {
         deallocate();
     }
@@ -23,11 +27,10 @@ void Buffer::allocate(VkDeviceSize s)
 {
     size = s;
 
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vk::BufferCreateInfo bufferInfo = {};
     bufferInfo.size = size;
     bufferInfo.usage = flags;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memUsage;
@@ -35,7 +38,8 @@ void Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info = {};
 
-    CheckResult(vmaCreateBuffer(vulkan->allocator, &bufferInfo, &allocInfo, &buffer, &allocation, &info));
+    CheckResult(vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo, reinterpret_cast<VkBuffer *>(&buffer),
+                                &allocation, &info));
     mapped = info.pMappedData;
     // Trace("Allocated ", name, " with size ", size, " at ",
     // Timer::systemTime());
@@ -52,20 +56,20 @@ void Buffer::copyTo(Buffer &destination)
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
-        if (destination.buffer != nullptr)
+        if (destination.buffer)
         {
             destination.deallocate();
         }
         destination.allocate(size);
     }
 
-    VkCommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
 
-    VkBufferCopy copyRegion = {};
+    vk::BufferCopy copyRegion = {};
     copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, buffer, destination.buffer, 1, &copyRegion);
+    commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
-    CheckResult(vulkan->endSingleTimeCommands(commandBuffer));
+    vulkan->endSingleTimeCommands(commandBuffer);
     // Trace("Copied ", name, " to ", destination.name, " at ",
     // Timer::systemTime());
 }

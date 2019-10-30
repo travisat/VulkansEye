@@ -12,22 +12,21 @@ Framebuffer::~Framebuffer()
 void Framebuffer::create()
 {
 
-    VkFramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    vk::FramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    CheckResult(vkCreateFramebuffer(vulkan->device, &framebufferInfo, nullptr, &framebuffer));
+    framebuffer = vulkan->device.createFramebuffer(framebufferInfo);
 }
 
 void Framebuffer::cleanup()
 {
-    if (framebuffer != nullptr)
+    if (framebuffer)
     {
-        vkDestroyFramebuffer(vulkan->device, framebuffer, nullptr);
+        vulkan->device.destroyFramebuffer(framebuffer);
     }
 }
 

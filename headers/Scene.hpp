@@ -34,8 +34,8 @@ class Scene
     void create();
     void cleanup();
     void recreate();
-    void drawColor(VkCommandBuffer commandBuffer, uint32_t currentImage);
-    void drawShadow(VkCommandBuffer commandBuffer, uint32_t currentImage);
+    void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
+    void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
     auto numTessBuffers() -> uint32_t

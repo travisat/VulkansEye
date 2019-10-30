@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace tat
 {
@@ -19,32 +19,32 @@ struct Vertex
     glm::vec2 UV;
     glm::vec3 normal;
 
-    static auto getBindingDescription() -> VkVertexInputBindingDescription
+    static auto getBindingDescription() -> vk::VertexInputBindingDescription
     {
-        VkVertexInputBindingDescription bindingDescription = {};
+        vk::VertexInputBindingDescription bindingDescription = {};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
         return bindingDescription;
     }
 
-    static auto getAttributeDescriptions() -> std::array<VkVertexInputAttributeDescription, 3>
+    static auto getAttributeDescriptions() -> std::array<vk::VertexInputAttributeDescription, 3>
     {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDesriptions = {};
+        std::array<vk::VertexInputAttributeDescription, 3> attributeDesriptions = {};
         attributeDesriptions[0].binding = 0;
         attributeDesriptions[0].location = 0;
-        attributeDesriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDesriptions[0].format = vk::Format::eR32G32B32Sfloat;
         attributeDesriptions[0].offset = offsetof(Vertex, position);
 
         attributeDesriptions[1].binding = 0;
         attributeDesriptions[1].location = 1;
-        attributeDesriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDesriptions[1].format = vk::Format::eR32G32Sfloat;
         attributeDesriptions[1].offset = offsetof(Vertex, UV);
 
         attributeDesriptions[2].binding = 0;
         attributeDesriptions[2].location = 2;
-        attributeDesriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDesriptions[2].format = vk::Format::eR32G32B32Sfloat;
         attributeDesriptions[2].offset = offsetof(Vertex, normal);
 
         return attributeDesriptions;

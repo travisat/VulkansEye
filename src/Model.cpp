@@ -1,6 +1,7 @@
 #include "Model.hpp"
 #include "Vulkan.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -20,189 +21,172 @@ void Model::create()
     createUniformBuffers();
 }
 
-
-
-void Model::createColorSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
+void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
+    vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    colorSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, colorSets.data()));
+    colorSets = vulkan->device.allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
-        VkDescriptorBufferInfo tessControlInfo = {};
+        vk::DescriptorBufferInfo tessControlInfo = {};
         tessControlInfo.buffer = tescBuffers[i].buffer;
         tessControlInfo.offset = 0;
         tessControlInfo.range = sizeof(TessControl);
 
-        VkDescriptorBufferInfo tessEvalInfo = {};
+        vk::DescriptorBufferInfo tessEvalInfo = {};
         tessEvalInfo.buffer = teseBuffers[i].buffer;
         tessEvalInfo.offset = 0;
         tessEvalInfo.range = sizeof(TessEval);
 
-        VkDescriptorImageInfo dispInfo = {};
-        dispInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo dispInfo = {};
+        dispInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         dispInfo.imageView = material->displacement.imageView;
         dispInfo.sampler = material->displacement.sampler;
 
-        VkDescriptorBufferInfo lightInfo = {};
+        vk::DescriptorBufferInfo lightInfo = {};
         lightInfo.buffer = uniformLights[i].buffer;
         lightInfo.offset = 0;
         lightInfo.range = sizeof(UniformLight);
 
-        VkDescriptorImageInfo shadowInfo = {};
-        shadowInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo shadowInfo = {};
+        shadowInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         shadowInfo.imageView = shadow->imageView;
         shadowInfo.sampler = shadow->sampler;
 
-        VkDescriptorImageInfo diffuseInfo = {};
-        diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo diffuseInfo = {};
+        diffuseInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         diffuseInfo.imageView = material->diffuse.imageView;
         diffuseInfo.sampler = material->diffuse.sampler;
 
-        VkDescriptorImageInfo normalInfo = {};
-        normalInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo normalInfo = {};
+        normalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         normalInfo.imageView = material->normal.imageView;
         normalInfo.sampler = material->normal.sampler;
 
-        VkDescriptorImageInfo roughnessInfo = {};
-        roughnessInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo roughnessInfo = {};
+        roughnessInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         roughnessInfo.imageView = material->roughness.imageView;
         roughnessInfo.sampler = material->roughness.sampler;
 
-        VkDescriptorImageInfo metallicInfo = {};
-        metallicInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo metallicInfo = {};
+        metallicInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         metallicInfo.imageView = material->metallic.imageView;
         metallicInfo.sampler = material->metallic.sampler;
 
-        VkDescriptorImageInfo aoInfo = {};
-        aoInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        vk::DescriptorImageInfo aoInfo = {};
+        aoInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         aoInfo.imageView = material->ao.imageView;
         aoInfo.sampler = material->ao.sampler;
 
-        std::array<VkWriteDescriptorSet, 10> descriptorWrites = {};
+        std::array<vk::WriteDescriptorSet, 10> descriptorWrites = {};
 
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = colorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &tessControlInfo;
 
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[1].dstSet = colorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[1].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pBufferInfo = &tessEvalInfo;
 
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[2].dstSet = colorSets[i];
         descriptorWrites[2].dstBinding = 2;
         descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[2].descriptorCount = 1;
         descriptorWrites[2].pImageInfo = &dispInfo;
 
-        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[3].dstSet = colorSets[i];
         descriptorWrites[3].dstBinding = 3;
         descriptorWrites[3].dstArrayElement = 0;
-        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[3].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[3].descriptorCount = 1;
         descriptorWrites[3].pBufferInfo = &lightInfo;
 
-        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[4].dstSet = colorSets[i];
         descriptorWrites[4].dstBinding = 4;
         descriptorWrites[4].dstArrayElement = 0;
-        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[4].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[4].descriptorCount = 1;
         descriptorWrites[4].pImageInfo = &shadowInfo;
 
-        descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[5].dstSet = colorSets[i];
         descriptorWrites[5].dstBinding = 5;
         descriptorWrites[5].dstArrayElement = 0;
-        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[5].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[5].descriptorCount = 1;
         descriptorWrites[5].pImageInfo = &diffuseInfo;
 
-        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[6].dstSet = colorSets[i];
         descriptorWrites[6].dstBinding = 6;
         descriptorWrites[6].dstArrayElement = 0;
-        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[6].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[6].descriptorCount = 1;
         descriptorWrites[6].pImageInfo = &normalInfo;
 
-        descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[7].dstSet = colorSets[i];
         descriptorWrites[7].dstBinding = 7;
         descriptorWrites[7].dstArrayElement = 0;
-        descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[7].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[7].descriptorCount = 1;
         descriptorWrites[7].pImageInfo = &roughnessInfo;
 
-        descriptorWrites[8].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[8].dstSet = colorSets[i];
         descriptorWrites[8].dstBinding = 8;
         descriptorWrites[8].dstArrayElement = 0;
-        descriptorWrites[8].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[8].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[8].descriptorCount = 1;
         descriptorWrites[8].pImageInfo = &metallicInfo;
 
-        descriptorWrites[9].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[9].dstSet = colorSets[i];
         descriptorWrites[9].dstBinding = 9;
         descriptorWrites[9].dstArrayElement = 0;
-        descriptorWrites[9].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[9].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[9].descriptorCount = 1;
         descriptorWrites[9].pImageInfo = &aoInfo;
 
-        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
-                               0, nullptr);
+        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                            nullptr);
     }
 }
 
-void Model::createShadowSets(VkDescriptorPool pool, VkDescriptorSetLayout layout)
+void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
-    std::vector<VkDescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
+    vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    shadowSets.resize(vulkan->swapChainImages.size());
-    CheckResult(vkAllocateDescriptorSets(vulkan->device, &allocInfo, shadowSets.data()));
+    shadowSets = vulkan->device.allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
-        VkDescriptorBufferInfo shadowInfo = {};
+        vk::DescriptorBufferInfo shadowInfo = {};
         shadowInfo.buffer = shadowBuffers[i].buffer;
         shadowInfo.offset = 0;
         shadowInfo.range = sizeof(UniformShadow);
 
-        VkWriteDescriptorSet shadow{};
-        shadow.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        vk::WriteDescriptorSet shadow{};
         shadow.dstSet = shadowSets[i];
         shadow.dstBinding = 0;
         shadow.dstArrayElement = 0;
-        shadow.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        shadow.descriptorType = vk::DescriptorType::eUniformBuffer;
         shadow.descriptorCount = 1;
         shadow.pBufferInfo = &shadowInfo;
 
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites = {shadow};
+        std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {shadow};
 
-        vkUpdateDescriptorSets(vulkan->device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(),
-                               0, nullptr);
+        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                            nullptr);
     }
 }
 
@@ -216,22 +200,22 @@ void Model::createUniformBuffers()
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
         tescBuffers[i].vulkan = vulkan;
-        tescBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        tescBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         tescBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         tescBuffers[i].resize(sizeof(TessControl));
 
         teseBuffers[i].vulkan = vulkan;
-        teseBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        teseBuffers[i].flags =vk::BufferUsageFlagBits::eUniformBuffer;
         teseBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         teseBuffers[i].resize(sizeof(TessEval));
 
         uniformLights[i].vulkan = vulkan;
-        uniformLights[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformLights[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         uniformLights[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         uniformLights[i].resize(sizeof(UniformLight));
 
         shadowBuffers[i].vulkan = vulkan;
-        shadowBuffers[i].flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        shadowBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         shadowBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         shadowBuffers[i].resize(sizeof(UniformShadow));
     }

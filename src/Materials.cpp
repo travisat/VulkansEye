@@ -1,4 +1,5 @@
 #include "Materials.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -53,7 +54,7 @@ void Materials::loadMaterial(int32_t index)
 void Materials::loadImage(const std::string &path, Image &image)
 {
     image.vulkan = vulkan;
-    image.imageUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image.imageUsage = vk::ImageUsageFlagBits::eTransferSrc |vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     image.loadSTB(path);
 

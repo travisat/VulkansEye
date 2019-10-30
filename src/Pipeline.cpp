@@ -1,5 +1,6 @@
 #include "Pipeline.hpp"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -11,108 +12,95 @@ Pipeline::~Pipeline()
 
 void Pipeline::create()
 {
-    CheckResult(vkCreatePipelineLayout(vulkan->device, &pipelineLayoutInfo, nullptr, &pipelineLayout));
+    pipelineLayout = vulkan->device.createPipelineLayout(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    CheckResult(vkCreateGraphicsPipelines(vulkan->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+    pipeline = vulkan->device.createGraphicsPipeline(nullptr, pipelineInfo); // TODO(travis) create pipeline cache
 }
 
 void Pipeline::cleanup()
 {
-    if (vertShaderStageInfo.module != nullptr)
+    if (vertShaderStageInfo.module)
     {
-        vkDestroyShaderModule(vulkan->device, vertShaderStageInfo.module, nullptr);
+        vulkan->device.destroyShaderModule(vertShaderStageInfo.module);
     }
-    if (fragShaderStageInfo.module != nullptr)
+    if (fragShaderStageInfo.module)
     {
-        vkDestroyShaderModule(vulkan->device, fragShaderStageInfo.module, nullptr);
+        vulkan->device.destroyShaderModule(fragShaderStageInfo.module);
     }
-    if (tescShaderStageInfo.module != nullptr)
+    if (tescShaderStageInfo.module)
     {
-        vkDestroyShaderModule(vulkan->device, tescShaderStageInfo.module, nullptr);
+        vulkan->device.destroyShaderModule(tescShaderStageInfo.module);
     }
-    if (teseShaderStageInfo.module != nullptr)
+    if (teseShaderStageInfo.module)
     {
-        vkDestroyShaderModule(vulkan->device, teseShaderStageInfo.module, nullptr);
+        vulkan->device.destroyShaderModule(teseShaderStageInfo.module);
     }
-    if (geomShaderStageInfo.module != nullptr)
+    if (geomShaderStageInfo.module)
     {
-        vkDestroyShaderModule(vulkan->device, geomShaderStageInfo.module, nullptr);
+        vulkan->device.destroyShaderModule(geomShaderStageInfo.module);
     }
 
-    vkDestroyPipeline(vulkan->device, pipeline, nullptr);
-    vkDestroyPipelineLayout(vulkan->device, pipelineLayout, nullptr);
+    vulkan->device.destroyPipeline(pipeline);
+    vulkan->device.destroyPipelineLayout(pipelineLayout);
 }
 
-void Pipeline::loadDefaults(VkRenderPass renderPass)
+void Pipeline::loadDefaults(vk::RenderPass renderPass)
 {
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     vertShaderStageInfo.pName = "main";
 
-    tescShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    tescShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    tescShaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationControl;
     tescShaderStageInfo.pName = "main";
 
-    teseShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    teseShaderStageInfo.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    teseShaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationEvaluation;
     teseShaderStageInfo.pName = "main";
 
-    geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+    geomShaderStageInfo.stage = vk::ShaderStageFlagBits::eGeometry;
     geomShaderStageInfo.pName = "main";
 
-    fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
     fragShaderStageInfo.pName = "main";
 
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
     vertexInputInfo.pVertexAttributeDescriptions = nullptr;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
     vertexInputInfo.pVertexBindingDescriptions = nullptr;
 
-    tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
     tessellationState.patchControlPoints = 3;
 
-    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-    dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_LINE_WIDTH};
+    dynamicStateEnables = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eLineWidth};
 
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.pDynamicStates = dynamicStateEnables.data();
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
 
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.polygonMode = vk::PolygonMode::eFill;
     rasterizer.lineWidth = 1.0F;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+    rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
     rasterizer.depthBiasEnable = VK_FALSE;
 
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = vulkan->msaaSamples;
 
-    colorBlendAttachment.colorWriteMask = 0xf;
+    colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.logicOp = vk::LogicOp::eCopy;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
     colorBlending.blendConstants[0] = 0.0F;
@@ -120,14 +108,12 @@ void Pipeline::loadDefaults(VkRenderPass renderPass)
     colorBlending.blendConstants[2] = 0.0F;
     colorBlending.blendConstants[3] = 0.0F;
 
-    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthCompareOp = vk::CompareOp::eLess;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
 
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -138,7 +124,7 @@ void Pipeline::loadDefaults(VkRenderPass renderPass)
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineHandle = nullptr;
 }
 
 } // namespace tat
