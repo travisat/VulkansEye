@@ -81,7 +81,6 @@ foreach(SHADER ${SHADERS})
         DEPENDS ${SHADER}
         COMMENT "Rebuilding ${SHADER}.spv"
     )
-    message(STATUS "Generating build commands for ${SHADER}.spv")  
 endforeach()
 
 target_include_directories(VulkansEye 
