@@ -26,7 +26,7 @@ void main(void)
         {
             lightpos =  shadows.lightpos;
             outPosition = inPosition[i];
-            gl_Position = shadows.projection * shadows.view[face] * shadows.model * outPosition;
+            gl_Position = shadows.projection * shadows.view[face] * shadows.model *  outPosition;
             EmitVertex();
         }
         EndPrimitive();
