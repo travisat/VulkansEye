@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "Config.h"
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
@@ -14,7 +15,11 @@ class Backdrop
   public:
     Vulkan *vulkan = nullptr;
     Player *player = nullptr;
-    std::string path;
+    BackropConfig *config = nullptr;
+
+    Image colorMap{};
+    Image radianceMap{};
+    Image irradianceMap{};
 
     ~Backdrop();
 
@@ -28,7 +33,6 @@ class Backdrop
     Image *shadowMap;
 
   private:
-    Image cubeMap{};
     UniformBuffer uBuffer;
 
     std::vector<vk::DescriptorSet> descriptorSets;
@@ -36,9 +40,9 @@ class Backdrop
     vk::DescriptorPool descriptorPool;
 
     Pipeline pipeline;
-    vk::DescriptorSetLayout descriptorSetLayout {};
+    vk::DescriptorSetLayout descriptorSetLayout{};
 
-    void loadCubeMap();
+    void loadCubeMap(Image &cubeMap, const std::string &path);
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

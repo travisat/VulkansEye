@@ -194,7 +194,13 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
         }
     }
 
-    config.backdrop = j.value("backdrop", config.backdrop);
+    if (j.find("backdrop") != j.end())
+    {
+        auto backdrop = j.at("backdrop");
+        config.backdrop.colorPath = backdrop.value("color", config.backdrop.colorPath);
+        config.backdrop.radiancePath = backdrop.value("radiance", config.backdrop.radiancePath);
+        config.backdrop.irradiancePath = backdrop.value("irradiance", config.backdrop.irradiancePath);
+    }
 
     if (j.find("lights") == j.end())
     {

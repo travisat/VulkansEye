@@ -1,6 +1,7 @@
 #include "Image.hpp"
 
 #include "Pipeline.hpp"
+#include "gli/target.hpp"
 #include "helpers.h"
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
@@ -24,7 +25,7 @@ Image::~Image()
     }
 }
 
-void Image::loadSTB(std::string path)
+void Image::loadSTB(const std::string &path)
 {
     this->path = path;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
@@ -53,6 +54,7 @@ void Image::loadSTB(std::string path)
     stbi_uc *pixels = stbi_load(path.c_str(), &width, &height, &channels, defaultChannels);
     channels = defaultChannels;
     size = width * height * channels;
+    // TODO(travis) make this fall through and let default texture be used instead of halting
     assert(pixels);
 
     Buffer stagingBuffer{};
@@ -66,33 +68,37 @@ void Image::loadSTB(std::string path)
     layout = vk::ImageLayout::eTransferDstOptimal;
     allocate();
     copyFrom(stagingBuffer);
-    
+
     generateMipmaps();
     Trace("Loaded ", path, " at ", Timer::systemTime());
 }
 
-void Image::loadTextureCube(std::string path)
+void Image::loadGLI(const std::string &path)
 {
     this->path = path;
-    // load texture into staging buffer using gli so we can extract image
-    gli::texture_cube texCube(gli::load(path));
-    assert(!texCube.empty());
+    gli::texture texture = gli::load(path);
+    // TODO(travis) make this fall through and let default texture be used instead of halting
+    assert(!texture.empty());
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.update(texCube.data(), texCube.size());
+    stagingBuffer.update(texture.data(), texture.size());
 
-    // allocate space in VkImage for buffer to go
-    width = texCube.extent().x;
-    height = texCube.extent().y;
-    mipLevels = static_cast<uint32_t>(texCube.levels());
-    layers = 6;
-    format = static_cast<vk::Format>(texCube.format());
-    flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    width = texture.extent().x;
+    height = texture.extent().y;
+    mipLevels = static_cast<uint32_t>(texture.levels());
+    if (texture.target() == gli::TARGET_CUBE)
+    {
+        layers = texture.faces();
+    }
+    else
+    {
+        layers = texture.layers();
+    }
     layout = vk::ImageLayout::eTransferDstOptimal;
-    viewType = vk::ImageViewType::eCube;
+    format = static_cast<vk::Format>(texture.format());
     allocate();
 
     vk::CommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
@@ -101,31 +107,33 @@ void Image::loadTextureCube(std::string path)
     // loop through faces/mipLevels in gli loaded texture and create regions to
     // copy
     uint32_t offset = 0;
-    for (uint32_t face = 0; face < 6; face++)
+    for (uint32_t layer = 0; layer < layers; layer++)
     {
-        for (uint32_t level = 0; level < mipLevels; level++)
-        {
-            vk::BufferImageCopy bufferCopyRegion = {};
-            bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-            bufferCopyRegion.imageSubresource.mipLevel = level;
-            bufferCopyRegion.imageSubresource.baseArrayLayer = face;
-            bufferCopyRegion.imageSubresource.layerCount = 1;
-            bufferCopyRegion.imageExtent.width = texCube[face][level].extent().x;
-            bufferCopyRegion.imageExtent.height = texCube[face][level].extent().y;
-            bufferCopyRegion.imageExtent.depth = 1;
-            bufferCopyRegion.bufferOffset = offset;
+            for (uint32_t level = 0; level < mipLevels; level++)
+            {
+                auto extent(texture.extent(level));
 
-            bufferCopyRegions.push_back(bufferCopyRegion);
+                vk::BufferImageCopy bufferCopyRegion = {};
+                bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+                bufferCopyRegion.imageSubresource.mipLevel = level;
+                bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+                bufferCopyRegion.imageSubresource.layerCount = 1;
+                bufferCopyRegion.imageExtent.width = extent.x;
+                bufferCopyRegion.imageExtent.height = extent.y;
+                bufferCopyRegion.imageExtent.depth = extent.z;
+                bufferCopyRegion.bufferOffset = offset;
 
-            offset += static_cast<uint32_t>(texCube[face][level].size());
-        }
+                bufferCopyRegions.push_back(bufferCopyRegion);
+
+                offset += static_cast<uint32_t>(texture.size(level));
+            }
     }
 
     vk::ImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = mipLevels;
-    subresourceRange.layerCount = 6;
+    subresourceRange.layerCount = layers;
 
     // copy gli loaded texture to image using regious created
     commandBuffer.copyBufferToImage(stagingBuffer.buffer, image, vk::ImageLayout::eTransferDstOptimal,
@@ -191,7 +199,7 @@ void Image::deallocate()
     }
     if (imageView)
     {
-       vulkan->device.destroyImageView(imageView);
+        vulkan->device.destroyImageView(imageView);
     }
 }
 

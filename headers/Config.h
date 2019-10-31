@@ -39,6 +39,13 @@ struct PlayerConfig
     float timeToStopfromVMax = 0.1F;
 };
 
+struct BackropConfig
+{
+    std::string colorPath = "resources/backdrop/desert/color.dds";
+    std::string radiancePath = "resources/backdrop/desert/radiance.dds";
+    std::string irradiancePath = "resources/backdrop/desert/irradiance.dds";
+};
+
 struct PointLightConfig
 {
     std::string name = "default";
@@ -81,7 +88,7 @@ struct Config
 {
     VulkanConfig vulkan{};
     PlayerConfig player{};
-    std::string backdrop = "resources/backdrop/nebula.dds";
+    BackropConfig backdrop{};
     std::vector<PointLightConfig> pointLights{};
     std::vector<MaterialConfig> materials{};
     std::vector<MeshConfig> meshes{};

@@ -76,7 +76,7 @@ void Scene::createBackdrop()
 {
     backdrop.vulkan = vulkan;
     backdrop.player = player;
-    backdrop.path = config->backdrop;
+    backdrop.config = &config->backdrop;
     backdrop.shadowMap = &shadow;
 
     backdrop.create();

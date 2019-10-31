@@ -26,7 +26,12 @@
             "z": 0
         }
     },
-    "backdrop": "resources/backdrop/nebula.dds",
+    "backdrop": 
+    {
+        "color": "resources/backdrop/desert/color.dds",
+        "radiance": "resources/backdrop/desert/radiance.dds",
+        "irradiance": "resources/backdrop/desert/irradiance.dds"
+    },
     "lights": {
         "lantern": {
             "position": {

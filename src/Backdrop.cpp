@@ -13,7 +13,9 @@ Backdrop::~Backdrop()
 
 void Backdrop::create()
 {
-    loadCubeMap();
+    loadCubeMap(colorMap, config->colorPath);
+    loadCubeMap(radianceMap, config->radiancePath);
+    loadCubeMap(irradianceMap, config->irradiancePath);
 
     createDescriptorPool();
     createDescriptorSetLayouts();
@@ -36,14 +38,16 @@ void Backdrop::recreate()
     createDescriptorSets();
 }
 
-void Backdrop::loadCubeMap()
+void Backdrop::loadCubeMap(Image &cubeMap,const std::string& path)
 {
     cubeMap.vulkan = vulkan;
     cubeMap.tiling = vk::ImageTiling::eOptimal;
     cubeMap.numSamples = vk::SampleCountFlagBits::e1;
     cubeMap.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    cubeMap.loadTextureCube(path);
+    cubeMap.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    cubeMap.viewType = vk::ImageViewType::eCube;
+    cubeMap.loadGLI(path);
 
     cubeMap.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     cubeMap.addressModeV = vk::SamplerAddressMode::eClampToEdge;
@@ -150,8 +154,8 @@ void Backdrop::createDescriptorSets()
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView = cubeMap.imageView;
-        imageInfo.sampler = cubeMap.sampler;
+        imageInfo.imageView = colorMap.imageView;
+        imageInfo.sampler = colorMap.sampler;
 
         std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];
