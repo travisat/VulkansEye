@@ -3,17 +3,9 @@
 // http://onrendering.blogspot.com/2011/12/tessellation-on-gpu-curved-pn-triangles.html
 
 // Phong tess patch data
-struct PhongPatch
-{
-    float termIJ;
-    float termJK;
-    float termIK;
-};
-
 layout(binding = 1) uniform UBO
 {
-    mat4 model;
-    mat4 vp; 
+    mat4 mvp;
     float tessStrength;
     float tessAlpha;
 }
@@ -25,7 +17,7 @@ layout(triangles, equal_spacing, cw) in;
 
 layout(location = 0) in vec2 inUV[];
 layout(location = 1) in vec3 inNormal[];
-layout(location = 2) in PhongPatch inPhongPatch[];
+layout(location = 2) in vec3 inPatch[];
 
 layout(location = 0) out vec3 outPosition;
 layout(location = 1) out vec2 outUV;
@@ -49,9 +41,9 @@ void main()
     vec3 barPos = gl_TessCoord[0] * Pi + gl_TessCoord[1] * Pj + gl_TessCoord[2] * Pk;
 
     // build terms
-    vec3 termIJ = vec3(inPhongPatch[0].termIJ, inPhongPatch[1].termIJ, inPhongPatch[2].termIJ);
-    vec3 termJK = vec3(inPhongPatch[0].termJK, inPhongPatch[1].termJK, inPhongPatch[2].termJK);
-    vec3 termIK = vec3(inPhongPatch[0].termIK, inPhongPatch[1].termIK, inPhongPatch[2].termIK);
+    vec3 termIJ = vec3(inPatch[0].x, inPatch[1].x, inPatch[2].x);
+    vec3 termJK = vec3(inPatch[0].y, inPatch[1].y, inPatch[2].y);
+    vec3 termIK = vec3(inPatch[0].z, inPatch[1].z, inPatch[2].z);
 
     // phong tesselated pos
     vec3 phongPos = tc2[0] * Pi + tc2[1] * Pj + tc2[2] * Pk + tc1[0] * tc1[1] * termIJ + tc1[1] * tc1[2] * termJK +
@@ -60,6 +52,5 @@ void main()
     // final position
     outPosition = (1.0 - ubo.tessAlpha) * barPos + ubo.tessAlpha * phongPos;
     outPosition -= normalize(outNormal) * (max(textureLod(displacementMap, outUV.st, 0.0).r, 0.0) * ubo.tessStrength);
-    outPosition = vec3(ubo.model * vec4(outPosition, 1.0));
-    gl_Position = ubo.vp * vec4(outPosition, 1.0);
+    gl_Position = ubo.mvp *  vec4(outPosition, 1.0);
 }

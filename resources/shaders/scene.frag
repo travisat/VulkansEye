@@ -19,6 +19,11 @@ struct PointLight
 
 layout(binding = 3) uniform UniformLight
 {
+    vec3 sunAngle;
+    mat4 sunMVP;
+    float radianceMipLevels;
+    float exposure;
+    float gamma;
     PointLight light[numLights];
 }
 uLight;
@@ -29,6 +34,9 @@ layout(binding = 6) uniform sampler2D normalMap;
 layout(binding = 7) uniform sampler2D metallicMap;
 layout(binding = 8) uniform sampler2D roughnessMap;
 layout(binding = 9) uniform sampler2D aoMap;
+layout(binding = 10) uniform samplerCube irradianceMap;
+layout(binding = 11) uniform samplerCube radianceMap;
+layout(binding = 12) uniform sampler2D sunMap;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
@@ -112,7 +120,8 @@ float ndfGGX(float NdotH, float roughness)
 }
 
 //[0],[2],[4]
-vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metallic)
+vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metallic, vec3 diffuseLight,
+          vec3 specularLight)
 {
     // cos angle between normal and light direction
     float NdotL = clamp(dot(N, L), 0.00001, 1.0);
@@ -123,7 +132,7 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
     // cos angle between normal and half vector
     float NdotH = clamp(dot(N, H), 0.0, 1.0);
     // cos angle between light direction and half vector
-    float LdotH = clamp(dot(L, H), 0.0, 1.0);
+    // float LdotH = clamp(dot(L, H), 0.0, 1.0);
     // cos angle between view direction and half vector
     float VdotH = clamp(dot(V, H), 0.0, 1.0);
 
@@ -144,9 +153,9 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
     float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
     float D = ndfGGX(NdotH, roughness); // microfacet distribution
 
-    // vec3 diffuseContrib = (1.0 - F) * Fd * baseColor
-    // vec3 specularContrib = G * F * D
-    return ((1.0 - F) * Fd * baseColor + G * F * D) / PI;
+    vec3 diffuseContrib = (1.0 - F) * Fd * baseColor * diffuseLight;
+    vec3 specularContrib = G * F * D * specularLight;
+    return (diffuseContrib + specularContrib) / PI;
 }
 
 //[5]
@@ -164,12 +173,12 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
 float getDistanceAttenuation(vec3 lightVector, float lumens, float angle)
 {
     float distanceSquared = dot(lightVector, lightVector);
-    //this puts light into inverted range
+    // this puts light into inverted range
     float inverseLight = (angle * distanceSquared) / lumens;
-    //square smooth and subtract from 1 to get correct range
+    // square smooth and subtract from 1 to get correct range
     float smoothLight = clamp(1.0 - inverseLight * inverseLight, 0.0, 1.0);
     smoothLight = smoothLight * smoothLight;
-    //apply inverse square law to smoothed light to get attenuation
+    // apply inverse square law to smoothed light to get attenuation
     return smoothLight / (distanceSquared + 1.0);
 }
 
@@ -203,8 +212,64 @@ float shadowCalc(vec3 lightVec)
     return 1.0 - shadow;      // sub from 1.0 here instead of later
 }
 
+float sunCalc()
+{
+
+    float shadow = 0.0; // initialize shadow to 0
+    float bias = 0.15;  //
+    int samples = 20;   // number of samples in shadowOffsetDirections
+    float viewDistance = length(inPosition);
+    // get coordinates in sunspace
+    vec4 sunCoord = uLight.sunMVP * vec4(inPosition, 1.0);
+    // get currentdepth in relation to suncoords
+    float currentDepth = length(inPosition.xyz - sunCoord.xyz);
+    // set radius to sample in based off distance from viewer
+    // make shadows closer sharper
+    // 512 is the maxlod from shadowmap so something 512 away and more will have a disc radius of 1.0
+    float diskRadius = (1.0 + (viewDistance / 512.0)) / 50.0;
+    for (int i = 0; i < samples; ++i)
+    {
+        float closestDepth = texture(sunMap, inUV * diskRadius).r;
+        if (currentDepth - bias > closestDepth)
+        {
+            shadow += 0.6; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
+        }
+    }
+    shadow /= float(samples); // average all the samples to create shadow intensity
+    return 1.0 - shadow;      // sub from 1.0 here instead of later
+}
+
+// [1]
+/*vec4 tonemap(vec4 color)
+{
+    vec3 outcol = Uncharted2Tonemap(color.rgb * uLight.exposure);
+    outcol = outcol * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    return vec4(pow(outcol, vec3(1.0f / uLight.gamma)), color.a);
+}
+
+// [1]
+vec3 Uncharted2Tonemap(vec3 color)
+{
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    float W = 11.2;
+    return ((color * (A * color + C * B) + D * E) / (color * (A * color + B) + D * F)) - E / F;
+}*/
+
 void main()
 {
+    vec4 sunCoord = uLight.sunMVP * vec4(inPosition, gl_FragCoord.z);
+    vec3 projCoords = sunCoord.xyz / sunCoord.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    float closestDepth = texture(sunMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float shadow = currentDepth < closestDepth ? 1.0 : 0.5;
+    outColor = vec4(vec3(closestDepth), 1.0);
+    /*
     vec3 baseColor = convertSRGBtoLinear(texture(diffuseMap, inUV).rgb);
     float metallic = texture(metallicMap, inUV).r;
     float roughness = texture(roughnessMap, inUV).r;
@@ -212,6 +277,28 @@ void main()
 
     vec3 N = getNormal(inPosition, inNormal); // Normal vector
     vec3 V = normalize(inPosition);           // Vector from surface to camera(origin)
+
+    float lod = (roughness * uLight.radianceMipLevels);
+
+    vec3 sunvec = normalize(inPosition - vec3(-4.0, 2, -2.5));
+    vec3 reflection = reflect(V, N);
+    vec3 diffuseLight = texture(irradianceMap, N).rgb;
+
+    vec3 specularLight = textureLod(radianceMap, reflection, lod).rgb;
+
+    vec3 f0 = mix(vec3(0.04), baseColor, metallic); // mix color based off metallic
+    float reflectance = max(max(f0.r, f0.g), f0.b);
+    float f90 = clamp(reflectance * 25.0, 0.0, 1.0);
+    vec3 H = normalize(sunvec + V);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+    vec3 F = fresnelSchlick(f0, f90, VdotH);
+    float NdotL = clamp(dot(N, sunvec), 0.00001, 1.0);
+    float NdotV = clamp(abs(dot(N, V)), 0.00001, 1.0);
+    float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float D = ndfGGX(NdotH, roughness); // microfacet distribution
+    vec3 specularContrib = G * F * D * specularLight;
+    vec3 ambient = sunCalc() * (baseColor * diffuseLight + specularContrib);
 
     vec3 luminance = vec3(0.0);
     for (int i = 0; i < numLights; ++i)
@@ -223,8 +310,10 @@ void main()
         vec3 lightVector = inPosition - lightPos;
         float intensity = lumens * getDistanceAttenuation(lightVector, lumens, 4 * PI);
         vec3 L = normalize(lightVector); // vector from surface to light
-        luminance += lightcolor * intensity * BRDF(N, V, L, baseColor, roughness, metallic);
+        luminance +=
+            intensity * shadowCalc(lightVector) * BRDF(N, V, L, baseColor, roughness, metallic, lightcolor, lightcolor);
     }
-    float shadow = shadowCalc(inPosition - uLight.light[0].position);
-    outColor = vec4(shadow * luminance * ambientOcclusion, 1.0);
+
+    outColor = vec4((ambient)*ambientOcclusion, 1.0);
+    */
 }

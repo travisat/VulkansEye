@@ -32,7 +32,8 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
     {
         prefix = "ERROR ";
     }
-    Trace(prefix, "[", pCallbackData->messageIdNumber, "][", pCallbackData->pMessageIdName, "] :", pCallbackData->pMessage);
+    Trace(prefix, "[", pCallbackData->messageIdNumber, "][", pCallbackData->pMessageIdName,
+          "] :", pCallbackData->pMessage);
     return VK_FALSE;
 }
 
@@ -46,6 +47,7 @@ void Engine::init()
     createAllocator();
 
     createSwapChain();
+    createSunPass(vulkan);
     createShadowPass(vulkan);
     createColorPass(vulkan);
     createCommandPool();
@@ -53,6 +55,7 @@ void Engine::init()
     scene->create();
     overlay->create();
 
+    createSunFramebuffers();
     createShadowFramebuffers();
     createColorFramebuffers();
     createSyncObjects();
@@ -75,6 +78,42 @@ Engine::~Engine()
         vulkan->device.destroySemaphore(presentFinishedSemaphores[i]);
         vulkan->device.destroyFence(waitFences[i]);
     }
+}
+
+void Engine::renderSun(vk::CommandBuffer commandBuffer, int32_t currentImage)
+{
+    vk::Viewport viewport{};
+    viewport.width = 1024;
+    viewport.height = 1024;
+    viewport.minDepth = 0.0F;
+    viewport.maxDepth = 1.0F;
+    commandBuffer.setViewport(0, 1, &viewport);
+
+    vk::Rect2D scissor{};
+    scissor.extent.width = 1024;
+    scissor.extent.height = 1024;
+    scissor.offset.x = 0;
+    scissor.offset.y = 0;
+    commandBuffer.setScissor(0, 1, &scissor);
+
+    commandBuffer.setLineWidth(1.0F);
+
+    std::array<vk::ClearValue, 2> clearValues = {};
+    clearValues[0].color = std::array<float, 4>{0.F, 0.F, 0.F, 0.F};
+    clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
+
+    vk::RenderPassBeginInfo sunPassInfo = {};
+    sunPassInfo.renderPass = vulkan->sunPass;
+    sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
+    sunPassInfo.renderArea.extent.width = 1024;
+    sunPassInfo.renderArea.extent.height = 1024;
+    sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    sunPassInfo.pClearValues = clearValues.data();
+    sunPassInfo.framebuffer = sunFbs[currentImage].framebuffer;
+
+    commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
+    scene->drawSun(commandBuffer, currentImage);
+    commandBuffer.endRenderPass();
 }
 
 void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
@@ -142,6 +181,8 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     colorPassInfo.pClearValues = clearValues.data();
     colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer;
 
+    scene->sun.transitionImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal,
+                                     vk::ImageLayout::eShaderReadOnlyOptimal);
     scene->shadow.transitionImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal,
                                         vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -153,6 +194,8 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     }
     commandBuffer.endRenderPass();
 
+    scene->sun.transitionImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal,
+                                     vk::ImageLayout::eColorAttachmentOptimal);
     scene->shadow.transitionImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal,
                                         vk::ImageLayout::eColorAttachmentOptimal);
 }
@@ -172,8 +215,10 @@ void Engine::createCommandBuffers()
     {
 
         vk::CommandBuffer commandBuffer = commandBuffers[i];
-        vk::CommandBufferBeginInfo beginInfo {};
+        vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
+
+        renderSun(commandBuffer, i);
 
         // draw shadows
         renderShadows(commandBuffer, i);
@@ -607,12 +652,35 @@ void Engine::createSwapChain()
     }
 }
 
+void Engine::createSunFramebuffers()
+{
+    sunDepth.vulkan = vulkan;
+    sunDepth.format = vulkan->findDepthFormat();
+    sunDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+    sunDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    sunDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    sunDepth.aspect = vk::ImageAspectFlagBits::eDepth;
+    sunDepth.resize(1024, 1024);
+
+    sunFbs.resize(vulkan->swapChainImageViews.size());
+
+    for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
+    {
+        sunFbs[i].vulkan = vulkan;
+        sunFbs[i].renderPass = vulkan->sunPass;
+        sunFbs[i].width = 1024;
+        sunFbs[i].height = 1024;
+        sunFbs[i].layers = 1;
+        sunFbs[i].attachments = {scene->sun.imageView, sunDepth.imageView};
+        sunFbs[i].create();
+    }
+}
+
 void Engine::createShadowFramebuffers()
 {
     shadowDepth.vulkan = vulkan;
     shadowDepth.layers = 6;
     shadowDepth.format = vulkan->findDepthFormat();
-    shadowDepth.numSamples = vk::SampleCountFlagBits::e1;
     shadowDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     shadowDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;

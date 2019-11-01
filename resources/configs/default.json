@@ -144,6 +144,31 @@
         "floortile": "resources/models/floortile.obj"
     },
     "models": {
+        "sphere": {
+            "type": "single",
+            "position": {
+                "x": 10,
+                "y": 0,
+                "z": 10
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "mesh": "sphere",
+            "material": "Fabric01",
+            "tessellation": {
+                "level": 64,
+                "strength": 0.02,
+                "alpha": 0.0
+            }
+        },
         "table": {
             "type": "single",
             "position": {

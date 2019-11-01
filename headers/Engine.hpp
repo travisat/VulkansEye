@@ -52,8 +52,9 @@ class Engine
   private:
     vk::DispatchLoaderDynamic dldy;
 
+    std::vector<Framebuffer> sunFbs{};
+    Image sunDepth{};
     std::vector<Framebuffer> shadowFbs{};
-    Image shadowColor{};
     Image shadowDepth{};
     std::vector<Framebuffer> swapChainFbs{};
     Image colorAttachment{};
@@ -71,6 +72,7 @@ class Engine
     void createCommandBuffers();
     // void recordColorCommandBuffers();
 
+    void renderSun(vk::CommandBuffer commandBuffer, int32_t currentImage);
     void renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage);
     void renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage);
 
@@ -85,6 +87,7 @@ class Engine
     void createSwapChain();
     void createColorFramebuffers();
     void createShadowFramebuffers();
+    void createSunFramebuffers();
     void createCommandPool();
     void createSyncObjects();
 

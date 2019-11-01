@@ -3,8 +3,6 @@
 #include <cassert>
 #include <unordered_map>
 
-
-
 #include "Config.h"
 #include "Materials.hpp"
 #include "Meshes.hpp"
@@ -26,6 +24,7 @@ class Model
     ModelConfig *config;
     Materials *materials;
     Meshes *meshes;
+
     std::string name = "Uknown Model";
 
     // mesh properties
@@ -42,20 +41,27 @@ class Model
     std::vector<Buffer> uniformLights;
     TessControl uTessControl = {};
     TessEval uTessEval = {};
+    Image *irradianceMap;
+    Image *radianceMap;
 
     // shadow pipeline
     std::vector<vk::DescriptorSet> shadowSets;
     Image *shadow;
     UniformShadow uShadow = {};
     std::vector<Buffer> shadowBuffers;
-   
+
+    std::vector<vk::DescriptorSet> sunSets;
+    Image *sun;
+    UniformSun uSun = {};
+    std::vector<Buffer> sunBuffers;
+
     void create();
     void createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
+    void createSunSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
   private:
-    
 };
 
 } // namespace tat

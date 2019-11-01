@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glm/fwd.hpp"
+#include "glm/geometric.hpp"
 #include "helpers.h"
 #include "vulkan/vulkan_core.h"
 #ifdef WIN32
@@ -36,15 +38,25 @@ struct UniformBuffer
 static const int numLights = 1;
 struct uPointLight
 {
-    glm::vec3 position{};
-    float buffer = 0.0F;
-    glm::vec3 color{};
+    alignas(16) glm::vec3 position{};
+    alignas(16) glm::vec3 color{};
     float lumens = 0.0F;
 };
 
 struct UniformLight
 {
+    alignas(16) glm::vec3 sunAngle = glm::vec3(-20.F, 20.F, -40.F);
+    alignas(16) glm::mat4 sunMVP{};
+    alignas(4) float radianceMipLevels = 0.F;
+    alignas(4) float exposure = 2.2F;
+    alignas(4) float gamma = 4.5F;
+    alignas(4) float buffer = 0.F;
     std::array<uPointLight, numLights> light{};
+};
+
+struct UniformSun 
+{
+    glm::mat4 sunMVP{};
 };
 
 struct TessControl
@@ -54,8 +66,7 @@ struct TessControl
 
 struct TessEval
 {
-    glm::mat4 model{};
-    glm::mat4 viewProjection{};
+    glm::mat4 mvp{};
     float tessStrength = 0.1F;
     float tessAlpha = 0.3F;
 };
@@ -75,6 +86,7 @@ class Vulkan
     {
         device.destroyRenderPass(colorPass);
         device.destroyRenderPass(shadowPass);
+        device.destroyRenderPass(sunPass);
         for (auto imageView : swapChainImageViews)
         {
            device.destroyImageView(imageView);
@@ -102,6 +114,7 @@ class Vulkan
 
     vk::RenderPass colorPass;
     vk::RenderPass shadowPass;
+    vk::RenderPass sunPass;
 
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
     vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;

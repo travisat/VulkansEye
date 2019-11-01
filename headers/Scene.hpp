@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <cstdint>
 #include <utility>
 
 
@@ -15,6 +16,9 @@
 #include "PointLight.hpp"
 #include "Model.hpp"
 #include "Vulkan.hpp"
+#include "glm/fwd.hpp"
+#include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_core.h"
 
 namespace tat
 {
@@ -28,6 +32,7 @@ class Scene
     std::string name = "Unknown";
 
     Image shadow;
+    Image sun;
 
     ~Scene();
 
@@ -36,24 +41,8 @@ class Scene
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
+    void drawSun(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
-
-    auto numTessBuffers() -> uint32_t
-    {
-        return static_cast<uint32_t>(models.size() + pointLights.size());
-    };
-    auto numUniformLights() -> uint32_t
-    {
-        return static_cast<uint32_t>(models.size() + pointLights.size()) * numLights;
-    };
-    auto numImageSamplers() -> uint32_t
-    {
-        return static_cast<uint32_t>((models.size() + pointLights.size()) * 6);
-    };
-    auto numShadows() -> uint32_t
-    {
-        return static_cast<uint32_t>(models.size());
-    };
 
   private:
     UniformLight uLight = {};
@@ -61,6 +50,8 @@ class Scene
     VkDescriptorSetLayout colorLayout;
     VkDescriptorPool shadowPool;
     VkDescriptorSetLayout shadowLayout;
+    VkDescriptorPool sunPool;
+    VkDescriptorSetLayout sunLayout;
 
     Backdrop backdrop;
     Materials materials{};
@@ -71,7 +62,9 @@ class Scene
     std::vector<PointLight> pointLights;
 
     Pipeline shadowPipeline;
+    Pipeline sunPipeline;
 
+    void createSun();
     void createShadow();
     void createLights();
     void createMaterials();
@@ -88,6 +81,11 @@ class Scene
     void createShadowLayouts();
     void createShadowPipeline();
     void createShadowSets();
+
+    void createSunPool();
+    void createSunLayouts();
+    void createSunPipeline();
+    void createSunSets();
 };
 
 } // namespace tat
