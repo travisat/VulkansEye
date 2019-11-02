@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(VulkansEye VERSION 0.1.0)
 
+set(CMAKE_CXX_STANDARD 17)
+
 include(CTest)
 enable_testing()
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
-find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
-pkg_search_module(VULKAN REQUIRED vulkan)
+foreach(SHADER ${SHADERS})
+    add_custom_command(OUTPUT ${SHADER}.spv
+        COMMAND glslangValidator -V "${SHADER}" -o "${SHADER}.spv"
+        DEPENDS ${SHADER}
+        COMMENT "Rebuilding ${SHADER}.spv"
+    )
+endforeach()
 
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert
@@ -66,23 +72,29 @@ ${SHADERS}
 ${COMPILED_SHADERS}
 )
 
-set_target_properties(VulkansEye 
-    PROPERTIES
-        CXX_STANDARD 17
-)   
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(external/glfw)
 
-foreach(SHADER ${SHADERS})
-    add_custom_command(OUTPUT ${SHADER}.spv
-        COMMAND glslangValidator -V "${SHADER}" -o "${SHADER}.spv"
-        DEPENDS ${SHADER}
-        COMMENT "Rebuilding ${SHADER}.spv"
-    )
-endforeach()
+find_package(Vulkan REQUIRED)
+
+IF(CMAKE_HOST_UNIX)
+target_link_libraries(VulkansEye Vulkan::Vulkan glfw ${CMAKE_DL_LIBS} pthread stdc++fs wayland-client)
+ENDIF(CMAKE_HOST_UNIX)
+
+IF(CMAKE_HOST_WIN32)
+target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR)
+target_link_libraries(VulkansEye glfw Vulkan::Vulkan)
+
+IF (MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+ENDIF (MSVC)
+ENDIF(CMAKE_HOST_WIN32)
 
 target_include_directories(VulkansEye 
     PUBLIC 
-        "${GLFW_INCLUDE_DIRS}"
-        "${VULKAN_INCLUDE_DIRS}"
+        "external/glfw/Include"
         "external/GSL/Include"
         "external/glm"
         "external/tinygltf"
@@ -91,15 +103,6 @@ target_include_directories(VulkansEye
         "external/gli"
         "external/imgui"
 )
-
-if (CMAKE_COMPILER_IS_GNUCXX)
-    target_link_libraries(VulkansEye ${VULKAN_LIBRARIES} ${GLFW_LIBRARIES} ${CMAKE_DL_LIBS} pthread stdc++fs wayland-client)
-endif (CMAKE_COMPILER_IS_GNUCXX)
-
-# Compiler specific stuff
-IF (MSVC)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-ENDIF (MSVC)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
