@@ -6,7 +6,7 @@
 namespace tat
 {
 
-void createColorPass(Vulkan *vulkan)
+auto createColorPass(Vulkan *vulkan) ->vk::RenderPass
 {
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vulkan->swapChainImageFormat;
@@ -87,10 +87,10 @@ void createColorPass(Vulkan *vulkan)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    vulkan->colorPass = vulkan->device.createRenderPass(renderPassInfo);
+    return vulkan->device.createRenderPass(renderPassInfo);
 }
 
-void createShadowPass(Vulkan *vulkan)
+auto createShadowPass(Vulkan *vulkan) -> vk::RenderPass
 {
     vk::AttachmentDescription shadowAttachment = {};
     shadowAttachment.format = vk::Format::eR32Sfloat;
@@ -110,7 +110,6 @@ void createShadowPass(Vulkan *vulkan)
     depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
     depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-
     depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     vk::AttachmentReference shadowAttachmentRef = {};
@@ -157,58 +156,7 @@ void createShadowPass(Vulkan *vulkan)
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    vulkan->shadowPass = vulkan->device.createRenderPass(renderPassInfo);
+    return vulkan->device.createRenderPass(renderPassInfo);
 }
 
-void createSunPass(Vulkan *vulkan)
-{
-    vk::AttachmentDescription sunAttachment = {};
-    sunAttachment.format = vulkan->findDepthFormat();
-    sunAttachment.samples = vk::SampleCountFlagBits::e1;
-    sunAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-    sunAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    sunAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    sunAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    sunAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    sunAttachment.finalLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
-
-    vk::AttachmentReference sunAttachmentRef = {};
-    sunAttachmentRef.attachment = 0;
-    sunAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::SubpassDescription subpass = {};
-    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpass.colorAttachmentCount = 0;
-    subpass.pDepthStencilAttachment = &sunAttachmentRef;
-
-    std::vector<vk::AttachmentDescription> attachments = {sunAttachment};
-
-    std::array<vk::SubpassDependency, 2> dependencies{};
-
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = vk::PipelineStageFlagBits::eFragmentShader;
-    dependencies[0].dstStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependencies[0].srcAccessMask = vk::AccessFlagBits::eShaderRead;
-    dependencies[0].dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-    dependencies[0].dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
-    dependencies[1].srcSubpass = 0;
-    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = vk::PipelineStageFlagBits::eLateFragmentTests;
-    dependencies[1].dstStageMask = vk::PipelineStageFlagBits::eFragmentShader;
-    dependencies[1].srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-    dependencies[1].dstAccessMask = vk::AccessFlagBits::eShaderRead;
-    dependencies[1].dependencyFlags = vk::DependencyFlagBits::eByRegion;
-
-    vk::RenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    renderPassInfo.pAttachments = attachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-    renderPassInfo.pDependencies = dependencies.data();
-
-    vulkan->sunPass = vulkan->device.createRenderPass(renderPassInfo);
-}
 } // namespace tat

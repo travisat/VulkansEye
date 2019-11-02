@@ -21,10 +21,10 @@ struct PointLight
 layout(binding = 1) uniform UniformLight
 {
     vec3 sunAngle;
-    mat4 sunMVP;
     float radianceMipLevels;
     float exposure;
     float gamma;
+    float shadowSize;
     PointLight light[numLights];
 }
 uLight;
@@ -42,6 +42,7 @@ layout(binding = 10) uniform sampler2D sunMap;
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
+layout(location = 3) in vec4 sunPosition;
 
 layout(location = 0) out vec4 outColor;
 
@@ -213,24 +214,20 @@ float shadowCalc(vec3 lightVec)
     return 1.0 - shadow;      // sub from 1.0 here instead of later
 }
 
-float sunCalc()
-{
+vec2 sunOffsetDirections[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1), vec2(-1, 1),
+                                  vec2(-1, 0), vec2(-1, -1));
 
-    float shadow = 0.0; // initialize shadow to 0
-    float bias = 0.05;  //
-    int samples = 20;   // number of samples in shadowOffsetDirections
-    float viewDistance = length(inPosition);
-    // get coordinates in sunspace
-    vec4 sunCoord = uLight.sunMVP * vec4(inPosition, 1.0);
-    // get currentdepth in relation to suncoords
-    float currentDepth = length(inPosition.xyz - sunCoord.xyz);
-    // set radius to sample in based off distance from viewer
-    // make shadows closer sharper
-    // 512 is the maxlod from shadowmap so something 512 away and more will have a disc radius of 1.0
-    float diskRadius = (1.0 + (viewDistance / 512.0)) / 50.0;
+float sunCalc(vec3 lightVec)
+{
+    float shadow = 0.0; 
+    float bias = 0.005; 
+    int samples = 9;   // number of samples in sunOffsetDirections
+    float currentDepth = length(lightVec);
+    float texelSize = 1.0 / uLight.shadowSize;
+
     for (int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(sunMap, inUV * diskRadius).r;
+        float closestDepth = texture(sunMap,  sunPosition.xy + sunOffsetDirections[i] * texelSize).r;
         if (currentDepth - bias > closestDepth)
         {
             shadow += 0.6; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
@@ -238,48 +235,6 @@ float sunCalc()
     }
     shadow /= float(samples); // average all the samples to create shadow intensity
     return 1.0 - shadow;      // sub from 1.0 here instead of later
-}
-
-//[7]
-const mat4 biasMat = mat4(0.5, 0.0, 0.0, 0.0, //
-                          0.0, 0.5, 0.0, 0.0, //
-                          0.0, 0.0, 1.0, 0.0, //
-                          0.5, 0.5, 0.0, 1.0);
-//[7]
-float textureProj(vec4 shadowCoord, vec2 off)
-{
-    float shadow = 1.0;
-    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0)
-    {
-        float dist = texture(sunMap, shadowCoord.st + off).r;
-        if (shadowCoord.w > 0.0 && dist < shadowCoord.z)
-        {
-            shadow = 0.2;
-        }
-    }
-    return shadow;
-}
-//[7]
-float filterPCF(vec4 sc)
-{
-    ivec2 texDim = textureSize(sunMap, 0);
-    float scale = 1.5;
-    float dx = scale * 1.0 / float(texDim.x);
-    float dy = scale * 1.0 / float(texDim.y);
-
-    float shadowFactor = 0.0;
-    int count = 0;
-    int range = 1;
-
-    for (int x = -range; x <= range; x++)
-    {
-        for (int y = -range; y <= range; y++)
-        {
-            shadowFactor += textureProj(sc, vec2(dx * x, dy * y));
-            count++;
-        }
-    }
-    return shadowFactor / count;
 }
 
 void main()
@@ -295,13 +250,13 @@ void main()
 
     float lod = (roughness * uLight.radianceMipLevels);
 
-    vec3 sunvec = normalize(uLight.sunAngle);
-    vec3 reflection = reflect(V, N);
+    vec3 sunvec = normalize(inPosition - uLight.sunAngle);
+    vec3 reflection = reflect(-V, N);
     vec3 diffuseLight = texture(irradianceMap, N).rgb;
 
     vec3 specularLight = textureLod(radianceMap, reflection, lod).rgb;
 
-    //lol
+    // lol
     vec3 f0 = mix(vec3(0.04), baseColor, metallic);
     float reflectance = max(max(f0.r, f0.g), f0.b);
     float f90 = clamp(reflectance * 25.0, 0.0, 1.0);
@@ -315,13 +270,8 @@ void main()
     float D = ndfGGX(NdotH, roughness);
     vec3 specularContrib = G * F * D * specularLight;
 
-    vec4 sunCoord = biasMat * uLight.sunMVP * vec4(inPosition, 1.0);
-    vec3 projCoords = sunCoord.xyz / sunCoord.w;
-    float currentDepth = projCoords.z;
-    float closestDepth = texture(sunMap, projCoords.xy).r;
-    float shadow = currentDepth > closestDepth ? 1.0: 0.0;
-
-    vec3 ambient = shadow * (baseColor * diffuseLight + specularContrib);
+    vec3 ambient = sunCalc(inPosition - uLight.sunAngle) * (baseColor * diffuseLight + specularContrib);
+    //vec3 ambient = sunCalc(inPosition - uLight.sunAngle) * vec3(1.0);// * baseColor;
 
     vec3 luminance = vec3(0.0);
     for (int i = 0; i < numLights; ++i)
@@ -330,7 +280,6 @@ void main()
         vec3 lightcolor = uLight.light[i].color;
         float lumens = uLight.light[i].lumens;
 
-
         vec3 lightVector = inPosition - lightPos;
         float intensity = lumens * getDistanceAttenuation(lightVector, lumens, 4 * PI);
         vec3 L = normalize(lightVector); // vector from surface to light
@@ -338,5 +287,5 @@ void main()
             intensity * shadowCalc(lightVector) * BRDF(N, V, L, baseColor, roughness, metallic, lightcolor, lightcolor);
     }
 
-    outColor = vec4((luminance + ambient) * ambientOcclusion, 1.0);
+    outColor = vec4((ambient)*ambientOcclusion, 1.0);
 }

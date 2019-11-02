@@ -1,21 +1,22 @@
-#include "PointLight.hpp"
+#include "Light.hpp"
 
 namespace tat
 {
 
-void PointLight::create()
+void Light::create()
 {
     name = config->name;
     light.position = config->position;
     light.color = kelvinToRGB(config->temperature);
     light.lumens = config->lumens;
+    light.steradians = config->steradians;
 }
 
 // https://www.shadertoy.com/view/lsSXW1
 // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
 // http://www.zombieprototypes.com/?p=210
 // converts light temperurate in kelvin to RGB
-auto PointLight::kelvinToRGB(float kelvin) -> glm::vec3
+auto Light::kelvinToRGB(float kelvin) -> glm::vec3
 {
     glm::vec3 color;
     kelvin = glm::clamp(kelvin, 1000.F, 40000.F) / 100.F;

@@ -5,7 +5,8 @@
         "zFar": 1024.0,
         "windowWidth": 1024,
         "windowHeight": 768,
-        "sync": true
+        "sync": true,
+        "shadowSize": 2048
     },
     "player": {
         "height": 1.7,
@@ -30,7 +31,16 @@
     "backdrop": {
         "color": "resources/backdrop/desert/color.dds",
         "radiance": "resources/backdrop/desert/radiance.dds",
-        "irradiance": "resources/backdrop/desert/irradiance.dds"
+        "irradiance": "resources/backdrop/desert/irradiance.dds",
+        "light": {
+            "position": {
+                "x": -20,
+                "y": 15,
+                "z": -8
+            },
+            "temperature": 6400,
+            "lumens": 900
+        }
     },
     "lights": {
         "lantern": {
@@ -162,7 +172,27 @@
                 "z": 1
             },
             "mesh": "table",
-            "material": "Plaster02"
+            "material": "Metal07"
+        },
+        "sphere": {
+            "type": "single",
+            "position": {
+                "x": -4,
+                "y": 1,
+                "z": -4
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "mesh": "sphere",
+            "material": "Metal07"
         },
         "floortiles": {
             "type": "single",

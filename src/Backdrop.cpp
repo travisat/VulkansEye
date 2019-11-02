@@ -17,6 +17,10 @@ void Backdrop::create()
     loadCubeMap(radianceMap, config->radiancePath);
     loadCubeMap(irradianceMap, config->irradiancePath);
 
+    light.vulkan = vulkan;
+    light.config = &config->light;
+    light.create();
+
     createDescriptorPool();
     createDescriptorSetLayouts();
     createPipeline();

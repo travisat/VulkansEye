@@ -175,6 +175,7 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
         config.vulkan.windowWidth = vulkan.value("windowWidth", config.vulkan.windowWidth);
         config.vulkan.windowHeight = vulkan.value("windowHeight", config.vulkan.windowHeight);
         config.vulkan.sync = vulkan.value("sync", config.vulkan.sync);
+        config.vulkan.shadowSize = vulkan.value("shadowSize", config.vulkan.shadowSize);
     }
 
     if (j.find("player") != j.end())
@@ -210,32 +211,45 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
         config.backdrop.colorPath = backdrop.value("color", config.backdrop.colorPath);
         config.backdrop.radiancePath = backdrop.value("radiance", config.backdrop.radiancePath);
         config.backdrop.irradiancePath = backdrop.value("irradiance", config.backdrop.irradiancePath);
+        if (backdrop.find("light") != backdrop.end())
+        {
+            auto light = backdrop.at("light");
+            if (light.find("position") != light.end())
+            {
+                auto position = light.at("position");
+                config.backdrop.light.position.x = position.value("x", config.backdrop.light.position.x);
+                config.backdrop.light.position.y = position.value("y", config.backdrop.light.position.y);
+                config.backdrop.light.position.z = position.value("z", config.backdrop.light.position.z);
+            }
+            config.backdrop.light.steradians =
+                light.value("steradians", config.backdrop.light.steradians);
+            config.backdrop.light.temperature =
+                light.value("temperature", config.backdrop.light.temperature);
+            config.backdrop.light.lumens = light.value("lumens", config.backdrop.light.lumens);
+        }
     }
 
     if (j.find("lights") == j.end())
     {
-        config.pointLights.resize(1); // loads defaults into index 0
+        config.lights.resize(1); // loads defaults into index 0
     }
     else
     {
-        // set size of lights equal to numberr of lights in config
-        config.pointLights.resize(j.at("lights").size());
-        // iterate over config and store value from json into config if that value exists
-        // otherwise leave the value alone from the default constructed value
-        int32_t i = 0;
         for (auto &[key, light] : j.at("lights").items())
         {
-            config.pointLights[i].name = key;
+            LightConfig c{};
+            c.name = key;
             if (light.find("position") != light.end())
             {
                 auto position = light.at("position");
-                config.pointLights[i].position.x = position.value("x", config.pointLights[i].position.x);
-                config.pointLights[i].position.y = position.value("y", config.pointLights[i].position.y);
-                config.pointLights[i].position.z = position.value("z", config.pointLights[i].position.z);
+                c.position.x = position.value("x", c.position.x);
+                c.position.y = position.value("y", c.position.y);
+                c.position.z = position.value("z", c.position.z);
             }
-            config.pointLights[i].temperature = light.value("temperature", config.pointLights[i].temperature);
-            config.pointLights[i].lumens = light.value("lumens", config.pointLights[i].lumens);
-            ++i;
+            c.steradians = light.value("steradians", c.steradians);
+            c.temperature = light.value("temperature", c.temperature);
+            c.lumens = light.value("lumens", c.lumens);
+            config.lights.push_back(c);
         }
     }
 
@@ -245,18 +259,17 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
     }
     else
     {
-        config.materials.resize(j.at("materials").size());
-        int32_t i = 0;
         for (auto &[key, material] : j.at("materials").items())
         {
-            config.materials[i].name = key;
-            config.materials[i].diffuse = material.value("diffuse", config.materials[i].diffuse);
-            config.materials[i].normal = material.value("normal", config.materials[i].normal);
-            config.materials[i].metallic = material.value("metallic", config.materials[i].metallic);
-            config.materials[i].roughness = material.value("roughness", config.materials[i].roughness);
-            config.materials[i].ao = material.value("ao", config.materials[i].ao);
-            config.materials[i].displacement = material.value("displacement", config.materials[i].displacement);
-            ++i;
+            MaterialConfig c{};
+            c.name = key;
+            c.diffuse = material.value("diffuse", c.diffuse);
+            c.normal = material.value("normal", c.normal);
+            c.metallic = material.value("metallic", c.metallic);
+            c.roughness = material.value("roughness", c.roughness);
+            c.ao = material.value("ao", c.ao);
+            c.displacement = material.value("displacement", c.displacement);
+            config.materials.push_back(c);
         }
     }
 
@@ -266,13 +279,12 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
     }
     else
     {
-        config.meshes.resize(j.at("meshes").size());
-        int32_t i = 0;
         for (auto &[key, value] : j.at("meshes").items())
         {
-            config.meshes[i].name = key;
-            config.meshes[i].path = value;
-            ++i;
+            MeshConfig c{};
+            c.name = key;
+            c.path = value;
+            config.meshes.push_back(c);
         }
     }
 
@@ -302,14 +314,6 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
                 c.scale.y = scale.value("y", c.scale.y);
                 c.scale.z = scale.value("z", c.scale.z);
             }
-            if (model.find("tessellation") != model.end())
-            {
-                auto tessellation = model.at("tessellation");
-                c.tessLevel = tessellation.value("level", c.tessLevel);
-                c.tessStregth = tessellation.value("strength", c.tessStregth);
-                c.tessAlpha = tessellation.value("alpha", c.tessAlpha);
-            }
-
             if (model.find("type") == model.end() || model.find("type").value() == "single")
             {
                 if (model.find("position") != model.end())

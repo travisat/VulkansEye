@@ -48,19 +48,18 @@ void Scene::createSun()
     sun.vulkan = vulkan;
     sun.mipLevels = 1;
     sun.layers = 1;
-    sun.format = vulkan->findDepthFormat(); 
-    sun.layout = vk::ImageLayout::eUndefined;
-    sun.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eDepthStencilAttachment;
+    sun.format = vk::Format::eR32Sfloat;
+    sun.layout = vk::ImageLayout::eColorAttachmentOptimal;
+    sun.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     sun.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    sun.aspect = vk::ImageAspectFlagBits::eDepth;
-    sun.resize(1024, 1024);
+    sun.aspect = vk::ImageAspectFlagBits::eColor;
+    sun.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
 
     sun.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     sun.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     sun.addressModeW = vk::SamplerAddressMode::eClampToEdge;
     sun.maxAnisotropy = 1.F;
     sun.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    
     sun.createSampler();
 }
 
@@ -71,12 +70,12 @@ void Scene::createShadow()
     shadow.layers = 6;
     shadow.format = vk::Format::eR32Sfloat;
     shadow.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    shadow.aspect = vk::ImageAspectFlagBits::eColor;
     shadow.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     shadow.flags = vk::ImageCreateFlagBits::eCubeCompatible;
     shadow.viewType = vk::ImageViewType::eCube;
-    shadow.resize(1024, 1024);
+    shadow.aspect = vk::ImageAspectFlagBits::eColor;
+    shadow.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
 
     shadow.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     shadow.addressModeV = vk::SamplerAddressMode::eClampToEdge;
@@ -84,8 +83,6 @@ void Scene::createShadow()
     shadow.maxAnisotropy = 1.0F;
     shadow.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     shadow.createSampler();
-
-    backdrop.shadowMap = &shadow;
 }
 
 void Scene::createMaterials()
@@ -105,20 +102,19 @@ void Scene::createBackdrop()
     backdrop.vulkan = vulkan;
     backdrop.player = player;
     backdrop.config = &config->backdrop;
-    backdrop.shadowMap = &shadow;
 
     backdrop.create();
 }
 
 void Scene::createLights()
 {
-    pointLights.resize(numLights);
+    lights.resize(numLights);
     int32_t index = 0;
-    for (auto &lightConfig : config->pointLights)
+    for (auto &lightConfig : config->lights)
     {
-        pointLights[index].config = &lightConfig;
-        pointLights[index].vulkan = vulkan;
-        pointLights[index].create();
+        lights[index].config = &lightConfig;
+        lights[index].vulkan = vulkan;
+        lights[index].create();
         ++index;
     }
 }
@@ -210,25 +206,21 @@ void Scene::update(uint32_t currentImage)
 {
     backdrop.update(currentImage);
 
-    uLight.sunAngle.x = -cos(glm::radians(Timer::time() / 10.F * 360.F)) * 20.F;
-    uLight.sunAngle.y = 20.F; // + sin(glm::radians(Timer::time()/10.F * 360.F)) * 20.F;
-    uLight.sunAngle.z = -25.F + sin(glm::radians(Timer::time() / 10.F * 360.F)) * 5.F;
+    uLight.sunAngle = backdrop.light.light.position;
 
-    glm::mat4 depthProjectionMatrix = glm::ortho(-50.F, 50.F, -50.F, 50.F, vulkan->zNear, vulkan->zFar);
+    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(uLight.sunAngle, glm::vec3(0.F), glm::vec3(0, 1, 0));
     glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix;
 
     uLight.radianceMipLevels = backdrop.radianceMap.mipLevels;
+    uLight.shadowSize = vulkan->shadowSize;
     for (int32_t i = 0; i < numLights; ++i)
     {
-        uLight.light[i].position = pointLights[i].light.position;
-        uLight.light[i].position.x = -player->position.x;
-        uLight.light[i].position.z = -player->position.z;
-        uLight.light[i].color = pointLights[i].light.color;
-        uLight.light[i].lumens = pointLights[i].light.lumens;
+        uLight.light[i].position = lights[i].light.position;
+        uLight.light[i].color = lights[i].light.color;
+        uLight.light[i].lumens = lights[i].light.lumens;
     }
 
-    UniformShadow shadowmvp{};
     shadowmvp.projection = glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
     // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
     // POSITIVE_X
@@ -247,11 +239,9 @@ void Scene::update(uint32_t currentImage)
     shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
 
     glm::vec3 lightPos = uLight.light[0].position;
-    shadowmvp.lightpos = glm::vec4(lightPos, 1.F);
 
     for (auto &model : models)
     {
-        UniformBuffer vertex{};
         // move model to worldspace
         glm::mat4 m = glm::translate(glm::mat4(1.F), model.position);
         m = glm::rotate(m, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
@@ -262,9 +252,6 @@ void Scene::update(uint32_t currentImage)
         // createmvp
         vertex.mvp = player->perspective * player->view * m;
 
-        model.vertexBuffers[currentImage].update(&vertex, sizeof(vertex));
-        model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
-
         // make model for model in lightspace
         shadowmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-lightPos));
         shadowmvp.model = glm::translate(shadowmvp.model, glm::vec3(model.position));
@@ -272,12 +259,21 @@ void Scene::update(uint32_t currentImage)
         shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
         shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
         shadowmvp.model = glm::scale(shadowmvp.model, model.scale);
-        model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
 
-        uLight.sunMVP = sunVP * m;
-        UniformBuffer sun{};
-        sun.mvp = uLight.sunMVP;
-        model.sunBuffers[currentImage].update(&sun, sizeof(sun));
+        // make model for model in lightspace
+        sunmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-uLight.sunAngle));
+        sunmvp.model = glm::translate(sunmvp.model, glm::vec3(model.position));
+        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
+        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
+        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
+        sunmvp.model = glm::scale(sunmvp.model, model.scale);
+        sunmvp.vp = sunVP;
+        vertex.sunMVP = sunVP * m;
+
+        model.vertexBuffers[currentImage].update(&vertex, sizeof(vertex));
+        model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
+        model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
+        model.sunBuffers[currentImage].update(&sunmvp, sizeof(sunmvp));
     }
 }
 
@@ -492,7 +488,6 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    //shadowPipeline.rasterizer.frontFace = vk::FrontFace::eClockwise;
     shadowPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
     shadowPipeline.create();
@@ -563,7 +558,6 @@ void Scene::createSunPipeline()
     sunPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
     sunPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
-    //sunPipeline.rasterizer.frontFace = vk::FrontFace::eClockwise;
     sunPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
     sunPipeline.create();

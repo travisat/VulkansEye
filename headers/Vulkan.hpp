@@ -30,26 +30,29 @@ namespace tat
 
 struct UniformBuffer
 {
-    alignas(16) glm::mat4 mvp{};
+    glm::mat4 mvp{};
+    glm::mat4 sunMVP{};
 };
 
-static const int numLights = 1;
-struct uPointLight
+constexpr int numLights = 1;
+
+// glsl expects vec3 to be alligned on 16 bits
+struct uLight
 {
     alignas(16) glm::vec3 position{};
     alignas(16) glm::vec3 color{};
     float lumens = 0.0F;
+    float steradians = 4.F * 3.1415926F;
 };
 
 struct UniformLight
 {
     alignas(16) glm::vec3 sunAngle = glm::vec3(-20.F, 20.F, -40.F);
-    alignas(16) glm::mat4 sunMVP{};
-    alignas(4) float radianceMipLevels = 0.F;
-    alignas(4) float exposure = 2.2F;
-    alignas(4) float gamma = 4.5F;
-    alignas(4) float buffer = 0.F;
-    std::array<uPointLight, numLights> light{};
+    float radianceMipLevels = 0.F;
+    float exposure = 2.2F;
+    float gamma = 4.5F;
+    float shadowSize = 1024.F;
+    std::array<uLight, numLights> light{};
 };
 
 struct UniformShadow
@@ -57,7 +60,12 @@ struct UniformShadow
     glm::mat4 model{};
     std::array<glm::mat4, 6> view{};
     glm::mat4 projection{};
-    glm::vec4 lightpos{};
+};
+
+struct UniformSun
+{
+    glm::mat4 model{};
+    glm::mat4 vp{};
 };
 
 class Vulkan
@@ -70,7 +78,7 @@ class Vulkan
         device.destroyRenderPass(sunPass);
         for (auto imageView : swapChainImageViews)
         {
-           device.destroyImageView(imageView);
+            device.destroyImageView(imageView);
         }
         device.destroySwapchainKHR(swapChain);
         device.destroyCommandPool(commandPool);
@@ -111,7 +119,8 @@ class Vulkan
     uint32_t height = 0;
     uint32_t currentImage = 0;
     float zNear = 0.01F;
-    float zFar = 512.0F;
+    float zFar = 512.F;
+    float shadowSize = 1024.F;
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;
@@ -119,7 +128,8 @@ class Vulkan
     auto checkFormat(vk::Format format) -> bool
     {
         vk::FormatProperties props = physicalDevice.getFormatProperties(format);
-        return (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) == vk::FormatFeatureFlagBits::eSampledImage;
+        return (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) ==
+               vk::FormatFeatureFlagBits::eSampledImage;
     };
 
     auto beginSingleTimeCommands() -> vk::CommandBuffer
@@ -157,12 +167,12 @@ class Vulkan
         vk::ShaderModuleCreateInfo createInfo = {};
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-       
+
         return device.createShaderModule(createInfo, nullptr);
     }
 
     auto findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-                             const vk::FormatFeatureFlags& features) -> vk::Format
+                             const vk::FormatFeatureFlags &features) -> vk::Format
     {
         for (vk::Format format : candidates)
         {

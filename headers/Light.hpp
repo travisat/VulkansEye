@@ -7,15 +7,15 @@
 
 namespace tat
 {
-class PointLight
+class Light
 {
   public:
     Vulkan *vulkan;
-    PointLightConfig *config;
+    LightConfig *config;
 
     uint32_t id;
     std::string name;
-    uPointLight light{};
+    uLight light{};
     void create();
 
   private:

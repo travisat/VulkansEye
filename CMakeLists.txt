@@ -57,7 +57,7 @@ ${CMAKE_SOURCE_DIR}/src/Meshes.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
 ${CMAKE_SOURCE_DIR}/src/Player.cpp
-${CMAKE_SOURCE_DIR}/src/PointLight.cpp
+${CMAKE_SOURCE_DIR}/src/Light.cpp
 ${CMAKE_SOURCE_DIR}/src/Scene.cpp
 ${CMAKE_SOURCE_DIR}/src/Overlay.cpp
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 

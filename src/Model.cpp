@@ -81,7 +81,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         radianceInfo.sampler = radianceMap->sampler;
 
         vk::DescriptorImageInfo sunInfo = {};
-        sunInfo.imageLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+        sunInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         sunInfo.imageView = sun->imageView;
         sunInfo.sampler = sun->sampler;
 
@@ -225,7 +225,7 @@ void Model::createSunSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layou
         vk::DescriptorBufferInfo sunInfo = {};
         sunInfo.buffer = sunBuffers[i].buffer;
         sunInfo.offset = 0;
-        sunInfo.range = sizeof(UniformBuffer);
+        sunInfo.range = sizeof(UniformSun);
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites{};
 
@@ -269,7 +269,7 @@ void Model::createUniformBuffers()
         sunBuffers[i].vulkan = vulkan;
         sunBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         sunBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        sunBuffers[i].resize(sizeof(UniformBuffer));
+        sunBuffers[i].resize(sizeof(UniformSun));
     }
 }
 

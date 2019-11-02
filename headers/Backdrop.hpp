@@ -3,6 +3,7 @@
 #include "Buffer.hpp"
 #include "Config.h"
 #include "Image.hpp"
+#include "Light.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "Timer.h"
@@ -21,6 +22,8 @@ class Backdrop
     Image radianceMap{};
     Image irradianceMap{};
 
+    Light light{};
+
     ~Backdrop();
 
     void create();
@@ -29,8 +32,6 @@ class Backdrop
 
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
-
-    Image *shadowMap;
 
   private:
     UniformBuffer uBuffer;

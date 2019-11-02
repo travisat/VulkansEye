@@ -16,6 +16,8 @@ using json = nlohmann::json;
 namespace tat
 {
 
+constexpr float PI = 3.1415926F;
+
 struct VulkanConfig
 {
     std::string name = "none";
@@ -24,6 +26,7 @@ struct VulkanConfig
     int windowWidth = 1024;
     int windowHeight = 768;
     bool sync = true;
+    float shadowSize = 1024.F;
 };
 
 struct PlayerConfig
@@ -40,19 +43,22 @@ struct PlayerConfig
     float timeToStopfromVMax = 0.1F;
 };
 
+struct LightConfig
+{
+    std::string name = "default";
+    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
+    //glm::vec3 rotation = glm::vec3(0.F); //TODO(travis) implement rotation for spot lights
+    float temperature = 6400;
+    float lumens = 1600;
+    float steradians = 4.F * PI;
+};
+
 struct BackropConfig
 {
     std::string colorPath = "resources/backdrop/desert/color.dds";
     std::string radiancePath = "resources/backdrop/desert/radiance.dds";
     std::string irradiancePath = "resources/backdrop/desert/irradiance.dds";
-};
-
-struct PointLightConfig
-{
-    std::string name = "default";
-    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
-    float temperature = 6400;
-    float lumens = 1600;
+    LightConfig light{};
 };
 
 struct MaterialConfig
@@ -80,9 +86,6 @@ struct ModelConfig
     glm::vec3 position{};
     glm::vec3 rotation{};
     glm::vec3 scale{};
-    float tessLevel = 1.F;
-    float tessStregth = 0.F;
-    float tessAlpha = 0.0F;
 };
 
 struct Config
@@ -90,7 +93,7 @@ struct Config
     VulkanConfig vulkan{};
     PlayerConfig player{};
     BackropConfig backdrop{};
-    std::vector<PointLightConfig> pointLights{};
+    std::vector<LightConfig> lights{};
     std::vector<MaterialConfig> materials{};
     std::vector<MeshConfig> meshes{};
     std::vector<ModelConfig> models{};

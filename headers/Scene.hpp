@@ -3,18 +3,16 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
-#include <cstdint>
 #include <utility>
-
 
 #include "Backdrop.hpp"
 #include "Config.h"
+#include "Light.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
+#include "Model.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
-#include "PointLight.hpp"
-#include "Model.hpp"
 #include "Vulkan.hpp"
 #include "glm/fwd.hpp"
 #include "vulkan/vulkan.hpp"
@@ -45,7 +43,6 @@ class Scene
     void update(uint32_t currentImage);
 
   private:
-    UniformLight uLight = {};
     VkDescriptorPool colorPool;
     VkDescriptorSetLayout colorLayout;
     VkDescriptorPool shadowPool;
@@ -57,9 +54,14 @@ class Scene
     Materials materials{};
     Meshes meshes{};
 
+    UniformBuffer vertex{};
+    UniformLight uLight{};
+    UniformShadow shadowmvp{};
+    UniformSun sunmvp{};
+
     Pipeline colorPipeline;
     std::vector<Model> models;
-    std::vector<PointLight> pointLights;
+    std::vector<Light> lights;
 
     Pipeline shadowPipeline;
     Pipeline sunPipeline;
