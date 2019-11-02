@@ -84,7 +84,7 @@ target_link_libraries(VulkansEye Vulkan::Vulkan glfw ${CMAKE_DL_LIBS} pthread st
 ENDIF(CMAKE_HOST_UNIX)
 
 IF(CMAKE_HOST_WIN32)
-target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR)
+target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(VulkansEye glfw Vulkan::Vulkan)
 
 IF (MSVC)
