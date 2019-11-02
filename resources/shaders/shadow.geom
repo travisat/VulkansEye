@@ -15,7 +15,6 @@ shadows;
 layout(location = 0) in vec4 inPosition[];
 
 layout(location = 0) out vec4 outPosition;
-layout(location = 1) out vec4 lightpos;
 
 void main(void)
 {
@@ -24,9 +23,8 @@ void main(void)
         gl_Layer = face;
         for (int i = 0; i < 3; ++i) // for each triangle's vertices
         {
-            lightpos =  shadows.lightpos;
-            outPosition = inPosition[i];
-            gl_Position = shadows.projection * shadows.view[face] * shadows.model *  outPosition;
+            outPosition = shadows.model * inPosition[i];
+            gl_Position = shadows.projection * shadows.view[face] * outPosition;
             EmitVertex();
         }
         EndPrimitive();

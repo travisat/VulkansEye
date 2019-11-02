@@ -135,7 +135,7 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     commandBuffer.setLineWidth(1.0F);
 
     std::array<vk::ClearValue, 2> clearValues = {};
-    clearValues[0].color = std::array<float, 4>{1.F, 1.F, 1.F, 1.F};
+    clearValues[0].color = std::array<float, 4>{0.F, 0.F, 0.F, 1.F};
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo shadowPassInfo = {};
@@ -181,11 +181,6 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     colorPassInfo.pClearValues = clearValues.data();
     colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer;
 
-    scene->sun.transitionImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal,
-                                     vk::ImageLayout::eShaderReadOnlyOptimal);
-    scene->shadow.transitionImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal,
-                                        vk::ImageLayout::eShaderReadOnlyOptimal);
-
     commandBuffer.beginRenderPass(colorPassInfo, vk::SubpassContents::eInline);
     scene->drawColor(commandBuffer, currentImage);
     if (vulkan->showOverlay)
@@ -193,11 +188,6 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
         overlay->draw(commandBuffer, currentImage);
     }
     commandBuffer.endRenderPass();
-
-    scene->sun.transitionImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal,
-                                     vk::ImageLayout::eColorAttachmentOptimal);
-    scene->shadow.transitionImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal,
-                                        vk::ImageLayout::eColorAttachmentOptimal);
 }
 
 void Engine::createCommandBuffers()
@@ -538,9 +528,9 @@ void Engine::createLogicalDevice()
     vk::PhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
-    deviceFeatures.tessellationShader = VK_TRUE;
+    //deviceFeatures.tessellationShader = VK_TRUE;
     deviceFeatures.geometryShader = VK_TRUE;
-    deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
+    //deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
 
     vk::DeviceCreateInfo createInfo{};
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -654,16 +644,7 @@ void Engine::createSwapChain()
 
 void Engine::createSunFramebuffers()
 {
-    sunDepth.vulkan = vulkan;
-    sunDepth.format = vulkan->findDepthFormat();
-    sunDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    sunDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    sunDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    sunDepth.aspect = vk::ImageAspectFlagBits::eDepth;
-    sunDepth.resize(1024, 1024);
-
     sunFbs.resize(vulkan->swapChainImageViews.size());
-
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
     {
         sunFbs[i].vulkan = vulkan;
@@ -671,7 +652,7 @@ void Engine::createSunFramebuffers()
         sunFbs[i].width = 1024;
         sunFbs[i].height = 1024;
         sunFbs[i].layers = 1;
-        sunFbs[i].attachments = {scene->sun.imageView, sunDepth.imageView};
+        sunFbs[i].attachments = {scene->sun.imageView};
         sunFbs[i].create();
     }
 }
@@ -690,7 +671,6 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(1024, 1024);
 
     shadowFbs.resize(vulkan->swapChainImageViews.size());
-
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
     {
         shadowFbs[i].vulkan = vulkan;

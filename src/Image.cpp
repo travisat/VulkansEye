@@ -109,24 +109,24 @@ void Image::loadGLI(const std::string &path)
     uint32_t offset = 0;
     for (uint32_t layer = 0; layer < layers; layer++)
     {
-            for (uint32_t level = 0; level < mipLevels; level++)
-            {
-                auto extent(texture.extent(level));
+        for (uint32_t level = 0; level < mipLevels; level++)
+        {
+            auto extent(texture.extent(level));
 
-                vk::BufferImageCopy bufferCopyRegion = {};
-                bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-                bufferCopyRegion.imageSubresource.mipLevel = level;
-                bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
-                bufferCopyRegion.imageSubresource.layerCount = 1;
-                bufferCopyRegion.imageExtent.width = extent.x;
-                bufferCopyRegion.imageExtent.height = extent.y;
-                bufferCopyRegion.imageExtent.depth = extent.z;
-                bufferCopyRegion.bufferOffset = offset;
+            vk::BufferImageCopy bufferCopyRegion = {};
+            bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+            bufferCopyRegion.imageSubresource.mipLevel = level;
+            bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
+            bufferCopyRegion.imageSubresource.layerCount = 1;
+            bufferCopyRegion.imageExtent.width = extent.x;
+            bufferCopyRegion.imageExtent.height = extent.y;
+            bufferCopyRegion.imageExtent.depth = extent.z;
+            bufferCopyRegion.bufferOffset = offset;
 
-                bufferCopyRegions.push_back(bufferCopyRegion);
+            bufferCopyRegions.push_back(bufferCopyRegion);
 
-                offset += static_cast<uint32_t>(texture.size(level));
-            }
+            offset += static_cast<uint32_t>(texture.size(level));
+        }
     }
 
     vk::ImageSubresourceRange subresourceRange = {};
@@ -187,7 +187,11 @@ void Image::allocate()
 
     CheckResult(vmaCreateImage(vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
                                reinterpret_cast<VkImage *>(&image), &allocation, nullptr));
-    transitionImageLayout(vk::ImageLayout::eUndefined, layout);
+
+    if (layout != vk::ImageLayout::eUndefined)
+    {
+        transitionImageLayout(vk::ImageLayout::eUndefined, layout);
+    }
     createImageView();
 }
 

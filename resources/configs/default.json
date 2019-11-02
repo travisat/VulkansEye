@@ -4,7 +4,8 @@
         "zNear": 0.1,
         "zFar": 1024.0,
         "windowWidth": 1024,
-        "windowHeight": 768
+        "windowHeight": 768,
+        "sync": true
     },
     "player": {
         "height": 1.7,
@@ -26,8 +27,7 @@
             "z": 0
         }
     },
-    "backdrop": 
-    {
+    "backdrop": {
         "color": "resources/backdrop/desert/color.dds",
         "radiance": "resources/backdrop/desert/radiance.dds",
         "irradiance": "resources/backdrop/desert/irradiance.dds"
@@ -144,31 +144,6 @@
         "floortile": "resources/models/floortile.obj"
     },
     "models": {
-        "sphere": {
-            "type": "single",
-            "position": {
-                "x": 10,
-                "y": 0,
-                "z": 10
-            },
-            "rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-            },
-            "scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
-            },
-            "mesh": "sphere",
-            "material": "Fabric01",
-            "tessellation": {
-                "level": 64,
-                "strength": 0.02,
-                "alpha": 0.0
-            }
-        },
         "table": {
             "type": "single",
             "position": {
@@ -187,262 +162,15 @@
                 "z": 1
             },
             "mesh": "table",
-            "material": "Fabric01",
-            "tessellation": {
-                "level": 64,
-                "strength": 0.02,
-                "alpha": 0.0
-            }
+            "material": "Plaster02"
         },
         "floortiles": {
-            "type": "multiple",
-            "positions": [
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": -6,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": -4,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": -2,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": 0,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": 2,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": 4,
-                    "y": 0,
-                    "z": 6
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": -6
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": -4
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": -2
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": 0
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": 2
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": 4
-                },
-                {
-                    "x": 6,
-                    "y": 0,
-                    "z": 6
-                }
-            ],
+            "type": "single",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
             "rotation": {
                 "x": 0,
                 "y": 0,
@@ -453,13 +181,8 @@
                 "y": 1,
                 "z": 1
             },
-            "mesh": "floortile",
-            "material": "Marble03",
-            "tessellation": {
-                "level": 8,
-                "strength": 0.00,
-                "alpha": 0.0
-            }
+            "mesh": "floor",
+            "material": "Plaster02"
         }
     }
 }

@@ -23,6 +23,7 @@ struct VulkanConfig
     float zFar = 1024.F;
     int windowWidth = 1024;
     int windowHeight = 768;
+    bool sync = true;
 };
 
 struct PlayerConfig

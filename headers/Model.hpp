@@ -36,23 +36,19 @@ class Model
     // color pipeline
     Material *material;
     std::vector<vk::DescriptorSet> colorSets;
-    std::vector<Buffer> tescBuffers;
-    std::vector<Buffer> teseBuffers;
+    std::vector<Buffer> vertexBuffers;
     std::vector<Buffer> uniformLights;
-    TessControl uTessControl = {};
-    TessEval uTessEval = {};
+
     Image *irradianceMap;
     Image *radianceMap;
 
     // shadow pipeline
     std::vector<vk::DescriptorSet> shadowSets;
     Image *shadow;
-    UniformShadow uShadow = {};
     std::vector<Buffer> shadowBuffers;
 
     std::vector<vk::DescriptorSet> sunSets;
     Image *sun;
-    UniformSun uSun = {};
     std::vector<Buffer> sunBuffers;
 
     void create();

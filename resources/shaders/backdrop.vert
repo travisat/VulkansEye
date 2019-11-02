@@ -3,8 +3,7 @@
 
 layout(binding = 0) uniform UniformBufferObject
 {
-    mat4 projection;
-    mat4 view;
+    mat4 mvp;
 }
 ubo;
 
@@ -16,12 +15,7 @@ void main()
     vec2 UV = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
     vec4 position = vec4(UV * 2.0f + -1.0f, 0.0f, 1.0f);
 
-    //skybox is a quad that fills the screen  
-    // https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
-    // by unprojecting the mvp (ie applying the inverse backwards)
-    mat4 inverseProjection = inverse(ubo.projection);
-    mat4 inverseModelView = transpose(ubo.view /* * mat4(1.0) */);
-    eyeDirection = vec3(inverseModelView * inverseProjection * position);
+    eyeDirection = vec3(ubo.mvp * position);
 
     gl_Position = position;
 }

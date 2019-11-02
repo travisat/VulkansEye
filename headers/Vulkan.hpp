@@ -30,9 +30,7 @@ namespace tat
 
 struct UniformBuffer
 {
-    alignas(16) glm::mat4 projection{};
-    alignas(16) glm::mat4 view{};
-    alignas(16) glm::mat4 model{};
+    alignas(16) glm::mat4 mvp{};
 };
 
 static const int numLights = 1;
@@ -52,23 +50,6 @@ struct UniformLight
     alignas(4) float gamma = 4.5F;
     alignas(4) float buffer = 0.F;
     std::array<uPointLight, numLights> light{};
-};
-
-struct UniformSun 
-{
-    glm::mat4 sunMVP{};
-};
-
-struct TessControl
-{
-    float tessLevel = 64.0F;
-};
-
-struct TessEval
-{
-    glm::mat4 mvp{};
-    float tessStrength = 0.1F;
-    float tessAlpha = 0.3F;
 };
 
 struct UniformShadow

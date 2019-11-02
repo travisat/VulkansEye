@@ -1,6 +1,7 @@
 #include "VulkansEye.hpp"
 #include "Config.h"
 #include "helpers.h"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -22,6 +23,14 @@ void VulkansEye::init(const std::string &configPath)
     vulkan.height = config.vulkan.windowHeight;
     vulkan.zNear = config.vulkan.zNear;
     vulkan.zFar = config.vulkan.zFar;
+    if (config.vulkan.sync == true)
+    {
+        vulkan.defaultPresentMode = vk::PresentModeKHR::eFifo;
+    }
+    else
+    {
+        vulkan.defaultPresentMode = vk::PresentModeKHR::eMailbox;
+    }
 
     // setup glfw window
     glfwInit();
@@ -165,6 +174,7 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
         config.vulkan.zFar = vulkan.value("zFar", config.vulkan.zFar);
         config.vulkan.windowWidth = vulkan.value("windowWidth", config.vulkan.windowWidth);
         config.vulkan.windowHeight = vulkan.value("windowHeight", config.vulkan.windowHeight);
+        config.vulkan.sync = vulkan.value("sync", config.vulkan.sync);
     }
 
     if (j.find("player") != j.end())

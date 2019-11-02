@@ -100,7 +100,7 @@ void createShadowPass(Vulkan *vulkan)
     shadowAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     shadowAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
     shadowAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    shadowAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    shadowAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     vk::AttachmentDescription depthAttachment = {};
     depthAttachment.format = vulkan->findDepthFormat();
@@ -113,9 +113,9 @@ void createShadowPass(Vulkan *vulkan)
 
     depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-    vk::AttachmentReference shadowAttachmentref = {};
-    shadowAttachmentref.attachment = 0;
-    shadowAttachmentref.layout = vk::ImageLayout::eColorAttachmentOptimal;
+    vk::AttachmentReference shadowAttachmentRef = {};
+    shadowAttachmentRef.attachment = 0;
+    shadowAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentReference depthAttachmentRef = {};
     depthAttachmentRef.attachment = 1;
@@ -124,7 +124,7 @@ void createShadowPass(Vulkan *vulkan)
     vk::SubpassDescription subpass = {};
     subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &shadowAttachmentref;
+    subpass.pColorAttachments = &shadowAttachmentRef;
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     std::vector<vk::AttachmentDescription> attachments = {shadowAttachment, depthAttachment};
@@ -163,60 +163,42 @@ void createShadowPass(Vulkan *vulkan)
 void createSunPass(Vulkan *vulkan)
 {
     vk::AttachmentDescription sunAttachment = {};
-    sunAttachment.format = vk::Format::eR32Sfloat;
+    sunAttachment.format = vulkan->findDepthFormat();
     sunAttachment.samples = vk::SampleCountFlagBits::e1;
     sunAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     sunAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     sunAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     sunAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
     sunAttachment.initialLayout = vk::ImageLayout::eUndefined;
-    sunAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    sunAttachment.finalLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
 
-    vk::AttachmentDescription depthAttachment = {};
-    depthAttachment.format = vulkan->findDepthFormat();
-    depthAttachment.samples = vk::SampleCountFlagBits::e1;
-    depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-    depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-    depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-    depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-
-    depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::AttachmentReference sunAttachmentref = {};
-    sunAttachmentref.attachment = 0;
-    sunAttachmentref.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference depthAttachmentRef = {};
-    depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    vk::AttachmentReference sunAttachmentRef = {};
+    sunAttachmentRef.attachment = 0;
+    sunAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     vk::SubpassDescription subpass = {};
     subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &sunAttachmentref;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.colorAttachmentCount = 0;
+    subpass.pDepthStencilAttachment = &sunAttachmentRef;
 
-    std::vector<vk::AttachmentDescription> attachments = {sunAttachment, depthAttachment};
+    std::vector<vk::AttachmentDescription> attachments = {sunAttachment};
 
     std::array<vk::SubpassDependency, 2> dependencies{};
 
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
-    dependencies[0].dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependencies[0].srcAccessMask = vk::AccessFlagBits::eMemoryRead;
-    dependencies[0].dstAccessMask =
-        vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+    dependencies[0].srcStageMask = vk::PipelineStageFlagBits::eFragmentShader;
+    dependencies[0].dstStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+    dependencies[0].srcAccessMask = vk::AccessFlagBits::eShaderRead;
+    dependencies[0].dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
     dependencies[0].dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
     dependencies[1].srcSubpass = 0;
     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependencies[1].dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
-    dependencies[1].srcAccessMask =
-        vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
-    dependencies[1].dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+    dependencies[1].srcStageMask = vk::PipelineStageFlagBits::eLateFragmentTests;
+    dependencies[1].dstStageMask = vk::PipelineStageFlagBits::eFragmentShader;
+    dependencies[1].srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[1].dstAccessMask = vk::AccessFlagBits::eShaderRead;
     dependencies[1].dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
     vk::RenderPassCreateInfo renderPassInfo = {};

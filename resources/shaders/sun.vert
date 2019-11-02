@@ -10,10 +10,7 @@ layout(binding = 0) uniform UBO
 }
 ubo;
 
-layout(location = 0) out vec4 outPosition;
-
 void main()
 {
-    outPosition = ubo.sunMVP * vec4(inPos, 1.0);
-    gl_Position = outPosition;
+    gl_Position =  ubo.sunMVP * vec4(inPos, 1.0);
 }
