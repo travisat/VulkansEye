@@ -5,13 +5,9 @@ include(CTest)
 enable_testing()
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
-set(VULKAN 
-C:/VulkanSDK/1.1.114.0
-)
-
-set(GLFW 
-${CMAKE_SOURCE_DIR}/../../Libraries/glfw-3.3.bin.WIN64
-)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(GLFW REQUIRED glfw3)
+pkg_search_module(VULKAN REQUIRED vulkan)
 
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert
@@ -77,7 +73,7 @@ set_target_properties(VulkansEye
 
 foreach(SHADER ${SHADERS})
     add_custom_command(OUTPUT ${SHADER}.spv
-        COMMAND glslangvalidator -V "${SHADER}" -o "${SHADER}.spv"
+        COMMAND glslangValidator -V "${SHADER}" -o "${SHADER}.spv"
         DEPENDS ${SHADER}
         COMMENT "Rebuilding ${SHADER}.spv"
     )
@@ -85,8 +81,8 @@ endforeach()
 
 target_include_directories(VulkansEye 
     PUBLIC 
-        "${GLFW}/include"
-        "${VULKAN}/Include"
+        "${GLFW_INCLUDE_DIRS}"
+        "${VULKAN_INCLUDE_DIRS}"
         "external/GSL/Include"
         "external/glm"
         "external/tinygltf"
@@ -96,19 +92,14 @@ target_include_directories(VulkansEye
         "external/imgui"
 )
 
-add_library(vulkan STATIC IMPORTED)
-set_property(TARGET vulkan PROPERTY IMPORTED_LOCATION "${VULKAN}/lib/vulkan-1.lib")
-target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(VulkansEye vulkan)
-
-add_library(glfw STATIC IMPORTED)
-set_property(TARGET glfw PROPERTY IMPORTED_LOCATION "${GLFW}/lib-vc2019/glfw3.lib")
-target_link_libraries(VulkansEye glfw)
+if (CMAKE_COMPILER_IS_GNUCXX)
+    target_link_libraries(VulkansEye ${VULKAN_LIBRARIES} ${GLFW_LIBRARIES} ${CMAKE_DL_LIBS} pthread stdc++fs wayland-client)
+endif (CMAKE_COMPILER_IS_GNUCXX)
 
 # Compiler specific stuff
-IF(MSVC)
+IF (MSVC)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
-ENDIF(MSVC)
+ENDIF (MSVC)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
