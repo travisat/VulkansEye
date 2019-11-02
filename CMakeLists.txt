@@ -7,14 +7,6 @@ include(CTest)
 enable_testing()
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
-foreach(SHADER ${SHADERS})
-    add_custom_command(OUTPUT ${SHADER}.spv
-        COMMAND glslangValidator -V "${SHADER}" -o "${SHADER}.spv"
-        DEPENDS ${SHADER}
-        COMMENT "Rebuilding ${SHADER}.spv"
-    )
-endforeach()
-
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.geom
@@ -42,6 +34,14 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag.spv
 )
+
+foreach(SHADER ${SHADERS})
+    add_custom_command(OUTPUT ${SHADER}.spv
+        COMMAND glslangValidator -V "${SHADER}" -o "${SHADER}.spv"
+        DEPENDS ${SHADER}
+        COMMENT "Rebuilding ${SHADER}.spv"
+    )
+endforeach()
 
 set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
