@@ -40,7 +40,6 @@ void Player::updateAspectRatio(float width, float height)
     this->windowWidth = width;
     this->windowHeight = height;
     perspective = glm::perspective(glm::radians(fieldOfView), (width / height), vulkan->zNear, vulkan->zFar);
-    perspective = clip * perspective;
 }
 
 void Player::move(glm::vec2 direction)
@@ -58,9 +57,9 @@ void Player::move(glm::vec2 direction)
 
 void Player::jump()
 {
-    if (position.y == -height)
+    if (position.y == height)
     {
-        velocity.y -= jumpVelocity; 
+        velocity.y += jumpVelocity; 
     }
 }
 
@@ -82,7 +81,7 @@ void Player::update(float deltaTime)
     if (lastMousePosition != mousePosition)
     {
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
-        rotation.x += deltaMousePosition.y * mouseSensitivity;
+        rotation.x -= deltaMousePosition.y * mouseSensitivity;
         rotation.x = std::clamp(rotation.x, -90.0F, 90.0F);
         rotation.y += deltaMousePosition.x * mouseSensitivity;
         lastMousePosition = mousePosition;
@@ -109,7 +108,7 @@ void Player::update(float deltaTime)
             force -= internalFriction * normalize(velocity);
         }
     }
-    else if (position.y == -height)
+    else if (position.y == height)
     { // we want to stop
         float stoppingForce = (mass * velocityMax) / (timeToStopfromVMax * deltaTime);
         if (glm::abs(velocity.x) < 0.001F && glm::abs(velocity.z) < 0.001) // if stopped don't apply friction
@@ -127,17 +126,17 @@ void Player::update(float deltaTime)
     // set acceleration
     acceleration = deltaTime * force / mass;
     
-    if (position.y < -height)
+    if (position.y > height)
     {
-        acceleration.y += 9.8F;
+        acceleration.y -= 9.8F;
     }
     // apply acceleration to velocity
     velocity += acceleration * deltaTime;
     // apply velocity to position
     position += velocity * deltaTime;
-    if (position.y > -height)
+    if (position.y < height)
     {
-        position.y = -height;
+        position.y = height;
         velocity.y = 0.0F;
     }
 

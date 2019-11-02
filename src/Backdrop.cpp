@@ -197,7 +197,8 @@ void Backdrop::createPipeline()
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
+    //pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+    //pipeline.rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

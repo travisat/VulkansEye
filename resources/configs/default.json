@@ -35,7 +35,7 @@
         "light": {
             "position": {
                 "x": -20,
-                "y": 15,
+                "y": -15,
                 "z": -8
             },
             "temperature": 6400,
@@ -46,7 +46,7 @@
         "lantern": {
             "position": {
                 "x": 0,
-                "y": 4.0,
+                "y": -4.0,
                 "z": 0
             },
             "temperature": 6400,
@@ -151,7 +151,8 @@
         "table": "resources/models/table.obj",
         "floor": "resources/models/floor.obj",
         "sphere": "resources/models/sphere.obj",
-        "floortile": "resources/models/floortile.obj"
+        "floortile": "resources/models/floortile.obj",
+        "suzanne": "resources/models/suzanne.obj"
     },
     "models": {
         "table": {
@@ -174,11 +175,11 @@
             "mesh": "table",
             "material": "Metal07"
         },
-        "sphere": {
+        "suzanne": {
             "type": "single",
             "position": {
                 "x": -4,
-                "y": 1,
+                "y": -1,
                 "z": -4
             },
             "rotation": {
@@ -191,10 +192,10 @@
                 "y": 1,
                 "z": 1
             },
-            "mesh": "sphere",
+            "mesh": "suzanne",
             "material": "Metal07"
         },
-        "floortiles": {
+        "floor": {
             "type": "single",
             "position": {
                 "x": 0,

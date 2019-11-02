@@ -89,7 +89,7 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     rasterizer.polygonMode = vk::PolygonMode::eFill;
     rasterizer.lineWidth = 1.0F;
     rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-    rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
+    rasterizer.frontFace = vk::FrontFace::eClockwise;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     multisampling.sampleShadingEnable = VK_FALSE;

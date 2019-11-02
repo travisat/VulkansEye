@@ -47,6 +47,7 @@ layout(location = 3) in vec4 sunPosition;
 layout(location = 0) out vec4 outColor;
 
 const float PI = 3.1415926;
+const float InvPI = 0.3183109;
 
 //[0] and [2]
 // convert from srgb color profile to linear color profile
@@ -121,8 +122,35 @@ float ndfGGX(float NdotH, float roughness)
     return alphaSq / (f * f);
 }
 
+vec3 diffuseBDRF(float NdotL, float NdotV, float roughness, float metallic, vec3 baseColor, vec3 diffuseLight)
+{
+    // Diffuse brdf
+    // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
+    // mix in diffuse retro-reflection based on roughness
+    float f90 = 0.5 + 2.0 * NdotL * NdotL * roughness * roughness;
+    vec3 f0 = mix(vec3(1.0), vec3(0.0), metallic);
+    float FL = fresnelSchlick(f0, f90, NdotL).r;
+    float FV = fresnelSchlick(f0, f90, NdotV).r;
+    float Fd = FL * FV;
+
+    return Fd * baseColor * diffuseLight;
+}
+
+vec3 specularBDRF(float NdotL, float NdotV, float NdotH, float VdotH, float roughness, float metallic, vec3 baseColor,
+                  vec3 specularLight)
+{
+    // Specular brdf
+    vec3 f0 = mix(vec3(0.04), baseColor, metallic); // mix color based off metallic
+    float reflectance = max(max(f0.r, f0.g), f0.b);
+    float f90 = clamp(reflectance * 25.0, 0.0, 1.0);
+    vec3 F = fresnelSchlick(f0, f90, VdotH);
+    float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
+    float D = ndfGGX(NdotH, roughness); // microfacet distribution
+    return G * F * D * specularLight;
+}
+
 //[0],[2],[4]
-vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metallic, vec3 diffuseLight,
+vec3 BRDF(vec3 N, vec3 V, vec3 L, float roughness, float metallic, vec3 baseColor, vec3 diffuseLight,
           vec3 specularLight)
 {
     // cos angle between normal and light direction
@@ -138,36 +166,13 @@ vec3 BRDF(vec3 N, vec3 V, vec3 L, vec3 baseColor, float roughness, float metalli
     // cos angle between view direction and half vector
     float VdotH = clamp(dot(V, H), 0.0, 1.0);
 
-    // Diffuse brdf
-    // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
-    // mix in diffuse retro-reflection based on roughness
-    float f90 = 0.5 + 2.0 * NdotL * NdotL * roughness * roughness;
-    vec3 f0 = vec3(1.0f, 1.0f, 1.0f);
-    float FL = fresnelSchlick(f0, f90, NdotL).r;
-    float FV = fresnelSchlick(f0, f90, NdotV).r;
-    float Fd = FL * FV * (1 - metallic);
-
-    // Specular brdf
-    f0 = mix(vec3(0.04), baseColor, metallic); // mix color based off metallic
-    float reflectance = max(max(f0.r, f0.g), f0.b);
-    f90 = clamp(reflectance * 25.0, 0.0, 1.0);
-    vec3 F = fresnelSchlick(f0, f90, VdotH);
-    float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
-    float D = ndfGGX(NdotH, roughness); // microfacet distribution
-
-    vec3 diffuseContrib = (1.0 - F) * Fd * baseColor * diffuseLight;
-    vec3 specularContrib = G * F * D * specularLight;
-    return (diffuseContrib + specularContrib) / PI;
+    vec3 diffuseContrib = diffuseBDRF(NdotL, NdotV, roughness, metallic, baseColor, diffuseLight);
+    vec3 specularContrib = specularBDRF(NdotL, NdotV, NdotH, VdotH, roughness, metallic, baseColor, specularLight);
+    return (diffuseContrib + specularContrib) * InvPI;
 }
 
 //[5]
 // Calculate attenuation
-// output range [0.0 - 1.0]
-// total brightness = 1.0 ie the full color of the light is applied
-// total darkness = 0.0, no light applied
-// light never actually goes to complete darkness, but our eyes are not perfect cameras
-// so complete darkness isn't unnatural looking and its better for computing
-// input
 // lightvector is (inposition - lightposition)
 // lumens are lumens
 // angle is in steradians
@@ -214,20 +219,20 @@ float shadowCalc(vec3 lightVec)
     return 1.0 - shadow;      // sub from 1.0 here instead of later
 }
 
-vec2 sunOffsetDirections[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1), vec2(-1, 1),
-                                  vec2(-1, 0), vec2(-1, -1));
+vec2 sunOffsetDirections[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1),
+                                     vec2(-1, 1), vec2(-1, 0), vec2(-1, -1));
 
-float sunCalc(vec3 lightVec)
+float sunCalc(vec3 lightVec, vec3 normal)
 {
-    float shadow = 0.0; 
-    float bias = 0.005; 
-    int samples = 9;   // number of samples in sunOffsetDirections
+    float shadow = 0.0;
+    float bias = max(0.05 * (1.0 - dot(normal, normalize(lightVec))), 0.005);
+    int samples = 9; // number of samples in sunOffsetDirections
     float currentDepth = length(lightVec);
     float texelSize = 1.0 / uLight.shadowSize;
 
     for (int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(sunMap,  sunPosition.xy + sunOffsetDirections[i] * texelSize).r;
+        float closestDepth = texture(sunMap, sunPosition.xy + sunOffsetDirections[i] * texelSize).r;
         if (currentDepth - bias > closestDepth)
         {
             shadow += 0.6; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
@@ -253,25 +258,20 @@ void main()
     vec3 sunvec = normalize(inPosition - uLight.sunAngle);
     vec3 reflection = reflect(-V, N);
     vec3 diffuseLight = texture(irradianceMap, N).rgb;
-
     vec3 specularLight = textureLod(radianceMap, reflection, lod).rgb;
 
-    // lol
-    vec3 f0 = mix(vec3(0.04), baseColor, metallic);
-    float reflectance = max(max(f0.r, f0.g), f0.b);
-    float f90 = clamp(reflectance * 25.0, 0.0, 1.0);
-    vec3 H = normalize(sunvec + V);
-    float VdotH = clamp(dot(V, H), 0.0, 1.0);
-    vec3 F = fresnelSchlick(f0, f90, VdotH);
-    float NdotL = clamp(dot(N, sunvec), 0.00001, 1.0);
+    /*float NdotL = clamp(dot(N, sunvec), 0.00001, 1.0);
     float NdotV = clamp(abs(dot(N, V)), 0.00001, 1.0);
-    float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
+    vec3 H = normalize(sunvec + V);
     float NdotH = clamp(dot(N, H), 0.0, 1.0);
-    float D = ndfGGX(NdotH, roughness);
-    vec3 specularContrib = G * F * D * specularLight;
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
 
-    vec3 ambient = sunCalc(inPosition - uLight.sunAngle) * (baseColor * diffuseLight + specularContrib);
-    //vec3 ambient = sunCalc(inPosition - uLight.sunAngle) * vec3(1.0);// * baseColor;
+    vec3 specularContrib = specularBDRF(NdotL, NdotV, NdotH, VdotH, roughness, metallic, baseColor, specularLight);
+    */
+    float brightness = 10;
+    vec3 ambient = BRDF(N, V, sunvec, roughness, metallic, baseColor, diffuseLight, specularLight);
+
+    ambient = brightness * sunCalc(inPosition - uLight.sunAngle, N) * ambient;
 
     vec3 luminance = vec3(0.0);
     for (int i = 0; i < numLights; ++i)
@@ -284,7 +284,7 @@ void main()
         float intensity = lumens * getDistanceAttenuation(lightVector, lumens, 4 * PI);
         vec3 L = normalize(lightVector); // vector from surface to light
         luminance +=
-            intensity * shadowCalc(lightVector) * BRDF(N, V, L, baseColor, roughness, metallic, lightcolor, lightcolor);
+            intensity * shadowCalc(lightVector) * BRDF(N, V, L, roughness, metallic, baseColor, lightcolor, lightcolor);
     }
 
     outColor = vec4((ambient)*ambientOcclusion, 1.0);
