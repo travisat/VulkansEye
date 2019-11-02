@@ -214,9 +214,9 @@ void Scene::update(uint32_t currentImage)
     uLight.sunAngle.y = 20.F; // + sin(glm::radians(Timer::time()/10.F * 360.F)) * 20.F;
     uLight.sunAngle.z = -25.F + sin(glm::radians(Timer::time() / 10.F * 360.F)) * 5.F;
 
-    glm::mat4 depthProjectionMatrix = glm::perspective(glm::radians(45.F), 1.F, vulkan->zNear, vulkan->zFar);
+    glm::mat4 depthProjectionMatrix = glm::ortho(-50.F, 50.F, -50.F, 50.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(uLight.sunAngle, glm::vec3(0.F), glm::vec3(0, 1, 0));
-    glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix * glm::mat4(1.F);
+    glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix;
 
     uLight.radianceMipLevels = backdrop.radianceMap.mipLevels;
     for (int32_t i = 0; i < numLights; ++i)
