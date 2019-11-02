@@ -26,7 +26,7 @@ class Timer
     // returns high resolution time in seconds since first call of function
     static auto time() -> float
     {
-        static std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
+        static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     };
