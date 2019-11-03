@@ -20,6 +20,8 @@ Scene::~Scene()
 
 void Scene::create()
 {
+    createBrdf();
+
     createShadow();
     createLights();
     createSun();
@@ -43,11 +45,24 @@ void Scene::create()
     createSunPipeline();
 }
 
+void Scene::createBrdf()
+{
+    brdf.vulkan = vulkan;
+    brdf.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+    brdf.memUsage =  VMA_MEMORY_USAGE_GPU_ONLY;
+    brdf.loadGLI(config->vulkan.brdf);
+
+    brdf.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    brdf.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    brdf.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    brdf.maxAnisotropy = 1.0F;
+    brdf.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    brdf.createSampler();
+}
+
 void Scene::createSun()
 {
     sun.vulkan = vulkan;
-    sun.mipLevels = 1;
-    sun.layers = 1;
     sun.format = vk::Format::eR32Sfloat;
     sun.layout = vk::ImageLayout::eColorAttachmentOptimal;
     sun.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
@@ -102,6 +117,7 @@ void Scene::createBackdrop()
     backdrop.vulkan = vulkan;
     backdrop.player = player;
     backdrop.config = &config->backdrop;
+    backdrop.shadowMap = &shadow;
 
     backdrop.create();
 }
@@ -133,6 +149,7 @@ void Scene::createModels()
         models[index].sun = &sun;
         models[index].irradianceMap = &backdrop.irradianceMap;
         models[index].radianceMap = &backdrop.radianceMap;
+        models[index].brdf = &brdf;
         models[index].create();
         ++index;
     }
@@ -206,10 +223,10 @@ void Scene::update(uint32_t currentImage)
 {
     backdrop.update(currentImage);
 
-    uLight.sunAngle = backdrop.light.light.position;
+    uLight.sun = backdrop.light.light.position;
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
-    glm::mat4 depthViewMatrix = glm::lookAt(uLight.sunAngle, glm::vec3(0.F), glm::vec3(0, 1, 0));
+    glm::mat4 depthViewMatrix = glm::lookAt(uLight.sun, glm::vec3(0.F), glm::vec3(0, 1, 0));
     glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix;
 
     uLight.radianceMipLevels = backdrop.radianceMap.mipLevels;
@@ -224,20 +241,21 @@ void Scene::update(uint32_t currentImage)
     shadowmvp.projection = glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
     // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
     // POSITIVE_X
-    shadowmvp.view[0] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(0.F, 1.F, 0.F));
-    shadowmvp.view[0] = glm::rotate(shadowmvp.view[0], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    shadowmvp.view[0] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(0.F, 1.F, 0.F));
+    shadowmvp.view[0] = glm::rotate(shadowmvp.view[0], glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
     // NEGATIVE_X
-    shadowmvp.view[1] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(0.F, 1.F, 0.F));
-    shadowmvp.view[1] = glm::rotate(shadowmvp.view[1], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    shadowmvp.view[1] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(0.F, 1.F, 0.F));
+    shadowmvp.view[1] = glm::rotate(shadowmvp.view[1], glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
     // POSITIVE_Y
     shadowmvp.view[2] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(1.F, 0.F, 0.F));
     // NEGATIVE_Y
     shadowmvp.view[3] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(1.F, 0.F, 0.F));
     // POSITIVE_Z
-    shadowmvp.view[4] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    shadowmvp.view[4] =  glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
+    
     // NEGATIVE_Z
-    shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
-
+    shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 1.F, 0.F));
+    shadowmvp.view[5] = glm::rotate(shadowmvp.view[5], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
     glm::vec3 lightPos = uLight.light[0].position;
 
     for (auto &model : models)
@@ -261,7 +279,7 @@ void Scene::update(uint32_t currentImage)
         shadowmvp.model = glm::scale(shadowmvp.model, model.scale);
 
         // make model for model in lightspace
-        sunmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-uLight.sunAngle));
+        sunmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-uLight.sun));
         sunmvp.model = glm::translate(sunmvp.model, glm::vec3(model.position));
         sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
         sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
@@ -287,7 +305,7 @@ void Scene::createColorPool()
     poolSizes[0].descriptorCount = models.size() * (2) * numSwapChainImages;
     poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
     // number of models * imagesamplers * swapchainimages
-    poolSizes[1].descriptorCount = models.size() * 9 * numSwapChainImages;
+    poolSizes[1].descriptorCount = models.size() * 10 * numSwapChainImages;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -300,7 +318,7 @@ void Scene::createColorPool()
 
 void Scene::createColorLayouts()
 {
-    std::array<vk::DescriptorSetLayoutBinding, 11> bindings{};
+    std::array<vk::DescriptorSetLayoutBinding, 12> bindings{};
 
     // UniformBuffer
     bindings[0].binding = 0;
@@ -378,6 +396,13 @@ void Scene::createColorLayouts()
     bindings[10].descriptorType = vk::DescriptorType::eCombinedImageSampler;
     bindings[10].pImmutableSamplers = nullptr;
     bindings[10].stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+    //brdf pregenned texture
+    bindings[11].descriptorCount = 1;
+    bindings[11].binding = 11;
+    bindings[11].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    bindings[11].pImmutableSamplers = nullptr;
+    bindings[11].stageFlags = vk::ShaderStageFlagBits::eFragment;    
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());

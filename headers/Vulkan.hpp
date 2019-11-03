@@ -47,7 +47,7 @@ struct uLight
 
 struct UniformLight
 {
-    alignas(16) glm::vec3 sunAngle = glm::vec3(-20.F, 20.F, -40.F);
+    alignas(16) glm::vec3 sun = glm::vec3(-20.F, 20.F, -40.F);
     float radianceMipLevels = 0.F;
     float exposure = 2.2F;
     float gamma = 4.5F;

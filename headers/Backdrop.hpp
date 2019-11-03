@@ -18,6 +18,8 @@ class Backdrop
     Player *player = nullptr;
     BackropConfig *config = nullptr;
 
+    Image *shadowMap;
+
     Image colorMap{};
     Image radianceMap{};
     Image irradianceMap{};

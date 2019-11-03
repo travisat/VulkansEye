@@ -60,6 +60,12 @@
             "roughness": "resources/materials/Concrete19/Concrete19_rgh.jpg",
             "displacement": "resources/materials/Concrete19/Concrete19_disp.jpg"
         },
+        "Concrete23": {
+            "diffuse": "resources/materials/Concrete23/Concrete23_col.jpg",
+            "normal": "resources/materials/Concrete23/Concrete23_nrm.jpg",
+            "roughness": "resources/materials/Concrete23/Concrete23_rgh.jpg",
+            "displacement": "resources/materials/Concrete23/Concrete23_disp.jpg"
+        },
         "Fabric01": {
             "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
             "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",
@@ -86,6 +92,13 @@
             "metallic": "resources/materials/Metal11/Metal11_met.jpg",
             "roughness": "resources/materials/Metal11/Metal11_rgh.jpg",
             "displacement": "resources/materials/Metal11/Metal11_disp.jpg"
+        },
+        "Metal12": {
+            "diffuse": "resources/materials/Metal12/Metal12_col.jpg",
+            "normal": "resources/materials/Metal12/Metal12_nrm.jpg",
+            "metallic": "resources/materials/Metal12/Metal12_met.jpg",
+            "roughness": "resources/materials/Metal12/Metal12_rgh.jpg",
+            "displacement": "resources/materials/Metal12/Metal12_disp.jpg"
         },
         "Metal28": {
             "diffuse": "resources/materials/Metal28/Metal28_col.jpg",
@@ -145,6 +158,22 @@
             "normal": "resources/materials/Plaster02/Plaster02_nrm.jpg",
             "roughness": "resources/materials/Plaster02/Plaster02_rgh.jpg",
             "displacement": "resources/materials/Plaster02/Plaster02_disp.jpg"
+        },
+        "Planks19": {
+            "diffuse": "resources/materials/Planks19/Planks19_col.jpg",
+            "normal": "resources/materials/Planks19/Planks19_nrm.jpg",
+            "roughness": "resources/materials/Planks19/Planks19_rgh.jpg",
+            "metallic": "resources/materials/Planks19/Planks19_met.jpg",
+            "ao": "resources/materials/Planks19/Planks19_AO.jpg",
+            "displacement": "resources/materials/Planks19/Planks19_disp.jpg"
+        },
+        "Planks13": {
+            "diffuse": "resources/materials/Planks13/Planks13_col.jpg",
+            "normal": "resources/materials/Planks13/Planks13_nrm.jpg",
+            "roughness": "resources/materials/Planks13/Planks13_rgh.jpg",
+            "metallic": "resources/materials/Planks13/Planks13_met.jpg",
+            "ao": "resources/materials/Planks13/Planks13_AO.jpg",
+            "displacement": "resources/materials/Planks13/Planks13_disp.jpg"
         }
     },
     "meshes": {
@@ -173,14 +202,14 @@
                 "z": 1
             },
             "mesh": "table",
-            "material": "Metal07"
+            "material": "Concrete23"
         },
-        "suzanne": {
+        "sphere": {
             "type": "single",
             "position": {
-                "x": -4,
+                "x": 2,
                 "y": -1,
-                "z": -4
+                "z": -3
             },
             "rotation": {
                 "x": 0,
@@ -192,8 +221,28 @@
                 "y": 1,
                 "z": 1
             },
+            "mesh": "sphere",
+            "material": "Metal12"
+        },
+        "suzanne": {
+            "type": "single",
+            "position": {
+                "x": -4,
+                "y": -1,
+                "z": -4
+            },
+            "rotation": {
+                "x": 45,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
             "mesh": "suzanne",
-            "material": "Metal07"
+            "material": "Metal12"
         },
         "floor": {
             "type": "single",
@@ -213,7 +262,7 @@
                 "z": 1
             },
             "mesh": "floor",
-            "material": "Plaster02"
+            "material": "Planks19"
         }
     }
 }

@@ -27,6 +27,7 @@ struct VulkanConfig
     int windowHeight = 768;
     bool sync = true;
     float shadowSize = 1024.F;
+    std::string brdf = "resources/brdf.dds";
 };
 
 struct PlayerConfig

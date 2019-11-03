@@ -135,7 +135,7 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     commandBuffer.setLineWidth(1.0F);
 
     std::array<vk::ClearValue, 2> clearValues = {};
-    clearValues[0].color = std::array<float, 4>{0.F, 0.F, 0.F, 1.F};
+    clearValues[0].color = std::array<float, 4>{1.F, 1.F, 1.F, 1.F};
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo shadowPassInfo = {};

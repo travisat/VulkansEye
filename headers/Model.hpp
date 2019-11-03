@@ -41,6 +41,7 @@ class Model
 
     Image *irradianceMap;
     Image *radianceMap;
+    Image *brdf;
 
     // shadow pipeline
     std::vector<vk::DescriptorSet> shadowSets;

@@ -85,7 +85,12 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         sunInfo.imageView = sun->imageView;
         sunInfo.sampler = sun->sampler;
 
-        std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
+        vk::DescriptorImageInfo brdfInfo = {};
+        brdfInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        brdfInfo.imageView = brdf->imageView;
+        brdfInfo.sampler = brdf->sampler;
+
+        std::array<vk::WriteDescriptorSet, 12> descriptorWrites = {};
 
         // vertex
         descriptorWrites[0].dstSet = colorSets[i];
@@ -174,6 +179,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[10].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[10].descriptorCount = 1;
         descriptorWrites[10].pImageInfo = &sunInfo;
+
+        // pregenned brdf sampler
+        descriptorWrites[11].dstSet = colorSets[i];
+        descriptorWrites[11].dstBinding = 11;
+        descriptorWrites[11].dstArrayElement = 0;
+        descriptorWrites[11].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites[11].descriptorCount = 1;
+        descriptorWrites[11].pImageInfo = &brdfInfo;
 
         vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                             nullptr);

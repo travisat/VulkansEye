@@ -45,8 +45,6 @@ void Backdrop::recreate()
 void Backdrop::loadCubeMap(Image &cubeMap,const std::string& path)
 {
     cubeMap.vulkan = vulkan;
-    cubeMap.tiling = vk::ImageTiling::eOptimal;
-    cubeMap.numSamples = vk::SampleCountFlagBits::e1;
     cubeMap.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap.flags = vk::ImageCreateFlagBits::eCubeCompatible;

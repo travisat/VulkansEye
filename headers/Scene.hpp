@@ -31,6 +31,7 @@ class Scene
 
     Image shadow;
     Image sun;
+    Image brdf;
 
     ~Scene();
 
@@ -66,6 +67,7 @@ class Scene
     Pipeline shadowPipeline;
     Pipeline sunPipeline;
 
+    void createBrdf();
     void createSun();
     void createShadow();
     void createLights();
