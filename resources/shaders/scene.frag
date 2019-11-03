@@ -82,118 +82,6 @@ vec3 getNormal(vec3 position, vec3 normal)
     return normalize(TBN * tangentNormal);
 }
 
-//{
-    /*
-    //[5]
-    // Calculate attenuation
-    float getDistanceAttenuation(vec3 lightVector, float lumens)
-    {
-        float distanceSquared = dot(lightVector, lightVector);
-        // this puts light into inverted range
-        float inverseLight = distanceSquared * 4.0 * PI / lumens;
-        // square smooth and subtract from 1 to get correct range
-        float smoothLight = clamp(1.0 - inverseLight * inverseLight, 0.0, 1.0);
-        smoothLight = smoothLight * smoothLight;
-        // apply inverse square law to smoothed light to get attenuation
-        return 10 * smoothLight / (distanceSquared);
-    }
-
-    //[6] directions to sample in
-    vec3 shadowOffsetDirections[20] = vec3[](
-        vec3(1, 1, 1), vec3(1, 1, 0), vec3(1, 1, -1), vec3(1, 0, 1), vec3(1, 0, -1), vec3(1, -1, 1), vec3(1, -1, 0),
-        vec3(1, -1, -1), vec3(0, 1, 1), vec3(0, 1, -1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(-1, 1, 1), vec3(-1, 1, 0),
-        vec3(-1, 1, -1), vec3(-1, 0, 1), vec3(-1, 0, -1), vec3(-1, -1, 1), vec3(-1, -1, 0), vec3(-1, -1, -1));
-
-    //[6]
-    float shadowCalc(vec3 lightVec)
-    {
-        if (texture(shadowMap , lightVec).r <= 0)
-            return 1.0;
-        float shadow = 0.0; // initialize shadow to 0
-        float bias = 0.15;  //
-        int samples = 20;   // number of samples in shadowOffsetDirections
-        float viewDistance = length(inPosition);
-        float currentDepth = length(lightVec);
-        // set radius to sample in based off distance from viewer
-        // make shadows closer sharper
-        float diskRadius = (1.0 + (viewDistance / 1024.0)) / 50.0;
-        for (int i = 0; i < samples; ++i)
-        {
-            float closestDepth = texture(shadowMap, lightVec + shadowOffsetDirections[i] * diskRadius).r;
-            if (currentDepth - bias > closestDepth)
-            {
-                shadow += 0.8; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
-            }
-        }
-        shadow /= float(samples); // average all the samples to create shadow intensity
-        return 1.0 - shadow;
-    }
-
-    //[0],[2]
-    // This calculates the specular geometric attenuation (aka G()),
-    // where rougher material will reflect less light back to the viewer.
-    float SmithGGXCorrelated(float NdotL, float NdotV, float roughness)
-    {
-        //  Original  formulation  of  G_SmithGGX  Correlated
-        //  lambda_v                = (-1 + sqrt(alphaG2 * (1 - NdotL2) / NdotL2 + 1))
-        //  * 0.5f; lambda_l                = (-1 + sqrt(alphaG2 * (1 - NdotV2) /
-        //  NdotV2 + 1)) * 0.5f; G_SmithGGXCorrelated = 1 / (1 + lambda_v + lambda_l);
-        //  V_SmithGGXCorrelated = G_SmithGGXCorrelated / (4.0f * NdotL * NdotV);
-        float alpha = roughness * roughness;
-        float alphaSq = alpha * alpha;
-        //  Caution: the "NdotL  *" and "NdotV  *" are  explicitely  inversed , this
-        //  is not a mistake.
-        float Lambda_GGXV = NdotL * sqrt((-NdotV * alphaSq + NdotV) * NdotV + alphaSq);
-        float Lambda_GGXL = NdotV * sqrt((-NdotL * alphaSq + NdotL) * NdotL + alphaSq);
-
-        return 0.5f / (Lambda_GGXV + Lambda_GGXL);
-    }
-
-    //[0]
-    // The following equation(s) model the distribution of microfacet normals across
-    // the area being drawn (aka D()) Implementation from "Average Irregularity
-    // Representation of a Roughened Surface for Ray Reflection" by T. S.
-    // Trowbridge, and K. P. Reitz Follows the distribution function recommended in
-    // the SIGGRAPH 2013 course notes from EPIC Games [1], Equation 3.
-    float ndfGGX(float NdotH, float roughness)
-    {
-        float alpha = roughness * roughness;
-        float alphaSq = alpha * alpha;
-        float f = (NdotH * alphaSq - NdotH) * NdotH + 1.0;
-        return alphaSq / (f * f);
-    }
-
-    //[0],[2],[4]
-    vec3 lightBRDF(vec3 N, vec3 V, vec3 L, float roughness, float metallic, vec3 diffuse, vec3 light)
-    {
-        // cos angle between normal and light direction
-        float NdotL = clamp(dot(N, L), 0.00001, 1.0);
-        // cos angle between nornal and view direction
-        float NdotV = clamp(abs(dot(N, V)), 0.00001, 1.0);
-        // half vector
-        vec3 H = normalize(L + V);
-        // cos angle between normal and half vector
-        float NdotH = clamp(dot(N, H), 0.00001, 1.0);
-
-        // Diffuse brdf
-        vec3 diffuseContrib = diffuse * (1.0 - metallic);
-
-        vec3 specularContrib = vec3(0.0);
-        if (NdotL > 0.0)
-        {
-            // Specular brdf
-            vec3 f0 = mix(vec3(0.04), diffuse, metallic); // mix color based off metallic
-            vec3 F = f0 + (1.0 - f0) * pow(1.0 - NdotV, 5.0);
-            float G = SmithGGXCorrelated(NdotL, NdotV, roughness);
-            float D = ndfGGX(NdotH, roughness);  // microfacet distribution
-            specularContrib = G * F * D * light;
-        }
-
-        return (diffuseContrib + specularContrib) * InvPI;
-    }
-    */
-//}
-
 vec2 sunOffsetDirections[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1),
                                      vec2(-1, 1), vec2(-1, 0), vec2(-1, -1));
 
@@ -261,20 +149,6 @@ void main()
 
     vec3 sunVec = inPosition - uLight.sun;
     vec3 ambient = sunCalc(sunVec, N) * iblBRDF(N, V, baseColor, roughness, metallic);
-
-    /*vec3 luminance = vec3(0.0);
-        for (int i = 0; i < numLights; ++i)
-        {
-        vec3 lightPos = uLight.light[i].position;
-        vec3 lightcolor = uLight.light[i].color;
-        float lumens = uLight.light[i].lumens;
-
-        vec3 lightVector = inPosition - lightPos;
-        float intensity = getDistanceAttenuation(lightVector, lumens);
-        vec3 L = normalize(lightVector); // vector from surface to light
-        luminance += shadowCalc(lightVector) * intensity *  lightBRDF(N, V, L, roughness, metallic, baseColor,
-        lightcolor);
-    }*/
 
     outColor = vec4(ambient * ambientOcclusion, 1.0);
 }
