@@ -34,7 +34,6 @@ class Scene
 
     SceneConfig config{};
     Image shadow;
-    Image sun;
     Image brdf;
 
     ~Scene();
@@ -44,33 +43,27 @@ class Scene
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
-    void drawSun(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);
 
   private:
-    VkDescriptorPool colorPool;
-    VkDescriptorSetLayout colorLayout;
-    VkDescriptorPool shadowPool;
-    VkDescriptorSetLayout shadowLayout;
-    VkDescriptorPool sunPool;
-    VkDescriptorSetLayout sunLayout;
+    vk::DescriptorPool colorPool;
+    vk::DescriptorSetLayout colorLayout;
+    vk::DescriptorPool shadowPool;
+    vk::DescriptorSetLayout shadowLayout;
 
     Backdrop* backdrop;
 
-    UniformBuffer vertex{};
-    UniformLight uLight{};
-    UniformShadow shadowmvp{};
-    UniformSun sunmvp{};
+    UniformVertex vertexBuffer{};
+    UniformLights lightsBuffer{};
+    UniformShadow shadowBuffer{};
 
     Pipeline colorPipeline;
     std::vector<Model> models;
     std::vector<Light> lights;
 
     Pipeline shadowPipeline;
-    Pipeline sunPipeline;
 
     void createBrdf();
-    void createSun();
     void createShadow();
     void createModels();
 
@@ -85,11 +78,6 @@ class Scene
     void createShadowLayouts();
     void createShadowPipeline();
     void createShadowSets();
-
-    void createSunPool();
-    void createSunLayouts();
-    void createSunPipeline();
-    void createSunSets();
 };
 
 } // namespace tat

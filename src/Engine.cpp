@@ -47,7 +47,6 @@ void Engine::init()
     createAllocator();
 
     createSwapChain();
-    vulkan->sunPass = createShadowPass(vulkan);
     vulkan->shadowPass = createShadowPass(vulkan);
     vulkan->colorPass = createColorPass(vulkan);
     createCommandPool();
@@ -55,7 +54,6 @@ void Engine::init()
     scene->create();
     overlay->create();
 
-    createSunFramebuffers();
     createShadowFramebuffers();
     createColorFramebuffers();
     createSyncObjects();
@@ -80,7 +78,7 @@ Engine::~Engine()
     }
 }
 
-void Engine::renderSun(vk::CommandBuffer commandBuffer, int32_t currentImage)
+void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
 {
     vk::Viewport viewport{};
     viewport.width = vulkan->shadowSize;
@@ -103,51 +101,15 @@ void Engine::renderSun(vk::CommandBuffer commandBuffer, int32_t currentImage)
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo sunPassInfo = {};
-    sunPassInfo.renderPass = vulkan->sunPass;
+    sunPassInfo.renderPass = vulkan->shadowPass;
     sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     sunPassInfo.renderArea.extent.width = vulkan->shadowSize;
     sunPassInfo.renderArea.extent.height = vulkan->shadowSize;
     sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     sunPassInfo.pClearValues = clearValues.data();
-    sunPassInfo.framebuffer = sunFbs[currentImage].framebuffer;
+    sunPassInfo.framebuffer = shadowFbs[currentImage].framebuffer;
 
     commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
-    scene->drawSun(commandBuffer, currentImage);
-    commandBuffer.endRenderPass();
-}
-
-void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
-{
-    vk::Viewport viewport{};
-    viewport.width = vulkan->shadowSize;
-    viewport.height = vulkan->shadowSize;
-    viewport.minDepth = 0.0F;
-    viewport.maxDepth = 1.0F;
-    commandBuffer.setViewport(0, 1, &viewport);
-
-    vk::Rect2D scissor{};
-    scissor.extent.width = vulkan->shadowSize;
-    scissor.extent.height = vulkan->shadowSize;
-    scissor.offset.x = 0;
-    scissor.offset.y = 0;
-    commandBuffer.setScissor(0, 1, &scissor);
-
-    commandBuffer.setLineWidth(1.0F);
-
-    std::array<vk::ClearValue, 2> clearValues = {};
-    clearValues[0].color = std::array<float, 4>{1.F, 1.F, 1.F, 1.F};
-    clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
-
-    vk::RenderPassBeginInfo shadowPassInfo = {};
-    shadowPassInfo.renderPass = vulkan->shadowPass;
-    shadowPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    shadowPassInfo.renderArea.extent.width = vulkan->shadowSize;
-    shadowPassInfo.renderArea.extent.height = vulkan->shadowSize;
-    shadowPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    shadowPassInfo.pClearValues = clearValues.data();
-    shadowPassInfo.framebuffer = shadowFbs[currentImage].framebuffer;
-
-    commandBuffer.beginRenderPass(shadowPassInfo, vk::SubpassContents::eInline);
     scene->drawShadow(commandBuffer, currentImage);
     commandBuffer.endRenderPass();
 }
@@ -208,10 +170,8 @@ void Engine::createCommandBuffers()
         vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
 
-        renderSun(commandBuffer, i);
-
         // draw shadows
-        //renderShadows(commandBuffer, i);
+        renderShadows(commandBuffer, i);
 
         // draw colors
         renderColors(commandBuffer, i);
@@ -528,9 +488,9 @@ void Engine::createLogicalDevice()
     vk::PhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
-    //deviceFeatures.tessellationShader = VK_TRUE;
+    // deviceFeatures.tessellationShader = VK_TRUE;
     deviceFeatures.geometryShader = VK_TRUE;
-    //deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
+    // deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
 
     vk::DeviceCreateInfo createInfo{};
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -642,41 +602,14 @@ void Engine::createSwapChain()
     }
 }
 
-void Engine::createSunFramebuffers()
-{
-    sunDepth.vulkan = vulkan;
-    sunDepth.layers = 1;
-    sunDepth.format = vulkan->findDepthFormat();
-    sunDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    sunDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    sunDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    sunDepth.aspect = vk::ImageAspectFlagBits::eDepth;
-    sunDepth.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
-
-    sunFbs.resize(vulkan->swapChainImageViews.size());
-    for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
-    {
-        sunFbs[i].vulkan = vulkan;
-        sunFbs[i].renderPass = vulkan->sunPass;
-        sunFbs[i].width = vulkan->shadowSize;
-        sunFbs[i].height = vulkan->shadowSize;
-        sunFbs[i].layers = 1;
-        sunFbs[i].attachments = {scene->sun.imageView, sunDepth.imageView};
-        sunFbs[i].create();
-    }
-}
-
 void Engine::createShadowFramebuffers()
 {
     shadowDepth.vulkan = vulkan;
-    shadowDepth.layers = 6;
     shadowDepth.format = vulkan->findDepthFormat();
     shadowDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     shadowDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     shadowDepth.aspect = vk::ImageAspectFlagBits::eDepth;
-    shadowDepth.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    shadowDepth.viewType = vk::ImageViewType::eCube;
     shadowDepth.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
 
     shadowFbs.resize(vulkan->swapChainImageViews.size());
@@ -686,7 +619,6 @@ void Engine::createShadowFramebuffers()
         shadowFbs[i].renderPass = vulkan->shadowPass;
         shadowFbs[i].width = vulkan->shadowSize;
         shadowFbs[i].height = vulkan->shadowSize;
-        shadowFbs[i].layers = 6;
         shadowFbs[i].attachments = {scene->shadow.imageView, shadowDepth.imageView};
         shadowFbs[i].create();
     }

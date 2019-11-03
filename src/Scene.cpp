@@ -10,19 +10,28 @@ namespace tat
 
 Scene::~Scene()
 {
-    vulkan->device.destroyDescriptorSetLayout(sunLayout);
-    vulkan->device.destroyDescriptorSetLayout(shadowLayout);
-    vulkan->device.destroyDescriptorSetLayout(colorLayout);
-    vulkan->device.destroyDescriptorPool(colorPool);
-    vulkan->device.destroyDescriptorPool(shadowPool);
-    vulkan->device.destroyDescriptorPool(sunPool);
+    if (shadowLayout)
+    {
+        vulkan->device.destroyDescriptorSetLayout(shadowLayout);
+    }
+    if (colorLayout)
+    {
+        vulkan->device.destroyDescriptorSetLayout(colorLayout);
+    }
+    if (colorPool)
+    {
+        vulkan->device.destroyDescriptorPool(colorPool);
+    }
+    if (shadowPool)
+    {
+        vulkan->device.destroyDescriptorPool(shadowPool);
+    }
 }
 
 void Scene::create()
 {
     createBrdf();
     createShadow();
-    createSun();
 
     loadBackdrop();
     createModels();
@@ -35,17 +44,13 @@ void Scene::create()
     createShadowLayouts();
     createShadowSets();
     createShadowPipeline();
-    createSunPool();
-    createSunLayouts();
-    createSunSets();
-    createSunPipeline();
 }
 
 void Scene::createBrdf()
 {
     brdf.vulkan = vulkan;
     brdf.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    brdf.memUsage =  VMA_MEMORY_USAGE_GPU_ONLY;
+    brdf.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     brdf.loadGLI(vulkan->brdfPath);
 
     brdf.addressModeU = vk::SamplerAddressMode::eClampToEdge;
@@ -56,42 +61,20 @@ void Scene::createBrdf()
     brdf.createSampler();
 }
 
-void Scene::createSun()
-{
-    sun.vulkan = vulkan;
-    sun.format = vk::Format::eR32Sfloat;
-    sun.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    sun.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
-    sun.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    sun.aspect = vk::ImageAspectFlagBits::eColor;
-    sun.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
-
-    sun.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    sun.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    sun.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    sun.maxAnisotropy = 1.F;
-    sun.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    sun.createSampler();
-}
-
 void Scene::createShadow()
 {
     shadow.vulkan = vulkan;
-    shadow.mipLevels = 1;
-    shadow.layers = 6;
     shadow.format = vk::Format::eR32Sfloat;
     shadow.layout = vk::ImageLayout::eColorAttachmentOptimal;
     shadow.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadow.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    shadow.viewType = vk::ImageViewType::eCube;
     shadow.aspect = vk::ImageAspectFlagBits::eColor;
     shadow.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
 
     shadow.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     shadow.addressModeV = vk::SamplerAddressMode::eClampToEdge;
     shadow.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    shadow.maxAnisotropy = 1.0F;
+    shadow.maxAnisotropy = 1.F;
     shadow.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     shadow.createSampler();
 }
@@ -99,7 +82,6 @@ void Scene::createShadow()
 void Scene::loadBackdrop()
 {
     backdrop = backdrops->getBackdrop(config.backdrop);
-    backdrop->shadowMap = &shadow;
 }
 
 void Scene::createModels()
@@ -113,7 +95,6 @@ void Scene::createModels()
         models[index].materials = materials;
         models[index].meshes = meshes;
         models[index].shadow = &shadow;
-        models[index].sun = &sun;
         models[index].irradianceMap = &backdrop->irradianceMap;
         models[index].radianceMap = &backdrop->radianceMap;
         models[index].brdf = &brdf;
@@ -171,60 +152,22 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     }
 }
 
-void Scene::drawSun(vk::CommandBuffer commandBuffer, uint32_t currentImage)
-{
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, sunPipeline.pipeline);
-
-    std::array<VkDeviceSize, 1> offsets = {0};
-    for (auto &model : models)
-    {
-        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
-        commandBuffer.bindIndexBuffer(model.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, sunPipeline.pipelineLayout, 0, 1,
-                                         &model.sunSets[currentImage], 0, nullptr);
-        commandBuffer.drawIndexed(model.mesh->indexSize, 1, 0, 0, 0);
-    }
-}
-
 void Scene::update(uint32_t currentImage)
 {
     backdrop->update(currentImage);
 
-    uLight.sun = backdrop->light.light.position;
+    lightsBuffer.light.position = backdrop->light.light.position;
+    lightsBuffer.light.rotation = backdrop->light.light.rotation;
+    lightsBuffer.light.color = backdrop->light.light.color;
+    lightsBuffer.light.lumens = backdrop->light.light.lumens;
+    lightsBuffer.light.steradians = backdrop->light.light.steradians;
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
-    glm::mat4 depthViewMatrix = glm::lookAt(uLight.sun, glm::vec3(0.F), glm::vec3(0, 1, 0));
-    glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix;
+    glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(lightsBuffer.light.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
+    glm::mat4 lightVP = depthProjectionMatrix * depthViewMatrix;
 
-    uLight.radianceMipLevels = backdrop->radianceMap.mipLevels;
-    uLight.shadowSize = vulkan->shadowSize;
-
-    /*for (int32_t i = 0; i < numLights; ++i)
-    {
-        uLight.light[i].position = lights[i].light.position;
-        uLight.light[i].color = lights[i].light.color;
-        uLight.light[i].lumens = lights[i].light.lumens;
-    }
-
-    shadowmvp.projection = glm::perspective(glm::radians(90.F), 1.F, vulkan->zNear, vulkan->zFar);
-    // https://github.com/SaschaWillems/Vulkan/blob/master/examples/shadowmappingomni/shadowmappingomni.cpp
-    // POSITIVE_X
-    shadowmvp.view[0] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(0.F, 1.F, 0.F));
-    shadowmvp.view[0] = glm::rotate(shadowmvp.view[0], glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
-    // NEGATIVE_X
-    shadowmvp.view[1] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(0.F, 1.F, 0.F));
-    shadowmvp.view[1] = glm::rotate(shadowmvp.view[1], glm::radians(180.F), glm::vec3(0.F, 0.F, 1.F));
-    // POSITIVE_Y
-    shadowmvp.view[2] = glm::rotate(glm::mat4(1.F), glm::radians(-90.F), glm::vec3(1.F, 0.F, 0.F));
-    // NEGATIVE_Y
-    shadowmvp.view[3] = glm::rotate(glm::mat4(1.F), glm::radians(90.F), glm::vec3(1.F, 0.F, 0.F));
-    // POSITIVE_Z
-    shadowmvp.view[4] =  glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
-    
-    // NEGATIVE_Z
-    shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 1.F, 0.F));
-    shadowmvp.view[5] = glm::rotate(shadowmvp.view[5], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
-    glm::vec3 lightPos = uLight.light[0].position;*/
+    lightsBuffer.radianceMipLevels = backdrop->radianceMap.mipLevels;
+    lightsBuffer.shadowSize = vulkan->shadowSize;
 
     for (auto &model : models)
     {
@@ -236,31 +179,21 @@ void Scene::update(uint32_t currentImage)
         m = glm::scale(m, model.scale);
 
         // createmvp
-        vertex.mvp = player->perspective * player->view * m;
-
-        /*// make model for model in lightspace
-        shadowmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-lightPos));
-        shadowmvp.model = glm::translate(shadowmvp.model, glm::vec3(model.position));
-        shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        shadowmvp.model = glm::scale(shadowmvp.model, model.scale);
-        */
+        vertexBuffer.modelMVP = player->perspective * player->view * m;
 
         // make model for model in lightspace
-        sunmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-uLight.sun));
-        sunmvp.model = glm::translate(sunmvp.model, glm::vec3(model.position));
-        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        sunmvp.model = glm::rotate(sunmvp.model, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        sunmvp.model = glm::scale(sunmvp.model, model.scale);
-        sunmvp.vp = sunVP;
-        vertex.sunMVP = sunVP * m;
+        shadowBuffer.m = glm::translate(glm::mat4(1.F), glm::vec3(-lightsBuffer.light.position));
+        shadowBuffer.m = glm::translate(shadowBuffer.m, glm::vec3(model.position));
+        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
+        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
+        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
+        shadowBuffer.m = glm::scale(shadowBuffer.m, model.scale);
+        shadowBuffer.vp = lightVP;
+        vertexBuffer.lightMVP = lightVP * m;
 
-        model.vertexBuffers[currentImage].update(&vertex, sizeof(vertex));
-        model.uniformLights[currentImage].update(&uLight, sizeof(uLight));
-        model.shadowBuffers[currentImage].update(&shadowmvp, sizeof(shadowmvp));
-        model.sunBuffers[currentImage].update(&sunmvp, sizeof(sunmvp));
+        model.vertexBuffers[currentImage].update(&vertexBuffer, sizeof(vertexBuffer));
+        model.lightsBuffers[currentImage].update(&lightsBuffer, sizeof(lightsBuffer));
+        model.shadowBuffers[currentImage].update(&shadowBuffer, sizeof(shadowBuffer));
     }
 }
 
@@ -274,7 +207,7 @@ void Scene::createColorPool()
     poolSizes[0].descriptorCount = models.size() * (2) * numSwapChainImages;
     poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
     // number of models * imagesamplers * swapchainimages
-    poolSizes[1].descriptorCount = models.size() * 10 * numSwapChainImages;
+    poolSizes[1].descriptorCount = models.size() * 9 * numSwapChainImages;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -287,7 +220,7 @@ void Scene::createColorPool()
 
 void Scene::createColorLayouts()
 {
-    std::array<vk::DescriptorSetLayoutBinding, 12> bindings{};
+    std::array<vk::DescriptorSetLayoutBinding, 11> bindings{};
 
     // UniformBuffer
     bindings[0].binding = 0;
@@ -359,19 +292,12 @@ void Scene::createColorLayouts()
     bindings[9].pImmutableSamplers = nullptr;
     bindings[9].stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    // sun
+    // brdf pregenned texture
     bindings[10].descriptorCount = 1;
     bindings[10].binding = 10;
     bindings[10].descriptorType = vk::DescriptorType::eCombinedImageSampler;
     bindings[10].pImmutableSamplers = nullptr;
     bindings[10].stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-    //brdf pregenned texture
-    bindings[11].descriptorCount = 1;
-    bindings[11].binding = 11;
-    bindings[11].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    bindings[11].pImmutableSamplers = nullptr;
-    bindings[11].stageFlags = vk::ShaderStageFlagBits::eFragment;    
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -420,7 +346,7 @@ void Scene::createShadowPool()
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
-    // number of models * shadow buffers * swapchainimages
+    // number of models * uniformBuffers * swapchainimages
     poolSizes[0].descriptorCount = models.size() * 1 * numSwapChainImages;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
@@ -439,7 +365,7 @@ void Scene::createShadowLayouts()
     shadowLayoutBinding.descriptorCount = 1;
     shadowLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
     shadowLayoutBinding.pImmutableSamplers = nullptr;
-    shadowLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eGeometry;
+    shadowLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
 
     std::array<vk::DescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
 
@@ -465,15 +391,12 @@ void Scene::createShadowPipeline()
     shadowPipeline.loadDefaults(vulkan->shadowPass);
 
     auto vertShaderCode = readFile("resources/shaders/shadow.vert.spv");
-    auto geomShaderCode = readFile("resources/shaders/shadow.geom.spv");
     auto fragShaderCode = readFile("resources/shaders/shadow.frag.spv");
 
     shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    shadowPipeline.geomShaderStageInfo.module = vulkan->createShaderModule(geomShaderCode);
     shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
-    shadowPipeline.shaderStages = {shadowPipeline.vertShaderStageInfo, shadowPipeline.geomShaderStageInfo,
-                                   shadowPipeline.fragShaderStageInfo};
+    shadowPipeline.shaderStages = {shadowPipeline.vertShaderStageInfo, shadowPipeline.fragShaderStageInfo};
 
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescrption = Vertex::getAttributeDescriptions();
@@ -485,76 +408,6 @@ void Scene::createShadowPipeline()
     shadowPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
     shadowPipeline.create();
-}
-
-void Scene::createSunPool()
-{
-    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
-
-    std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
-    poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
-    // number of models * uniformBuffers * swapchainimages
-    poolSizes[0].descriptorCount = models.size() * 1 * numSwapChainImages;
-
-    vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    // number of models * swapchainimages
-    poolInfo.maxSets = models.size() * numSwapChainImages;
-
-    sunPool = vulkan->device.createDescriptorPool(poolInfo);
-}
-
-void Scene::createSunLayouts()
-{
-    vk::DescriptorSetLayoutBinding sunLayoutBinding = {};
-    sunLayoutBinding.binding = 0;
-    sunLayoutBinding.descriptorCount = 1;
-    sunLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-    sunLayoutBinding.pImmutableSamplers = nullptr;
-    sunLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
-
-    std::array<vk::DescriptorSetLayoutBinding, 1> layouts = {sunLayoutBinding};
-
-    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
-    layoutInfo.pBindings = layouts.data();
-
-    sunLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
-}
-
-void Scene::createSunSets()
-{
-    for (auto &model : models)
-    {
-        model.createSunSets(sunPool, sunLayout);
-    }
-}
-
-void Scene::createSunPipeline()
-{
-    sunPipeline.vulkan = vulkan;
-    sunPipeline.descriptorSetLayout = sunLayout;
-    sunPipeline.loadDefaults(vulkan->sunPass);
-
-    auto vertShaderCode = readFile("resources/shaders/sun.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/sun.frag.spv");
-
-    sunPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    sunPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
-
-    sunPipeline.shaderStages = {sunPipeline.vertShaderStageInfo, sunPipeline.fragShaderStageInfo};
-
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescrption = Vertex::getAttributeDescriptions();
-    sunPipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
-    sunPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    sunPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
-    sunPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
-
-    sunPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-
-    sunPipeline.create();
 }
 
 } // namespace tat

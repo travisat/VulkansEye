@@ -75,17 +75,16 @@ void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Backdrop::createUniformBuffers()
 {
-    uniformBuffers.resize(vulkan->swapChainImages.size());
-    for (auto &buffer : uniformBuffers)
+    vertexBuffers.resize(vulkan->swapChainImages.size());
+    for (auto &buffer : vertexBuffers)
     {
         buffer.vulkan = vulkan;
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        buffer.resize(sizeof(UniformBuffer));
+        buffer.resize(sizeof(UniformVertex));
 
-        UniformBuffer uBuffer{};
-        memcpy(buffer.mapped, &uBuffer, sizeof(uBuffer));
+        memcpy(buffer.mapped, &vertexBuffer, sizeof(vertexBuffer));
     }
 }
 
@@ -96,8 +95,8 @@ void Backdrop::update(uint32_t currentImage)
     // by unprojecting the mvp (ie applying the inverse backwards)
     glm::mat4 inverseProjection = inverse(player->perspective);
     glm::mat4 inverseModelView = transpose(player->view);
-    uBuffer.mvp = inverseModelView * inverseProjection;
-    memcpy(uniformBuffers[currentImage].mapped, &uBuffer, sizeof(uBuffer));
+    vertexBuffer.modelMVP = inverseModelView * inverseProjection;
+    memcpy(vertexBuffers[currentImage].mapped, &vertexBuffer, sizeof(vertexBuffer));
 }
 
 void Backdrop::createDescriptorPool()
@@ -121,12 +120,12 @@ void Backdrop::createDescriptorPool()
 
 void Backdrop::createDescriptorSetLayouts()
 {
-    vk::DescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
+    vk::DescriptorSetLayoutBinding vertexLayoutBinding = {};
+    vertexLayoutBinding.binding = 0;
+    vertexLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    vertexLayoutBinding.descriptorCount = 1;
+    vertexLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+    vertexLayoutBinding.pImmutableSamplers = nullptr;
 
     vk::DescriptorSetLayoutBinding samplerLayoutBinding = {};
     samplerLayoutBinding.binding = 1;
@@ -135,7 +134,7 @@ void Backdrop::createDescriptorSetLayouts()
     samplerLayoutBinding.pImmutableSamplers = nullptr;
     samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = {vertexLayoutBinding, samplerLayoutBinding};
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -158,9 +157,9 @@ void Backdrop::createDescriptorSets()
     {
 
         vk::DescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = uniformBuffers[i].buffer;
+        bufferInfo.buffer = vertexBuffers[i].buffer;
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBuffer);
+        bufferInfo.range = sizeof(UniformVertex);
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -200,9 +199,6 @@ void Backdrop::createPipeline()
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
-
-    // pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-    // pipeline.rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

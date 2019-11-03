@@ -12,25 +12,27 @@
 
 const int numLights = 1;
 
-struct PointLight
+struct UniformLight
 {
-    vec3 position;
-    vec3 color;
+    vec4 position;
+    vec4 rotation;
+    vec4 color;
     float lumens;
+    float steradians;
 };
 
-layout(binding = 1) uniform UniformLight
+layout(binding = 1) uniform UniformLights
 {
-    vec3 sun;
     float radianceMipLevels;
     float exposure;
     float gamma;
     float shadowSize;
-    PointLight light[numLights];
+    UniformLight light;
+    UniformLight flashLight;
 }
-uLight;
+lights;
 
-layout(binding = 2) uniform samplerCube shadowMap;
+layout(binding = 2) uniform sampler2D shadowMap;
 layout(binding = 3) uniform sampler2D diffuseMap;
 layout(binding = 4) uniform sampler2D normalMap;
 layout(binding = 5) uniform sampler2D roughnessMap;
@@ -38,13 +40,12 @@ layout(binding = 6) uniform sampler2D metallicMap;
 layout(binding = 7) uniform sampler2D aoMap;
 layout(binding = 8) uniform samplerCube irradianceMap;
 layout(binding = 9) uniform samplerCube radianceMap;
-layout(binding = 10) uniform sampler2D sunMap;
-layout(binding = 11) uniform sampler2D brdfMap;
+layout(binding = 10) uniform sampler2D brdfMap;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
-layout(location = 3) in vec4 sunPosition;
+layout(location = 3) in vec4 lightWorldPos;
 
 layout(location = 0) out vec4 outColor;
 
@@ -82,20 +83,20 @@ vec3 getNormal(vec3 position, vec3 normal)
     return normalize(TBN * tangentNormal);
 }
 
-vec2 sunOffsetDirections[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1),
-                                     vec2(-1, 1), vec2(-1, 0), vec2(-1, -1));
+vec2 shadowOffsets[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1), vec2(-1, 1),
+                               vec2(-1, 0), vec2(-1, -1));
 
-float sunCalc(vec3 lightVec, vec3 normal)
+float shadowCalc(vec3 lightVec, vec3 normal)
 {
     float shadow = 0.0;
     float bias = max(0.05 * (1.0 - dot(normal, normalize(lightVec))), 0.005);
     int samples = 9; // number of samples in sunOffsetDirections
     float currentDepth = length(lightVec);
-    float texelSize = 1.0 / uLight.shadowSize;
+    float texelSize = 1.0 / lights.shadowSize;
 
     for (int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(sunMap, sunPosition.xy + sunOffsetDirections[i] * texelSize).r;
+        float closestDepth = texture(shadowMap, lightWorldPos.xy + shadowOffsets[i] * texelSize).r;
         if (currentDepth - bias > closestDepth)
         {
             shadow += 0.3; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
@@ -108,7 +109,7 @@ float sunCalc(vec3 lightVec, vec3 normal)
 //[8]
 vec3 prefilteredRadiance(vec3 R, float roughness)
 {
-    float lod = roughness * uLight.radianceMipLevels;
+    float lod = roughness * lights.radianceMipLevels;
     float lodf = floor(lod);
     float lodc = ceil(lod);
     vec3 a = textureLod(radianceMap, R, lodf).rgb;
@@ -147,8 +148,8 @@ void main()
     vec3 N = getNormal(inPosition, inNormal); // Normal vector
     vec3 V = normalize(inPosition);           // Vector from surface to camera(origin)
 
-    vec3 sunVec = inPosition - uLight.sun;
-    vec3 ambient = sunCalc(sunVec, N) * iblBRDF(N, V, baseColor, roughness, metallic);
+    vec3 lightVec = inPosition - vec3(lights.light.position);
+    vec3 ambient = shadowCalc(lightVec, N) * iblBRDF(N, V, baseColor, roughness, metallic);
 
     outColor = vec4(ambient * ambientOcclusion, 1.0);
 }

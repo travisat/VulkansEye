@@ -37,8 +37,7 @@ class Model
     Material *material;
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertexBuffers;
-    std::vector<Buffer> uniformLights;
-
+    std::vector<Buffer> lightsBuffers;
     Image *irradianceMap;
     Image *radianceMap;
     Image *brdf;
@@ -48,14 +47,9 @@ class Model
     Image *shadow;
     std::vector<Buffer> shadowBuffers;
 
-    std::vector<vk::DescriptorSet> sunSets;
-    Image *sun;
-    std::vector<Buffer> sunBuffers;
-
     void create();
     void createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
-    void createSunSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
   private:

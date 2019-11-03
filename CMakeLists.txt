@@ -9,10 +9,7 @@ include_directories(${CMAKE_SOURCE_DIR}/headers)
 
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert
-${CMAKE_SOURCE_DIR}/resources/shaders/shadow.geom
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.frag
-${CMAKE_SOURCE_DIR}/resources/shaders/sun.vert
-${CMAKE_SOURCE_DIR}/resources/shaders/sun.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert
@@ -23,10 +20,7 @@ ${CMAKE_SOURCE_DIR}/resources/shaders/ui.frag
 
 set(COMPILED_SHADERS
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.vert.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/shadow.geom.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/shadow.frag.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/sun.vert.spv
-${CMAKE_SOURCE_DIR}/resources/shaders/sun.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.vert.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/scene.frag.spv
 ${CMAKE_SOURCE_DIR}/resources/shaders/backdrop.vert.spv

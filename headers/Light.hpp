@@ -13,9 +13,8 @@ class Light
     Vulkan *vulkan;
     LightConfig *config;
 
-    uint32_t id;
     std::string name;
-    uLight light{};
+    UniformLight light{};
     void create();
 
   private:

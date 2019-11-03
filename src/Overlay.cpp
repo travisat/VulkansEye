@@ -249,7 +249,7 @@ void Overlay::newFrame()
     {
         lastUpdateTime = frameTime;
         uiSettings.position = player->position * -1.0F; // world is opposite cameras position
-        uiSettings.position.y -= player->height;        // put position on ground
+        uiSettings.position.y += player->height;        // put position on ground
         uiSettings.rotation = player->rotation;
         uiSettings.velocity = glm::length(player->velocity);
         uiSettings.fps = 1.0F / deltaTime;

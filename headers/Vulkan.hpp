@@ -28,43 +28,34 @@
 namespace tat
 {
 
-struct UniformBuffer
+struct UniformVertex
 {
-    glm::mat4 mvp{};
-    glm::mat4 sunMVP{};
-};
-
-constexpr int numLights = 1;
-
-// glsl expects vec3 to be alligned on 16 bits
-struct uLight
-{
-    alignas(16) glm::vec3 position{};
-    alignas(16) glm::vec3 color{};
-    float lumens = 0.0F;
-    float steradians = 4.F * 3.1415926F;
+    glm::mat4 modelMVP{};
+    glm::mat4 lightMVP{};
 };
 
 struct UniformLight
 {
-    alignas(16) glm::vec3 sun = glm::vec3(-20.F, 20.F, -40.F);
+    glm::vec4 position{};
+    glm::vec4 rotation{};
+    glm::vec4 color{};
+    float lumens = 0.0F;
+    float steradians = 4.F * 3.1415926F;
+};
+
+struct UniformLights
+{
     float radianceMipLevels = 0.F;
     float exposure = 2.2F;
     float gamma = 4.5F;
     float shadowSize = 1024.F;
-    std::array<uLight, numLights> light{};
+    UniformLight light{};
+    UniformLight flashLight{};
 };
 
 struct UniformShadow
 {
-    glm::mat4 model{};
-    std::array<glm::mat4, 6> view{};
-    glm::mat4 projection{};
-};
-
-struct UniformSun
-{
-    glm::mat4 model{};
+    glm::mat4 m{};
     glm::mat4 vp{};
 };
 
@@ -75,7 +66,6 @@ class Vulkan
     {
         device.destroyRenderPass(colorPass);
         device.destroyRenderPass(shadowPass);
-        device.destroyRenderPass(sunPass);
         for (auto imageView : swapChainImageViews)
         {
             device.destroyImageView(imageView);
@@ -103,7 +93,6 @@ class Vulkan
 
     vk::RenderPass colorPass;
     vk::RenderPass shadowPass;
-    vk::RenderPass sunPass;
 
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
     vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
