@@ -211,7 +211,7 @@ void Engine::createCommandBuffers()
         renderSun(commandBuffer, i);
 
         // draw shadows
-        renderShadows(commandBuffer, i);
+        //renderShadows(commandBuffer, i);
 
         // draw colors
         renderColors(commandBuffer, i);

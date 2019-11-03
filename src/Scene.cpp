@@ -231,7 +231,8 @@ void Scene::update(uint32_t currentImage)
 
     uLight.radianceMipLevels = backdrop.radianceMap.mipLevels;
     uLight.shadowSize = vulkan->shadowSize;
-    for (int32_t i = 0; i < numLights; ++i)
+
+    /*for (int32_t i = 0; i < numLights; ++i)
     {
         uLight.light[i].position = lights[i].light.position;
         uLight.light[i].color = lights[i].light.color;
@@ -256,7 +257,7 @@ void Scene::update(uint32_t currentImage)
     // NEGATIVE_Z
     shadowmvp.view[5] = glm::rotate(glm::mat4(1.F), glm::radians(180.F), glm::vec3(0.F, 1.F, 0.F));
     shadowmvp.view[5] = glm::rotate(shadowmvp.view[5], glm::radians(180.F), glm::vec3(1.F, 0.F, 0.F));
-    glm::vec3 lightPos = uLight.light[0].position;
+    glm::vec3 lightPos = uLight.light[0].position;*/
 
     for (auto &model : models)
     {
@@ -270,13 +271,14 @@ void Scene::update(uint32_t currentImage)
         // createmvp
         vertex.mvp = player->perspective * player->view * m;
 
-        // make model for model in lightspace
+        /*// make model for model in lightspace
         shadowmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-lightPos));
         shadowmvp.model = glm::translate(shadowmvp.model, glm::vec3(model.position));
         shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
         shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
         shadowmvp.model = glm::rotate(shadowmvp.model, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
         shadowmvp.model = glm::scale(shadowmvp.model, model.scale);
+        */
 
         // make model for model in lightspace
         sunmvp.model = glm::translate(glm::mat4(1.F), glm::vec3(-uLight.sun));

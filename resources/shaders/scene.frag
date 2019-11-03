@@ -98,7 +98,7 @@ float sunCalc(vec3 lightVec, vec3 normal)
         float closestDepth = texture(sunMap, sunPosition.xy + sunOffsetDirections[i] * texelSize).r;
         if (currentDepth - bias > closestDepth)
         {
-            shadow += 0.6; // shadow instensity 0.0 = no shadow, 1.0 = full shadow, 6 looks nice
+            shadow += 0.3; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
         }
     }
     shadow /= float(samples); // average all the samples to create shadow intensity
