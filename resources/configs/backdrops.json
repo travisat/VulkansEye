@@ -1,0 +1,16 @@
+{
+    "desert": {
+        "color": "resources/backdrop/desert/color.dds",
+        "radiance": "resources/backdrop/desert/radiance.dds",
+        "irradiance": "resources/backdrop/desert/irradiance.dds",
+        "light": {
+            "position": {
+                "x": -20,
+                "y": -15,
+                "z": -8
+            },
+            "temperature": 6400,
+            "lumens": 900
+        }
+    }
+}

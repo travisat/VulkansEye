@@ -21,14 +21,10 @@ Scene::~Scene()
 void Scene::create()
 {
     createBrdf();
-
     createShadow();
-    createLights();
     createSun();
 
-    createMaterials();
-    createMeshes();
-    createBackdrop();
+    loadBackdrop();
     createModels();
 
     createColorPool(); // needs stage/lights/actors to know number of descriptors
@@ -50,7 +46,7 @@ void Scene::createBrdf()
     brdf.vulkan = vulkan;
     brdf.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     brdf.memUsage =  VMA_MEMORY_USAGE_GPU_ONLY;
-    brdf.loadGLI(config->vulkan.brdf);
+    brdf.loadGLI(vulkan->brdfPath);
 
     brdf.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     brdf.addressModeV = vk::SamplerAddressMode::eClampToEdge;
@@ -100,55 +96,26 @@ void Scene::createShadow()
     shadow.createSampler();
 }
 
-void Scene::createMaterials()
+void Scene::loadBackdrop()
 {
-    materials.vulkan = vulkan;
-    materials.loadConfigs(config->materials);
-}
-
-void Scene::createMeshes()
-{
-    meshes.vulkan = vulkan;
-    meshes.loadConfigs(config->meshes);
-}
-
-void Scene::createBackdrop()
-{
-    backdrop.vulkan = vulkan;
-    backdrop.player = player;
-    backdrop.config = &config->backdrop;
-    backdrop.shadowMap = &shadow;
-
-    backdrop.create();
-}
-
-void Scene::createLights()
-{
-    lights.resize(numLights);
-    int32_t index = 0;
-    for (auto &lightConfig : config->lights)
-    {
-        lights[index].config = &lightConfig;
-        lights[index].vulkan = vulkan;
-        lights[index].create();
-        ++index;
-    }
+    backdrop = backdrops->getBackdrop(config.backdrop);
+    backdrop->shadowMap = &shadow;
 }
 
 void Scene::createModels()
 {
-    models.resize(config->models.size());
+    models.resize(config.models.size());
     int32_t index = 0;
-    for (auto &modelConfig : config->models)
+    for (auto &modelConfig : config.models)
     {
         models[index].config = &modelConfig;
         models[index].vulkan = vulkan;
-        models[index].materials = &materials;
-        models[index].meshes = &meshes;
+        models[index].materials = materials;
+        models[index].meshes = meshes;
         models[index].shadow = &shadow;
         models[index].sun = &sun;
-        models[index].irradianceMap = &backdrop.irradianceMap;
-        models[index].radianceMap = &backdrop.radianceMap;
+        models[index].irradianceMap = &backdrop->irradianceMap;
+        models[index].radianceMap = &backdrop->radianceMap;
         models[index].brdf = &brdf;
         models[index].create();
         ++index;
@@ -157,7 +124,7 @@ void Scene::createModels()
 
 void Scene::cleanup()
 {
-    backdrop.cleanup();
+    backdrop->cleanup();
     colorPipeline.cleanup();
     vulkan->device.destroyDescriptorPool(colorPool);
 }
@@ -166,7 +133,7 @@ void Scene::recreate()
 {
     player->updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
 
-    backdrop.recreate();
+    backdrop->recreate();
     createColorPool();
     createColorSets();
     createColorPipeline();
@@ -174,7 +141,7 @@ void Scene::recreate()
 
 void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    backdrop.draw(commandBuffer, currentImage);
+    backdrop->draw(commandBuffer, currentImage);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorPipeline.pipeline);
 
@@ -221,15 +188,15 @@ void Scene::drawSun(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Scene::update(uint32_t currentImage)
 {
-    backdrop.update(currentImage);
+    backdrop->update(currentImage);
 
-    uLight.sun = backdrop.light.light.position;
+    uLight.sun = backdrop->light.light.position;
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(uLight.sun, glm::vec3(0.F), glm::vec3(0, 1, 0));
     glm::mat4 sunVP = depthProjectionMatrix * depthViewMatrix;
 
-    uLight.radianceMipLevels = backdrop.radianceMap.mipLevels;
+    uLight.radianceMipLevels = backdrop->radianceMap.mipLevels;
     uLight.shadowSize = vulkan->shadowSize;
 
     /*for (int32_t i = 0; i < numLights; ++i)

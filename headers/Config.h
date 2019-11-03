@@ -18,7 +18,7 @@ namespace tat
 
 constexpr float PI = 3.1415926F;
 
-struct VulkanConfig
+struct Config
 {
     std::string name = "none";
     float zNear = 0.1F;
@@ -28,6 +28,21 @@ struct VulkanConfig
     bool sync = true;
     float shadowSize = 1024.F;
     std::string brdf = "resources/brdf.dds";
+    std::string playerConfigPath = "resources/configs/player.json";
+    std::string materialsConfigPath = "resources/configs/materials.json";
+    std::string meshesConfigPath = "resources/configs/meshes.json";
+    std::string backdropsConfigPath = "resources/configs/backdrops.json";
+    std::string sceneConfigPath = "resources/configs/scene.json";
+};
+
+struct LightConfig
+{
+    std::string name = "default";
+    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
+    // glm::vec3 rotation = glm::vec3(0.F); //TODO(travis) implement rotation for spot lights
+    float temperature = 6400;
+    float lumens = 1600;
+    float steradians = 4.F * PI;
 };
 
 struct PlayerConfig
@@ -42,24 +57,21 @@ struct PlayerConfig
     float velocityMax = 6.F;
     float timeToReachVMax = 0.6F;
     float timeToStopfromVMax = 0.1F;
+    LightConfig flashLight{};
 };
 
-struct LightConfig
+struct BackdropConfig
 {
-    std::string name = "default";
-    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
-    //glm::vec3 rotation = glm::vec3(0.F); //TODO(travis) implement rotation for spot lights
-    float temperature = 6400;
-    float lumens = 1600;
-    float steradians = 4.F * PI;
-};
-
-struct BackropConfig
-{
+    std::string name = "desert";
     std::string colorPath = "resources/backdrop/desert/color.dds";
     std::string radiancePath = "resources/backdrop/desert/radiance.dds";
     std::string irradiancePath = "resources/backdrop/desert/irradiance.dds";
     LightConfig light{};
+};
+
+struct BackdropsConfig
+{
+    std::vector<BackdropConfig> backdrops{};
 };
 
 struct MaterialConfig
@@ -73,10 +85,20 @@ struct MaterialConfig
     std::string displacement = "resources/materials/default/displacement.png";
 };
 
+struct MaterialsConfig
+{
+    std::vector<MaterialConfig> materials{};
+};
+
 struct MeshConfig
 {
     std::string name = "cube";
     std::string path = "resources/models/cube.obj";
+};
+
+struct MeshesConfig
+{
+    std::vector<MeshConfig> meshes{};
 };
 
 struct ModelConfig
@@ -89,14 +111,10 @@ struct ModelConfig
     glm::vec3 scale{};
 };
 
-struct Config
+struct SceneConfig
 {
-    VulkanConfig vulkan{};
-    PlayerConfig player{};
-    BackropConfig backdrop{};
-    std::vector<LightConfig> lights{};
-    std::vector<MaterialConfig> materials{};
-    std::vector<MeshConfig> meshes{};
+    std::string name = "default";
+    std::string backdrop = "desert";
     std::vector<ModelConfig> models{};
 };
 

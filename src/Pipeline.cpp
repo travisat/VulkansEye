@@ -42,8 +42,14 @@ void Pipeline::cleanup()
         vulkan->device.destroyShaderModule(geomShaderStageInfo.module);
     }
 
-    vulkan->device.destroyPipeline(pipeline);
-    vulkan->device.destroyPipelineLayout(pipelineLayout);
+    if (pipeline)
+    {
+        vulkan->device.destroyPipeline(pipeline);
+    }
+    if (pipelineLayout)
+    {
+        vulkan->device.destroyPipelineLayout(pipelineLayout);
+    }
 }
 
 void Pipeline::loadDefaults(vk::RenderPass renderPass)

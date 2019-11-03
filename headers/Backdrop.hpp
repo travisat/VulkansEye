@@ -16,7 +16,10 @@ class Backdrop
   public:
     Vulkan *vulkan = nullptr;
     Player *player = nullptr;
-    BackropConfig *config = nullptr;
+    BackdropConfig *config = nullptr;
+    std::string name;
+
+    bool loaded = false;
 
     Image *shadowMap;
 

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "Backdrop.hpp"
+#include "Backdrops.hpp"
 #include "Config.h"
 #include "Light.hpp"
 #include "Materials.hpp"
@@ -25,10 +25,14 @@ class Scene
 {
   public:
     Vulkan *vulkan = nullptr;
-    Config *config = nullptr;
     Player *player = nullptr;
+    Materials *materials = nullptr;
+    Meshes *meshes = nullptr;
+    Backdrops *backdrops = nullptr;
+
     std::string name = "Unknown";
 
+    SceneConfig config{};
     Image shadow;
     Image sun;
     Image brdf;
@@ -51,9 +55,7 @@ class Scene
     VkDescriptorPool sunPool;
     VkDescriptorSetLayout sunLayout;
 
-    Backdrop backdrop;
-    Materials materials{};
-    Meshes meshes{};
+    Backdrop* backdrop;
 
     UniformBuffer vertex{};
     UniformLight uLight{};
@@ -70,11 +72,9 @@ class Scene
     void createBrdf();
     void createSun();
     void createShadow();
-    void createLights();
-    void createMaterials();
-    void createMeshes();
     void createModels();
-    void createBackdrop();
+
+    void loadBackdrop();
 
     void createColorPool();
     void createColorLayouts();

@@ -14,16 +14,16 @@ void VulkansEye::init(const std::string &configPath)
     Timer::systemTime();
 
     // load config
-    Config config;
-    loadConfig(configPath, config);
+    Config config = createConfig(configPath);
 
     // load display settings
-    vulkan.name = config.vulkan.name;
-    vulkan.width = config.vulkan.windowWidth;
-    vulkan.height = config.vulkan.windowHeight;
-    vulkan.zNear = config.vulkan.zNear;
-    vulkan.zFar = config.vulkan.zFar;
-    if (config.vulkan.sync == true)
+    vulkan.name = config.name;
+    vulkan.width = config.windowWidth;
+    vulkan.height = config.windowHeight;
+    vulkan.zNear = config.zNear;
+    vulkan.zFar = config.zFar;
+    vulkan.brdfPath = config.brdf;
+    if (config.sync == true)
     {
         vulkan.defaultPresentMode = vk::PresentModeKHR::eFifo;
     }
@@ -49,14 +49,29 @@ void VulkansEye::init(const std::string &configPath)
     displayMode = DisplayMode::nocursor;
 
     // create player
-    player.config = &config.player;
     player.vulkan = &vulkan;
-    player.create();
+    player.loadConfig(createPlayerconfig(config.playerConfigPath));
+
+    // create backdrops
+    backdrops.vulkan = &vulkan;
+    backdrops.player = &player;
+    backdrops.loadConfig(createBackdropsConfig(config.backdropsConfigPath));
+
+    // create materials
+    materials.vulkan = &vulkan;
+    materials.loadConfig(createMaterialsConfig(config.materialsConfigPath));
+
+    // create meshes
+    meshes.vulkan = &vulkan;
+    meshes.loadConfig(createMeshesConfig(config.meshesConfigPath));
 
     // load scene
-    scene.config = &config;
+    scene.config = createSceneConfig(config.sceneConfigPath);
     scene.vulkan = &vulkan;
     scene.player = &player;
+    scene.backdrops = &backdrops;
+    scene.materials = &materials;
+    scene.meshes = &meshes;
 
     // load overlay
     overlay.vulkan = &vulkan;
@@ -160,133 +175,128 @@ void VulkansEye::handleInput()
     }
 }
 
-void VulkansEye::loadConfig(const std::string &path, Config &config)
+auto VulkansEye::createConfig(const std::string &path) -> Config
 {
+    Config config;
     std::ifstream file(path);
     json j;
     file >> j;
 
-    if (j.find("vulkan") != j.end())
-    {
-        auto vulkan = j.at("vulkan");
-        config.vulkan.name = vulkan.value("name", config.vulkan.name);
-        config.vulkan.zNear = vulkan.value("zNear", config.vulkan.zNear);
-        config.vulkan.zFar = vulkan.value("zFar", config.vulkan.zFar);
-        config.vulkan.windowWidth = vulkan.value("windowWidth", config.vulkan.windowWidth);
-        config.vulkan.windowHeight = vulkan.value("windowHeight", config.vulkan.windowHeight);
-        config.vulkan.sync = vulkan.value("sync", config.vulkan.sync);
-        config.vulkan.shadowSize = vulkan.value("shadowSize", config.vulkan.shadowSize);
-    }
+    config.name = j.value("name", config.name);
+    config.zNear = j.value("zNear", config.zNear);
+    config.zFar = j.value("zFar", config.zFar);
+    config.windowWidth = j.value("windowWidth", config.windowWidth);
+    config.windowHeight = j.value("windowHeight", config.windowHeight);
+    config.sync = j.value("sync", config.sync);
+    config.shadowSize = j.value("shadowSize", config.shadowSize);
+    config.brdf = j.value("brdfPath", config.brdf);
+    config.playerConfigPath = j.value("playerConfigPath", config.playerConfigPath);
+    config.backdropsConfigPath = j.value("backdropsConfigPath", config.backdropsConfigPath);
+    config.materialsConfigPath = j.value("materialsConfigPath", config.materialsConfigPath);
+    config.meshesConfigPath = j.value("meshesConfigPath", config.meshesConfigPath);
+    config.sceneConfigPath = j.value("sceneConfigPath", config.sceneConfigPath);
+    return config;
+}
 
-    if (j.find("player") != j.end())
-    {
-        auto player = j.at("player");
-        config.player.height = player.value("height", config.player.height);
-        config.player.mass = player.value("mass", config.player.mass);
-        config.player.velocityMax = player.value("velocityMax", config.player.velocityMax);
-        config.player.timeToReachVMax = player.value("timeToReachVMax", config.player.timeToReachVMax);
-        config.player.timeToStopfromVMax = player.value("timeToStopFromVMax", config.player.timeToStopfromVMax);
-        config.player.jumpHeight = player.value("jumpHeight", config.player.jumpHeight);
-        config.player.mouseSensitivity = player.value("mouseSensitivity", config.player.mouseSensitivity);
-        config.player.fieldOfView = player.value("fieldOfView", config.player.fieldOfView);
-        if (player.find("position") != player.end())
-        {
-            auto position = player.at("position");
-            config.player.rotation.x = position.value("x", config.player.position.x);
-            config.player.position.y = position.value("y", config.player.position.y);
-            config.player.position.z = position.value("z", config.player.position.z);
-        }
-        if (player.find("rotation") != player.end())
-        {
-            auto rotation = player.at("rotation");
-            config.player.rotation.x = rotation.value("x", config.player.rotation.x);
-            config.player.rotation.y = rotation.value("y", config.player.rotation.y);
-            config.player.rotation.z = rotation.value("z", config.player.rotation.z);
-        }
-    }
+auto VulkansEye::createPlayerconfig(const std::string &path) -> PlayerConfig
+{
+    PlayerConfig config{};
+    std::ifstream file(path);
+    json j;
+    file >> j;
 
-    if (j.find("backdrop") != j.end())
+    config.height = j.value("height", config.height);
+    config.mass = j.value("mass", config.mass);
+    config.velocityMax = j.value("velocityMax", config.velocityMax);
+    config.timeToReachVMax = j.value("timeToReachVMax", config.timeToReachVMax);
+    config.timeToStopfromVMax = j.value("timeToStopFromVMax", config.timeToStopfromVMax);
+    config.jumpHeight = j.value("jumpHeight", config.jumpHeight);
+    config.mouseSensitivity = j.value("mouseSensitivity", config.mouseSensitivity);
+    config.fieldOfView = j.value("fieldOfView", config.fieldOfView);
+
+    return config;
+}
+
+auto VulkansEye::createBackdropsConfig(const std::string &path) -> BackdropsConfig
+{
+    BackdropsConfig config{};
+    std::ifstream file(path);
+    json j;
+    file >> j;
+    for (auto &[key, backdrop] : j.items())
     {
-        auto backdrop = j.at("backdrop");
-        config.backdrop.colorPath = backdrop.value("color", config.backdrop.colorPath);
-        config.backdrop.radiancePath = backdrop.value("radiance", config.backdrop.radiancePath);
-        config.backdrop.irradiancePath = backdrop.value("irradiance", config.backdrop.irradiancePath);
+        BackdropConfig c{};
+        c.name = key;
+        c.colorPath = backdrop.value("color", c.colorPath);
+        c.radiancePath = backdrop.value("radiance", c.radiancePath);
+        c.irradiancePath = backdrop.value("irradiance", c.irradiancePath);
         if (backdrop.find("light") != backdrop.end())
         {
             auto light = backdrop.at("light");
             if (light.find("position") != light.end())
             {
                 auto position = light.at("position");
-                config.backdrop.light.position.x = position.value("x", config.backdrop.light.position.x);
-                config.backdrop.light.position.y = position.value("y", config.backdrop.light.position.y);
-                config.backdrop.light.position.z = position.value("z", config.backdrop.light.position.z);
+                c.light.position.x = position.value("x", c.light.position.x);
+                c.light.position.y = position.value("y", c.light.position.y);
+                c.light.position.z = position.value("z", c.light.position.z);
             }
-            config.backdrop.light.steradians =
-                light.value("steradians", config.backdrop.light.steradians);
-            config.backdrop.light.temperature =
-                light.value("temperature", config.backdrop.light.temperature);
-            config.backdrop.light.lumens = light.value("lumens", config.backdrop.light.lumens);
+            c.light.steradians = light.value("steradians", c.light.steradians);
+            c.light.temperature = light.value("temperature", c.light.temperature);
+            c.light.lumens = light.value("lumens", c.light.lumens);
         }
+        config.backdrops.push_back(c);
     }
+    return config;
+}
 
-    if (j.find("lights") == j.end())
-    {
-        config.lights.resize(1); // loads defaults into index 0
-    }
-    else
-    {
-        for (auto &[key, light] : j.at("lights").items())
-        {
-            LightConfig c{};
-            c.name = key;
-            if (light.find("position") != light.end())
-            {
-                auto position = light.at("position");
-                c.position.x = position.value("x", c.position.x);
-                c.position.y = position.value("y", c.position.y);
-                c.position.z = position.value("z", c.position.z);
-            }
-            c.steradians = light.value("steradians", c.steradians);
-            c.temperature = light.value("temperature", c.temperature);
-            c.lumens = light.value("lumens", c.lumens);
-            config.lights.push_back(c);
-        }
-    }
+auto VulkansEye::createMaterialsConfig(const std::string &path) -> MaterialsConfig
+{
+    MaterialsConfig config{};
+    std::ifstream file(path);
+    json j;
+    file >> j;
 
-    if (j.find("materials") == j.end())
+    for (auto &[key, material] : j.items())
     {
-        config.materials.resize(1);
+        MaterialConfig c{};
+        c.name = key;
+        c.diffuse = material.value("diffuse", c.diffuse);
+        c.normal = material.value("normal", c.normal);
+        c.metallic = material.value("metallic", c.metallic);
+        c.roughness = material.value("roughness", c.roughness);
+        c.ao = material.value("ao", c.ao);
+        c.displacement = material.value("displacement", c.displacement);
+        config.materials.push_back(c);
     }
-    else
-    {
-        for (auto &[key, material] : j.at("materials").items())
-        {
-            MaterialConfig c{};
-            c.name = key;
-            c.diffuse = material.value("diffuse", c.diffuse);
-            c.normal = material.value("normal", c.normal);
-            c.metallic = material.value("metallic", c.metallic);
-            c.roughness = material.value("roughness", c.roughness);
-            c.ao = material.value("ao", c.ao);
-            c.displacement = material.value("displacement", c.displacement);
-            config.materials.push_back(c);
-        }
-    }
+    return config;
+}
 
-    if (j.find("meshes") == j.end())
+auto VulkansEye::createMeshesConfig(const std::string &path) ->  MeshesConfig
+{
+    MeshesConfig config{};
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    for (auto &[key, value] : j.items())
     {
-        config.meshes.resize(1);
+        MeshConfig c{};
+        c.name = key;
+        c.path = value;
+        config.meshes.push_back(c);
     }
-    else
-    {
-        for (auto &[key, value] : j.at("meshes").items())
-        {
-            MeshConfig c{};
-            c.name = key;
-            c.path = value;
-            config.meshes.push_back(c);
-        }
-    }
+    return config;
+}
+
+ auto VulkansEye::createSceneConfig(const std::string &path) -> SceneConfig
+{
+    SceneConfig config{};
+    std::ifstream file(path);
+    json j;
+    file >> j;
+
+    config.name = j.value("name", config.name);
+    config.backdrop = j.value("backdrop", config.backdrop);
 
     if (j.find("models") == j.end())
     {
@@ -341,6 +351,7 @@ void VulkansEye::loadConfig(const std::string &path, Config &config)
             }
         }
     }
-};
+    return config;
+}
 
 } // namespace tat

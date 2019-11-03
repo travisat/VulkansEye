@@ -55,6 +55,7 @@ ${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Materials.cpp
 ${CMAKE_SOURCE_DIR}/src/Meshes.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
+${CMAKE_SOURCE_DIR}/src/Backdrops.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
 ${CMAKE_SOURCE_DIR}/src/Player.cpp
 ${CMAKE_SOURCE_DIR}/src/Light.cpp

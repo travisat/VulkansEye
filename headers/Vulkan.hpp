@@ -125,6 +125,8 @@ class Vulkan
     bool showOverlay = true;
     bool updateCommandBuffer = false;
 
+    std::string brdfPath;
+
     auto checkFormat(vk::Format format) -> bool
     {
         vk::FormatProperties props = physicalDevice.getFormatProperties(format);

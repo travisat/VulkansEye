@@ -4,18 +4,18 @@
 namespace tat
 {
 
-void Player::create()
+void Player::loadConfig(const PlayerConfig &config)
 {
-    fieldOfView = config->fieldOfView;
-    position = config->position;
-    rotation = config->rotation;
-    height = config->height;
-    mass = config->mass;
-    jumpVelocity = glm::sqrt(2.0F * 9.8F * config->jumpHeight);
-    velocityMax = config->velocityMax;
-    timeToReachVMax = config->timeToReachVMax;
-    timeToStopfromVMax = config->timeToStopfromVMax;
-    mouseSensitivity = config->mouseSensitivity;
+    fieldOfView = config.fieldOfView;
+    position = config.position;
+    rotation = config.rotation;
+    height = config.height;
+    mass = config.mass;
+    jumpVelocity = glm::sqrt(2.0F * 9.8F * config.jumpHeight);
+    velocityMax = config.velocityMax;
+    timeToReachVMax = config.timeToReachVMax;
+    timeToStopfromVMax = config.timeToStopfromVMax;
+    mouseSensitivity = config.mouseSensitivity;
     updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
     updateView();
 }

@@ -1,0 +1,15 @@
+{
+    "name": "desert",
+    "zNear": 0.1,
+    "zFar": 1024.0,
+    "windowWidth": 1024,
+    "windowHeight": 768,
+    "sync": true,
+    "shadowSize": 2048,
+    "brdfPath": "resources/brdf.dds",
+    "playerConfigPath": "resources/configs/player.json",
+    "materialsConfigPath": "resources/configs/materials.json",
+    "meshesConfigPath": "resources/configs/meshes.json",
+    "backdropsConfigPath": "resources/configs/backdrops.json",
+    "sceneConfigPath": "resources/configs/scene.json"
+}

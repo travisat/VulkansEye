@@ -1,0 +1,7 @@
+{
+    "table": "resources/models/table.obj",
+    "floor": "resources/models/floor.obj",
+    "sphere": "resources/models/sphere.obj",
+    "floortile": "resources/models/floortile.obj",
+    "suzanne": "resources/models/suzanne.obj"
+}

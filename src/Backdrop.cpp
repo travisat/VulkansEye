@@ -7,8 +7,14 @@ namespace tat
 
 Backdrop::~Backdrop()
 {
-    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
-    vulkan->device.destroyDescriptorPool(descriptorPool);
+    if (descriptorSetLayout)
+    {
+        vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    }
+    if (descriptorPool)
+    {
+        vulkan->device.destroyDescriptorPool(descriptorPool);
+    }
 }
 
 void Backdrop::create()
@@ -42,7 +48,7 @@ void Backdrop::recreate()
     createDescriptorSets();
 }
 
-void Backdrop::loadCubeMap(Image &cubeMap,const std::string& path)
+void Backdrop::loadCubeMap(Image &cubeMap, const std::string &path)
 {
     cubeMap.vulkan = vulkan;
     cubeMap.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
@@ -85,12 +91,12 @@ void Backdrop::createUniformBuffers()
 
 void Backdrop::update(uint32_t currentImage)
 {
-    //skybox is a quad that fills the screen  
+    // skybox is a quad that fills the screen
     // https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
     // by unprojecting the mvp (ie applying the inverse backwards)
-    glm::mat4 inverseProjection =  inverse(player->perspective);
+    glm::mat4 inverseProjection = inverse(player->perspective);
     glm::mat4 inverseModelView = transpose(player->view);
-    uBuffer.mvp = inverseModelView * inverseProjection; 
+    uBuffer.mvp = inverseModelView * inverseProjection;
     memcpy(uniformBuffers[currentImage].mapped, &uBuffer, sizeof(uBuffer));
 }
 
@@ -146,7 +152,7 @@ void Backdrop::createDescriptorSets()
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets =  vulkan->device.allocateDescriptorSets(allocInfo);
+    descriptorSets = vulkan->device.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
     {
@@ -195,8 +201,8 @@ void Backdrop::createPipeline()
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    //pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-    //pipeline.rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
+    // pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+    // pipeline.rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

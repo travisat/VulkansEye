@@ -28,7 +28,7 @@ class Meshes
   public:
     Vulkan *vulkan;
 
-    void loadConfigs(const std::vector<MeshConfig> &meshes);
+    void loadConfig(const MeshesConfig &config);
 
     auto getMesh(const std::string &name) -> Mesh *;
 

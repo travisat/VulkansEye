@@ -4,14 +4,14 @@
 
 namespace tat
 {
-void Meshes::loadConfigs(const std::vector<MeshConfig> &meshes)
+void Meshes::loadConfig(const MeshesConfig &config)
 {
     
     // resize and allow for 0 index to be default
-    configs.resize(meshes.size() + 1);
+    configs.resize(config.meshes.size() + 1);
     collection.resize(configs.size());
     int32_t index = 1; // start at 1 because index of 0 is reserved for default
-    for (const auto& meshConfig : meshes)
+    for (const auto& meshConfig : config.meshes)
     {
         collection[index].name = meshConfig.name;
         //insert name into map for index retrieval

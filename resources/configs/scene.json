@@ -1,0 +1,86 @@
+{
+    "name": "default",
+    "backdrop": "desert",
+    "models": {
+        "table": {
+            "type": "single",
+            "mesh": "table",
+            "material": "Concrete23",
+            "position": {
+                "x": 2,
+                "y": 0,
+                "z": 2
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            }
+        },
+        "sphere": {
+            "type": "single",
+            "mesh": "sphere",
+            "material": "Metal12",
+            "position": {
+                "x": 2,
+                "y": -1,
+                "z": -3
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            }
+        },
+        "suzanne": {
+            "type": "single",
+            "mesh": "suzanne",
+            "material": "Concrete23",
+            "position": {
+                "x": -4,
+                "y": -1,
+                "z": -4
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            }
+        },
+        "floor": {
+            "type": "single",
+            "mesh": "floor",
+            "material": "PavingStones45",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            }
+        }
+    }
+}

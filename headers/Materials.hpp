@@ -30,7 +30,7 @@ class Materials
     Vulkan *vulkan = nullptr;
 
     //copies Material configs into config vector
-    void loadConfigs(const std::vector<MaterialConfig> &materials);
+    void loadConfig(const MaterialsConfig &config);
     
     //return pointer to material with name
     //loads material if it has not been loaded yet

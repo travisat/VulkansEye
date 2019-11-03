@@ -1,6 +1,11 @@
+#include "Backdrops.hpp"
+#include "Config.h"
 #include "Engine.hpp"
+#include "Materials.hpp"
+#include "Meshes.hpp"
 #include "Overlay.hpp"
 #include "Timer.h"
+
 
 namespace tat
 {
@@ -18,11 +23,14 @@ class VulkansEye
     void run();
 
   private:
-    tat::Vulkan vulkan;
-    Engine engine;
-    Scene scene;
-    Player player;
-    Overlay overlay;
+    Vulkan vulkan{};
+    Engine engine{};
+    Player player{};
+    Overlay overlay{};
+    Backdrops backdrops{};
+    Materials materials{};
+    Meshes meshes{};
+    Scene scene{};
 
     DisplayMode displayMode = DisplayMode::nocursor;
 
@@ -30,12 +38,16 @@ class VulkansEye
     void mainLoop();
     void handleInput();
 
-    static void framebufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/)
-    {
-        //auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
+    static void framebufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/){
+        // auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
     };
 
-    static void loadConfig(const std::string &path, Config &config);
+    static auto createConfig(const std::string &path) -> Config;
+    static auto createPlayerconfig(const std::string &path) -> PlayerConfig;
+    static auto createMaterialsConfig(const std::string &path) -> MaterialsConfig;
+    static auto createMeshesConfig(const std::string &path) -> MeshesConfig;
+    static auto createBackdropsConfig(const std::string &path) -> BackdropsConfig;
+    static auto createSceneConfig(const std::string &path) -> SceneConfig;
 };
 
 } // namespace tat

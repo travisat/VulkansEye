@@ -15,9 +15,8 @@ class Player
 {
   public:
     Vulkan *vulkan;
-    PlayerConfig *config;
 
-    void create();
+    void loadConfig(const PlayerConfig &config);
 
     glm::vec3 rotation = glm::vec3(0.0F);
     glm::vec3 position = glm::vec3(0.0F);
