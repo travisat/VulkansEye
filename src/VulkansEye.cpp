@@ -271,7 +271,7 @@ auto VulkansEye::createMaterialsConfig(const std::string &path) -> MaterialsConf
     return config;
 }
 
-auto VulkansEye::createMeshesConfig(const std::string &path) ->  MeshesConfig
+auto VulkansEye::createMeshesConfig(const std::string &path) -> MeshesConfig
 {
     MeshesConfig config{};
     std::ifstream file(path);
@@ -288,7 +288,7 @@ auto VulkansEye::createMeshesConfig(const std::string &path) ->  MeshesConfig
     return config;
 }
 
- auto VulkansEye::createSceneConfig(const std::string &path) -> SceneConfig
+auto VulkansEye::createSceneConfig(const std::string &path) -> SceneConfig
 {
     SceneConfig config{};
     std::ifstream file(path);
