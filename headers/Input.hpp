@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -37,8 +38,10 @@ class Input
         getInstance().mouseButtonCallbackImpl(window, button, action, mods);
     }
 
+    // in array of mouse buttons the correspondin button is true while pressed
     void mouseButtonCallbackImpl(GLFWwindow * /*window*/, int button, int action, int /*mods*/)
     {
+        
         if (action == GLFW_PRESS)
         {
             if (button >= 0 && button < 8)
@@ -77,26 +80,27 @@ class Input
         {
             if (key >= 0 && key < 349)
             {
-                pressed[key] = true;
-                released[key] = false;
+                pressed[key] = 1;
+                released[key] = 0;
             }
         }
         else if (action == GLFW_RELEASE)
         {
             if (key >= 0 && key < 349)
             {
-                pressed[key] = false;
-                released[key] = true;
+                pressed[key] = 0;
+                released[key] = 1;
             }
         }
     }
 
-    static auto isKeyPressed(const uint32_t key) -> bool
+    //return 0 if not pressed, 1 if pressed
+    static auto isKeyPressed(const uint32_t key) -> int8_t
     {
         return getInstance().isKeyPressedIMPL(key);
     }
 
-    auto isKeyPressedIMPL(const uint32_t key) -> bool
+    auto isKeyPressedIMPL(const uint32_t key) ->int8_t
     {
         return pressed[key];
     }
@@ -108,9 +112,9 @@ class Input
 
     auto wasKeyReleasedIMPL(const uint32_t key) -> bool
     {
-        if (released[key])
+        if (released[key] != 0)
         {
-            released[key] = false;
+            released[key] = 0;
             return true;
         }
         return false;
@@ -136,6 +140,7 @@ class Input
         return mouseX;
     }
 
+    //if button is being pressed return true
     static auto checkMouse(uint32_t button) -> bool
     {
         return getInstance().checkMouseIMPL(button);
@@ -150,11 +155,11 @@ class Input
     Input() = default; // private constructor necessary to allow only 1 instance
 
     // GLFW_MOUSE_BUTTON_LAST = 8
-    std::array<bool, 9> mouseButtons = {false};
+    std::array<bool, 9> mouseButtons {false};
 
     // GLFW_KEY_LAST == 348
-    std::array<bool, 349> pressed = {false};
-    std::array<bool, 349> released = {false};
+    std::array<int8_t, 349> pressed {0};
+    std::array<int8_t, 349> released {0};
 
     double mouseX{};
     double mouseY{};

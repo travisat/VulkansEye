@@ -1,6 +1,7 @@
 #pragma once
 
 #include <imgui.h>
+#include <string_view>
 
 #include "Buffer.hpp"
 #include "Image.hpp"
@@ -23,7 +24,10 @@ struct UISettings
     glm::vec3 rotation = glm::vec3(0.0F);
     float velocity = 0.0F;
     float fps = 0.0F;
+    int32_t modeNum = 0;
 };
+
+constexpr std::array<std::string_view, 6> mode = {"Game","Dbug","Nput","Free","Save","Load"};
 
 // ----------------------------------------------------------------------------
 // Overlay class

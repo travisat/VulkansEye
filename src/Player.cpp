@@ -50,6 +50,7 @@ void Player::move(glm::vec2 direction)
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
     camFront = glm::normalize(camFront);
 
+    //convert input move direction into player view
     moveDir = glm::vec3(0.0F);
     moveDir += direction.y * camFront * glm::vec3(1.0F, 0.0F, 1.0F);
     moveDir += direction.x * glm::cross(camFront, glm::vec3(0.0F, 1.0F, 0.0F));

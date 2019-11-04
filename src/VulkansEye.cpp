@@ -123,55 +123,72 @@ void VulkansEye::mainLoop()
 
 void VulkansEye::handleInput()
 {
+    // game mode
     if (Input::wasKeyReleased(GLFW_KEY_F1))
     {
-        if (displayMode == DisplayMode::cursor)
+        if (vulkan.mode != Mode::Game)
         {
-            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            player.mouseMode = true;
-            displayMode = DisplayMode::nocursor;
-        }
-        else if (displayMode == DisplayMode::nocursor)
-        {
-            glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            player.mouseMode = false;
-            displayMode = DisplayMode::cursor;
+            if (displayMode == DisplayMode::cursor)
+            {
+                glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                player.mouseMode = true;
+                displayMode = DisplayMode::nocursor;
+            }
+            vulkan.showOverlay = false;
+            vulkan.updateCommandBuffer = true;
+            vulkan.mode = Mode::Game;
         }
     }
+    // dbug mode
+    if (Input::wasKeyReleased(GLFW_KEY_F2))
+    {
+        if (vulkan.mode != Mode::Dbug)
+        {
+            if (displayMode == DisplayMode::cursor)
+            {
+                glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetInputMode(vulkan.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                player.mouseMode = true;
+                displayMode = DisplayMode::nocursor;
+            }
+            vulkan.showOverlay = true;
+            vulkan.updateCommandBuffer = true;
+            vulkan.mode = Mode::Dbug;
+        }
+    }
+
+    // nput mode
+    if (Input::wasKeyReleased(GLFW_KEY_F3))
+    {
+        if (vulkan.mode != Mode::Nput)
+        {
+            if (displayMode != DisplayMode::cursor)
+            {
+                glfwSetInputMode(vulkan.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                player.mouseMode = false;
+                displayMode = DisplayMode::cursor;
+            }
+            vulkan.mode = Mode::Nput;
+        }
+    }
+
+    auto moveDir = glm::vec2(0.F);
+    moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
+    moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
+    moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
+    moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
+    player.move(moveDir);
+
+    if (Input::isKeyPressed(GLFW_KEY_SPACE) != 0)
+    {
+        player.jump();
+    }
+
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
         std::cerr << "Pressed Escape.  Closing." << std::endl;
         glfwSetWindowShouldClose(vulkan.window, 1);
-    }
-    if (Input::wasKeyReleased(GLFW_KEY_F3))
-    {
-        vulkan.showOverlay = !vulkan.showOverlay;
-        vulkan.updateCommandBuffer = true;
-    }
-
-    auto moveDir = glm::vec2(0.0F);
-    if (Input::isKeyPressed(GLFW_KEY_W))
-    {
-        moveDir.y += 1.0F;
-    }
-    if (Input::isKeyPressed(GLFW_KEY_S))
-    {
-        moveDir.y -= 1.0F;
-    }
-    if (Input::isKeyPressed(GLFW_KEY_A))
-    {
-        moveDir.x -= 1.0F;
-    }
-    if (Input::isKeyPressed(GLFW_KEY_D))
-    {
-        moveDir.x += 1.0F;
-    }
-    player.move(moveDir);
-
-    if (Input::isKeyPressed(GLFW_KEY_SPACE))
-    {
-        player.jump();
     }
 }
 

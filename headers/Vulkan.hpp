@@ -28,6 +28,16 @@
 namespace tat
 {
 
+enum class Mode
+{
+    Game,
+    Dbug,
+    Nput,
+    Free,
+    Save,
+    Load
+};
+
 struct UniformVertex
 {
     glm::mat4 modelMVP{};
@@ -113,6 +123,8 @@ class Vulkan
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;
+
+    Mode mode = Mode::Dbug;
 
     std::string brdfPath;
 

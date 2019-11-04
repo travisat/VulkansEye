@@ -1,5 +1,6 @@
 #include "Overlay.hpp"
 #include "helpers.h"
+#include "imgui.h"
 #include "vulkan/vulkan.hpp"
 
 namespace tat
@@ -250,18 +251,37 @@ void Overlay::newFrame()
         lastUpdateTime = frameTime;
         uiSettings.position = player->position * -1.0F; // world is opposite cameras position
         uiSettings.position.y += player->height;        // put position on ground
-        uiSettings.rotation = player->rotation;
-        uiSettings.velocity = glm::length(player->velocity);
         uiSettings.fps = 1.0F / deltaTime;
+
+        switch (vulkan->mode)
+        {
+            case Mode::Game :
+                uiSettings.modeNum = 0;
+                break;
+            case Mode::Dbug :
+                uiSettings.modeNum = 1;
+                break;
+            case Mode::Nput :
+                uiSettings.modeNum = 2;
+                break;
+            case Mode::Free :
+                uiSettings.modeNum = 3;
+                break;
+            case Mode::Save :
+                uiSettings.modeNum = 4;
+                break;
+            case Mode::Load :
+                uiSettings.modeNum = 5;
+        }
+
     }
 
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
     ImGui::Begin(vulkan->name.c_str());
+    ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
     ImGui::InputFloat("Fps", &uiSettings.fps);
     ImGui::InputFloat3("Position", &uiSettings.position.x, 2);
-    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x, 2);
-    ImGui::InputFloat("Velocity", &uiSettings.velocity);
     ImGui::End();
 
     ImGui::Render();

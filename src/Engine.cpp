@@ -279,7 +279,7 @@ void Engine::updateWindow()
                                       commandBuffers.data());
 
     createSwapChain();
-    createColorPass(vulkan);
+    vulkan->colorPass = createColorPass(vulkan);
     createColorFramebuffers();
     createCommandBuffers();
     vulkan->device.waitIdle();
@@ -327,7 +327,7 @@ void Engine::resizeWindow()
     overlay->cleanup();
 
     createSwapChain();
-    createColorPass(vulkan);
+    vulkan->colorPass = createColorPass(vulkan);
 
     scene->recreate();
     overlay->recreate();
