@@ -89,6 +89,7 @@ ENDIF(CMAKE_HOST_WIN32)
 
 target_include_directories(VulkansEye 
     PUBLIC 
+        "external/assimp/include"
         "external/glfw/Include"
         "external/GSL/Include"
         "external/glm"
