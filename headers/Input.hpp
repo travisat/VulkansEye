@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>

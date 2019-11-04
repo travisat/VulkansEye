@@ -1,16 +1,16 @@
 #include "Meshes.hpp"
 #include "helpers.h"
 #include "vulkan/vulkan.hpp"
+#include <cstdint>
 
 namespace tat
 {
 void Meshes::loadConfig(const MeshesConfig &config)
 {
     
-    // resize and allow for 0 index to be default
-    configs.resize(config.meshes.size() + 1);
+    configs.resize(config.meshes.size());
     collection.resize(configs.size());
-    int32_t index = 1; // start at 1 because index of 0 is reserved for default
+    int32_t index = 0; 
     for (const auto& meshConfig : config.meshes)
     {
         collection[index].name = meshConfig.name;
@@ -42,42 +42,42 @@ void Meshes::loadMesh(int32_t index)
         return;
     }
     // otherwise load the mesh
-    loadObj(configs[index].path, collection[index].vertices, collection[index].indices);
-    collection[index].vertexSize = static_cast<uint32_t>(collection[index].vertices.size());
-    collection[index].indexSize = static_cast<uint32_t>(collection[index].indices.size());
+    loadObj(configs[index].path, mesh);
+    mesh->vertexSize = static_cast<uint32_t>(mesh->vertices.size());
+    mesh->indexSize = static_cast<uint32_t>(mesh->indices.size());
     
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    Trace(mesh->vertexSize);
 
-    stagingBuffer.update(collection[index].vertices);
-    collection[index].vertexBuffer.vulkan = vulkan;
-    collection[index].vertexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
-    collection[index].vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    stagingBuffer.copyTo(collection[index].vertexBuffer);
+    stagingBuffer.update(mesh->vertices.data(), mesh->vertexSize * sizeof(mesh->vertices[0]));
+    mesh->vertexBuffer.vulkan = vulkan;
+    mesh->vertexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+    mesh->vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    stagingBuffer.copyTo(mesh->vertexBuffer);
 
-    stagingBuffer.update(collection[index].indices);
-    collection[index].indexBuffer.vulkan = vulkan;
-    collection[index].indexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
-    collection[index].indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    stagingBuffer.copyTo(collection[index].indexBuffer);
-
-    Trace("Loaded ", configs[index].path, " at ", Timer::systemTime());
+    stagingBuffer.update(mesh->indices.data(), mesh->indexSize * sizeof(mesh->indices[0]));
+    mesh->indexBuffer.vulkan = vulkan;
+    mesh->indexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+    mesh->indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    stagingBuffer.copyTo(mesh->indexBuffer);
 
     mesh->loaded = true;
+    Trace("Loaded ", configs[index].path, " at ", Timer::systemTime());
 }
 
 
-void Meshes::loadObj(const std::string &path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices)
+void Meshes::loadObj(const std::string &path, Mesh *mesh)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn;
     std::string err;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+    std::unordered_map<Vertex, uint32_t> uniqueVertices {};
 
     assert(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()));
 
@@ -96,11 +96,11 @@ void Meshes::loadObj(const std::string &path, std::vector<Vertex> &vertices, std
 
             if (uniqueVertices.count(vertex) == 0)
             {
-                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                vertices.push_back(vertex);
+                uniqueVertices[vertex] = static_cast<uint32_t>(mesh->vertices.size());
+                mesh->vertices.emplace_back(vertex);
             }
 
-            indices.push_back(uniqueVertices[vertex]);
+            mesh->indices.emplace_back(uniqueVertices[vertex]);
         }
     }
 }

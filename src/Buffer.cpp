@@ -20,34 +20,46 @@ void Buffer::resize(VkDeviceSize s)
         deallocate();
     }
     allocate(s);
-    // Trace("Resized ", name, " to ", s, " at ", Timer::systemTime());
+}
+
+void Buffer::update(void *t, size_t s)
+{
+    if (s != size)
+    {
+        if (buffer)
+        {
+            deallocate();
+        }
+        allocate(s);
+    }
+    void *data = nullptr;
+    vmaMapMemory(vulkan->allocator, allocation, &data);
+    memcpy(data, t, s);
+    vmaUnmapMemory(vulkan->allocator, allocation);
 }
 
 void Buffer::allocate(VkDeviceSize s)
 {
     size = s;
 
-    vk::BufferCreateInfo bufferInfo = {};
+    vk::BufferCreateInfo bufferInfo{};
     bufferInfo.size = size;
     bufferInfo.usage = flags;
     bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    VmaAllocationCreateInfo allocInfo = {};
+    VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = memUsage;
     allocInfo.flags = memFlags;
 
-    VmaAllocationInfo info = {};
+    VmaAllocationInfo info{};
 
-    CheckResult(vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo, reinterpret_cast<VkBuffer *>(&buffer),
-                                &allocation, &info));
+    CheckResult(vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
+                                reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info));
     mapped = info.pMappedData;
-    // Trace("Allocated ", name, " with size ", size, " at ",
-    // Timer::systemTime());
 }
 
 void Buffer::deallocate()
 {
-    // Trace("Deallocated ", name, " at ", Timer::systemTime());
     vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
 }
 

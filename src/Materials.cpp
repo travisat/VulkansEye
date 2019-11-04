@@ -7,9 +7,9 @@ void Materials::loadConfig(const MaterialsConfig &config)
 {
     
     // resize and allow for 0 index to be default
-    configs.resize(config.materials.size() + 1);
+    configs.resize(config.materials.size() + 0);
     collection.resize(configs.size());
-    int32_t index = 1; // start at 1 because index of 0 is reserved for default
+    int32_t index = 0; 
     for (const auto& materialConfig : config.materials)
     {
         collection[index].name = materialConfig.name;

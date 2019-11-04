@@ -42,7 +42,7 @@ class Meshes
 
     auto getIndex(const std::string &name) -> int32_t;
     void loadMesh(int32_t index);
-    static void loadObj(const std::string &path, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices);
+    static void loadObj(const std::string &path, Mesh *mesh);
 };
 
 }; // namespace tat
