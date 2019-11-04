@@ -1,6 +1,8 @@
 #pragma once
 
-#include <tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <cstdint>
 
@@ -42,7 +44,7 @@ class Meshes
 
     auto getIndex(const std::string &name) -> int32_t;
     void loadMesh(int32_t index);
-    static void loadObj(const std::string &path, Mesh *mesh);
+    static void importMesh(const std::string &path, Mesh *mesh);
 };
 
 }; // namespace tat

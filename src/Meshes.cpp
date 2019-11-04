@@ -1,22 +1,26 @@
 #include "Meshes.hpp"
+#include "assimp/Importer.hpp"
+#include "assimp/mesh.h"
+#include "assimp/postprocess.h"
+#include "assimp/vector2.h"
+#include "assimp/vector3.h"
 #include "helpers.h"
 #include "vulkan/vulkan.hpp"
-#include <cstdint>
 
 namespace tat
 {
 void Meshes::loadConfig(const MeshesConfig &config)
 {
-    
+
     configs.resize(config.meshes.size());
     collection.resize(configs.size());
-    int32_t index = 0; 
-    for (const auto& meshConfig : config.meshes)
+    int32_t index = 0;
+    for (const auto &meshConfig : config.meshes)
     {
         collection[index].name = meshConfig.name;
-        //insert name into map for index retrieval
+        // insert name into map for index retrieval
         names.insert(std::make_pair(meshConfig.name, index));
-        //insert config into configs so mesh can be loaded when needed
+        // insert config into configs so mesh can be loaded when needed
         configs[index] = meshConfig;
         ++index;
     }
@@ -24,11 +28,11 @@ void Meshes::loadConfig(const MeshesConfig &config)
 
 auto Meshes::getMesh(const std::string &name) -> Mesh *
 {
-    //get index, returns 0 for default if name of mesh not found
+    // get index, returns 0 for default if name of mesh not found
     int32_t index = getIndex(name);
-    //load mesh if not loaded
+    // load mesh if not loaded
     loadMesh(index);
-    //return mesh
+    // return mesh
     return &collection[index];
 }
 
@@ -42,16 +46,13 @@ void Meshes::loadMesh(int32_t index)
         return;
     }
     // otherwise load the mesh
-    loadObj(configs[index].path, mesh);
-    mesh->vertexSize = static_cast<uint32_t>(mesh->vertices.size());
-    mesh->indexSize = static_cast<uint32_t>(mesh->indices.size());
-    
+    importMesh(configs[index].path, mesh);
+
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    Trace(mesh->vertexSize);
 
     stagingBuffer.update(mesh->vertices.data(), mesh->vertexSize * sizeof(mesh->vertices[0]));
     mesh->vertexBuffer.vulkan = vulkan;
@@ -69,40 +70,45 @@ void Meshes::loadMesh(int32_t index)
     Trace("Loaded ", configs[index].path, " at ", Timer::systemTime());
 }
 
-
-void Meshes::loadObj(const std::string &path, Mesh *mesh)
+void Meshes::importMesh(const std::string &path, Mesh *mesh)
 {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn;
-    std::string err;
-    std::unordered_map<Vertex, uint32_t> uniqueVertices {};
+    Assimp::Importer importer;
+    uint32_t processFlags = aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals | aiProcess_GenUVCoords |
+                            aiProcess_Triangulate | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes |
+                            aiProcess_JoinIdenticalVertices;
+    const aiScene *pScene = importer.ReadFile(path, processFlags);
 
-    assert(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()));
+    assert(pScene); // TODO(travis) error handling
 
-    for (const auto &shape : shapes)
+    for (int i = 0; i < pScene->mNumMeshes; ++i)
     {
-        for (const auto &index : shape.mesh.indices)
+        const aiMesh *aimesh = pScene->mMeshes[i];
+        for (int j = 0; j < aimesh->mNumFaces; ++j)
         {
-            Vertex vertex = {};
-            vertex.position = {(attrib.vertices[3 * index.vertex_index + 0]),
-                               (attrib.vertices[3 * index.vertex_index + 1]),
-                               (attrib.vertices[3 * index.vertex_index + 2])};
-            vertex.UV = {attrib.texcoords[2 * index.texcoord_index + 0],
-                         1.0F - attrib.texcoords[2 * index.texcoord_index + 1]};
-            vertex.normal = {attrib.normals[3 * index.normal_index + 0], attrib.normals[3 * index.normal_index + 1],
-                             attrib.normals[3 * index.normal_index + 2]};
-
-            if (uniqueVertices.count(vertex) == 0)
+            const aiFace *face = &aimesh->mFaces[j];
+            for (int k = 0; k < face->mNumIndices; ++k)
             {
-                uniqueVertices[vertex] = static_cast<uint32_t>(mesh->vertices.size());
-                mesh->vertices.emplace_back(vertex);
+                mesh->indices.push_back(face->mIndices[k]);
             }
-
-            mesh->indices.emplace_back(uniqueVertices[vertex]);
+        }
+        for (int j = 0; j < aimesh->mNumVertices; ++j)
+        {
+            Vertex vertex{};
+            vertex.position.x = aimesh->mVertices[j].x;
+            vertex.position.y = aimesh->mVertices[j].y;
+            vertex.position.z = aimesh->mVertices[j].z;
+            vertex.UV.x = aimesh->mTextureCoords[0][j].x;
+            vertex.UV.y = aimesh->mTextureCoords[0][j].y;
+            vertex.normal.x = aimesh->mNormals[j].x;
+            vertex.normal.y = aimesh->mNormals[j].y;
+            vertex.normal.z = aimesh->mNormals[j].z;
+            mesh->vertices.push_back(vertex);
         }
     }
+    mesh->indexSize = mesh->indices.size();
+    assert(mesh->indexSize > 0);
+    mesh->vertexSize = mesh->vertices.size();
+    assert(mesh->vertexSize > 0);
 }
 
 auto Meshes::getIndex(const std::string &name) -> int32_t
