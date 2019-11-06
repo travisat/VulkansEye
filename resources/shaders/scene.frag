@@ -55,8 +55,8 @@ layout(location = 0) out vec4 outColor;
 // for converting basecolor (diffuse)
 vec3 convertSRGBtoLinear(vec3 srgbIn)
 {
-    vec3 bLess = step(0.04045, srgbIn);
-    vec3 linOut = mix(srgbIn / 12.92, pow((srgbIn + 0.055) / 1.055, vec3(2.4)), bLess);
+    vec3 bLess = step(0.04045F, srgbIn);
+    vec3 linOut = mix(srgbIn / 12.92F, pow((srgbIn + 0.055F) / 1.055F, vec3(2.4F)), bLess);
     return linOut;
 }
 
@@ -65,7 +65,7 @@ vec3 convertSRGBtoLinear(vec3 srgbIn)
 vec3 getNormal(vec3 position, vec3 normal)
 {
     // Perturb normal, see http://www.thetenthplanet.de/archives/1180
-    vec3 tangentNormal = texture(normalMap, inUV).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(normalMap, inUV).xyz * 2.F - 1.F;
 
     vec3 q1 = dFdx(position);
     vec3 q2 = dFdy(position);
@@ -80,17 +80,17 @@ vec3 getNormal(vec3 position, vec3 normal)
     return normalize(TBN * tangentNormal);
 }
 
-vec2 sampleOffsets[9] = vec2[](vec2(1.0, 1.0), vec2(1.0, 0.0), vec2(1.0, -1.0), //
-                               vec2(0.0, 1.0), vec2(0.0, 0.0), vec2(0.0, -1.0), //
-                               vec2(-1.0, 1.0), vec2(-1.0, 0.0), vec2(-1.0, -1.0));
+vec2 sampleOffsets[9] = vec2[](vec2(1.F, 1.F), vec2(1.F, 0.F), vec2(1.F, -1.F), //
+                               vec2(0.F, 1.F), vec2(0.F, 0.F), vec2(0.F, -1.F), //
+                               vec2(-1.0, 1.F), vec2(-1.F, 0.F), vec2(-1.F, -1.F));
 
 float shadowCalc(vec3 lightVec, vec3 normal)
 {
-    float shadow = 0.0;
+    float shadow = 0.F;
     // compute bias based off NdotL
-    float bias = max(0.05 * (1.0 - dot(normal, normalize(lightVec))), 0.005);
+    float bias = max(0.05F * (1.F - dot(normal, normalize(lightVec))), 0.005F);
     int samples = 9;                           // number of samples in sampleOffsets
-    float texelSize = 1.0 / lights.shadowSize; // size of texel that will be checked
+    float texelSize = 1.F / lights.shadowSize; // size of texel that will be checked
 
     float currentDistanceToLight = length(lightVec);
     for (int i = 0; i < samples; ++i)
@@ -98,26 +98,26 @@ float shadowCalc(vec3 lightVec, vec3 normal)
         float closestDistanceToLight = texture(shadowMap, lightWorldPos.xy + sampleOffsets[i] * texelSize).r;
         if (currentDistanceToLight - bias > closestDistanceToLight)
         {
-            shadow += 0.3; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
+            shadow += 0.5F; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
         }
     }
     shadow /= float(samples); // average all the samples to create shadow intensity
-    return 1.0 - shadow;      // sub from 1.0 here instead of later
+    return 1.F - shadow;      // sub from 1.0 here instead of later
 }
 
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 {
-    float NdotV = max(dot(N, V), 0.0);
-    vec3 f0 = vec3(0.04);
+    float NdotV = max(dot(N, V), 0.F);
+    vec3 f0 = vec3(0.04F);
 
     // compute diffuse
     vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 diffuseColor = (baseColor - f0) * (1.0 - metallic);
+    vec3 diffuseColor = (baseColor - f0) * (1.F - metallic);
     vec3 diffuse = irradiance * diffuseColor;
 
     // compute specular
     vec3 R = reflect(-V, N);
-    //R.y *= -1.0;
+    R.x *= -1.F;
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, roughness)).rg;
     vec3 specular = radiance * (mix(f0, baseColor, metallic) * brdf.x + brdf.y);
@@ -135,7 +135,7 @@ void main()
     vec3 N = getNormal(inPosition, inNormal);      // Normal vector
     vec3 V = normalize(inPosition - vec3(camPos)); // Vector from camera to model
 
-    float shadow = shadowCalc(inPosition - vec3(lights.light.position), N);
+    float shadow = shadowCalc(vec3(lights.light.position) - inPosition, N);
     vec3 ambient = iblBRDF(N, V, baseColor, roughness, metallic);
-    outColor = vec4(shadow * ambient * ambientOcclusion, 1.0);
+    outColor = vec4(shadow * ambient * ambientOcclusion, 1.F);
 }

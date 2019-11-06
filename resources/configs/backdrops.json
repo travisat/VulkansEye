@@ -12,5 +12,19 @@
             "temperature": 6400,
             "lumens": 900
         }
+    },
+    "papermill": {
+        "color": "resources/backdrop/papermill/color.dds",
+        "radiance": "resources/backdrop/papermill/radiance.dds",
+        "irradiance": "resources/backdrop/papermill/irradiance.dds",
+        "light": {
+            "position": {
+                "x": -15,
+                "y": -15,
+                "z": -10
+            },
+            "temperature": 6400,
+            "lumens": 900
+        }
     }
 }
