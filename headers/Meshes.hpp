@@ -7,8 +7,8 @@
 #include <cstdint>
 
 #include "Buffer.hpp"
-#include "Config.h"
-#include "Vertex.h"
+#include "Config.hpp"
+#include "Vertex.hpp"
 
 namespace tat
 {

@@ -1,5 +1,5 @@
 #include "Player.hpp"
-#include "helpers.h"
+#include "helpers.hpp"
 
 namespace tat
 {

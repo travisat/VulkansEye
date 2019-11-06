@@ -1,7 +1,6 @@
 #include "VulkansEye.hpp"
-#include "Config.h"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
+#include "Config.hpp"
+#include "helpers.hpp"
 
 namespace tat
 {

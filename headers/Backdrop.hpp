@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Buffer.hpp"
-#include "Config.h"
+#include "Config.hpp"
 #include "Image.hpp"
 #include "Light.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
-#include "Timer.h"
+#include "Timer.hpp"
 
 namespace tat
 {

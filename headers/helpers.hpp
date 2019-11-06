@@ -2,7 +2,7 @@
 
 #ifdef WIN32
 #define NOMINMAX
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #include <cassert>

@@ -2,8 +2,7 @@
 
 #include <algorithm>
 
-#include "Config.h"
-
+#include "Config.hpp"
 #include "Input.hpp"
 #include "Vulkan.hpp"
 

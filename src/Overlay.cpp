@@ -1,7 +1,5 @@
 #include "Overlay.hpp"
-#include "helpers.h"
-#include "imgui.h"
-#include "vulkan/vulkan.hpp"
+#include "helpers.hpp"
 
 namespace tat
 {

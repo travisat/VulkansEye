@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "Config.h"
+#include "Config.hpp"
 #include "Vulkan.hpp"
 #include "Image.hpp"
 

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "glm/fwd.hpp"
-#include "glm/geometric.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan_core.h"
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -12,18 +8,18 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
-
 #define GLM_FORCE_RADIANS
 #define GLM_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include <vk_mem_alloc.h>
 
 #include <array>
 #include <iostream>
 #include <vector>
+
+#include "helpers.hpp"
 
 namespace tat
 {

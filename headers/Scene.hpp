@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "Backdrops.hpp"
-#include "Config.h"
+#include "Config.hpp"
 #include "Light.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
@@ -14,9 +14,6 @@
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "Vulkan.hpp"
-#include "glm/fwd.hpp"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
 
 namespace tat
 {

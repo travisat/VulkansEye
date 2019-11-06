@@ -1,6 +1,4 @@
 #include "Pipeline.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
 
 namespace tat
 {

@@ -3,15 +3,13 @@
 #include <cassert>
 #include <unordered_map>
 
-#include "Config.h"
+#include "Config.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
-#include "Timer.h"
-#include "Vertex.h"
-
+#include "Timer.hpp"
+#include "Vertex.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
-#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -20,7 +18,7 @@ class Model
 {
   public:
     // config values
-    tat::Vulkan *vulkan = nullptr;
+    Vulkan *vulkan = nullptr;
     ModelConfig *config;
     Materials *materials;
     Meshes *meshes;

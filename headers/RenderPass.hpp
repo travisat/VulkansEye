@@ -3,7 +3,6 @@
 #include <array>
 
 #include "Vulkan.hpp"
-#include "vulkan/vulkan.hpp"
 
 namespace tat
 {

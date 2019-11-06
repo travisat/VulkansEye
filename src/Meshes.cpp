@@ -1,12 +1,5 @@
 #include "Meshes.hpp"
-#include "assimp/Importer.hpp"
-#include "assimp/mesh.h"
-#include "assimp/postprocess.h"
-#include "assimp/scene.h"
-#include "assimp/vector2.h"
-#include "assimp/vector3.h"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
+#include "helpers.hpp"
 
 namespace tat
 {
@@ -79,8 +72,6 @@ void Meshes::importMesh(Mesh *mesh)
     auto processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_PreTransformVertices |
                             aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
     auto pScene = importer.ReadFile(mesh->path, processFlags);
-
-    assert(pScene); // TODO(travis) error handling
 
     const aiVector3D zero3D(0.F, 0.F, 0.F);
 

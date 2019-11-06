@@ -7,7 +7,7 @@
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
-#include "Timer.h"
+#include "Timer.hpp"
 #include "Vulkan.hpp"
 
 

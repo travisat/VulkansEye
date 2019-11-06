@@ -5,8 +5,6 @@
 
 #include "Buffer.hpp"
 #include "Vulkan.hpp"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
 
 namespace tat
 {

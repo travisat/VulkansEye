@@ -9,8 +9,6 @@
 #include <array>
 #include <iostream>
 
-
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 // Singleton as there can only be one Input and Input should never be locked

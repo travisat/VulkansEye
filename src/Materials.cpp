@@ -1,5 +1,4 @@
 #include "Materials.hpp"
-#include "vulkan/vulkan.hpp"
 
 namespace tat
 {

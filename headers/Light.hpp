@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Config.h"
-
+#include "Config.hpp"
 #include "Vulkan.hpp"
 #include "Model.hpp"
 

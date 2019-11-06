@@ -1,7 +1,6 @@
 #include "Model.hpp"
 #include "Vulkan.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
+#include "helpers.hpp"
 
 namespace tat
 {

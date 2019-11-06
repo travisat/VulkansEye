@@ -1,10 +1,5 @@
 #include "Image.hpp"
-
-#include "Pipeline.hpp"
-#include "gli/target.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
+#include "helpers.hpp"
 
 namespace tat
 {

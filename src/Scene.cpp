@@ -1,9 +1,6 @@
 #include "Scene.hpp"
 #include "Vulkan.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
+#include "helpers.hpp"
 
 namespace tat
 {

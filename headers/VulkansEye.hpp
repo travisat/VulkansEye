@@ -1,11 +1,10 @@
 #include "Backdrops.hpp"
-#include "Config.h"
+#include "Config.hpp"
 #include "Engine.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
 #include "Overlay.hpp"
-#include "Timer.h"
-
+#include "Timer.hpp"
 
 namespace tat
 {

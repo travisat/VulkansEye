@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vertex.h"
+#include "Vertex.hpp"
 #include "Vulkan.hpp"
 
 namespace tat

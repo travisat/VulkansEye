@@ -1,7 +1,5 @@
 #include "Engine.hpp"
-#include "helpers.h"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
+#include "helpers.hpp"
 #include <cstdint>
 
 namespace tat

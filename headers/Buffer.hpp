@@ -4,10 +4,9 @@
 #include <vcruntime.h>
 #endif
 
-#include "Timer.h"
-#include "Vertex.h"
+#include "Timer.hpp"
+#include "Vertex.hpp"
 #include "Vulkan.hpp"
-#include "vulkan/vulkan.hpp"
 namespace tat
 {
 
