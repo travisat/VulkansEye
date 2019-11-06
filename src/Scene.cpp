@@ -164,7 +164,6 @@ void Scene::update(uint32_t currentImage)
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(lightsBuffer.light.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
-    glm::mat4 lightVP = depthProjectionMatrix * depthViewMatrix;
 
     lightsBuffer.radianceMipLevels = backdrop->radianceMap.mipLevels;
     lightsBuffer.shadowSize = vulkan->shadowSize;
@@ -172,25 +171,24 @@ void Scene::update(uint32_t currentImage)
     for (auto &model : models)
     {
         // move model to worldspace
-        glm::mat4 m = glm::translate(glm::mat4(1.F), model.position);
-        m = glm::rotate(m, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        m = glm::rotate(m, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        m = glm::rotate(m, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        m = glm::scale(m, model.scale);
+        glm::mat4 T = glm::translate(glm::mat4(1.F), model.position);
+        glm::mat4 R = glm::rotate(glm::mat4(1.F), glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
+        R = glm::rotate(R, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
+        R = glm::rotate(R, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
+        glm::mat4 S = glm::scale(glm::mat4(1.F), model.scale);
+        glm::mat4 M = T * R * S;
 
-        // createmvp
-        vertexBuffer.modelMVP = player->perspective * player->view * m;
+        // create mvp for player space
+        vertexBuffer.model = M;
+        vertexBuffer.view = player->view;
+        vertexBuffer.projection = player->perspective;
+        vertexBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * M));
 
-        // make model for model in lightspace
-        shadowBuffer.m = glm::translate(glm::mat4(1.F), glm::vec3(-lightsBuffer.light.position));
-        shadowBuffer.m = glm::translate(shadowBuffer.m, glm::vec3(model.position));
-        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        shadowBuffer.m = glm::rotate(shadowBuffer.m, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        shadowBuffer.m = glm::scale(shadowBuffer.m, model.scale);
-        shadowBuffer.vp = lightVP;
-        vertexBuffer.lightMVP = lightVP * m;
-
+        // create mvp for lightspace
+        shadowBuffer.model = M;
+        shadowBuffer.view = depthViewMatrix;
+        shadowBuffer.projection = depthProjectionMatrix;
+        vertexBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * M;
         model.vertexBuffers[currentImage].update(&vertexBuffer, sizeof(vertexBuffer));
         model.lightsBuffers[currentImage].update(&lightsBuffer, sizeof(lightsBuffer));
         model.shadowBuffers[currentImage].update(&shadowBuffer, sizeof(shadowBuffer));

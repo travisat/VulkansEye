@@ -11,6 +11,11 @@
         "roughness": "resources/materials/Concrete23/Concrete23_rgh.jpg",
         "displacement": "resources/materials/Concrete23/Concrete23_disp.jpg"
     },
+    "Duck": {
+        "diffuse": "resources/materials/Duck/duck.png",
+        "roughness": "resources/materials/Duck/roughness.png",
+        "ao": "resources/materials/Duck/ao.png"
+    },
     "Fabric01": {
         "diffuse": "resources/materials/Fabric01/Fabric01_col.jpg",
         "normal": "resources/materials/Fabric01/Fabric01_nrm.jpg",

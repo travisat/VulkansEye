@@ -49,9 +49,6 @@ layout(location = 3) in vec4 lightWorldPos;
 
 layout(location = 0) out vec4 outColor;
 
-const float PI = 3.1415926;
-const float InvPI = 0.3183109;
-
 //[0] and [2]
 // convert from srgb color profile to linear color profile
 // for converting basecolor (diffuse)
@@ -63,8 +60,7 @@ vec3 convertSRGBtoLinear(vec3 srgbIn)
 }
 
 //[0]
-// Find the normal for this fragment, pulling from a predefined normal map
-// or from the interpolated mesh normal and tangent attributes.
+// Find the normal for this fragment
 vec3 getNormal(vec3 position, vec3 normal)
 {
     // Perturb normal, see http://www.thetenthplanet.de/archives/1180
@@ -83,21 +79,23 @@ vec3 getNormal(vec3 position, vec3 normal)
     return normalize(TBN * tangentNormal);
 }
 
-vec2 shadowOffsets[9] = vec2[](vec2(1, 1), vec2(1, 0), vec2(1, -1), vec2(0, 1), vec2(0, 0), vec2(0, -1), vec2(-1, 1),
-                               vec2(-1, 0), vec2(-1, -1));
+vec2 sampleOffsets[9] = vec2[](vec2(1.0, 1.0), vec2(1.0, 0.0), vec2(1.0, -1.0), //
+                               vec2(0.0, 1.0), vec2(0.0, 0.0), vec2(0.0, -1.0), //
+                               vec2(-1.0, 1.0), vec2(-1.0, 0.0), vec2(-1.0, -1.0));
 
 float shadowCalc(vec3 lightVec, vec3 normal)
 {
     float shadow = 0.0;
+    // compute bias based off NdotL
     float bias = max(0.05 * (1.0 - dot(normal, normalize(lightVec))), 0.005);
-    int samples = 9; // number of samples in sunOffsetDirections
-    float currentDepth = length(lightVec);
-    float texelSize = 1.0 / lights.shadowSize;
+    int samples = 9;                           // number of samples in sampleOffsets
+    float texelSize = 1.0 / lights.shadowSize; // size of texel that will be checked
 
+    float currentDistanceToLight = length(lightVec);
     for (int i = 0; i < samples; ++i)
     {
-        float closestDepth = texture(shadowMap, lightWorldPos.xy + shadowOffsets[i] * texelSize).r;
-        if (currentDepth - bias > closestDepth)
+        float closestDistanceToLight = texture(shadowMap, lightWorldPos.xy + sampleOffsets[i] * texelSize).r;
+        if (currentDistanceToLight - bias > closestDistanceToLight)
         {
             shadow += 0.3; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
         }
@@ -106,40 +104,28 @@ float shadowCalc(vec3 lightVec, vec3 normal)
     return 1.0 - shadow;      // sub from 1.0 here instead of later
 }
 
-//[8]
-vec3 prefilteredRadiance(vec3 R, float roughness)
-{
-    float lod = roughness * lights.radianceMipLevels;
-    float lodf = floor(lod);
-    float lodc = ceil(lod);
-    vec3 a = textureLod(radianceMap, R, lodf).rgb;
-    vec3 b = textureLod(radianceMap, R, lodc).rgb;
-    return mix(a, b, lod - lodf);
-}
-
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 {
     // compute diffusecontrib
-    vec3 irradiance = texture(irradianceMap, N).rgb;
-    vec3 diffuse = irradiance * baseColor;
+    vec3 irradiance = convertSRGBtoLinear(texture(irradianceMap, N).rgb);
+    vec3 f0 = vec3(0.04);
+    vec3 diffuseColor = baseColor * (vec3(1.0) - f0);
+    diffuseColor *= 1.0 - metallic;
+    vec3 diffuse = irradiance * diffuseColor;
 
     // compute specularcontrib
-    vec3 reflection = reflect(-V, N);
-    vec3 radiance = prefilteredRadiance(reflection, roughness);
-    vec2 brdf = texture(brdfMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
-    vec3 f0 = mix(vec3(0.04), baseColor, metallic); // mix color based off metallic
-    vec3 F = f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0 - max(dot(N, V), 0.0), 5.0);
-    vec3 specular = radiance * (F * brdf.x + brdf.y);
+    vec3 R = normalize(reflect(-V, N));
+    float NdotV = max(dot(N, V), 0.0);
+    vec3 radiance = convertSRGBtoLinear(textureLod(radianceMap, R, lights.radianceMipLevels * roughness).rgb);
+    vec2 brdf = texture(brdfMap, vec2(NdotV, roughness * roughness)).rg;
+    vec3 specularColor = mix(f0, baseColor, metallic);
+    vec3 specular = radiance * (specularColor * brdf.x + brdf.y);
 
-    // ambient output
-    vec3 kD = 1.0 - F;
-    kD *= 1.0 - metallic;
-    return kD * diffuse + specular;
+    return diffuse + specular;
 }
 
 void main()
 {
-
     vec3 baseColor = convertSRGBtoLinear(texture(diffuseMap, inUV).rgb);
     float metallic = texture(metallicMap, inUV).r;
     float roughness = texture(roughnessMap, inUV).r;
@@ -148,8 +134,7 @@ void main()
     vec3 N = getNormal(inPosition, inNormal); // Normal vector
     vec3 V = normalize(inPosition);           // Vector from surface to camera(origin)
 
-    vec3 lightVec = inPosition - vec3(lights.light.position);
-    vec3 ambient = shadowCalc(lightVec, N) * iblBRDF(N, V, baseColor, roughness, metallic);
-
-    outColor = vec4(ambient * ambientOcclusion, 1.0);
+    float shadow = shadowCalc(inPosition - vec3(lights.light.position), N);
+    vec3 ambient = iblBRDF(N, V, baseColor, roughness, metallic);
+    outColor = vec4(shadow * ambient * ambientOcclusion, 1.0);
 }

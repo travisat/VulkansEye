@@ -1,7 +1,7 @@
 {
-    "table": "resources/models/table.obj",
-    "floor": "resources/models/floor.obj",
-    "sphere": "resources/models/sphere.obj",
-    "floortile": "resources/models/floortile.obj",
-    "suzanne": "resources/models/suzanne.obj"
+    "table": "resources/models/table.glb",
+    "floor": "resources/models/floor.glb",
+    "sphere": "resources/models/sphere.glb",
+    "suzanne": "resources/models/suzanne.glb",
+    "duck" : "resources/models/Duck.glb"
 }

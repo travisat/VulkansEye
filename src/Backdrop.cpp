@@ -75,8 +75,8 @@ void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Backdrop::createUniformBuffers()
 {
-    vertexBuffers.resize(vulkan->swapChainImages.size());
-    for (auto &buffer : vertexBuffers)
+    inverseBuffers.resize(vulkan->swapChainImages.size());
+    for (auto &buffer : inverseBuffers)
     {
         buffer.vulkan = vulkan;
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
@@ -84,7 +84,7 @@ void Backdrop::createUniformBuffers()
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
         buffer.resize(sizeof(UniformVertex));
 
-        memcpy(buffer.mapped, &vertexBuffer, sizeof(vertexBuffer));
+        memcpy(buffer.mapped, &inverseBuffer, sizeof(inverseBuffer));
     }
 }
 
@@ -95,8 +95,8 @@ void Backdrop::update(uint32_t currentImage)
     // by unprojecting the mvp (ie applying the inverse backwards)
     glm::mat4 inverseProjection = inverse(player->perspective);
     glm::mat4 inverseModelView = transpose(player->view);
-    vertexBuffer.modelMVP = inverseModelView * inverseProjection;
-    memcpy(vertexBuffers[currentImage].mapped, &vertexBuffer, sizeof(vertexBuffer));
+    inverseBuffer.inverseMVP = inverseModelView * inverseProjection;
+    memcpy(inverseBuffers[currentImage].mapped, &inverseBuffer, sizeof(inverseBuffer));
 }
 
 void Backdrop::createDescriptorPool()
@@ -157,9 +157,9 @@ void Backdrop::createDescriptorSets()
     {
 
         vk::DescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = vertexBuffers[i].buffer;
+        bufferInfo.buffer = inverseBuffers[i].buffer;
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformVertex);
+        bufferInfo.range = sizeof(UniformBackdrop);
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -199,6 +199,8 @@ void Backdrop::createPipeline()
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
+
+    //pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

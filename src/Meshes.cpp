@@ -2,6 +2,7 @@
 #include "assimp/Importer.hpp"
 #include "assimp/mesh.h"
 #include "assimp/postprocess.h"
+#include "assimp/scene.h"
 #include "assimp/vector2.h"
 #include "assimp/vector3.h"
 #include "helpers.h"
@@ -73,12 +74,15 @@ void Meshes::loadMesh(int32_t index)
 void Meshes::importMesh(const std::string &path, Mesh *mesh)
 {
     Assimp::Importer importer;
-    uint32_t processFlags = aiProcess_GenSmoothNormals | aiProcess_FixInfacingNormals | aiProcess_GenUVCoords |
-                            aiProcess_Triangulate | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes |
-                            aiProcess_JoinIdenticalVertices;
+    uint32_t processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | 
+                            aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
     const aiScene *pScene = importer.ReadFile(path, processFlags);
 
     assert(pScene); // TODO(travis) error handling
+
+    const aiVector3D zero3D(0.F, 0.F, 0.F);
+
+    // const aiVector3D scale = pScene->mMetaData->
 
     for (int i = 0; i < pScene->mNumMeshes; ++i)
     {
@@ -93,15 +97,18 @@ void Meshes::importMesh(const std::string &path, Mesh *mesh)
         }
         for (int j = 0; j < aimesh->mNumVertices; ++j)
         {
+            const aiVector3D *pPosition = &aimesh->mVertices[j];
+            const aiVector3D *pUV = aimesh->HasTextureCoords(0) ? &aimesh->mTextureCoords[0][j] : &zero3D;
+            const aiVector3D *pNormal = &aimesh->mNormals[j];
             Vertex vertex{};
-            vertex.position.x = aimesh->mVertices[j].x;
-            vertex.position.y = aimesh->mVertices[j].y;
-            vertex.position.z = aimesh->mVertices[j].z;
-            vertex.UV.x = aimesh->mTextureCoords[0][j].x;
-            vertex.UV.y = aimesh->mTextureCoords[0][j].y;
-            vertex.normal.x = aimesh->mNormals[j].x;
-            vertex.normal.y = aimesh->mNormals[j].y;
-            vertex.normal.z = aimesh->mNormals[j].z;
+            vertex.position.x = pPosition->x;
+            vertex.position.y = pPosition->y;
+            vertex.position.z = pPosition->z;
+            vertex.UV.x = pUV->x;
+            vertex.UV.y = pUV->y;
+            vertex.normal.x = pNormal->x;
+            vertex.normal.y = pNormal->y;
+            vertex.normal.z = pNormal->z;
             mesh->vertices.push_back(vertex);
         }
     }

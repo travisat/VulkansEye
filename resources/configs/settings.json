@@ -4,7 +4,7 @@
     "zFar": 1024.0,
     "windowWidth": 1024,
     "windowHeight": 768,
-    "sync": false,
+    "sync": true,
     "shadowSize": 2048,
     "brdfPath": "resources/brdf.dds",
     "playerConfigPath": "resources/configs/player.json",

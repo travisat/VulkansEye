@@ -40,8 +40,16 @@ enum class Mode
 
 struct UniformVertex
 {
-    glm::mat4 modelMVP{};
+    glm::mat4 model{};
+    glm::mat4 view{};
+    glm::mat4 projection{};
     glm::mat4 lightMVP{};
+    glm::mat4 normalMatrix{};
+};
+
+struct UniformBackdrop
+{
+    glm::mat4 inverseMVP{};
 };
 
 struct UniformLight
@@ -65,8 +73,9 @@ struct UniformLights
 
 struct UniformShadow
 {
-    glm::mat4 m{};
-    glm::mat4 vp{};
+    glm::mat4 model{};
+    glm::mat4 view{};
+    glm::mat4 projection{};
 };
 
 class Vulkan

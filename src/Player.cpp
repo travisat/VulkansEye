@@ -22,17 +22,14 @@ void Player::loadConfig(const PlayerConfig &config)
 
 void Player::updateView()
 {
+     glm::mat4 translate = glm::translate(glm::mat4(1.0F), position);
 
-    glm::mat4 rotationMatrix = glm::mat4(1.0F);
-    glm::mat4 translationMatrix;
+    glm::mat4 rotate = glm::mat4(1.0F);
+    rotate = glm::rotate(rotate, glm::radians(rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
+    rotate = glm::rotate(rotate, glm::radians(rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
+    rotate = glm::rotate(rotate, glm::radians(rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
 
-    rotationMatrix = glm::rotate(rotationMatrix, glm::radians(rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
-    rotationMatrix = glm::rotate(rotationMatrix, glm::radians(rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
-    rotationMatrix = glm::rotate(rotationMatrix, glm::radians(rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
-
-    translationMatrix = glm::translate(glm::mat4(1.0F), position);
-
-    view = rotationMatrix * translationMatrix;
+    view = rotate * translate;
 }
 
 void Player::updateAspectRatio(float width, float height)
@@ -50,7 +47,7 @@ void Player::move(glm::vec2 direction)
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
     camFront = glm::normalize(camFront);
 
-    //convert input move direction into player view
+    // convert input move direction into player view
     moveDir = glm::vec3(0.0F);
     moveDir += direction.y * camFront * glm::vec3(1.0F, 0.0F, 1.0F);
     moveDir += direction.x * glm::cross(camFront, glm::vec3(0.0F, 1.0F, 0.0F));
@@ -60,7 +57,7 @@ void Player::jump()
 {
     if (position.y == height)
     {
-        velocity.y += jumpVelocity; 
+        velocity.y += jumpVelocity;
     }
 }
 
@@ -126,7 +123,7 @@ void Player::update(float deltaTime)
 
     // set acceleration
     acceleration = deltaTime * force / mass;
-    
+
     if (position.y > height)
     {
         acceleration.y -= 9.8F;

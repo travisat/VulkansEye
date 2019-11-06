@@ -2,15 +2,19 @@
 
 layout(binding = 0) uniform UniformVertex
 {
-    mat4 modelMVP;
+    mat4 model;
+    mat4 view;
+    mat4 projection;
     mat4 lightMVP;
-} vertexBuffer;
+    mat4 normalMatrix;
+}
+vertexBuffer;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
 
-layout(location = 0) out vec3 outPosition;
+layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec2 outUV;
 layout(location = 2) out vec3 outNormal;
 layout(location = 3) out vec4 lightWorldPos;
@@ -23,8 +27,9 @@ const mat4 biasMat = mat4(0.5, 0.0, 0.0, 0.0, //
 void main()
 {
     outUV = inUV;
-    outNormal = inNormal;
-    outPosition = inPosition;
+    outNormal = normalize(mat3(vertexBuffer.normalMatrix) * inNormal);
+    
+    outPosition =  vertexBuffer.model * vec4(inPosition, 1.0);
     lightWorldPos = biasMat * vertexBuffer.lightMVP * vec4(inPosition, 1.0);
-    gl_Position = vertexBuffer.modelMVP * vec4(inPosition, 1.0);
+    gl_Position = vertexBuffer.projection * vertexBuffer.view * outPosition;
 }

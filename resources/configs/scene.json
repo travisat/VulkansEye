@@ -4,22 +4,22 @@
     "models": {
         "table": {
             "type": "single",
-            "mesh": "table",
-            "material": "Concrete23",
+            "mesh": "duck",
+            "material": "Duck",
             "position": {
-                "x": 2,
+                "x": 4,
                 "y": 0,
-                "z": 2
+                "z": 3
             },
             "rotation": {
-                "x": 0,
+                "x": 90,
                 "y": 0,
-                "z": 0
+                "z": 90
             },
             "scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
+                "x": 0.01,
+                "y": 0.01,
+                "z": 0.01
             }
         },
         "sphere": {
@@ -32,7 +32,7 @@
                 "z": -3
             },
             "rotation": {
-                "x": 0,
+                "x": 180,
                 "y": 0,
                 "z": 0
             },
@@ -52,7 +52,7 @@
                 "z": -4
             },
             "rotation": {
-                "x": 0,
+                "x": 90,
                 "y": 0,
                 "z": 0
             },
@@ -65,14 +65,14 @@
         "floor": {
             "type": "single",
             "mesh": "floor",
-            "material": "PavingStones45",
+            "material": "Planks13",
             "position": {
                 "x": 0,
                 "y": 0,
                 "z": 0
             },
             "rotation": {
-                "x": 0,
+                "x": 90,
                 "y": 0,
                 "z": 0
             },
