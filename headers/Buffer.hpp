@@ -47,8 +47,6 @@ class Buffer
   private:
     VmaAllocation allocation{};
     vk::DeviceSize size = 0;
-
-    bool ismapped = false;
 };
 
 } // namespace tat

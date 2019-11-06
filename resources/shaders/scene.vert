@@ -7,6 +7,7 @@ layout(binding = 0) uniform UniformVertex
     mat4 projection;
     mat4 lightMVP;
     mat4 normalMatrix;
+    vec4 camPos;
 }
 vertexBuffer;
 
@@ -18,6 +19,7 @@ layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec2 outUV;
 layout(location = 2) out vec3 outNormal;
 layout(location = 3) out vec4 lightWorldPos;
+layout(location = 4) out vec4 camPos;
 
 const mat4 biasMat = mat4(0.5, 0.0, 0.0, 0.0, //
                           0.0, 0.5, 0.0, 0.0, //
@@ -28,6 +30,7 @@ void main()
 {
     outUV = inUV;
     outNormal = normalize(mat3(vertexBuffer.normalMatrix) * inNormal);
+    camPos = vertexBuffer.camPos;
     
     outPosition =  vertexBuffer.model * vec4(inPosition, 1.0);
     lightWorldPos = biasMat * vertexBuffer.lightMVP * vec4(inPosition, 1.0);

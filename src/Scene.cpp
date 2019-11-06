@@ -183,6 +183,7 @@ void Scene::update(uint32_t currentImage)
         vertexBuffer.view = player->view;
         vertexBuffer.projection = player->perspective;
         vertexBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * M));
+        vertexBuffer.camPos = glm::vec4(-1.F * player->position, 1.F);
 
         // create mvp for lightspace
         shadowBuffer.model = M;

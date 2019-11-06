@@ -45,6 +45,7 @@ struct UniformVertex
     glm::mat4 projection{};
     glm::mat4 lightMVP{};
     glm::mat4 normalMatrix{};
+    glm::vec4 camPos{};
 };
 
 struct UniformBackdrop

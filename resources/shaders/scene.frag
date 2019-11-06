@@ -46,6 +46,7 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec4 lightWorldPos;
+layout(location = 4) in vec4 camPos;
 
 layout(location = 0) out vec4 outColor;
 
@@ -106,20 +107,20 @@ float shadowCalc(vec3 lightVec, vec3 normal)
 
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 {
-    // compute diffusecontrib
-    vec3 irradiance = convertSRGBtoLinear(texture(irradianceMap, N).rgb);
+    float NdotV = max(dot(N, V), 0.0);
     vec3 f0 = vec3(0.04);
-    vec3 diffuseColor = baseColor * (vec3(1.0) - f0);
-    diffuseColor *= 1.0 - metallic;
+
+    // compute diffuse
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 diffuseColor = (baseColor - f0) * (1.0 - metallic);
     vec3 diffuse = irradiance * diffuseColor;
 
-    // compute specularcontrib
-    vec3 R = normalize(reflect(-V, N));
-    float NdotV = max(dot(N, V), 0.0);
-    vec3 radiance = convertSRGBtoLinear(textureLod(radianceMap, R, lights.radianceMipLevels * roughness).rgb);
-    vec2 brdf = texture(brdfMap, vec2(NdotV, roughness * roughness)).rg;
-    vec3 specularColor = mix(f0, baseColor, metallic);
-    vec3 specular = radiance * (specularColor * brdf.x + brdf.y);
+    // compute specular
+    vec3 R = reflect(-V, N);
+    //R.y *= -1.0;
+    vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
+    vec2 brdf = texture(brdfMap, vec2(NdotV, roughness)).rg;
+    vec3 specular = radiance * (mix(f0, baseColor, metallic) * brdf.x + brdf.y);
 
     return diffuse + specular;
 }
@@ -131,8 +132,8 @@ void main()
     float roughness = texture(roughnessMap, inUV).r;
     float ambientOcclusion = texture(aoMap, inUV).r;
 
-    vec3 N = getNormal(inPosition, inNormal); // Normal vector
-    vec3 V = normalize(inPosition);           // Vector from surface to camera(origin)
+    vec3 N = getNormal(inPosition, inNormal);      // Normal vector
+    vec3 V = normalize(inPosition - vec3(camPos)); // Vector from camera to model
 
     float shadow = shadowCalc(inPosition - vec3(lights.light.position), N);
     vec3 ambient = iblBRDF(N, V, baseColor, roughness, metallic);
