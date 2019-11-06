@@ -94,6 +94,8 @@ struct MeshConfig
 {
     std::string name = "cube";
     std::string path = "resources/models/cube.obj";
+    glm::vec3 center{};
+    glm::vec3 size{};
 };
 
 struct MeshesConfig

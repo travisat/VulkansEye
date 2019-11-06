@@ -295,11 +295,23 @@ auto VulkansEye::createMeshesConfig(const std::string &path) -> MeshesConfig
     json j;
     file >> j;
 
-    for (auto &[key, value] : j.items())
+    for (auto &[key, mesh] : j.items())
     {
         MeshConfig c{};
         c.name = key;
-        c.path = value;
+        c.path = mesh.value("path", c.path);
+        if (mesh.find("center") != mesh.end())
+        {
+            c.center.x = mesh.at("center").value("x", c.center.x);
+            c.center.y = mesh.at("center").value("y", c.center.y);
+            c.center.z = mesh.at("center").value("z", c.center.z);
+        }
+        if (mesh.find("size") != mesh.end())
+        {
+            c.size.x = mesh.at("size").value("x", c.size.x);
+            c.size.y = mesh.at("size").value("y", c.size.y);
+            c.size.z = mesh.at("size").value("z", c.size.z);
+        }
         config.meshes.push_back(c);
     }
     return config;

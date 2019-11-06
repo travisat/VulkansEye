@@ -1,7 +1,54 @@
 {
-    "table": "resources/models/table.glb",
-    "floor": "resources/models/floor.glb",
-    "sphere": "resources/models/sphere.glb",
-    "suzanne": "resources/models/suzanne.glb",
-    "duck" : "resources/models/Duck.glb"
+    "table": {
+        "path": "resources/models/table.glb",
+        "center": {
+            "x": 0,
+            "y": -0.5,
+            "z": 0
+        },
+        "size": {
+            "x": 1,
+            "y": 2,
+            "z": 0.75
+        }
+    },
+    "floor": {
+        "path": "resources/models/floor.glb",
+        "center": {
+            "x": 0,
+            "y": -0.05,
+            "z": 0
+        },
+        "size": {
+            "x": 10,
+            "y": 0.1,
+            "z": 10
+        }
+    },
+    "sphere": {
+        "path": "resources/models/sphere.glb",
+        "center": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+        },
+        "size": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        }
+    },
+    "suzanne": {
+        "path": "resources/models/suzanne.glb",
+        "center": {
+            "x": 0.002499,
+            "y": -1.72786,
+            "z": 0.44609
+        },
+        "size": {
+            "x": 4.1,
+            "y": 2.55,
+            "z": 2.95
+        }
+    }
 }

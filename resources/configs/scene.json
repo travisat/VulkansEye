@@ -4,35 +4,35 @@
     "models": {
         "table": {
             "type": "single",
-            "mesh": "duck",
-            "material": "Duck",
+            "mesh": "table",
+            "material": "Metal07",
             "position": {
                 "x": 4,
                 "y": 0,
                 "z": 3
             },
             "rotation": {
-                "x": 90,
+                "x": 0,
                 "y": 0,
-                "z": 90
+                "z": 0
             },
             "scale": {
-                "x": 0.01,
-                "y": 0.01,
-                "z": 0.01
+                "x": 1,
+                "y": 1,
+                "z": 1
             }
         },
         "sphere": {
             "type": "single",
-            "mesh": "table",
+            "mesh": "sphere",
             "material": "Metal07",
             "position": {
                 "x": 2,
-                "y": 0,
+                "y": -1,
                 "z": -3
             },
             "rotation": {
-                "x": 180,
+                "x": 0,
                 "y": 0,
                 "z": 0
             },
@@ -48,11 +48,11 @@
             "material": "Concrete23",
             "position": {
                 "x": -4,
-                "y": -1,
+                "y": 0,
                 "z": -4
             },
             "rotation": {
-                "x": 90,
+                "x": 0,
                 "y": 0,
                 "z": 0
             },
@@ -65,21 +65,21 @@
         "floor": {
             "type": "single",
             "mesh": "floor",
-            "material": "Planks19",
+            "material": "Planks13",
             "position": {
                 "x": 0,
                 "y": 0,
                 "z": 0
             },
             "rotation": {
-                "x": 90,
+                "x": 0,
                 "y": 0,
                 "z": 0
             },
             "scale": {
-                "x": 1,
+                "x": 2,
                 "y": 1,
-                "z": 1
+                "z": 2
             }
         }
     }

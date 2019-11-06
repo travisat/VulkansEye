@@ -1,8 +1,8 @@
 #pragma once
 
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 #include <cstdint>
 
@@ -16,12 +16,22 @@ namespace tat
 struct Mesh
 {
     std::string name = "";
-    uint32_t vertexSize = 0;
-    uint32_t indexSize = 0;
-    std::vector<Vertex> vertices{};
-    std::vector<uint32_t> indices{};
-    Buffer vertexBuffer{};
-    Buffer indexBuffer{};
+    std::string path = "";
+    glm::vec3 center{};
+    glm::vec3 size{};
+
+    struct
+    {
+        std::vector<Vertex> vertices{};
+        std::vector<uint32_t> indices{};
+    } data;
+
+    struct
+    {
+        Buffer vertex{};
+        Buffer index{};
+    } buffers;
+
     bool loaded = false;
 };
 
@@ -35,8 +45,6 @@ class Meshes
     auto getMesh(const std::string &name) -> Mesh *;
 
   private:
-    // vector of configs, use loadConfigs to populate
-    std::vector<MeshConfig> configs{};
     // vector of empty Meshes until mesh has been loaded
     std::vector<Mesh> collection{};
     // string index = mesh index
@@ -44,7 +52,7 @@ class Meshes
 
     auto getIndex(const std::string &name) -> int32_t;
     void loadMesh(int32_t index);
-    static void importMesh(const std::string &path, Mesh *mesh);
+    static void importMesh(Mesh *mesh);
 };
 
 }; // namespace tat

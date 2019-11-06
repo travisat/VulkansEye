@@ -12,17 +12,17 @@ namespace tat
 {
 void Meshes::loadConfig(const MeshesConfig &config)
 {
-
-    configs.resize(config.meshes.size());
-    collection.resize(configs.size());
+    collection.resize(config.meshes.size());
     int32_t index = 0;
     for (const auto &meshConfig : config.meshes)
     {
         collection[index].name = meshConfig.name;
+        collection[index].path = meshConfig.path;
+        collection[index].center = meshConfig.center;
+        collection[index].size = meshConfig.size;
         // insert name into map for index retrieval
         names.insert(std::make_pair(meshConfig.name, index));
         // insert config into configs so mesh can be loaded when needed
-        configs[index] = meshConfig;
         ++index;
     }
 }
@@ -47,7 +47,7 @@ void Meshes::loadMesh(int32_t index)
         return;
     }
     // otherwise load the mesh
-    importMesh(configs[index].path, mesh);
+    importMesh(mesh);
 
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
@@ -55,51 +55,53 @@ void Meshes::loadMesh(int32_t index)
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-    stagingBuffer.update(mesh->vertices.data(), mesh->vertexSize * sizeof(mesh->vertices[0]));
-    mesh->vertexBuffer.vulkan = vulkan;
-    mesh->vertexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
-    mesh->vertexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    stagingBuffer.copyTo(mesh->vertexBuffer);
+    stagingBuffer.update(mesh->data.vertices.data(), mesh->data.vertices.size() * sizeof(mesh->data.vertices[0]));
+    mesh->buffers.vertex.vulkan = vulkan;
+    mesh->buffers.vertex.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
+    mesh->buffers.vertex.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    stagingBuffer.copyTo(mesh->buffers.vertex);
 
-    stagingBuffer.update(mesh->indices.data(), mesh->indexSize * sizeof(mesh->indices[0]));
-    mesh->indexBuffer.vulkan = vulkan;
-    mesh->indexBuffer.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
-    mesh->indexBuffer.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    stagingBuffer.copyTo(mesh->indexBuffer);
+    stagingBuffer.update(mesh->data.indices.data(), mesh->data.indices.size() * sizeof(mesh->data.indices[0]));
+    mesh->buffers.index.vulkan = vulkan;
+    mesh->buffers.index.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
+    mesh->buffers.index.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    stagingBuffer.copyTo(mesh->buffers.index);
 
     mesh->loaded = true;
-    Trace("Loaded ", configs[index].path, " at ", Timer::systemTime());
+    Trace("Loaded ", mesh->name, " at ", Timer::systemTime());
+    Trace("Vertices: ", mesh->data.vertices.size());
+    Trace("Indices: ", mesh->data.indices.size());
 }
 
-void Meshes::importMesh(const std::string &path, Mesh *mesh)
+void Meshes::importMesh(Mesh *mesh)
 {
     Assimp::Importer importer;
-    uint32_t processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | 
+    auto processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_PreTransformVertices |
                             aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
-    const aiScene *pScene = importer.ReadFile(path, processFlags);
+    auto pScene = importer.ReadFile(mesh->path, processFlags);
 
     assert(pScene); // TODO(travis) error handling
 
     const aiVector3D zero3D(0.F, 0.F, 0.F);
 
-    // const aiVector3D scale = pScene->mMetaData->
-
     for (int i = 0; i < pScene->mNumMeshes; ++i)
     {
-        const aiMesh *aimesh = pScene->mMeshes[i];
+        auto aimesh = pScene->mMeshes[i];
+        
         for (int j = 0; j < aimesh->mNumFaces; ++j)
         {
             const aiFace *face = &aimesh->mFaces[j];
             for (int k = 0; k < face->mNumIndices; ++k)
             {
-                mesh->indices.push_back(face->mIndices[k]);
+                mesh->data.indices.push_back(face->mIndices[k]);
             }
         }
+
         for (int j = 0; j < aimesh->mNumVertices; ++j)
         {
-            const aiVector3D *pPosition = &aimesh->mVertices[j];
-            const aiVector3D *pUV = aimesh->HasTextureCoords(0) ? &aimesh->mTextureCoords[0][j] : &zero3D;
-            const aiVector3D *pNormal = &aimesh->mNormals[j];
+            auto pPosition = &aimesh->mVertices[j];
+            auto pUV = aimesh->HasTextureCoords(0) ? &aimesh->mTextureCoords[0][j] : &zero3D;
+            auto pNormal = &aimesh->mNormals[j];
             Vertex vertex{};
             vertex.position.x = pPosition->x;
             vertex.position.y = pPosition->y;
@@ -109,13 +111,9 @@ void Meshes::importMesh(const std::string &path, Mesh *mesh)
             vertex.normal.x = pNormal->x;
             vertex.normal.y = pNormal->y;
             vertex.normal.z = pNormal->z;
-            mesh->vertices.push_back(vertex);
+            mesh->data.vertices.push_back(vertex);
         }
     }
-    mesh->indexSize = mesh->indices.size();
-    assert(mesh->indexSize > 0);
-    mesh->vertexSize = mesh->vertices.size();
-    assert(mesh->vertexSize > 0);
 }
 
 auto Meshes::getIndex(const std::string &name) -> int32_t

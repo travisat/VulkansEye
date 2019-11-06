@@ -129,11 +129,11 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
-        commandBuffer.bindIndexBuffer(model.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->buffers.vertex.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(model.mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout, 0, 1,
                                          &model.colorSets[currentImage], 0, nullptr);
-        commandBuffer.drawIndexed(model.mesh->indexSize, 1, 0, 0, 0);
+        commandBuffer.drawIndexed(model.mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
 
@@ -144,11 +144,11 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->vertexBuffer.buffer, offsets.data());
-        commandBuffer.bindIndexBuffer(model.mesh->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->buffers.vertex.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(model.mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout, 0, 1,
                                          &model.shadowSets[currentImage], 0, nullptr);
-        commandBuffer.drawIndexed(model.mesh->indexSize, 1, 0, 0, 0);
+        commandBuffer.drawIndexed(model.mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
 
