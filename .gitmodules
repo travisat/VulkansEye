@@ -20,3 +20,6 @@
 	path = external/glfw
 	url = https://github.com/glfw/glfw.git
 
+[submodule "external/leathers"]
+	path = external/leathers
+	url = https://github.com/ruslo/leathers
