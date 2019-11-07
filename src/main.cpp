@@ -8,7 +8,7 @@
 
 #include "VulkansEye.hpp"
 
-#define DEFAULT_CONFIG "resources/configs/settings.json"
+#define DEFAULT_CONFIG "assets/configs/settings.json"
 
 auto main(int argc, char *argv[]) -> int
 {

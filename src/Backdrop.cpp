@@ -191,8 +191,8 @@ void Backdrop::createPipeline()
     pipeline.descriptorSetLayout = descriptorSetLayout;
     pipeline.loadDefaults(vulkan->colorPass);
 
-    auto vertShaderCode = readFile("resources/shaders/backdrop.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/backdrop.frag.spv");
+    auto vertShaderCode = readFile("assets/shaders/backdrop.vert.spv");
+    auto fragShaderCode = readFile("assets/shaders/backdrop.frag.spv");
 
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);

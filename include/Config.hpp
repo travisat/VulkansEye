@@ -27,12 +27,12 @@ struct Config
     int windowHeight = 768;
     bool sync = true;
     float shadowSize = 1024.F;
-    std::string brdf = "resources/brdf.dds";
-    std::string playerConfigPath = "resources/configs/player.json";
-    std::string materialsConfigPath = "resources/configs/materials.json";
-    std::string meshesConfigPath = "resources/configs/meshes.json";
-    std::string backdropsConfigPath = "resources/configs/backdrops.json";
-    std::string sceneConfigPath = "resources/configs/scene.json";
+    std::string brdf = "assets/brdf.dds";
+    std::string playerConfigPath = "assets/configs/player.json";
+    std::string materialsConfigPath = "assets/configs/materials.json";
+    std::string meshesConfigPath = "assets/configs/meshes.json";
+    std::string backdropsConfigPath = "assets/configs/backdrops.json";
+    std::string sceneConfigPath = "assets/configs/scene.json";
 };
 
 struct LightConfig
@@ -63,9 +63,9 @@ struct PlayerConfig
 struct BackdropConfig
 {
     std::string name = "desert";
-    std::string colorPath = "resources/backdrop/desert/color.dds";
-    std::string radiancePath = "resources/backdrop/desert/radiance.dds";
-    std::string irradiancePath = "resources/backdrop/desert/irradiance.dds";
+    std::string colorPath = "assets/backdrop/desert/color.dds";
+    std::string radiancePath = "assets/backdrop/desert/radiance.dds";
+    std::string irradiancePath = "assets/backdrop/desert/irradiance.dds";
     LightConfig light{};
 };
 
@@ -77,12 +77,12 @@ struct BackdropsConfig
 struct MaterialConfig
 {
     std::string name = "default";
-    std::string diffuse = "resources/materials/default/diffuse.png";
-    std::string normal = "resources/materials/default/normal.png";
-    std::string roughness = "resources/materials/default/roughness.png";
-    std::string metallic = "resources/materials/default/metallic.png";
-    std::string ao = "resources/materials/default/ao.png";
-    std::string displacement = "resources/materials/default/displacement.png";
+    std::string diffuse = "assets/materials/default/diffuse.png";
+    std::string normal = "assets/materials/default/normal.png";
+    std::string roughness = "assets/materials/default/roughness.png";
+    std::string metallic = "assets/materials/default/metallic.png";
+    std::string ao = "assets/materials/default/ao.png";
+    std::string displacement = "assets/materials/default/displacement.png";
 };
 
 struct MaterialsConfig
@@ -93,7 +93,7 @@ struct MaterialsConfig
 struct MeshConfig
 {
     std::string name = "cube";
-    std::string path = "resources/models/cube.obj";
+    std::string path = "assets/models/cube.obj";
     glm::vec3 center{};
     glm::vec3 size{};
 };

@@ -318,8 +318,8 @@ void Scene::createColorPipeline()
     colorPipeline.descriptorSetLayout = colorLayout;
     colorPipeline.loadDefaults(vulkan->colorPass);
 
-    auto vertShaderCode = readFile("resources/shaders/scene.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/scene.frag.spv");
+    auto vertShaderCode = readFile("assets/shaders/scene.vert.spv");
+    auto fragShaderCode = readFile("assets/shaders/scene.frag.spv");
 
     colorPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     colorPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
@@ -386,8 +386,8 @@ void Scene::createShadowPipeline()
     shadowPipeline.descriptorSetLayout = shadowLayout;
     shadowPipeline.loadDefaults(vulkan->shadowPass);
 
-    auto vertShaderCode = readFile("resources/shaders/shadow.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/shadow.frag.spv");
+    auto vertShaderCode = readFile("assets/shaders/shadow.vert.spv");
+    auto fragShaderCode = readFile("assets/shaders/shadow.frag.spv");
 
     shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);

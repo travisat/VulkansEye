@@ -1,6 +1,6 @@
 {
     "table": {
-        "path": "resources/models/table.glb",
+        "path": "assets/models/table.glb",
         "center": {
             "x": 0,
             "y": -0.5,
@@ -13,7 +13,7 @@
         }
     },
     "floor": {
-        "path": "resources/models/floor.glb",
+        "path": "assets/models/floor.glb",
         "center": {
             "x": 0,
             "y": -0.05,
@@ -26,7 +26,7 @@
         }
     },
     "sphere": {
-        "path": "resources/models/sphere.glb",
+        "path": "assets/models/sphere.glb",
         "center": {
             "x": 0,
             "y": 0,
@@ -39,7 +39,7 @@
         }
     },
     "suzanne": {
-        "path": "resources/models/suzanne.glb",
+        "path": "assets/models/suzanne.glb",
         "center": {
             "x": 0.002499,
             "y": -1.72786,

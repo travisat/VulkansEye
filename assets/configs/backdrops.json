@@ -1,8 +1,8 @@
 {
     "desert": {
-        "color": "resources/backdrop/desert/color.dds",
-        "radiance": "resources/backdrop/desert/radiance.dds",
-        "irradiance": "resources/backdrop/desert/irradiance.dds",
+        "color": "assets/backdrop/desert/color.dds",
+        "radiance": "assets/backdrop/desert/radiance.dds",
+        "irradiance": "assets/backdrop/desert/irradiance.dds",
         "light": {
             "position": {
                 "x": -20,
@@ -14,9 +14,9 @@
         }
     },
     "papermill": {
-        "color": "resources/backdrop/papermill/color.dds",
-        "radiance": "resources/backdrop/papermill/radiance.dds",
-        "irradiance": "resources/backdrop/papermill/irradiance.dds",
+        "color": "assets/backdrop/papermill/color.dds",
+        "radiance": "assets/backdrop/papermill/radiance.dds",
+        "irradiance": "assets/backdrop/papermill/irradiance.dds",
         "light": {
             "position": {
                 "x": -15,

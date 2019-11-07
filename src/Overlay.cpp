@@ -188,8 +188,8 @@ void Overlay::createPipeline()
     pipeline.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     // Vertex bindings an attributes based on ImGui vertex definition
-    auto vertShaderCode = readFile("resources/shaders/ui.vert.spv");
-    auto fragShaderCode = readFile("resources/shaders/ui.frag.spv");
+    auto vertShaderCode = readFile("assets/shaders/ui.vert.spv");
+    auto fragShaderCode = readFile("assets/shaders/ui.frag.spv");
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
