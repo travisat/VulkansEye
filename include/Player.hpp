@@ -4,28 +4,19 @@
 #include <memory>
 
 #include "Config.hpp"
+#include "Object.hpp"
 #include "Input.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
 {
 
-
-class Player
+class Player : public Object
 {
   public:
     std::shared_ptr<Vulkan> vulkan;
 
     void loadConfig(const PlayerConfig &config);
-
-    glm::vec3 rotation = glm::vec3(0.0F);
-    glm::vec3 position = glm::vec3(0.0F);
-    glm::vec3 velocity = glm::vec3(0.0F);
-    glm::vec3 acceleration = glm::vec3(0.0F);
-    glm::vec3 force = glm::vec3(0.0F);
-
-    float height; // m
-    float mass;   // kg
 
     glm::mat4 perspective;
     glm::mat4 view;
@@ -41,6 +32,11 @@ class Player
     void updateAspectRatio(float windowWidth, float windowHeight);
 
     bool mouseMode = true;
+
+    auto height() -> float
+    {
+      return m_size.y;
+    };
 
   private:
     float fieldOfView;

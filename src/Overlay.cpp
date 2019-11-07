@@ -247,8 +247,8 @@ void Overlay::newFrame()
     if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0F))
     {
         lastUpdateTime = frameTime;
-        uiSettings.position = player->position; // world is opposite cameras position
-        uiSettings.position.y += player->height;        // put position on ground
+        uiSettings.position = player->position(); // world is opposite cameras position
+        uiSettings.position.y += player->height();        // put position on ground
         uiSettings.fps = 1.0F / deltaTime;
 
         switch (vulkan->mode)

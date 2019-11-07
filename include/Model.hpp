@@ -9,13 +9,14 @@
 #include "Image.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
+#include "Object.hpp"
 #include "Timer.hpp"
 #include "Vertex.hpp"
 
 namespace tat
 {
 
-class Model
+class Model : public Object
 {
   public:
     // config values
@@ -56,10 +57,6 @@ class Model
   private:
     int32_t meshIndex;
     int32_t materialIndex;
-
-    glm::vec3 m_position = glm::vec3(0.F);
-    glm::vec3 m_rotation = glm::vec3(0.F);
-    glm::vec3 m_scale = glm::vec3(1.F);
 
     void updateModel();
 };

@@ -6,11 +6,12 @@ namespace tat
 
 void Player::loadConfig(const PlayerConfig &config)
 {
+    m_position = config.position;
+    m_rotation = config.rotation;
+    m_size = glm::vec3(0.5F, config.height, 0.25F);
+    m_mass = config.mass;
+
     fieldOfView = config.fieldOfView;
-    position = config.position;
-    rotation = config.rotation;
-    height = config.height;
-    mass = config.mass;
     jumpVelocity = glm::sqrt(2.0F * 9.8F * config.jumpHeight);
     velocityMax = config.velocityMax;
     timeToReachVMax = config.timeToReachVMax;
@@ -22,12 +23,12 @@ void Player::loadConfig(const PlayerConfig &config)
 
 void Player::updateView()
 {
-     glm::mat4 translate = glm::translate(glm::mat4(1.0F), position);
+    glm::mat4 translate = glm::translate(glm::mat4(1.0F), m_position);
 
     glm::mat4 rotate = glm::mat4(1.0F);
-    rotate = glm::rotate(rotate, glm::radians(rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
-    rotate = glm::rotate(rotate, glm::radians(rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
-    rotate = glm::rotate(rotate, glm::radians(rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
+    rotate = glm::rotate(rotate, glm::radians(m_rotation.x), glm::vec3(1.0F, 0.0F, 0.0F));
+    rotate = glm::rotate(rotate, glm::radians(m_rotation.y), glm::vec3(0.0F, 1.0F, 0.0F));
+    rotate = glm::rotate(rotate, glm::radians(m_rotation.z), glm::vec3(0.0F, 0.0F, 1.0F));
 
     view = rotate * translate;
 }
@@ -42,9 +43,9 @@ void Player::updateAspectRatio(float width, float height)
 void Player::move(glm::vec2 direction)
 {
     glm::vec3 camFront;
-    camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
-    camFront.y = sin(glm::radians(rotation.x));
-    camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
+    camFront.x = -cos(glm::radians(m_rotation.x)) * sin(glm::radians(m_rotation.y));
+    camFront.y = sin(glm::radians(m_rotation.x));
+    camFront.z = cos(glm::radians(m_rotation.x)) * cos(glm::radians(m_rotation.y));
     camFront = glm::normalize(camFront);
 
     // convert input move direction into player view
@@ -55,9 +56,9 @@ void Player::move(glm::vec2 direction)
 
 void Player::jump()
 {
-    if (position.y == height)
+    if (m_position.y == m_size.y)
     {
-        velocity.y += jumpVelocity;
+        m_velocity.y += jumpVelocity;
     }
 }
 
@@ -79,63 +80,64 @@ void Player::update(float deltaTime)
     if (lastMousePosition != mousePosition)
     {
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
-        rotation.x -= deltaMousePosition.y * mouseSensitivity;
-        rotation.x = std::clamp(rotation.x, -90.0F, 90.0F);
-        rotation.y += deltaMousePosition.x * mouseSensitivity;
+        m_rotation.x -= deltaMousePosition.y * mouseSensitivity;
+        m_rotation.x = std::clamp(m_rotation.x, -90.0F, 90.0F);
+        m_rotation.y += deltaMousePosition.x * mouseSensitivity;
         lastMousePosition = mousePosition;
     }
 
-    force = glm::vec3(0.0F);
+    m_force = glm::vec3(0.0F);
     if (moveDir != glm::vec3(0.0F))
     {
         moveDir = normalize(moveDir);
         // turn rotational vector into force for walking
-        float walkingForce = (mass * velocityMax) / (timeToReachVMax * deltaTime);
+        float walkingForce = (m_mass * velocityMax) / (timeToReachVMax * deltaTime);
 
-        force = moveDir * walkingForce;
+        m_force = moveDir * walkingForce;
 
-        if (glm::abs(velocity.x) < 0.001F && glm::abs(velocity.z) < 0.001) // if stopped don't apply friction
+        if (glm::abs(m_velocity.x) < 0.001F && glm::abs(m_velocity.z) < 0.001) // if stopped don't apply friction
         {
-            velocity.x = 0.0F;
-            velocity.z = 0.0F;
+            m_velocity.x = 0.0F;
+            m_velocity.z = 0.0F;
         }
         else // apply friction
         {
             float internalFriction =
-                (glm::length(velocity) / velocityMax) * walkingForce; // internal friction, our legs only move so fast
-            force -= internalFriction * normalize(velocity);
+                (glm::length(m_velocity) / velocityMax) * walkingForce; // internal friction, our legs only move so fast
+            m_force -= internalFriction * normalize(m_velocity);
         }
     }
-    else if (position.y == height)
+    else if (m_position.y == m_size.y)
     { // we want to stop
-        float stoppingForce = (mass * velocityMax) / (timeToStopfromVMax * deltaTime);
-        if (glm::abs(velocity.x) < 0.001F && glm::abs(velocity.z) < 0.001) // if stopped don't apply friction
+        float stoppingForce = (m_mass * velocityMax) / (timeToStopfromVMax * deltaTime);
+        if (glm::abs(m_velocity.x) < 0.001F && glm::abs(m_velocity.z) < 0.001) // if stopped don't apply friction
         {
-            velocity.x = 0.0F;
-            velocity.z = 0.0F;
+            m_velocity.x = 0.0F;
+            m_velocity.z = 0.0F;
         }
         else // apply stopping force
         {
-            float internalFriction = (glm::length(velocity) / velocityMax) * stoppingForce;
-            force = internalFriction * (-1.0F * normalize(velocity));
+            float internalFriction = (glm::length(m_velocity) / velocityMax) * stoppingForce;
+            m_force = internalFriction * (-1.0F * normalize(m_velocity));
         }
     }
 
-    // set acceleration
-    acceleration = deltaTime * force / mass;
 
-    if (position.y > height)
+    // set acceleration
+    m_acceleration = deltaTime * m_force / m_mass;
+
+    if (m_position.y > m_size.y)
     {
-        acceleration.y -= 9.8F;
+        m_acceleration.y -= 9.8F;
     }
     // apply acceleration to velocity
-    velocity += acceleration * deltaTime;
+    m_velocity += m_acceleration * deltaTime;
     // apply velocity to position
-    position += velocity * deltaTime;
-    if (position.y < height)
+    m_position += m_velocity * deltaTime;
+    if (m_position.y < m_size.y)
     {
-        position.y = height;
-        velocity.y = 0.0F;
+        m_position.y = m_size.y;
+        m_velocity.y = 0.0F;
     }
 
     updateView();
