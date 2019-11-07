@@ -34,8 +34,8 @@ class Model
     // color pipeline
     Material *material;
     std::vector<vk::DescriptorSet> colorSets;
-    std::vector<Buffer> vertexBuffers;
-    std::vector<Buffer> lightsBuffers;
+    std::vector<Buffer> vertBuffers;
+    std::vector<Buffer> fragBuffers;
     Image *irradianceMap;
     Image *radianceMap;
     Image *brdf;
@@ -43,7 +43,7 @@ class Model
     // shadow pipeline
     std::vector<vk::DescriptorSet> shadowSets;
     Image *shadow;
-    std::vector<Buffer> shadowBuffers;
+    std::vector<Buffer> shadBuffers;
 
     void create();
     void createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);

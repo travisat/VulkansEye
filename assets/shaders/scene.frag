@@ -12,23 +12,15 @@
 
 const int numLights = 1;
 
-struct UniformLight
-{
-    vec4 position;
-    vec4 rotation;
-    vec4 color;
-    float lumens;
-    float steradians;
-};
-
 layout(binding = 1) uniform UniformLights
 {
+    vec4 position;
+    vec4 color;
+    float lumens;
     float radianceMipLevels;
     float exposure;
     float gamma;
     float shadowSize;
-    UniformLight light;
-    UniformLight flashLight;
 }
 lights;
 
@@ -120,7 +112,7 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     R.x *= -1.F;
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, roughness)).rg;
-    vec3 specular = radiance * (mix(f0, baseColor, metallic) * brdf.x + brdf.y);
+    vec3 specular = radiance * (mix(f0, vec3(lights.color), metallic) * brdf.x + brdf.y);
 
     return diffuse + specular;
 }
@@ -135,7 +127,7 @@ void main()
     vec3 N = getNormal(inPosition, inNormal);      // Normal vector
     vec3 V = normalize(inPosition - vec3(camPos)); // Vector from camera to model
 
-    float shadow = shadowCalc(vec3(lights.light.position) - inPosition, N);
+    float shadow = shadowCalc(vec3(lights.position) - inPosition, N);
     vec3 ambient = iblBRDF(N, V, baseColor, roughness, metallic);
     outColor = vec4(shadow * ambient * ambientOcclusion, 1.F);
 }

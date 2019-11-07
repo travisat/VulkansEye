@@ -38,11 +38,9 @@ struct Config
 struct LightConfig
 {
     std::string name = "default";
-    glm::vec3 position = glm::vec3(-2.F, 3.F, -4.F);
-    // glm::vec3 rotation = glm::vec3(0.F); //TODO(travis) implement rotation for spot lights
+    glm::vec3 position = glm::vec3(0.F);
     float temperature = 6400;
     float lumens = 1600;
-    float steradians = 4.F * PI;
 };
 
 struct PlayerConfig

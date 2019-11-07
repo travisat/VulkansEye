@@ -6,10 +6,9 @@ namespace tat
 void Light::create()
 {
     name = config->name;
-    light.position = glm::vec4(config->position, 1.F);
-    light.color = glm::vec4(kelvinToRGB(config->temperature), 1.F);
-    light.lumens = config->lumens;
-    light.steradians = config->steradians;
+    position = glm::vec4(config->position, 1.F);
+    color = glm::vec4(kelvinToRGB(config->temperature), 1.F);
+    lumens = config->lumens;
 }
 
 // https://www.shadertoy.com/view/lsSXW1

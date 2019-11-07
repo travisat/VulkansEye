@@ -12,6 +12,7 @@ void VulkansEye::init(const std::string &configPath)
     Timer::time();
     Timer::systemTime();
 
+
     // load config
     Config config = createConfig(configPath);
 
@@ -256,7 +257,6 @@ auto VulkansEye::createBackdropsConfig(const std::string &path) -> BackdropsConf
                 c.light.position.y = position.value("y", c.light.position.y);
                 c.light.position.z = position.value("z", c.light.position.z);
             }
-            c.light.steradians = light.value("steradians", c.light.steradians);
             c.light.temperature = light.value("temperature", c.light.temperature);
             c.light.lumens = light.value("lumens", c.light.lumens);
         }

@@ -30,14 +30,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
-        vertexInfo.buffer = vertexBuffers[i].buffer;
+        vertexInfo.buffer = vertBuffers[i].buffer;
         vertexInfo.offset = 0;
-        vertexInfo.range = sizeof(UniformVertex);
+        vertexInfo.range = sizeof(UniformVert);
 
-        vk::DescriptorBufferInfo lightInfo = {};
-        lightInfo.buffer = lightsBuffers[i].buffer;
-        lightInfo.offset = 0;
-        lightInfo.range = sizeof(UniformLights);
+        vk::DescriptorBufferInfo fragInfo = {};
+        fragInfo.buffer = fragBuffers[i].buffer;
+        fragInfo.offset = 0;
+        fragInfo.range = sizeof(UniformFrag);
 
         vk::DescriptorImageInfo shadowInfo = {};
         shadowInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -86,7 +86,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
         std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
 
-        // vertex
+        // vert uniform buffer
         descriptorWrites[0].dstSet = colorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
@@ -94,13 +94,13 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &vertexInfo;
 
-        // uLight
+        // frag uniform buffer
         descriptorWrites[1].dstSet = colorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pBufferInfo = &lightInfo;
+        descriptorWrites[1].pBufferInfo = &fragInfo;
 
         // shadow
         descriptorWrites[2].dstSet = colorSets[i];
@@ -191,9 +191,9 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};
-        shadowInfo.buffer = shadowBuffers[i].buffer;
+        shadowInfo.buffer = shadBuffers[i].buffer;
         shadowInfo.offset = 0;
-        shadowInfo.range = sizeof(UniformShadow);
+        shadowInfo.range = sizeof(UniformShad);
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites{};
 
@@ -212,26 +212,26 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
 
 void Model::createUniformBuffers()
 {
-    vertexBuffers.resize(vulkan->swapChainImages.size());
-    lightsBuffers.resize(vulkan->swapChainImages.size());
-    shadowBuffers.resize(vulkan->swapChainImages.size());
+    vertBuffers.resize(vulkan->swapChainImages.size());
+    fragBuffers.resize(vulkan->swapChainImages.size());
+    shadBuffers.resize(vulkan->swapChainImages.size());
 
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
     {
-        vertexBuffers[i].vulkan = vulkan;
-        vertexBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
-        vertexBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        vertexBuffers[i].resize(sizeof(UniformVertex));
+        vertBuffers[i].vulkan = vulkan;
+        vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
+        vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        vertBuffers[i].resize(sizeof(UniformVert));
 
-        lightsBuffers[i].vulkan = vulkan;
-        lightsBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
-        lightsBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        lightsBuffers[i].resize(sizeof(UniformLights));
+        fragBuffers[i].vulkan = vulkan;
+        fragBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
+        fragBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        fragBuffers[i].resize(sizeof(UniformFrag));
 
-        shadowBuffers[i].vulkan = vulkan;
-        shadowBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
-        shadowBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        shadowBuffers[i].resize(sizeof(UniformShadow));
+        shadBuffers[i].vulkan = vulkan;
+        shadBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
+        shadBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        shadBuffers[i].resize(sizeof(UniformShad));
     }
 }
 

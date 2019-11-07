@@ -39,10 +39,10 @@ class Backdrop
     void update(uint32_t currentImage);
 
   private:
-    UniformBackdrop inverseBuffer;
+    UniformBack backBuffer;
 
     std::vector<vk::DescriptorSet> descriptorSets;
-    std::vector<Buffer> inverseBuffers;
+    std::vector<Buffer> backBuffers;
     vk::DescriptorPool descriptorPool;
 
     Pipeline pipeline;

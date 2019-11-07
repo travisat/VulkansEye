@@ -74,16 +74,16 @@ void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Backdrop::createUniformBuffers()
 {
-    inverseBuffers.resize(vulkan->swapChainImages.size());
-    for (auto &buffer : inverseBuffers)
+    backBuffers.resize(vulkan->swapChainImages.size());
+    for (auto &buffer : backBuffers)
     {
         buffer.vulkan = vulkan;
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        buffer.resize(sizeof(UniformVertex));
+        buffer.resize(sizeof(UniformBack));
 
-        memcpy(buffer.mapped, &inverseBuffer, sizeof(inverseBuffer));
+        memcpy(buffer.mapped, &backBuffer, sizeof(backBuffer));
     }
 }
 
@@ -94,8 +94,8 @@ void Backdrop::update(uint32_t currentImage)
     // by unprojecting the mvp (ie applying the inverse backwards)
     glm::mat4 inverseProjection = inverse(player->perspective);
     glm::mat4 inverseModelView = transpose(player->view);
-    inverseBuffer.inverseMVP = inverseModelView * inverseProjection;
-    memcpy(inverseBuffers[currentImage].mapped, &inverseBuffer, sizeof(inverseBuffer));
+    backBuffer.inverseMVP = inverseModelView * inverseProjection;
+    memcpy(backBuffers[currentImage].mapped, &backBuffer, sizeof(backBuffer));
 }
 
 void Backdrop::createDescriptorPool()
@@ -156,9 +156,9 @@ void Backdrop::createDescriptorSets()
     {
 
         vk::DescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = inverseBuffers[i].buffer;
+        bufferInfo.buffer = backBuffers[i].buffer;
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBackdrop);
+        bufferInfo.range = sizeof(UniformBack);
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

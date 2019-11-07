@@ -13,7 +13,9 @@ class Light
     LightConfig *config;
 
     std::string name;
-    UniformLight light{};
+    glm::vec4 position{};
+    glm::vec4 color{};
+    float lumens = 0.0F;
     void create();
 
   private:

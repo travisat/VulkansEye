@@ -50,9 +50,9 @@ class Scene
 
     Backdrop* backdrop;
 
-    UniformVertex vertexBuffer{};
-    UniformLights lightsBuffer{};
-    UniformShadow shadowBuffer{};
+    UniformVert vertBuffer{};
+    UniformFrag fragBuffer{};
+    UniformShad shadBuffer{};
 
     Pipeline colorPipeline;
     std::vector<Model> models;

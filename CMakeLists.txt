@@ -73,8 +73,7 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw)
 
 find_package(Vulkan REQUIRED)
-find_package(assimp REQUIRED)
-find_package(spdlog REQUIRED)
+find_package(assimp CONFIG REQUIRED)
 
 IF(CMAKE_HOST_UNIX)
 target_link_libraries(VulkansEye PRIVATE Vulkan::Vulkan glfw ${CMAKE_DL_LIBS} pthread stdc++fs wayland-client)
@@ -82,7 +81,7 @@ ENDIF(CMAKE_HOST_UNIX)
 
 IF(CMAKE_HOST_WIN32)
 target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp spdlog::spdlog)
+target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp)
 
 IF (MSVC)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")

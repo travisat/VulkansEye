@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -34,7 +35,7 @@ enum class Mode
     Load
 };
 
-struct UniformVertex
+struct UniformVert
 {
     glm::mat4 model{};
     glm::mat4 view{};
@@ -44,31 +45,23 @@ struct UniformVertex
     glm::vec4 camPos{};
 };
 
-struct UniformBackdrop
+struct UniformBack
 {
     glm::mat4 inverseMVP{};
 };
 
-struct UniformLight
+struct UniformFrag
 {
     glm::vec4 position{};
-    glm::vec4 rotation{};
     glm::vec4 color{};
     float lumens = 0.0F;
-    float steradians = 4.F * 3.1415926F;
-};
-
-struct UniformLights
-{
     float radianceMipLevels = 0.F;
     float exposure = 2.2F;
     float gamma = 4.5F;
     float shadowSize = 1024.F;
-    UniformLight light{};
-    UniformLight flashLight{};
 };
 
-struct UniformShadow
+struct UniformShad
 {
     glm::mat4 model{};
     glm::mat4 view{};
@@ -95,8 +88,8 @@ class Vulkan
         instance.destroy();
     };
 
-    std::string name = "Unknown";
-
+    std::string name;
+    GLFWwindow *window;
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::PhysicalDevice physicalDevice;
@@ -106,20 +99,15 @@ class Vulkan
     vk::CommandPool commandPool;
     vk::SwapchainKHR swapChain;
     std::vector<vk::Image> swapChainImages{};
-
     vk::RenderPass colorPass;
     vk::RenderPass shadowPass;
-
-    vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
-    vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
+    vk::SampleCountFlagBits msaaSamples;
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
     vk::Format swapChainImageFormat;
     vk::Extent2D swapChainExtent;
-
     std::vector<vk::ImageView> swapChainImageViews;
 
-    GLFWwindow *window = nullptr;
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t currentImage = 0;
@@ -129,8 +117,8 @@ class Vulkan
     bool prepared = false;
     bool showOverlay = true;
     bool updateCommandBuffer = false;
-
     Mode mode = Mode::Dbug;
+    vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
 
     std::string brdfPath;
 

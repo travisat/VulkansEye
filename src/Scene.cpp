@@ -153,17 +153,15 @@ void Scene::update(uint32_t currentImage)
 {
     backdrop->update(currentImage);
 
-    lightsBuffer.light.position = backdrop->light.light.position;
-    lightsBuffer.light.rotation = backdrop->light.light.rotation;
-    lightsBuffer.light.color = backdrop->light.light.color;
-    lightsBuffer.light.lumens = backdrop->light.light.lumens;
-    lightsBuffer.light.steradians = backdrop->light.light.steradians;
+    fragBuffer.position = backdrop->light.position;
+    fragBuffer.color = backdrop->light.color;
+    fragBuffer.lumens = backdrop->light.lumens;
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
-    glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(lightsBuffer.light.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
+    glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
 
-    lightsBuffer.radianceMipLevels = backdrop->radianceMap.mipLevels;
-    lightsBuffer.shadowSize = vulkan->shadowSize;
+    fragBuffer.radianceMipLevels = backdrop->radianceMap.mipLevels;
+    fragBuffer.shadowSize = vulkan->shadowSize;
 
     for (auto &model : models)
     {
@@ -176,20 +174,20 @@ void Scene::update(uint32_t currentImage)
         glm::mat4 M = T * R * S;
 
         // create mvp for player space
-        vertexBuffer.model = M;
-        vertexBuffer.view = player->view;
-        vertexBuffer.projection = player->perspective;
-        vertexBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * M));
-        vertexBuffer.camPos = glm::vec4(-1.F * player->position, 1.F);
+        vertBuffer.model = M;
+        vertBuffer.view = player->view;
+        vertBuffer.projection = player->perspective;
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * M));
+        vertBuffer.camPos = glm::vec4(-1.F * player->position, 1.F);
 
         // create mvp for lightspace
-        shadowBuffer.model = M;
-        shadowBuffer.view = depthViewMatrix;
-        shadowBuffer.projection = depthProjectionMatrix;
-        vertexBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * M;
-        model.vertexBuffers[currentImage].update(&vertexBuffer, sizeof(vertexBuffer));
-        model.lightsBuffers[currentImage].update(&lightsBuffer, sizeof(lightsBuffer));
-        model.shadowBuffers[currentImage].update(&shadowBuffer, sizeof(shadowBuffer));
+        shadBuffer.model = M;
+        shadBuffer.view = depthViewMatrix;
+        shadBuffer.projection = depthProjectionMatrix;
+        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * M;
+        model.vertBuffers[currentImage].update(&vertBuffer, sizeof(vertBuffer));
+        model.fragBuffers[currentImage].update(&fragBuffer, sizeof(fragBuffer));
+        model.shadBuffers[currentImage].update(&shadBuffer, sizeof(shadBuffer));
     }
 }
 
