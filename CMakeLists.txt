@@ -39,6 +39,7 @@ endforeach()
 
 set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
+${CMAKE_SOURCE_DIR}/src/Window.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp

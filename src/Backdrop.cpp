@@ -18,12 +18,12 @@ Backdrop::~Backdrop()
 
 void Backdrop::create()
 {
-    loadCubeMap(colorMap, config->colorPath);
-    loadCubeMap(radianceMap, config->radiancePath);
-    loadCubeMap(irradianceMap, config->irradiancePath);
+    loadCubeMap(colorMap, config.colorPath);
+    loadCubeMap(radianceMap, config.radiancePath);
+    loadCubeMap(irradianceMap, config.irradiancePath);
 
     light.vulkan = vulkan;
-    light.config = &config->light;
+    light.config = config.light;
     light.create();
 
     createDescriptorPool();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gli/gli.hpp>
+#include <memory>
 #include <stb_image.h>
 
 #include "Buffer.hpp"
@@ -12,7 +13,7 @@ namespace tat
 class Image
 {
   public:
-    Vulkan *vulkan = nullptr;
+    std::shared_ptr<Vulkan> vulkan;
     vk::Image image = nullptr;
     vk::ImageView imageView = nullptr;
     vk::Sampler sampler = nullptr;

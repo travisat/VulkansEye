@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <utility>
 
 #include "Backdrops.hpp"
@@ -21,11 +22,11 @@ namespace tat
 class Scene
 {
   public:
-    Vulkan *vulkan = nullptr;
-    Player *player = nullptr;
-    Materials *materials = nullptr;
-    Meshes *meshes = nullptr;
-    Backdrops *backdrops = nullptr;
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Player> player;
+    std::shared_ptr<Materials> materials;
+    std::shared_ptr<Meshes> meshes;
+    std::shared_ptr<Backdrops> backdrops;
 
     std::string name = "Unknown";
 
@@ -48,7 +49,7 @@ class Scene
     vk::DescriptorPool shadowPool;
     vk::DescriptorSetLayout shadowLayout;
 
-    Backdrop* backdrop;
+    Backdrop *backdrop;
 
     UniformVert vertBuffer{};
     UniformFrag fragBuffer{};

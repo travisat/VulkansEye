@@ -2,13 +2,14 @@
 
 #include "Vertex.hpp"
 #include "Vulkan.hpp"
+#include <memory>
 
 namespace tat
 {
 class Pipeline
 {
   public:
-    Vulkan *vulkan;
+    std::shared_ptr<Vulkan> vulkan;
     vk::DescriptorSetLayout descriptorSetLayout;
 
     vk::Pipeline pipeline;

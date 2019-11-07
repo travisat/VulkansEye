@@ -40,7 +40,7 @@ void Backdrops::loadBackdrop(int32_t index)
     // otherwise load the material
     backdrop->player = player;
     backdrop->vulkan = vulkan;
-    backdrop->config = &configs[index];
+    backdrop->config = configs[index];
     backdrop->create();
     backdrop->loaded = true;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <set>
 
@@ -41,9 +42,9 @@ struct QueueFamilyIndices
 class Engine
 {
   public:
-    Vulkan *vulkan = nullptr;
-    Scene *scene;
-    Overlay *overlay;
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Scene> scene;
+    std::shared_ptr<Overlay> overlay;
 
     ~Engine();
     void init();
@@ -77,7 +78,6 @@ class Engine
     void resizeWindow();
 
     void createInstance();
-    void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createAllocator();

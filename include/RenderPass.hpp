@@ -1,13 +1,14 @@
 #pragma once
 
 #include <array>
+#include <memory>
 
 #include "Vulkan.hpp"
 
 namespace tat
 {
 
-auto createColorPass(Vulkan *vulkan) -> vk::RenderPass;
-auto createShadowPass(Vulkan *vulkan) -> vk::RenderPass;
+auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass;
+auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass;
 
 } // namespace tat

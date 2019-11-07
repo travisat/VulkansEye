@@ -2,6 +2,7 @@
 
 #include "Backdrop.hpp"
 #include "Config.hpp"
+#include <memory>
 
 namespace tat
 {
@@ -9,8 +10,8 @@ namespace tat
 class Backdrops
 {
   public:
-    Vulkan *vulkan;
-    Player *player;
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Player> player;
 
     void loadConfig(const BackdropsConfig &config);
     auto getBackdrop(const std::string &name) -> Backdrop *;

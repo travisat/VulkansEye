@@ -16,25 +16,27 @@ auto main(int argc, char *argv[]) -> int
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif
 
-    tat::VulkansEye app;
     try
     {
+        const char *config;
         switch (argc)
         {
         case 0:
         case 1:
-            app.init(DEFAULT_CONFIG);
+            config = DEFAULT_CONFIG;
             break;
         case 2:
             if (std::filesystem::exists(argv[1]))
             {
-                app.init(argv[1]);
+                config = argv[1];
                 break;
             } // fall through if doesn't exist
         default:
             std::cerr << "Usage: VulkansEye [config]" << std::endl;
             return EXIT_FAILURE;
         }
+
+        tat::VulkansEye app(config);
         app.run();
     }
     catch (const std::exception &e)

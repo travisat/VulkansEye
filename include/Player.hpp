@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 
 #include "Config.hpp"
 #include "Input.hpp"
@@ -13,7 +14,7 @@ namespace tat
 class Player
 {
   public:
-    Vulkan *vulkan;
+    std::shared_ptr<Vulkan> vulkan;
 
     void loadConfig(const PlayerConfig &config);
 

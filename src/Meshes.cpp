@@ -5,8 +5,9 @@ namespace tat
 {
 void Meshes::loadConfig(const MeshesConfig &config)
 {
-    collection.resize(config.meshes.size());
-    int32_t index = 0;
+    //index 0 is default mesh
+    collection.resize(config.meshes.size() + 1);
+    int32_t index = 1;
     for (const auto &meshConfig : config.meshes)
     {
         collection[index].name = meshConfig.name;
@@ -20,14 +21,16 @@ void Meshes::loadConfig(const MeshesConfig &config)
     }
 }
 
-auto Meshes::getMesh(const std::string &name) -> Mesh *
+auto Meshes::getIndex(const std::string &name) -> int32_t
 {
-    // get index, returns 0 for default if name of mesh not found
-    int32_t index = getIndex(name);
-    // load mesh if not loaded
+    auto result = names.find(name);
+    int32_t index = 0;
+    if (result != names.end())
+    {
+       index = result->second;
+    }
     loadMesh(index);
-    // return mesh
-    return &collection[index];
+    return index;
 }
 
 void Meshes::loadMesh(int32_t index)
@@ -107,16 +110,6 @@ void Meshes::importMesh(Mesh *mesh)
     }
 }
 
-auto Meshes::getIndex(const std::string &name) -> int32_t
-{
-    auto result = names.find(name);
-    if (result == names.end())
-    {
-        // if name not in list return 0 index which is for default mesh
-        return 0;
-    }
-    // otherwise return index for name
-    return result->second;
-}
+
 
 } // namespace tat

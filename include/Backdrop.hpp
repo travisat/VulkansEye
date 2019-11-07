@@ -7,6 +7,7 @@
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "Timer.hpp"
+#include <memory>
 
 namespace tat
 {
@@ -14,14 +15,14 @@ namespace tat
 class Backdrop
 {
   public:
-    Vulkan *vulkan = nullptr;
-    Player *player = nullptr;
-    BackdropConfig *config = nullptr;
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Player> player;
+    BackdropConfig config;
     std::string name;
 
     bool loaded = false;
 
-    Image *shadowMap;
+    const Image *shadowMap;
 
     Image colorMap{};
     Image radianceMap{};

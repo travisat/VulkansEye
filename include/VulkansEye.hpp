@@ -5,41 +5,31 @@
 #include "Meshes.hpp"
 #include "Overlay.hpp"
 #include "Timer.hpp"
+#include <memory>
 
 namespace tat
 {
 
-enum class DisplayMode
-{
-    cursor = 0,
-    nocursor = 1
-};
-
 class VulkansEye
 {
   public:
-    void init(const std::string &configPath);
+    explicit VulkansEye(const std::string &configPath);
+    ~VulkansEye() = default;
     void run();
 
   private:
-    Vulkan vulkan{};
+    std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};
-    Player player{};
-    Overlay overlay{};
-    Backdrops backdrops{};
-    Materials materials{};
-    Meshes meshes{};
-    Scene scene{};
+    std::shared_ptr<Player> player = std::make_shared<Player>();
+    std::shared_ptr<Overlay> overlay = std::make_shared<Overlay>();
+    std::shared_ptr<Backdrops> backdrops = std::make_shared<Backdrops>();
+    std::shared_ptr<Materials> materials = std::make_shared<Materials>();
+    std::shared_ptr<Meshes> meshes = std::make_shared<Meshes>();
+    std::shared_ptr<Scene> scene = std::make_shared<Scene>();
 
     DisplayMode displayMode = DisplayMode::nocursor;
 
-    void cleanup();
-    void mainLoop();
     void handleInput();
-
-    static void framebufferResizeCallback(GLFWwindow *window, int /*width*/, int /*height*/){
-        // auto app = reinterpret_cast<Engine *>(glfwGetWindowUserPointer(window));
-    };
 
     static auto createConfig(const std::string &path) -> Config;
     static auto createPlayerconfig(const std::string &path) -> PlayerConfig;

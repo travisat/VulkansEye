@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #ifdef WINDOWS
 #include <vcruntime.h>
 #endif
@@ -14,7 +15,7 @@ class Buffer
 {
   public:
     // required settings
-    Vulkan *vulkan = nullptr;
+    std::shared_ptr<Vulkan> vulkan;
     vk::BufferUsageFlags flags{};
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
     VmaAllocationCreateFlags memFlags = 0;

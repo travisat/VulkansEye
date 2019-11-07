@@ -6,9 +6,6 @@
 #include <windows.h>
 #endif
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
 #define GLM_FORCE_RADIANS
 #define GLM_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -21,9 +18,17 @@
 #include <vector>
 
 #include "helpers.hpp"
+#include "Window.hpp"
 
 namespace tat
 {
+
+enum class DisplayMode
+{
+    cursor = 0,
+    nocursor = 1
+};
+
 
 enum class Mode
 {
@@ -89,7 +94,7 @@ class Vulkan
     };
 
     std::string name;
-    GLFWwindow *window;
+    std::shared_ptr<Window> window;
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::PhysicalDevice physicalDevice;

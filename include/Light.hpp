@@ -3,14 +3,15 @@
 #include "Config.hpp"
 #include "Vulkan.hpp"
 #include "Model.hpp"
+#include <memory>
 
 namespace tat
 {
 class Light
 {
   public:
-    Vulkan *vulkan;
-    LightConfig *config;
+    std::shared_ptr<Vulkan> vulkan;
+    LightConfig config;
 
     std::string name;
     glm::vec4 position{};

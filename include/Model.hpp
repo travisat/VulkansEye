@@ -1,15 +1,16 @@
 #pragma once
 
 #include <cassert>
+#include <memory>
 #include <unordered_map>
 
+#include "Buffer.hpp"
 #include "Config.hpp"
+#include "Image.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
 #include "Timer.hpp"
 #include "Vertex.hpp"
-#include "Buffer.hpp"
-#include "Image.hpp"
 
 namespace tat
 {
@@ -18,31 +19,24 @@ class Model
 {
   public:
     // config values
-    Vulkan *vulkan = nullptr;
-    ModelConfig *config;
-    Materials *materials;
-    Meshes *meshes;
+    std::shared_ptr<Vulkan> vulkan;
+    ModelConfig config;
+    std::shared_ptr<Materials> materials;
+    std::shared_ptr<Meshes> meshes;
 
-    std::string name = "Uknown Model";
+    std::string name;
 
-    // mesh properties
-    Mesh *mesh;
-    glm::vec3 position = glm::vec3(0.0F);
-    glm::vec3 rotation = glm::vec3(0.0F);
-    glm::vec3 scale = glm::vec3(1.0F);
+    const Image *irradianceMap;
+    const Image *radianceMap;
+    const Image *brdf;
+    const Image *shadow;
 
-    // color pipeline
-    Material *material;
+    glm::mat4 model;
+
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertBuffers;
     std::vector<Buffer> fragBuffers;
-    Image *irradianceMap;
-    Image *radianceMap;
-    Image *brdf;
-
-    // shadow pipeline
     std::vector<vk::DescriptorSet> shadowSets;
-    Image *shadow;
     std::vector<Buffer> shadBuffers;
 
     void create();
@@ -50,7 +44,24 @@ class Model
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
+    inline auto getMesh() -> Mesh *
+    {
+      return meshes->getMesh(meshIndex);
+    };
+
+    void translate(glm::vec3 translation);
+    void rotate(glm::vec3 rotation);
+    void scale(glm::vec3 scale);
+
   private:
+    int32_t meshIndex;
+    int32_t materialIndex;
+
+    glm::vec3 m_position = glm::vec3(0.F);
+    glm::vec3 m_rotation = glm::vec3(0.F);
+    glm::vec3 m_scale = glm::vec3(1.F);
+
+    void updateModel();
 };
 
 } // namespace tat

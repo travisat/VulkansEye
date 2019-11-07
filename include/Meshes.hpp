@@ -5,6 +5,7 @@
 #include <assimp/scene.h>
 
 #include <cstdint>
+#include <memory>
 
 #include "Buffer.hpp"
 #include "Config.hpp"
@@ -38,11 +39,18 @@ struct Mesh
 class Meshes
 {
   public:
-    Vulkan *vulkan;
-
+    std::shared_ptr<Vulkan> vulkan;
     void loadConfig(const MeshesConfig &config);
-
-    auto getMesh(const std::string &name) -> Mesh *;
+    auto getIndex(const std::string &name) -> int32_t;
+    inline auto getMesh(int32_t index) -> Mesh *
+    {
+        if (index < collection.size() && index > 0)
+        {
+            return &collection[index];
+        }
+        //return default mesh if index out of range
+        return &collection[0];
+    };
 
   private:
     // vector of empty Meshes until mesh has been loaded
@@ -50,7 +58,6 @@ class Meshes
     // string index = mesh index
     std::map<std::string, int32_t> names{};
 
-    auto getIndex(const std::string &name) -> int32_t;
     void loadMesh(int32_t index);
     static void importMesh(Mesh *mesh);
 };

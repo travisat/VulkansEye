@@ -1,6 +1,7 @@
 #pragma once
 
 #include <imgui.h>
+#include <memory>
 #include <string_view>
 
 #include "Buffer.hpp"
@@ -35,8 +36,8 @@ constexpr std::array<std::string_view, 6> mode = {"Game","Dbug","Nput","Free","S
 class Overlay
 {
   public:
-    tat::Vulkan *vulkan = nullptr;
-    Player *player = nullptr;
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Player> player;
 
     bool update = false;
     // UI params are set via push constants

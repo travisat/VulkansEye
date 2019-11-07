@@ -39,7 +39,7 @@ void Engine::init()
 {
 
     createInstance();
-    createSurface();
+    vulkan->surface = vulkan->window->createSurface(vulkan->instance);
     pickPhysicalDevice();
     createLogicalDevice();
     createAllocator();
@@ -297,8 +297,8 @@ void Engine::resizeWindow()
     int height = 0;
     while (width == 0 || height == 0)
     {
-        glfwGetFramebufferSize(vulkan->window, &width, &height);
-        glfwWaitEvents();
+        std::tie(width, height) = vulkan->window->getFrameBufferSize();
+        vulkan->window->wait();
     }
     vulkan->device.waitIdle();
     vulkan->width = width;
@@ -364,12 +364,6 @@ void Engine::createInstance()
     }
 
     vulkan->instance = vk::createInstance(createInfo);
-}
-
-void Engine::createSurface()
-{
-    CheckResult(glfwCreateWindowSurface(vulkan->instance, vulkan->window, nullptr,
-                                        reinterpret_cast<VkSurfaceKHR *>(&vulkan->surface)));
 }
 
 void Engine::pickPhysicalDevice()

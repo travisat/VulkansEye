@@ -87,7 +87,7 @@ void Scene::createModels()
     int32_t index = 0;
     for (auto &modelConfig : config.models)
     {
-        models[index].config = &modelConfig;
+        models[index].config = modelConfig;
         models[index].vulkan = vulkan;
         models[index].materials = materials;
         models[index].meshes = meshes;
@@ -126,11 +126,12 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->buffers.vertex.buffer, offsets.data());
-        commandBuffer.bindIndexBuffer(model.mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
+        auto mesh = model.getMesh();
+        commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout, 0, 1,
                                          &model.colorSets[currentImage], 0, nullptr);
-        commandBuffer.drawIndexed(model.mesh->data.indices.size(), 1, 0, 0, 0);
+        commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
 
@@ -141,11 +142,12 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        commandBuffer.bindVertexBuffers(0, 1, &model.mesh->buffers.vertex.buffer, offsets.data());
-        commandBuffer.bindIndexBuffer(model.mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
+        auto mesh = model.getMesh();
+        commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
+        commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout, 0, 1,
                                          &model.shadowSets[currentImage], 0, nullptr);
-        commandBuffer.drawIndexed(model.mesh->data.indices.size(), 1, 0, 0, 0);
+        commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
 
@@ -165,26 +167,18 @@ void Scene::update(uint32_t currentImage)
 
     for (auto &model : models)
     {
-        // move model to worldspace
-        glm::mat4 T = glm::translate(glm::mat4(1.F), model.position);
-        glm::mat4 R = glm::rotate(glm::mat4(1.F), glm::radians(model.rotation.x), glm::vec3(1.F, 0.F, 0.F));
-        R = glm::rotate(R, glm::radians(model.rotation.y), glm::vec3(0.F, 1.F, 0.F));
-        R = glm::rotate(R, glm::radians(model.rotation.z), glm::vec3(0.F, 0.F, 1.F));
-        glm::mat4 S = glm::scale(glm::mat4(1.F), model.scale);
-        glm::mat4 M = T * R * S;
-
         // create mvp for player space
-        vertBuffer.model = M;
+        vertBuffer.model = model.model;
         vertBuffer.view = player->view;
         vertBuffer.projection = player->perspective;
-        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * M));
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * model.model));
         vertBuffer.camPos = glm::vec4(-1.F * player->position, 1.F);
 
         // create mvp for lightspace
-        shadBuffer.model = M;
+        shadBuffer.model = model.model;
         shadBuffer.view = depthViewMatrix;
         shadBuffer.projection = depthProjectionMatrix;
-        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * M;
+        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * model.model;
         model.vertBuffers[currentImage].update(&vertBuffer, sizeof(vertBuffer));
         model.fragBuffers[currentImage].update(&fragBuffer, sizeof(fragBuffer));
         model.shadBuffers[currentImage].update(&shadBuffer, sizeof(shadBuffer));

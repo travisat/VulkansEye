@@ -1,10 +1,11 @@
 #include "RenderPass.hpp"
 #include "helpers.hpp"
+#include <memory>
 
 namespace tat
 {
 
-auto createColorPass(Vulkan *vulkan) ->vk::RenderPass
+auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) ->vk::RenderPass
 {
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vulkan->swapChainImageFormat;
@@ -88,7 +89,7 @@ auto createColorPass(Vulkan *vulkan) ->vk::RenderPass
     return vulkan->device.createRenderPass(renderPassInfo);
 }
 
-auto createShadowPass(Vulkan *vulkan) -> vk::RenderPass
+auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
 {
     vk::AttachmentDescription shadowAttachment = {};
     shadowAttachment.format = vk::Format::eR32Sfloat;
