@@ -1,6 +1,7 @@
 #include "Backdrops.hpp"
 #include "Config.hpp"
 #include "Engine.hpp"
+#include "Input.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
 #include "Overlay.hpp"
@@ -20,7 +21,7 @@ class VulkansEye
   private:
     std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};
-    std::shared_ptr<Player> player = std::make_shared<Player>();
+    std::shared_ptr<Player> player;
     std::shared_ptr<Overlay> overlay = std::make_shared<Overlay>();
     std::shared_ptr<Backdrops> backdrops = std::make_shared<Backdrops>();
     std::shared_ptr<Materials> materials = std::make_shared<Materials>();
@@ -29,7 +30,7 @@ class VulkansEye
 
     DisplayMode displayMode = DisplayMode::nocursor;
 
-    void handleInput();
+    void handleInput(float deltaTime);
 
     static auto createConfig(const std::string &path) -> Config;
     static auto createPlayerconfig(const std::string &path) -> PlayerConfig;

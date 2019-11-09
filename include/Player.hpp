@@ -1,11 +1,7 @@
 #pragma once
 
-#include <algorithm>
-#include <memory>
-
 #include "Config.hpp"
 #include "Object.hpp"
-#include "Input.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
@@ -14,20 +10,12 @@ namespace tat
 class Player : public Object
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
+    explicit Player(const std::shared_ptr<Vulkan> &vulkan, const PlayerConfig &config);
+    ~Player() = default;
 
-    void loadConfig(const PlayerConfig &config);
-
-    glm::mat4 perspective;
-    glm::mat4 view;
-
-    void update(float deltaTime);
-    void move(glm::vec2 direction);
+    void look(double mouseX, double mouseY);
+    void move(glm::vec2 direction, float deltaTime);
     void jump();
-
-    void applyForce(glm::vec3 force);
-
-    void updateView();
 
     void updateAspectRatio(float windowWidth, float windowHeight);
 
@@ -35,17 +23,18 @@ class Player : public Object
 
     auto height() -> float
     {
-      return m_size.y;
+        return scale().y;
     };
 
   private:
     float fieldOfView;
+    float zNear;
+    float zFar;
 
     float windowWidth;
     float windowHeight;
 
-    float jumpVelocity = 0.0F; // sqrt(2.0 * Gravity * heightofJump)
-    float lastTime = 0.0F;     // s
+    float jumpVelocity = 0.F; // sqrt(2.0 * Gravity * heightofJump)
 
     // force applied while walking
     float velocityMax;        // m/s
@@ -54,8 +43,9 @@ class Player : public Object
 
     float mouseSensitivity = 33.4F;
 
-    glm::vec2 lastMousePosition = glm::vec2(0.0F);
-    glm::vec3 moveDir = glm::vec3(0.0F);
+    glm::vec2 lastMousePosition = glm::vec2(0.F);
+
+    auto onGround() -> bool;
 };
 
 } // namespace tat

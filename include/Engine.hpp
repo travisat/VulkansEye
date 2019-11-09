@@ -48,7 +48,7 @@ class Engine
 
     ~Engine();
     void init();
-    void drawFrame();
+    void drawFrame(float deltaTime);
 
   private:
     vk::DispatchLoaderDynamic dldy;

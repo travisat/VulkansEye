@@ -1,5 +1,6 @@
 #include "VulkansEye.hpp"
 #include "Config.hpp"
+#include "Input.hpp"
 #include "helpers.hpp"
 
 namespace tat
@@ -43,8 +44,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
     vulkan->window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     // create player
-    player->vulkan = vulkan;
-    player->loadConfig(createPlayerconfig(config.playerConfigPath));
+    player = std::make_shared<Player>(vulkan, createPlayerconfig(config.playerConfigPath));
 
     // create backdrops
     backdrops->vulkan = vulkan;
@@ -94,16 +94,15 @@ void VulkansEye::run()
         overlay->updateBuffers();
 
         glfwPollEvents();
-        handleInput();
-
+        handleInput(deltaTime);
         player->update(deltaTime);
 
-        engine.drawFrame();
+        engine.drawFrame(deltaTime);
     }
     vkDeviceWaitIdle(vulkan->device);
 }
 
-void VulkansEye::handleInput()
+void VulkansEye::handleInput(float deltaTime)
 {
     // game mode
     if (Input::wasKeyReleased(GLFW_KEY_F1))
@@ -155,12 +154,14 @@ void VulkansEye::handleInput()
         }
     }
 
+    player->look(Input::getMouseX(), Input::getMouseY());
+
     auto moveDir = glm::vec2(0.F);
     moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
     moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
     moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
     moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
-    player->move(moveDir);
+    player->move(moveDir, deltaTime);
 
     if (Input::isKeyPressed(GLFW_KEY_SPACE) != 0)
     {
@@ -281,12 +282,6 @@ auto VulkansEye::createMeshesConfig(const std::string &path) -> MeshesConfig
         MeshConfig c{};
         c.name = key;
         c.path = mesh.value("path", c.path);
-        if (mesh.find("center") != mesh.end())
-        {
-            c.center.x = mesh.at("center").value("x", c.center.x);
-            c.center.y = mesh.at("center").value("y", c.center.y);
-            c.center.z = mesh.at("center").value("z", c.center.z);
-        }
         if (mesh.find("size") != mesh.end())
         {
             c.size.x = mesh.at("size").value("x", c.size.x);

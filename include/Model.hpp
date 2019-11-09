@@ -32,8 +32,6 @@ class Model : public Object
     const Image *brdf;
     const Image *shadow;
 
-    glm::mat4 model;
-
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertBuffers;
     std::vector<Buffer> fragBuffers;
@@ -47,18 +45,12 @@ class Model : public Object
 
     inline auto getMesh() -> Mesh *
     {
-      return meshes->getMesh(meshIndex);
+        return meshes->getMesh(meshIndex);
     };
-
-    void translate(glm::vec3 translation);
-    void rotate(glm::vec3 rotation);
-    void scale(glm::vec3 scale);
 
   private:
     int32_t meshIndex;
     int32_t materialIndex;
-
-    void updateModel();
 };
 
 } // namespace tat

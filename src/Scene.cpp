@@ -151,7 +151,7 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     }
 }
 
-void Scene::update(uint32_t currentImage)
+void Scene::update(uint32_t currentImage, float deltaTime)
 {
     backdrop->update(currentImage);
 
@@ -167,18 +167,19 @@ void Scene::update(uint32_t currentImage)
 
     for (auto &model : models)
     {
+        model.update(deltaTime);
         // create mvp for player space
-        vertBuffer.model = model.model;
-        vertBuffer.view = player->view;
-        vertBuffer.projection = player->perspective;
-        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->perspective * player->view * model.model));
+        vertBuffer.model = model.model();
+        vertBuffer.view = player->view();
+        vertBuffer.projection = player->projection();
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->projection() * player->view() * model.model()));
         vertBuffer.camPos = glm::vec4(-1.F * player->position(), 1.F);
 
         // create mvp for lightspace
-        shadBuffer.model = model.model;
+        shadBuffer.model = model.model();
         shadBuffer.view = depthViewMatrix;
         shadBuffer.projection = depthProjectionMatrix;
-        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * model.model;
+        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * model.model();
         model.vertBuffers[currentImage].update(&vertBuffer, sizeof(vertBuffer));
         model.fragBuffers[currentImage].update(&fragBuffer, sizeof(fragBuffer));
         model.shadBuffers[currentImage].update(&shadBuffer, sizeof(shadBuffer));

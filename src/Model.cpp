@@ -7,49 +7,21 @@ namespace tat
 
 void Model::create()
 {
-    //load config
+    // load config
     name = config.name;
-    m_position = config.position;
-    m_rotation = config.rotation;
-    m_scale = config.scale;
 
-    updateModel();
-
-    //get material/mesh from their collections
+    // get material/mesh from their collections
     materialIndex = materials->getIndex(config.material);
     meshIndex = meshes->getIndex(config.mesh);
+    m_size = meshes->getMesh(meshIndex)->size;
+
+    // move/rotate/scale
+    translate(config.position);
+    rotate(config.rotation);
+    scale(config.scale);
+    updateModel();
 
     createUniformBuffers();
-}
-
-void Model::updateModel()
-{
-    //generate model matrix
-    //scale then rotate then translate T * R * S
-    glm::mat4 T = glm::translate(glm::mat4(1.F), m_position);
-    glm::mat4 R = glm::rotate(glm::mat4(1.F), glm::radians(m_rotation.x), glm::vec3(1.F, 0.F, 0.F));
-    R = glm::rotate(R, glm::radians(m_rotation.y), glm::vec3(0.F, 1.F, 0.F));
-    R = glm::rotate(R, glm::radians(m_rotation.z), glm::vec3(0.F, 0.F, 1.F));
-    glm::mat4 S = glm::scale(glm::mat4(1.F), m_scale);
-    model = T * R * S;
-}
-
-void Model::translate(glm::vec3 t)
-{
-    m_position = m_position + t;
-    updateModel();
-}
-
-void Model::rotate(glm::vec3 r)
-{
-    m_rotation = m_rotation + r;
-    updateModel();
-}
-
-void Model::scale(glm::vec3 s)
-{
-    m_scale = m_scale + s;
-    updateModel();
 }
 
 void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)

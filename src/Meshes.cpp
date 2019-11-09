@@ -12,7 +12,6 @@ void Meshes::loadConfig(const MeshesConfig &config)
     {
         collection[index].name = meshConfig.name;
         collection[index].path = meshConfig.path;
-        collection[index].center = meshConfig.center;
         collection[index].size = meshConfig.size;
         // insert name into map for index retrieval
         names.insert(std::make_pair(meshConfig.name, index));
@@ -64,9 +63,7 @@ void Meshes::loadMesh(int32_t index)
     stagingBuffer.copyTo(mesh->buffers.index);
 
     mesh->loaded = true;
-    Trace("Loaded ", mesh->name, " at ", Timer::systemTime());
-    Trace("Vertices: ", mesh->data.vertices.size());
-    Trace("Indices: ", mesh->data.indices.size());
+    Trace("Loaded ", mesh->path, " at ", Timer::systemTime());
 }
 
 void Meshes::importMesh(Mesh *mesh)

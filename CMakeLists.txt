@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(VulkansEye VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
+add_compile_options(-Wno-pragma-pack)
 
 include(CTest)
 enable_testing()
@@ -49,6 +50,7 @@ ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Materials.cpp
 ${CMAKE_SOURCE_DIR}/src/Meshes.cpp
+${CMAKE_SOURCE_DIR}/src/Object.cpp
 ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrops.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp

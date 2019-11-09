@@ -92,7 +92,6 @@ struct MeshConfig
 {
     std::string name = "cube";
     std::string path = "assets/models/cube.obj";
-    glm::vec3 center{};
     glm::vec3 size{};
 };
 

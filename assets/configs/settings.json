@@ -1,11 +1,11 @@
 {
     "name": "desert",
     "zNear": 0.1,
-    "zFar": 1024.0,
+    "zFar": 512.0,
     "windowWidth": 1024,
     "windowHeight": 768,
     "sync": true,
-    "shadowSize": 2048,
+    "shadowSize": 4096,
     "brdfPath": "assets/brdf.dds",
     "playerConfigPath": "assets/configs/player.json",
     "materialsConfigPath": "assets/configs/materials.json",

@@ -5,7 +5,7 @@
         "table": {
             "type": "single",
             "mesh": "table",
-            "material": "Metal07",
+            "material": "Marble03",
             "position": {
                 "x": 4,
                 "y": 0,
@@ -22,30 +22,10 @@
                 "z": 1
             }
         },
-        "sphere": {
-            "type": "single",
-            "mesh": "sphere",
-            "material": "Metal07",
-            "position": {
-                "x": 2,
-                "y": -1,
-                "z": -3
-            },
-            "rotation": {
-                "x": 0,
-                "y": 0,
-                "z": 0
-            },
-            "scale": {
-                "x": 1,
-                "y": 1,
-                "z": 1
-            }
-        },
         "suzanne": {
             "type": "single",
             "mesh": "suzanne",
-            "material": "Concrete23",
+            "material": "Rock14",
             "position": {
                 "x": -4,
                 "y": 0,
@@ -65,7 +45,7 @@
         "floor": {
             "type": "single",
             "mesh": "floor",
-            "material": "Planks13",
+            "material": "Tiles20",
             "position": {
                 "x": 0,
                 "y": 0,

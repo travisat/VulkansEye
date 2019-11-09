@@ -41,7 +41,7 @@ class Scene
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
-    void update(uint32_t currentImage);
+    void update(uint32_t currentImage, float deltaTime);
 
   private:
     vk::DescriptorPool colorPool;

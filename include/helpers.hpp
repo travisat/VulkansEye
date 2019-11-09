@@ -12,6 +12,8 @@
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
+#include <glm/ext.hpp>
+
 // These need to be templated functions
 
 namespace tat

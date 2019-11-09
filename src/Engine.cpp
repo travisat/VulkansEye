@@ -178,7 +178,7 @@ void Engine::createCommandBuffers()
     }
 }
 
-void Engine::drawFrame()
+void Engine::drawFrame(float deltaTime)
 {
     if (!vulkan->prepared)
     {
@@ -209,7 +209,7 @@ void Engine::drawFrame()
         CheckResult(result);
     }
 
-    scene->update(currentBuffer);
+    scene->update(currentBuffer, deltaTime);
 
     const vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     vk::SubmitInfo submitInfo = {};
