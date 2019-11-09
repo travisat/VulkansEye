@@ -59,8 +59,8 @@ void Object::update(float deltaTime)
         // TODO(travis) replace this with collision detection
         if (m_position.y - m_size.y / 2.F < 0.F)
         {
-            m_position.y = m_size.y / 2.F;
-            translate();
+            auto diff = glm::vec3(0.F, -1.F * (m_position.y - m_size.y / 2.F), 0.F);
+            translate(diff);
             m_velocity.y = 0.F;
         }
 

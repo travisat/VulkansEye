@@ -48,12 +48,12 @@ void Player::move(glm::vec2 direction, float deltaTime)
     moveDir += direction.x * glm::cross(camFront, glm::vec3(0.F, 1.F, 0.F));
 
     auto force = glm::vec3(0.F);
-    if (glm::length(moveDir) > 0.0001F)
+    if (glm::length(moveDir) > 0.F)
     { // we want to move
         float walking = (m_mass * velocityMax) / (timeToReachVMax * deltaTime);
         force = normalize(moveDir) * walking;
 
-        if (glm::length(m_velocity) > 0.0001F)
+        if (glm::length(m_velocity) > 0.F)
         { // if we are moving apply friction
             float internalFriction = (glm::length(m_velocity) / velocityMax) * walking;
             force -= internalFriction * normalize(m_velocity);
@@ -61,7 +61,7 @@ void Player::move(glm::vec2 direction, float deltaTime)
     }
     else if (onGround())
     { // we want to stop
-        if (length(m_velocity) != 0.F)
+        if (length(m_velocity) > 0.F)
         { // if stopped don't apply friction
             float stoppingForce = (m_mass * velocityMax) / (timeToStopfromVMax * deltaTime);
             float internalFriction = (glm::length(m_velocity) / velocityMax) * stoppingForce;
@@ -83,8 +83,8 @@ void Player::jump()
 void Player::look(double mouseX, double mouseY)
 {
     // convert from glfw coordinates [0, width],[0, height] to [-1,1] interval
-    mouseX = (mouseX / (windowWidth / 2)) - 1.0F;
-    mouseY = (mouseY / (windowHeight / 2)) - 1.0F;
+    mouseX = (mouseX / (windowWidth / 2)) - 1.F;
+    mouseY = (mouseY / (windowHeight / 2)) - 1.F;
     glm::vec2 mousePosition(mouseX, mouseY);
 
     // discard old lastMousePosition so mouse doesn't jump changing modes

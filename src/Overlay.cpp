@@ -16,15 +16,15 @@ void Overlay::create()
     ImGui::CreateContext();
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
-    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0F, 0.0F, 0.0F, 0.6F);
-    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.0F, 0.0F, 0.0F, 0.8F);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.F, 0.F, 0.F, 0.6F);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.F, 0.F, 0.F, 0.8F);
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_Header] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
-    style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0F, 1.0F, 1.0F, 1.0F);
+    style.Colors[ImGuiCol_CheckMark] = ImVec4(1.F, 1.F, 1.F, 1.F);
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
-    io.DisplayFramebufferScale = ImVec2(1.0F, 1.0F);
+    io.DisplayFramebufferScale = ImVec2(1.F, 1.F);
 
     createFont();
 
@@ -244,11 +244,11 @@ void Overlay::newFrame()
     float frameTime = Timer::time();
     float deltaTime = frameTime - lastFrameTime;
     lastFrameTime = frameTime;
-    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.0F))
+    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
     {
         lastUpdateTime = frameTime;
         uiSettings.position = -1.F * player->position();
-        uiSettings.fps = 1.0F / deltaTime;
+        uiSettings.fps = 1.F / deltaTime;
 
         switch (vulkan->mode)
         {
@@ -344,8 +344,8 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
 
     // UI scale and translate via push constants
-    pushConstBlock.scale = glm::vec2(2.0F / io.DisplaySize.x, 2.0F / io.DisplaySize.y);
-    pushConstBlock.translate = glm::vec2(-1.0F);
+    pushConstBlock.scale = glm::vec2(2.F / io.DisplaySize.x, 2.F / io.DisplaySize.y);
+    pushConstBlock.translate = glm::vec2(-1.F);
     commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstBlock),
                                 &pushConstBlock);
 
