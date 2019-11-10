@@ -51,6 +51,7 @@ ${CMAKE_SOURCE_DIR}/src/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/RenderPass.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Image.cpp
+${CMAKE_SOURCE_DIR}/src/Camera.cpp
 ${CMAKE_SOURCE_DIR}/src/Materials.cpp
 ${CMAKE_SOURCE_DIR}/src/Meshes.cpp
 ${CMAKE_SOURCE_DIR}/src/Object.cpp

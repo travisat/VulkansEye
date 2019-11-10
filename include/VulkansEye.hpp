@@ -1,5 +1,6 @@
 #include "Backdrops.hpp"
 #include "Config.hpp"
+#include "Camera.hpp"
 #include "Engine.hpp"
 #include "Input.hpp"
 #include "Materials.hpp"
@@ -23,6 +24,7 @@ class VulkansEye
 
     std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};
+    std::shared_ptr<Camera> camera;
     std::shared_ptr<Player> player;
     std::shared_ptr<Overlay> overlay;
     std::shared_ptr<Backdrops> backdrops;

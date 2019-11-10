@@ -1,6 +1,5 @@
 #include "Meshes.hpp"
 #include "Config.hpp"
-#include "helpers.hpp"
 #include <memory>
 #include <stdexcept>
 

@@ -1,5 +1,4 @@
 #include "Framebuffer.hpp"
-#include "helpers.hpp"
 
 namespace tat
 {

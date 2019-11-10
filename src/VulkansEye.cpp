@@ -2,7 +2,6 @@
 #include "Backdrops.hpp"
 #include "Config.hpp"
 #include "Input.hpp"
-#include "helpers.hpp"
 #include <memory>
 
 namespace tat
@@ -17,10 +16,8 @@ VulkansEye::VulkansEye(const std::string &configPath)
     Timer::systemTime();
     debugLogger->info("Started Timers");
 
-
     // load config
     auto config = Config(configPath);
-
 
     // load display settings
     vulkan->name = config.name;
@@ -28,6 +25,8 @@ VulkansEye::VulkansEye(const std::string &configPath)
     vulkan->height = config.windowHeight;
     vulkan->zNear = config.zNear;
     vulkan->zFar = config.zFar;
+    vulkan->FoV = config.FoV;
+    vulkan->mouseSensitivity = config.mouseSensitivity;
     vulkan->brdfPath = config.brdf;
     if (config.sync == true)
     {
@@ -53,12 +52,13 @@ VulkansEye::VulkansEye(const std::string &configPath)
     engine.vulkan = vulkan;
     engine.init();
 
-    player = std::make_shared<Player>(vulkan, config.playerConfigPath);
+    camera = std::make_shared<Camera>(vulkan);
+    player = std::make_shared<Player>(camera, config.playerConfigPath);
     materials = std::make_shared<Materials>(vulkan, config.materialsConfigPath);
     meshes = std::make_shared<Meshes>(vulkan, config.meshesConfigPath);
-    backdrops = std::make_shared<Backdrops>(vulkan, player, config.backdropsConfigPath);
-    scene = std::make_shared<Scene>(vulkan, player, materials, meshes, backdrops, config.sceneConfigPath);
-    overlay = std::make_shared<Overlay>(vulkan, player);
+    backdrops = std::make_shared<Backdrops>(vulkan, camera, config.backdropsConfigPath);
+    scene = std::make_shared<Scene>(vulkan, camera, player, materials, meshes, backdrops, config.sceneConfigPath);
+    overlay = std::make_shared<Overlay>(vulkan, player, camera);
 
     // prepare engine
     engine.scene = scene;
@@ -85,6 +85,8 @@ void VulkansEye::run()
         glfwPollEvents();
         handleInput(deltaTime);
         player->update(deltaTime);
+        camera->setPosition(glm::vec3(-1.F, -1.F, -1.F) * player->position());
+        camera->update();
 
         engine.drawFrame(deltaTime);
     }
@@ -103,7 +105,7 @@ void VulkansEye::handleInput(float deltaTime)
             {
                 vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 vulkan->window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                player->mouseMode = true;
+                camera->mouseMode = true;
                 displayMode = DisplayMode::nocursor;
             }
             vulkan->showOverlay = false;
@@ -121,7 +123,7 @@ void VulkansEye::handleInput(float deltaTime)
             {
                 vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 vulkan->window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                player->mouseMode = true;
+                camera->mouseMode = true;
                 displayMode = DisplayMode::nocursor;
             }
             vulkan->showOverlay = true;
@@ -139,7 +141,7 @@ void VulkansEye::handleInput(float deltaTime)
             if (displayMode != DisplayMode::cursor)
             {
                 vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                player->mouseMode = false;
+                camera->mouseMode = false;
                 displayMode = DisplayMode::cursor;
             }
             vulkan->mode = Mode::Nput;
@@ -147,13 +149,13 @@ void VulkansEye::handleInput(float deltaTime)
         }
     }
 
-    player->look(Input::getMouseX(), Input::getMouseY());
+    camera->look(Input::getMouseX(), Input::getMouseY());
 
     auto moveDir = glm::vec2(0.F);
-    moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
-    moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
-    moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
-    moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
+    moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
+    moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
+    moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
+    moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
     player->move(moveDir, deltaTime);
 
     if (Input::isKeyPressed(GLFW_KEY_SPACE) != 0)
@@ -163,7 +165,7 @@ void VulkansEye::handleInput(float deltaTime)
 
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
-        debugLogger->info("Pressed Escape Closing"); 
+        debugLogger->info("Pressed Escape Closing");
         vulkan->window->setClose(1);
     }
 }

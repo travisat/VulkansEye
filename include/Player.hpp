@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Camera.hpp"
 #include "Config.hpp"
 #include "Object.hpp"
-#include "Vulkan.hpp"
+#include <memory>
+
 
 namespace tat
 {
@@ -10,16 +12,11 @@ namespace tat
 class Player : public Object
 {
   public:
-    explicit Player(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath);
+    explicit Player(const std::shared_ptr<Camera> &camera, const std::string &configPath);
     ~Player() = default;
 
-    void look(double mouseX, double mouseY);
     void move(glm::vec2 direction, float deltaTime);
     void jump();
-
-    void updateAspectRatio(float windowWidth, float windowHeight);
-
-    bool mouseMode = true;
 
     auto height() -> float
     {
@@ -27,24 +24,14 @@ class Player : public Object
     };
 
   private:
+    std::shared_ptr<Camera> camera;
     std::shared_ptr<spdlog::logger> debugLogger;
-    float fieldOfView;
-    float zNear;
-    float zFar;
-
-    float windowWidth;
-    float windowHeight;
 
     float jumpVelocity = 0.F; // sqrt(2.0 * Gravity * heightofJump)
-
     // force applied while walking
     float velocityMax;        // m/s
     float timeToReachVMax;    // s
     float timeToStopfromVMax; // s
-
-    float mouseSensitivity = 33.4F;
-
-    glm::vec2 lastMousePosition = glm::vec2(0.F);
 
     auto onGround() -> bool;
 };

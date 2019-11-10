@@ -13,6 +13,7 @@
 #include "Model.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
+#include "Camera.hpp"
 #include "Vulkan.hpp"
 
 namespace tat
@@ -26,7 +27,7 @@ class Scene
     Image shadow;
     Image brdf;
 
-    Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player,
+    Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera, const std::shared_ptr<Player> &player,
           const std::shared_ptr<Materials> &materials, const std::shared_ptr<Meshes> &meshes,
           const std::shared_ptr<Backdrops> &backdrops, const std::string &configPath);
     ~Scene();
@@ -40,6 +41,7 @@ class Scene
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
     std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Camera> camera;
     std::shared_ptr<Player> player;
     std::shared_ptr<Materials> materials;
     std::shared_ptr<Meshes> meshes;

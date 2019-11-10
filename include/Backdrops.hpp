@@ -10,12 +10,12 @@ namespace tat
 class Backdrops
 {
   public:
-    Backdrops(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player,
+    Backdrops(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera,
               const std::string &configPath);
     ~Backdrops() = default;
 
     std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Player> player;
+    std::shared_ptr<Camera> camera;
 
     auto getBackdrop(const std::string &name) -> Backdrop *;
 

@@ -45,6 +45,8 @@ Config::Config(const std::string &path)
             load(j, "settings", "zFar", zFar);
             load(j, "settings", "windowWidth", windowWidth);
             load(j, "settings", "windowHeight", windowHeight);
+            load(j, "settings", "mouseSensitivity", mouseSensitivity);
+            load(j, "player", "FoV", FoV);
             load(j, "settings", "sync", sync);
             load(j, "settings", "shadowSize", shadowSize);
             load(j, "settings", "brdfPath", brdf);
@@ -76,15 +78,12 @@ PlayerConfig::PlayerConfig(const std::string &path)
             std::ifstream file(path);
             json j;
             file >> j;
-
             load(j, "player", "height", height);
             load(j, "player", "mass", mass);
             load(j, "player", "velocityMax", velocityMax);
             load(j, "player", "timeToReachVMax", timeToReachVMax);
             load(j, "player", "timeToStopFromVMax", timeToStopfromVMax);
             load(j, "player", "jumpHeight", jumpHeight);
-            load(j, "player", "mouseSensitivity", mouseSensitivity);
-            load(j, "player", "fieldOfView", fieldOfView);
         }
         catch (json::exception &e)
         {
@@ -259,7 +258,7 @@ SceneConfig::SceneConfig(const std::string &path)
             {
                 auto s = j.at("scene");
                 name = s.value("name", name);
-                backdrop = s.value("backdrop", backdrop); 
+                backdrop = s.value("backdrop", backdrop);
 
                 if (s.find("models") == s.end())
                 {

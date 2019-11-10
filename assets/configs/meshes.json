@@ -12,8 +12,8 @@
             "path": "assets/models/table.glb",
             "size": {
                 "x": 1,
-                "y": 2,
-                "z": 0.75
+                "y": 1,
+                "z": 2
             }
         },
         "floor": {

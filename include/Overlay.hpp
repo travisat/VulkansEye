@@ -20,10 +20,11 @@ namespace tat
 // Options and values to display/toggle from the UI
 struct UISettings
 {
-    glm::vec3 position = glm::vec3(0.0F);
-    glm::vec3 rotation = glm::vec3(0.0F);
-    float velocity = 0.0F;
-    float fps = 0.0F;
+    glm::vec3 position = glm::vec3(0.F);
+    glm::vec3 rotation = glm::vec3(0.F);
+
+    float velocity = 0.F;
+    float fps = 0.F;
     int32_t modeNum = 0;
 };
 
@@ -37,6 +38,7 @@ class Overlay
   public:
     std::shared_ptr<Vulkan> vulkan;
     std::shared_ptr<Player> player;
+    std::shared_ptr<Camera> camera;
 
     bool update = false;
     // UI params are set via push constants
@@ -46,7 +48,7 @@ class Overlay
         glm::vec2 translate;
     } pushConstBlock{};
 
-    Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player);
+    Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player, const std::shared_ptr<Camera> &camera);
     ~Overlay();
 
     void recreate();

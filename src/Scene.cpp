@@ -1,27 +1,28 @@
 #include "Scene.hpp"
 #include "Config.hpp"
 #include "Vulkan.hpp"
-#include "helpers.hpp"
 #include <filesystem>
 
 namespace tat
 {
 
-Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player,
-             const std::shared_ptr<Materials> &materials, const std::shared_ptr<Meshes> &meshes,
-             const std::shared_ptr<Backdrops> &backdrops, const std::string& configPath)
+Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera,
+             const std::shared_ptr<Player> &player, const std::shared_ptr<Materials> &materials,
+             const std::shared_ptr<Meshes> &meshes, const std::shared_ptr<Backdrops> &backdrops,
+             const std::string &configPath)
 {
     debugLogger = spdlog::get("debugLogger");
     this->vulkan = vulkan;
+    this->camera = camera;
     this->player = player;
     this->materials = materials;
     this->meshes = meshes;
     this->backdrops = backdrops;
+
     auto config = SceneConfig(configPath);
 
     createBrdf();
     createShadow();
-
     loadBackdrop(config.backdrop);
     createModels(config.models);
 
@@ -122,7 +123,7 @@ void Scene::cleanup()
 
 void Scene::recreate()
 {
-    player->updateAspectRatio(static_cast<float>(vulkan->width), static_cast<float>(vulkan->height));
+    camera->updateProjection();
 
     backdrop->recreate();
     createColorPool();
@@ -181,10 +182,10 @@ void Scene::update(uint32_t currentImage, float deltaTime)
         model.update(deltaTime);
         // create mvp for player space
         vertBuffer.model = model.model();
-        vertBuffer.view = player->view();
-        vertBuffer.projection = player->projection();
-        vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->projection() * player->view() * model.model()));
-        vertBuffer.camPos = glm::vec4(player->position(), 1.F);
+        vertBuffer.view = camera->view();
+        vertBuffer.projection = camera->projection();
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(camera->projection() * camera->view() * model.model()));
+        vertBuffer.camPos = glm::vec4(-camera->position(), 1.F);
 
         // create mvp for lightspace
         shadBuffer.model = model.model();
@@ -323,15 +324,10 @@ void Scene::createColorPipeline()
     colorPipeline.loadDefaults(vulkan->colorPass);
 
     auto vertPath = "assets/shaders/scene.vert.spv";
-    assert(std::filesystem::exists(vertPath));
     auto fragPath = "assets/shaders/scene.frag.spv";
-    assert(std::filesystem::exists(fragPath));
 
-    auto vertShaderCode = readFile(vertPath);
-    auto fragShaderCode = readFile(fragPath);
-
-    colorPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    colorPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+    colorPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
+    colorPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
 
     colorPipeline.shaderStages = {colorPipeline.vertShaderStageInfo, colorPipeline.fragShaderStageInfo};
 
@@ -396,15 +392,10 @@ void Scene::createShadowPipeline()
     shadowPipeline.loadDefaults(vulkan->shadowPass);
 
     auto vertPath = "assets/shaders/shadow.vert.spv";
-    assert(std::filesystem::exists(vertPath));
     auto fragPath = "assets/shaders/shadow.frag.spv";
-    assert(std::filesystem::exists(fragPath));
 
-    auto vertShaderCode = readFile(vertPath);
-    auto fragShaderCode = readFile(fragPath);
-
-    shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+    shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
+    shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
 
     shadowPipeline.shaderStages = {shadowPipeline.vertShaderStageInfo, shadowPipeline.fragShaderStageInfo};
 

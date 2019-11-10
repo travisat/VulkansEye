@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -16,12 +17,14 @@
 #include <array>
 #include <iostream>
 #include <vector>
+#include <fstream>
+#include <filesystem>
 
-#include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/spdlog.h>
 
-#include "helpers.hpp"
+
 #include "Window.hpp"
 
 namespace tat
@@ -32,7 +35,6 @@ enum class DisplayMode
     cursor = 0,
     nocursor = 1
 };
-
 
 enum class Mode
 {
@@ -120,6 +122,8 @@ class Vulkan
     uint32_t currentImage = 0;
     float zNear = 0.01F;
     float zFar = 512.F;
+    float FoV = 67.F;
+    float mouseSensitivity = 33.4F;
     float shadowSize = 1024.F;
     bool prepared = false;
     bool showOverlay = true;
@@ -166,11 +170,32 @@ class Vulkan
         device.freeCommandBuffers(commandPool, 1, &commandBuffer);
     };
 
-    auto createShaderModule(const std::vector<char> &code) -> vk::ShaderModule
+    auto createShaderModule(const std::string &filename) -> vk::ShaderModule
     {
+        if (!std::filesystem::exists(filename))
+        {
+            spdlog::get("debugLogger")->error("Shader {} does not exist", filename);
+            throw std::runtime_error("Shader does not exist");
+            return nullptr;
+        }
+
+        std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open())
+        {
+            throw std::runtime_error("failed to open file");
+        }
+
+        size_t fileSize = (size_t)file.tellg();
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+        file.close();
+
         vk::ShaderModuleCreateInfo createInfo = {};
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+        createInfo.codeSize = buffer.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
         return device.createShaderModule(createInfo, nullptr);
     }

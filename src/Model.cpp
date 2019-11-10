@@ -1,6 +1,5 @@
 #include "Model.hpp"
 #include "Vulkan.hpp"
-#include "helpers.hpp"
 
 namespace tat
 {
@@ -15,6 +14,7 @@ void Model::create()
     materialIndex = materials->getIndex(config.material);
     meshIndex = meshes->getIndex(config.mesh);
     m_size = meshes->getMesh(meshIndex)->size;
+    m_mass = config.mass;
 
     // move/rotate/scale
     translate(config.position);

@@ -1,7 +1,5 @@
 #include "Object.hpp"
 #include "glm/gtx/string_cast.hpp"
-#include "helpers.hpp"
-
 namespace tat
 {
 
@@ -46,7 +44,7 @@ void Object::update(float deltaTime)
         m_force = glm::vec3(0.F);
 
         // apply gravity
-        m_acceleration.y -= 9.8F;
+        m_acceleration.y += 9.8F;
 
         // apply acceleration to velocity
         m_velocity += m_acceleration * deltaTime;
@@ -57,9 +55,10 @@ void Object::update(float deltaTime)
         // move object y back to 0 if lower than 0
         // zero out velocity
         // TODO(travis) replace this with collision detection
-        if (m_position.y - m_size.y / 2.F < 0.F)
+        auto bottom = m_position.y + m_size.y/2;
+        if (bottom > 0.F)
         {
-            auto diff = glm::vec3(0.F, -1.F * (m_position.y - m_size.y / 2.F), 0.F);
+            auto diff = glm::vec3(0.F, -bottom, 0.F);
             translate(diff);
             m_velocity.y = 0.F;
         }
@@ -102,6 +101,7 @@ void Object::scale(glm::vec3 scale)
 {
     m_scale *= scale;
     S = glm::scale(glm::mat4(1.F), m_scale);
+    m_size = m_scale * m_size;
 }
 
 void Object::updateModel()

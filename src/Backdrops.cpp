@@ -4,12 +4,12 @@
 
 namespace tat
 {
-Backdrops::Backdrops(const std::shared_ptr<Vulkan>& vulkan, const std::shared_ptr<Player>& player, const std::string& configPath)
+Backdrops::Backdrops(const std::shared_ptr<Vulkan>& vulkan, const std::shared_ptr<Camera>& camera, const std::string& configPath)
 {
     debugLogger = spdlog::get("debugLogger");
     auto config = BackdropsConfig(configPath);
     this->vulkan = vulkan;
-    this->player = player;
+    this->camera = camera;
     
     // resize and allow for 0 index to be default
     configs.resize(config.backdrops.size() + 1);
@@ -46,7 +46,7 @@ void Backdrops::loadBackdrop(int32_t index)
     }
     // otherwise load the material
     backdrop->vulkan = vulkan;
-    backdrop->player = player;
+    backdrop->camera = camera;
     backdrop->loadConfig(configs[index]);
 }
 

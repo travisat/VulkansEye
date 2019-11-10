@@ -1,16 +1,17 @@
 #include <filesystem>
+#include <memory>
 
 #include "Overlay.hpp"
-#include "helpers.hpp"
 
 namespace tat
 {
 
-Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player)
+Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player, const std::shared_ptr<Camera> &camera)
 {
     debugLogger = spdlog::get("debugLogger");
     this->vulkan = vulkan;
     this->player = player;
+    this->camera = camera;
 
     ImGui::CreateContext();
     // Color scheme
@@ -195,13 +196,9 @@ void Overlay::createPipeline()
     pipeline.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     auto vertPath = "assets/shaders/ui.vert.spv";
-    assert(std::filesystem::exists(vertPath));
     auto fragPath = "assets/shaders/ui.frag.spv";
-    assert(std::filesystem::exists(fragPath));
-    auto vertShaderCode = readFile(vertPath);
-    auto fragShaderCode = readFile(fragPath);
-    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
+    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
@@ -257,7 +254,8 @@ void Overlay::newFrame()
     if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
     {
         lastUpdateTime = frameTime;
-        uiSettings.position = -1.F * player->position();
+        uiSettings.position = player->position();
+        uiSettings.rotation = camera->rotation();
         uiSettings.fps = 1.F / deltaTime;
 
         switch (vulkan->mode)
@@ -288,6 +286,8 @@ void Overlay::newFrame()
     ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
     ImGui::InputFloat("Fps", &uiSettings.fps);
     ImGui::InputFloat3("Position", &uiSettings.position.x, 2);
+    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x, 2);
+
     ImGui::End();
 
     ImGui::Render();

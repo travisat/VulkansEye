@@ -106,8 +106,8 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     vec3 diffuse = irradiance * diffuseColor;
 
     // compute specular
-    vec3 R = normalize(reflect(-V, N));
-   
+    vec3 R = -reflect(-V, N);
+    R.x *= -1.F;
     
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, 1.F - roughness)).rg;
@@ -124,7 +124,7 @@ void main()
     float ambientOcclusion = texture(aoMap, inUV).r;
 
     vec3 N = getNormal(inPosition, inNormal);      // Normal vector
-    vec3 V = normalize(inPosition - vec3(camPos)); // Vector from camera to model
+    vec3 V = normalize(vec3(camPos) - inPosition); // Vector from camera to model
 
     float shadow = shadowCalc(vec3(lights.position) - inPosition, N);
     vec3 ambient = iblBRDF(N, V, baseColor, roughness, metallic);

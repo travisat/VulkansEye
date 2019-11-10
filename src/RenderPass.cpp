@@ -1,5 +1,4 @@
 #include "RenderPass.hpp"
-#include "helpers.hpp"
 #include <memory>
 
 namespace tat

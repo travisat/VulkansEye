@@ -1,6 +1,5 @@
 #include "Image.hpp"
 #include "gli/target.hpp"
-#include "helpers.hpp"
 #include "vulkan/vulkan_core.h"
 #include <stdexcept>
 

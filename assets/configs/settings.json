@@ -2,6 +2,8 @@
     "settings": {
         "zNear": 0.1,
         "zFar": 512.0,
+        "FoV": 67,
+        "mouseSensitivity": 33.4,
         "windowWidth": 1024,
         "windowHeight": 768,
         "sync": true,

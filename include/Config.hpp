@@ -32,6 +32,8 @@ class Config
     float zFar = 1024.F;
     int windowWidth = 1024;
     int windowHeight = 768;
+    float FoV = 60.F;
+    float mouseSensitivity = 25.F;
     bool sync = true;
     float shadowSize = 1024.F;
     std::string brdf = "assets/brdf.dds";
@@ -51,14 +53,11 @@ class PlayerConfig
     PlayerConfig() = default;
     explicit PlayerConfig(const std::string &path);
     ~PlayerConfig() = default;
-
-    float fieldOfView = 60.F;
     glm::vec3 position{};
     glm::vec3 rotation{};
     float height = 1.7F; // meters 1.0f == 1m
     float mass = 100.F;
     float jumpHeight = 1.F;
-    float mouseSensitivity = 25.F;
     float velocityMax = 6.F;
     float timeToReachVMax = 0.6F;
     float timeToStopfromVMax = 0.1F;

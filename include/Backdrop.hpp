@@ -4,7 +4,7 @@
 #include "Config.hpp"
 #include "Image.hpp"
 #include "Pipeline.hpp"
-#include "Player.hpp"
+#include "Camera.hpp"
 #include "Timer.hpp"
 #include <memory>
 
@@ -15,7 +15,7 @@ class Backdrop
 {
   public:
     std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Player> player;
+    std::shared_ptr<Camera> camera;
     std::string name;
 
     glm::vec3 light{};

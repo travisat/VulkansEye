@@ -2,7 +2,6 @@
 
 #include <utility>
 #include <filesystem>
-#include "helpers.hpp"
 
 namespace tat
 {
@@ -96,8 +95,8 @@ void Backdrop::update(uint32_t currentImage)
     // skybox is a quad that fills the screen
     // https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
     // by unprojecting the mvp (ie applying the inverse backwards)
-    glm::mat4 inverseProjection = inverse(player->projection());
-    glm::mat4 inverseModelView = transpose(player->view());
+    glm::mat4 inverseProjection = inverse(camera->projection());
+    glm::mat4 inverseModelView = transpose(camera->view());
     backBuffer.inverseMVP = inverseModelView * inverseProjection;
     memcpy(backBuffers[currentImage].mapped, &backBuffer, sizeof(backBuffer));
 }
@@ -195,16 +194,11 @@ void Backdrop::createPipeline()
     pipeline.descriptorSetLayout = descriptorSetLayout;
     pipeline.loadDefaults(vulkan->colorPass);
 
-     auto vertPath = "assets/shaders/backdrop.vert.spv";
-    assert(std::filesystem::exists(vertPath));
+    auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
-    assert(std::filesystem::exists(fragPath));
-
-    auto vertShaderCode = readFile(vertPath);
-    auto fragShaderCode = readFile(fragPath);
-
-    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
-    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
+    
+    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
+    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
