@@ -1,14 +1,15 @@
 #pragma once
-#include "Vulkan.hpp"
 #include "Image.hpp"
+#include "Vulkan.hpp"
 #include <memory>
+
 
 namespace tat
 {
 
 class Framebuffer
 {
-public:
+  public:
     std::shared_ptr<Vulkan> vulkan;
     vk::RenderPass renderPass;
     int32_t width;
@@ -22,9 +23,9 @@ public:
     void create();
     void cleanup();
 
-private:
+  private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     void createRenderPass();
-
 };
 
 } // namespace tat

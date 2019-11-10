@@ -48,9 +48,11 @@ class Engine
 
     ~Engine();
     void init();
+    void prepare();
     void drawFrame(float deltaTime);
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     vk::DispatchLoaderDynamic dldy;
 
     std::vector<Framebuffer> shadowFbs{};

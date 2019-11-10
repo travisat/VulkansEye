@@ -1,30 +1,24 @@
 {
-    "desert": {
-        "color": "assets/backdrop/desert/color.dds",
-        "radiance": "assets/backdrop/desert/radiance.dds",
-        "irradiance": "assets/backdrop/desert/irradiance.dds",
-        "light": {
-            "position": {
+    "backdrops": {
+        "desert": {
+            "color": "assets/backdrop/desert/color.dds",
+            "radiance": "assets/backdrop/desert/radiance.dds",
+            "irradiance": "assets/backdrop/desert/irradiance.dds",
+            "light": {
                 "x": -20,
                 "y": -15,
                 "z": -8
-            },
-            "temperature": 6400,
-            "lumens": 900
-        }
-    },
-    "papermill": {
-        "color": "assets/backdrop/papermill/color.dds",
-        "radiance": "assets/backdrop/papermill/radiance.dds",
-        "irradiance": "assets/backdrop/papermill/irradiance.dds",
-        "light": {
-            "position": {
+            }
+        },
+        "papermill": {
+            "color": "assets/backdrop/papermill/color.dds",
+            "radiance": "assets/backdrop/papermill/radiance.dds",
+            "irradiance": "assets/backdrop/papermill/irradiance.dds",
+            "light": {
                 "x": -15,
                 "y": -15,
                 "z": -10
-            },
-            "temperature": 6400,
-            "lumens": 900
+            }
         }
     }
 }

@@ -1,18 +1,17 @@
+#include <filesystem>
+
 #include "Overlay.hpp"
 #include "helpers.hpp"
 
 namespace tat
 {
 
-Overlay::~Overlay()
+Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player)
 {
-    ImGui::DestroyContext();
-    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
-    vulkan->device.destroyDescriptorPool(descriptorPool);
-}
+    debugLogger = spdlog::get("debugLogger");
+    this->vulkan = vulkan;
+    this->player = player;
 
-void Overlay::create()
-{
     ImGui::CreateContext();
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
@@ -34,6 +33,14 @@ void Overlay::create()
     createPipeline();
     newFrame();
     createBuffers();
+    debugLogger->info("Loaded Overlay");
+}
+
+Overlay::~Overlay()
+{
+    ImGui::DestroyContext();
+    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Overlay::recreate()
@@ -187,9 +194,12 @@ void Overlay::createPipeline()
     pipeline.pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipeline.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    // Vertex bindings an attributes based on ImGui vertex definition
-    auto vertShaderCode = readFile("assets/shaders/ui.vert.spv");
-    auto fragShaderCode = readFile("assets/shaders/ui.frag.spv");
+    auto vertPath = "assets/shaders/ui.vert.spv";
+    assert(std::filesystem::exists(vertPath));
+    auto fragPath = "assets/shaders/ui.frag.spv";
+    assert(std::filesystem::exists(fragPath));
+    auto vertShaderCode = readFile(vertPath);
+    auto fragShaderCode = readFile(fragPath);
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
@@ -252,25 +262,24 @@ void Overlay::newFrame()
 
         switch (vulkan->mode)
         {
-            case Mode::Game :
-                uiSettings.modeNum = 0;
-                break;
-            case Mode::Dbug :
-                uiSettings.modeNum = 1;
-                break;
-            case Mode::Nput :
-                uiSettings.modeNum = 2;
-                break;
-            case Mode::Free :
-                uiSettings.modeNum = 3;
-                break;
-            case Mode::Save :
-                uiSettings.modeNum = 4;
-                break;
-            case Mode::Load :
-                uiSettings.modeNum = 5;
+        case Mode::Game:
+            uiSettings.modeNum = 0;
+            break;
+        case Mode::Dbug:
+            uiSettings.modeNum = 1;
+            break;
+        case Mode::Nput:
+            uiSettings.modeNum = 2;
+            break;
+        case Mode::Free:
+            uiSettings.modeNum = 3;
+            break;
+        case Mode::Save:
+            uiSettings.modeNum = 4;
+            break;
+        case Mode::Load:
+            uiSettings.modeNum = 5;
         }
-
     }
 
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);

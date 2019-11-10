@@ -1,12 +1,15 @@
 #include "Player.hpp"
+#include "Config.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "helpers.hpp"
 
 namespace tat
 {
 
-Player::Player(const std::shared_ptr<Vulkan> &vulkan, const PlayerConfig &config)
+Player::Player(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath)
 {
+    debugLogger = spdlog::get("debugLogger");
+    auto config = PlayerConfig(configPath);
     auto size = glm::vec3(0.5F, config.height * 2.F, 0.25F);
     translate(config.position + size / 2.F);
     rotate(config.rotation);

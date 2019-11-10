@@ -4,6 +4,11 @@
 namespace tat
 {
 
+Image::Image()
+{
+    debugLogger = spdlog::get("debugLogger");
+}
+
 Image::~Image()
 {
     if (image)
@@ -65,7 +70,7 @@ void Image::loadSTB(const std::string &path)
     copyFrom(stagingBuffer);
 
     generateMipmaps();
-    Trace("Loaded ", path, " at ", Timer::systemTime());
+    debugLogger->info("Loaded Image {}", path);
 }
 
 void Image::loadGLI(const std::string &path)
@@ -137,7 +142,7 @@ void Image::loadGLI(const std::string &path)
     vulkan->endSingleTimeCommands(commandBuffer);
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    Trace("Loaded ", path, " at ", Timer::systemTime());
+    debugLogger->info("Loaded Image {}", path);
 }
 
 void Image::createSampler()
@@ -263,7 +268,7 @@ void Image::generateMipmaps()
 
     if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
     {
-        Trace(path, " does not support linear blitting");
+        debugLogger->warn("Warning {} does not support linear blitting", path);
         return;
     }
 
@@ -397,7 +402,7 @@ void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
         barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
         break;
     default:
-        Trace("Unsupported Transition at ", Timer::systemTime());
+        debugLogger->warn("Warning unsupported layout transition");
         break;
     }
 
@@ -432,7 +437,7 @@ void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
         break;
     default:
         // Other source layouts aren't handled (yet)
-        Trace("Unsupported Transition at ", Timer::systemTime());
+        debugLogger->warn("Warning unsupported layout transition");
         break;
     }
 

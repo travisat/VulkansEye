@@ -10,13 +10,17 @@ namespace tat
 class Backdrops
 {
   public:
+    Backdrops(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player,
+              const std::string &configPath);
+    ~Backdrops() = default;
+
     std::shared_ptr<Vulkan> vulkan;
     std::shared_ptr<Player> player;
 
-    void loadConfig(const BackdropsConfig &config);
     auto getBackdrop(const std::string &name) -> Backdrop *;
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     // vector of configs, use loadConfigs to populate
     std::vector<BackdropConfig> configs{};
     // vector of empty Backdrops until mesh has been loaded

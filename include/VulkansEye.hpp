@@ -19,25 +19,20 @@ class VulkansEye
     void run();
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
+
     std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};
     std::shared_ptr<Player> player;
-    std::shared_ptr<Overlay> overlay = std::make_shared<Overlay>();
-    std::shared_ptr<Backdrops> backdrops = std::make_shared<Backdrops>();
-    std::shared_ptr<Materials> materials = std::make_shared<Materials>();
-    std::shared_ptr<Meshes> meshes = std::make_shared<Meshes>();
-    std::shared_ptr<Scene> scene = std::make_shared<Scene>();
+    std::shared_ptr<Overlay> overlay;
+    std::shared_ptr<Backdrops> backdrops;
+    std::shared_ptr<Materials> materials;
+    std::shared_ptr<Meshes> meshes;
+    std::shared_ptr<Scene> scene;
 
     DisplayMode displayMode = DisplayMode::nocursor;
 
     void handleInput(float deltaTime);
-
-    static auto createConfig(const std::string &path) -> Config;
-    static auto createPlayerconfig(const std::string &path) -> PlayerConfig;
-    static auto createMaterialsConfig(const std::string &path) -> MaterialsConfig;
-    static auto createMeshesConfig(const std::string &path) -> MeshesConfig;
-    static auto createBackdropsConfig(const std::string &path) -> BackdropsConfig;
-    static auto createSceneConfig(const std::string &path) -> SceneConfig;
 };
 
 } // namespace tat

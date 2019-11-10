@@ -1,9 +1,15 @@
 #include "Backdrops.hpp"
+#include "Config.hpp"
+#include "spdlog/spdlog.h"
 
 namespace tat
 {
-void Backdrops::loadConfig(const BackdropsConfig &config)
+Backdrops::Backdrops(const std::shared_ptr<Vulkan>& vulkan, const std::shared_ptr<Player>& player, const std::string& configPath)
 {
+    debugLogger = spdlog::get("debugLogger");
+    auto config = BackdropsConfig(configPath);
+    this->vulkan = vulkan;
+    this->player = player;
     
     // resize and allow for 0 index to be default
     configs.resize(config.backdrops.size() + 1);
@@ -16,6 +22,8 @@ void Backdrops::loadConfig(const BackdropsConfig &config)
         configs[index] = backdropConfig;
         ++index;
     }
+    
+    debugLogger->info("Loaded Backdrops");
 }
 
 auto Backdrops::getBackdrop(const std::string &name) -> Backdrop *
@@ -30,19 +38,16 @@ auto Backdrops::getBackdrop(const std::string &name) -> Backdrop *
 
 void Backdrops::loadBackdrop(int32_t index)
 {
-    // get pointer to material
     Backdrop *backdrop = &collection[index];
     // if already loaded return
-    if (backdrop->loaded == true)
+    if (collection[index].loaded == true)
     {
         return;
     }
     // otherwise load the material
-    backdrop->player = player;
     backdrop->vulkan = vulkan;
-    backdrop->config = configs[index];
-    backdrop->create();
-    backdrop->loaded = true;
+    backdrop->player = player;
+    backdrop->loadConfig(configs[index]);
 }
 
 auto Backdrops::getIndex(const std::string &name) -> int32_t

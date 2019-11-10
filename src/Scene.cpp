@@ -1,9 +1,40 @@
 #include "Scene.hpp"
+#include "Config.hpp"
 #include "Vulkan.hpp"
 #include "helpers.hpp"
+#include <filesystem>
 
 namespace tat
 {
+
+Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player,
+             const std::shared_ptr<Materials> &materials, const std::shared_ptr<Meshes> &meshes,
+             const std::shared_ptr<Backdrops> &backdrops, const std::string& configPath)
+{
+    debugLogger = spdlog::get("debugLogger");
+    this->vulkan = vulkan;
+    this->player = player;
+    this->materials = materials;
+    this->meshes = meshes;
+    this->backdrops = backdrops;
+    auto config = SceneConfig(configPath);
+
+    createBrdf();
+    createShadow();
+
+    loadBackdrop(config.backdrop);
+    createModels(config.models);
+
+    createColorPool(); // needs stage/lights/actors to know number of descriptors
+    createColorLayouts();
+    createColorSets();     // needs descriptorsetLayout and descriptorpool
+    createColorPipeline(); // needs descriptorsetlayout
+    createShadowPool();
+    createShadowLayouts();
+    createShadowSets();
+    createShadowPipeline();
+    debugLogger->info("Loaded Scene");
+}
 
 Scene::~Scene()
 {
@@ -23,24 +54,6 @@ Scene::~Scene()
     {
         vulkan->device.destroyDescriptorPool(shadowPool);
     }
-}
-
-void Scene::create()
-{
-    createBrdf();
-    createShadow();
-
-    loadBackdrop();
-    createModels();
-
-    createColorPool(); // needs stage/lights/actors to know number of descriptors
-    createColorLayouts();
-    createColorSets();     // needs descriptorsetLayout and descriptorpool
-    createColorPipeline(); // needs descriptorsetlayout
-    createShadowPool();
-    createShadowLayouts();
-    createShadowSets();
-    createShadowPipeline();
 }
 
 void Scene::createBrdf()
@@ -76,16 +89,16 @@ void Scene::createShadow()
     shadow.createSampler();
 }
 
-void Scene::loadBackdrop()
+void Scene::loadBackdrop(const std::string &name)
 {
-    backdrop = backdrops->getBackdrop(config.backdrop);
+    backdrop = backdrops->getBackdrop(name);
 }
 
-void Scene::createModels()
+void Scene::createModels(const std::vector<ModelConfig> &configs)
 {
-    models.resize(config.models.size());
+    models.resize(configs.size());
     int32_t index = 0;
-    for (auto &modelConfig : config.models)
+    for (auto &modelConfig : configs)
     {
         models[index].config = modelConfig;
         models[index].vulkan = vulkan;
@@ -155,9 +168,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 {
     backdrop->update(currentImage);
 
-    fragBuffer.position = backdrop->light.position;
-    fragBuffer.color = backdrop->light.color;
-    fragBuffer.lumens = backdrop->light.lumens;
+    fragBuffer.position = glm::vec4(backdrop->light, 1.F);
 
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
@@ -311,8 +322,13 @@ void Scene::createColorPipeline()
     colorPipeline.descriptorSetLayout = colorLayout;
     colorPipeline.loadDefaults(vulkan->colorPass);
 
-    auto vertShaderCode = readFile("assets/shaders/scene.vert.spv");
-    auto fragShaderCode = readFile("assets/shaders/scene.frag.spv");
+    auto vertPath = "assets/shaders/scene.vert.spv";
+    assert(std::filesystem::exists(vertPath));
+    auto fragPath = "assets/shaders/scene.frag.spv";
+    assert(std::filesystem::exists(fragPath));
+
+    auto vertShaderCode = readFile(vertPath);
+    auto fragShaderCode = readFile(fragPath);
 
     colorPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     colorPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
@@ -379,8 +395,13 @@ void Scene::createShadowPipeline()
     shadowPipeline.descriptorSetLayout = shadowLayout;
     shadowPipeline.loadDefaults(vulkan->shadowPass);
 
-    auto vertShaderCode = readFile("assets/shaders/shadow.vert.spv");
-    auto fragShaderCode = readFile("assets/shaders/shadow.frag.spv");
+    auto vertPath = "assets/shaders/shadow.vert.spv";
+    assert(std::filesystem::exists(vertPath));
+    auto fragPath = "assets/shaders/shadow.frag.spv";
+    assert(std::filesystem::exists(fragPath));
+
+    auto vertShaderCode = readFile(vertPath);
+    auto fragShaderCode = readFile(fragPath);
 
     shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);

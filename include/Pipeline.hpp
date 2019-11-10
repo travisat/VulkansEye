@@ -41,5 +41,6 @@ class Pipeline
     vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
 };
 } // namespace tat

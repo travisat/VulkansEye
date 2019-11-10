@@ -7,6 +7,7 @@ namespace tat
 
 void Model::create()
 {
+    debugLogger = spdlog::get("debugLogger");
     // load config
     name = config.name;
 

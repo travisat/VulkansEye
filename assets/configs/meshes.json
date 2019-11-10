@@ -1,34 +1,36 @@
 {
-    "table": {
-        "path": "assets/models/table.glb",
-        "size": {
-            "x": 1,
-            "y": 2,
-            "z": 0.75
-        }
-    },
-    "floor": {
-        "path": "assets/models/floor.glb",
-        "size": {
-            "x": 10,
-            "y": 0.1,
-            "z": 10
-        }
-    },
-    "sphere": {
-        "path": "assets/models/sphere.glb",
-        "size": {
-            "x": 1,
-            "y": 1,
-            "z": 1
-        }
-    },
-    "suzanne": {
-        "path": "assets/models/suzanne.glb",
-        "size": {
-            "x": 4.1,
-            "y": 2.55,
-            "z": 2.95
+    "meshes": {
+        "table": {
+            "path": "assets/models/table.glb",
+            "size": {
+                "x": 1,
+                "y": 2,
+                "z": 0.75
+            }
+        },
+        "floor": {
+            "path": "assets/models/floor.glb",
+            "size": {
+                "x": 10,
+                "y": 0.1,
+                "z": 10
+            }
+        },
+        "sphere": {
+            "path": "assets/models/sphere.glb",
+            "size": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            }
+        },
+        "suzanne": {
+            "path": "assets/models/suzanne.glb",
+            "size": {
+                "x": 4.1,
+                "y": 2.55,
+                "z": 2.95
+            }
         }
     }
 }

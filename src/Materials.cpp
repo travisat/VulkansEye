@@ -1,11 +1,14 @@
 #include "Materials.hpp"
+#include "Config.hpp"
 
 namespace tat
 {
 
-void Materials::loadConfig(const MaterialsConfig &config)
+Materials::Materials(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath)
 {
-
+    debugLogger = spdlog::get("debugLogger");
+    this->vulkan = vulkan;
+    auto config = MaterialsConfig(configPath);
     // resize and allow for 0 index to be default
     configs.resize(config.materials.size() + 1);
     collection.resize(configs.size() + 1);
@@ -19,6 +22,7 @@ void Materials::loadConfig(const MaterialsConfig &config)
         configs[index] = materialConfig;
         ++index;
     }
+    debugLogger->info("Loaded Materials");
 }
 
 auto Materials::getIndex(const std::string &name) -> int32_t

@@ -38,12 +38,12 @@ inline auto readFile(const std::string &filename) -> std::vector<char>
     return buffer;
 };
 
-template <typename... Args> void Trace(Args &&... args)
+/*template <typename... Args> void Trace(Args &&... args)
 {
     std::ostringstream stream;
     (stream << ... << std::forward<Args>(args)) << '\n';
     std::clog << stream.str();
-}
+}*/
 
 inline auto CheckResult(vk::Result result) -> vk::Result
 {

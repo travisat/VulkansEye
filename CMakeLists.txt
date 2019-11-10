@@ -42,6 +42,7 @@ set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/Window.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
+${CMAKE_SOURCE_DIR}/src/Config.cpp
 ${CMAKE_SOURCE_DIR}/src/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/Framebuffer.cpp
@@ -55,7 +56,6 @@ ${CMAKE_SOURCE_DIR}/src/Model.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrops.cpp
 ${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
 ${CMAKE_SOURCE_DIR}/src/Player.cpp
-${CMAKE_SOURCE_DIR}/src/Light.cpp
 ${CMAKE_SOURCE_DIR}/src/Scene.cpp
 ${CMAKE_SOURCE_DIR}/src/Overlay.cpp
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 
@@ -101,6 +101,7 @@ target_include_directories(VulkansEye
         "external/vma/src"
         "external/gli"
         "external/imgui"
+        "external/spdlog/include"
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

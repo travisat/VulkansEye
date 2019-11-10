@@ -17,6 +17,10 @@
 #include <iostream>
 #include <vector>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/async.h>
+#include <spdlog/sinks/basic_file_sink.h>
+
 #include "helpers.hpp"
 #include "Window.hpp"
 
@@ -58,8 +62,6 @@ struct UniformBack
 struct UniformFrag
 {
     glm::vec4 position{};
-    glm::vec4 color{};
-    float lumens = 0.0F;
     float radianceMipLevels = 0.F;
     float exposure = 2.2F;
     float gamma = 4.5F;

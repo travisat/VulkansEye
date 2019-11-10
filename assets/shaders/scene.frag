@@ -15,8 +15,6 @@ const int numLights = 1;
 layout(binding = 1) uniform UniformLights
 {
     vec4 position;
-    vec4 color;
-    float lumens;
     float radianceMipLevels;
     float exposure;
     float gamma;
@@ -112,7 +110,7 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     R.x *= -1.F;
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, roughness)).rg;
-    vec3 specular = radiance * (mix(f0, vec3(lights.color), metallic) * brdf.x + brdf.y);
+    vec3 specular = radiance * (mix(f0, vec3(irradiance), metallic) * brdf.x + brdf.y);
 
     return diffuse + specular;
 }

@@ -3,7 +3,6 @@
 #include "Buffer.hpp"
 #include "Config.hpp"
 #include "Image.hpp"
-#include "Light.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
 #include "Timer.hpp"
@@ -17,22 +16,21 @@ class Backdrop
   public:
     std::shared_ptr<Vulkan> vulkan;
     std::shared_ptr<Player> player;
-    BackdropConfig config;
     std::string name;
+
+    glm::vec3 light{};
 
     bool loaded = false;
 
-    const Image *shadowMap;
+    Backdrop() = default;
+    ~Backdrop();
 
     Image colorMap{};
     Image radianceMap{};
     Image irradianceMap{};
 
-    Light light{};
+    void loadConfig(const BackdropConfig &config);
 
-    ~Backdrop();
-
-    void create();
     void cleanup();
     void recreate();
 
@@ -40,6 +38,9 @@ class Backdrop
     void update(uint32_t currentImage);
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
+    BackdropConfig config;
+
     UniformBack backBuffer;
 
     std::vector<vk::DescriptorSet> descriptorSets;

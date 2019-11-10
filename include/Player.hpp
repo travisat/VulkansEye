@@ -10,7 +10,7 @@ namespace tat
 class Player : public Object
 {
   public:
-    explicit Player(const std::shared_ptr<Vulkan> &vulkan, const PlayerConfig &config);
+    explicit Player(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath);
     ~Player() = default;
 
     void look(double mouseX, double mouseY);
@@ -27,6 +27,7 @@ class Player : public Object
     };
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     float fieldOfView;
     float zNear;
     float zFar;

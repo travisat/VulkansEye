@@ -10,6 +10,7 @@ Pipeline::~Pipeline()
 
 void Pipeline::create()
 {
+    debugLogger = spdlog::get("debugLogger");
     pipelineLayout = vulkan->device.createPipelineLayout(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());

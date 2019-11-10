@@ -1,8 +1,29 @@
 #include "Backdrop.hpp"
+
+#include <utility>
+#include <filesystem>
 #include "helpers.hpp"
 
 namespace tat
 {
+
+void Backdrop::loadConfig(const BackdropConfig &config)
+{
+    debugLogger = spdlog::get("debugLogger");
+    loadCubeMap(colorMap, config.colorPath);
+    loadCubeMap(radianceMap, config.radiancePath);
+    loadCubeMap(irradianceMap, config.irradiancePath);
+
+    light = config.light;
+
+    createDescriptorPool();
+    createDescriptorSetLayouts();
+    createPipeline();
+    createUniformBuffers();
+    createDescriptorSets();
+    loaded = true;
+    debugLogger->info("Loaded Backdrop {}", name);
+}
 
 Backdrop::~Backdrop()
 {
@@ -14,23 +35,6 @@ Backdrop::~Backdrop()
     {
         vulkan->device.destroyDescriptorPool(descriptorPool);
     }
-}
-
-void Backdrop::create()
-{
-    loadCubeMap(colorMap, config.colorPath);
-    loadCubeMap(radianceMap, config.radiancePath);
-    loadCubeMap(irradianceMap, config.irradiancePath);
-
-    light.vulkan = vulkan;
-    light.config = config.light;
-    light.create();
-
-    createDescriptorPool();
-    createDescriptorSetLayouts();
-    createPipeline();
-    createUniformBuffers();
-    createDescriptorSets();
 }
 
 void Backdrop::cleanup()
@@ -191,15 +195,20 @@ void Backdrop::createPipeline()
     pipeline.descriptorSetLayout = descriptorSetLayout;
     pipeline.loadDefaults(vulkan->colorPass);
 
-    auto vertShaderCode = readFile("assets/shaders/backdrop.vert.spv");
-    auto fragShaderCode = readFile("assets/shaders/backdrop.frag.spv");
+     auto vertPath = "assets/shaders/backdrop.vert.spv";
+    assert(std::filesystem::exists(vertPath));
+    auto fragPath = "assets/shaders/backdrop.frag.spv";
+    assert(std::filesystem::exists(fragPath));
+
+    auto vertShaderCode = readFile(vertPath);
+    auto fragShaderCode = readFile(fragPath);
 
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertShaderCode);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragShaderCode);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    //pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
+    // pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

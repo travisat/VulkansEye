@@ -50,6 +50,7 @@ class Image
     int faces = 1;
     uint32_t mipLevels = 1;
 
+    Image();
     ~Image();
 
     void loadSTB(const std::string &path); // use stb_image.h to load most normal image formats
@@ -66,6 +67,7 @@ class Image
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     VmaAllocation allocation{};
     std::string path;
     // create VkImage allocation

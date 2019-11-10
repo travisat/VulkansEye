@@ -49,6 +49,7 @@ class Model : public Object
     };
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     int32_t meshIndex;
     int32_t materialIndex;
 };

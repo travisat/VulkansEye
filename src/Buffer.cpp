@@ -4,6 +4,11 @@
 namespace tat
 {
 
+Buffer::Buffer()
+{
+    debugLogger = spdlog::get("debugLogger");
+}
+
 Buffer::~Buffer()
 {
     if (buffer)
@@ -81,8 +86,6 @@ void Buffer::copyTo(Buffer &destination)
     commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
     vulkan->endSingleTimeCommands(commandBuffer);
-    // Trace("Copied ", name, " to ", destination.name, " at ",
-    // Timer::systemTime());
 }
 
 } // namespace tat

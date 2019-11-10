@@ -1,15 +1,16 @@
 {
-    "name": "desert",
-    "zNear": 0.1,
-    "zFar": 512.0,
-    "windowWidth": 1024,
-    "windowHeight": 768,
-    "sync": true,
-    "shadowSize": 4096,
-    "brdfPath": "assets/brdf.dds",
-    "playerConfigPath": "assets/configs/player.json",
-    "materialsConfigPath": "assets/configs/materials.json",
-    "meshesConfigPath": "assets/configs/meshes.json",
-    "backdropsConfigPath": "assets/configs/backdrops.json",
-    "sceneConfigPath": "assets/configs/scene.json"
+    "settings": {
+        "zNear": 0.1,
+        "zFar": 512.0,
+        "windowWidth": 1024,
+        "windowHeight": 768,
+        "sync": true,
+        "shadowSize": 4096,
+        "brdfPath": "assets/brdf.dds",
+        "playerConfigPath": "assets/configs/player.json",
+        "materialsConfigPath": "assets/configs/materials.json",
+        "meshesConfigPath": "assets/configs/meshes.json",
+        "backdropsConfigPath": "assets/configs/backdrops.json",
+        "sceneConfigPath": "assets/configs/scene.json"
+    }
 }

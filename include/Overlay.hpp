@@ -11,7 +11,6 @@
 #include "Timer.hpp"
 #include "Vulkan.hpp"
 
-
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
 
@@ -28,7 +27,7 @@ struct UISettings
     int32_t modeNum = 0;
 };
 
-constexpr std::array<std::string_view, 6> mode = {"Game","Dbug","Nput","Free","Save","Load"};
+constexpr std::array<std::string_view, 6> mode = {"Game", "Dbug", "Nput", "Free", "Save", "Load"};
 
 // ----------------------------------------------------------------------------
 // Overlay class
@@ -45,11 +44,11 @@ class Overlay
     {
         glm::vec2 scale;
         glm::vec2 translate;
-    } pushConstBlock;
+    } pushConstBlock{};
 
+    Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player);
     ~Overlay();
 
-    void create();
     void recreate();
     void cleanup();
 
@@ -63,6 +62,7 @@ class Overlay
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     // Vulkan resources for rendering the UI
     Buffer vertexBuffer{};
     Buffer indexBuffer{};

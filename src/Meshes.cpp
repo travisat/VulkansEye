@@ -1,10 +1,16 @@
 #include "Meshes.hpp"
+#include "Config.hpp"
 #include "helpers.hpp"
+#include <memory>
+#include <stdexcept>
 
 namespace tat
 {
-void Meshes::loadConfig(const MeshesConfig &config)
+Meshes::Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath)
 {
+    debugLogger = spdlog::get("debugLogger");
+    this-> vulkan = vulkan;
+    auto config = MeshesConfig(configPath);
     //index 0 is default mesh
     collection.resize(config.meshes.size() + 1);
     int32_t index = 1;
@@ -18,6 +24,7 @@ void Meshes::loadConfig(const MeshesConfig &config)
         // insert config into configs so mesh can be loaded when needed
         ++index;
     }
+    debugLogger->info("Loaded Meshes");
 }
 
 auto Meshes::getIndex(const std::string &name) -> int32_t
@@ -63,7 +70,7 @@ void Meshes::loadMesh(int32_t index)
     stagingBuffer.copyTo(mesh->buffers.index);
 
     mesh->loaded = true;
-    Trace("Loaded ", mesh->path, " at ", Timer::systemTime());
+    debugLogger->info("Loaded Mesh {}", mesh->path);
 }
 
 void Meshes::importMesh(Mesh *mesh)
@@ -74,6 +81,12 @@ void Meshes::importMesh(Mesh *mesh)
     auto pScene = importer.ReadFile(mesh->path, processFlags);
 
     const aiVector3D zero3D(0.F, 0.F, 0.F);
+
+    if (pScene == nullptr)
+    {
+        spdlog::get("debugLogger")->error("Unable to load {}", mesh->path);
+        throw std::runtime_error("Unable to load mesh");
+    }
 
     for (int i = 0; i < pScene->mNumMeshes; ++i)
     {

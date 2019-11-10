@@ -5,6 +5,9 @@
 #define VMA_IMPLEMENTATION
 
 #include <filesystem>
+#include <spdlog/async.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/spdlog.h>
 
 #include "VulkansEye.hpp"
 
@@ -12,42 +15,48 @@
 
 auto main(int argc, char *argv[]) -> int
 {
-#ifdef WIN32
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-#endif
 
     try
     {
-        const char *config;
-        switch (argc)
+        auto debugLogger = spdlog::basic_logger_mt<spdlog::async_factory>("debugLogger", "logs/debug.log", true);
+        debugLogger->info("BEGIN");
+
+        try
         {
-        case 0:
-        case 1:
-            config = DEFAULT_CONFIG;
-            break;
-        case 2:
-            if (std::filesystem::exists(argv[1]))
+            std::string config = DEFAULT_CONFIG;
+            switch (argc)
             {
-                config = argv[1];
+            case 0:
+            case 1:
                 break;
-            } // fall through if doesn't exist
-        default:
-            std::cerr << "Usage: VulkansEye [config]" << std::endl;
+            case 2:
+                if (std::filesystem::exists(argv[1]))
+                {
+                    config = argv[1];
+                    break;
+                } // fall through if doesn't exist
+            default:
+                std::cout << "Usage: VulkansEye [config]" << std::endl;
+                return EXIT_FAILURE;
+            }
+
+            tat::VulkansEye app(config);
+            app.run();
+        }
+        catch (const std::exception &e)
+        {
+            debugLogger->error("Error {}", e.what());
+            debugLogger->error("Stopping");
             return EXIT_FAILURE;
         }
 
-        tat::VulkansEye app(config);
-        app.run();
+        debugLogger->info("END");
     }
-    catch (const std::exception &e)
+    catch (const spdlog::spdlog_ex &ex)
     {
-        std::cerr << e.what() << std::endl;
+        std::cout << "Log initialization failed: " << ex.what() << std::endl;
         return EXIT_FAILURE;
     }
-
-#ifdef WIN32
-    CoUninitialize();
-#endif
 
     return EXIT_SUCCESS;
 }

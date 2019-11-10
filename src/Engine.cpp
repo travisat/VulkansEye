@@ -13,31 +13,27 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
                                          /*pUserData*/) -> VkBool32
 {
     std::string prefix;
+    auto logger = spdlog::get("debugLogger");
 
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0)
+    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
     {
-        prefix = "VERBOSE ";
-    }
-    else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0)
-    {
-        prefix = "INFO ";
-    }
-    else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
-    {
-        prefix = "WARNING ";
+        logger->warn("Validation {}", pCallbackData->pMessage);
     }
     else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
     {
-        prefix = "ERROR ";
+        logger->error("Validation {}", pCallbackData->pMessage);
     }
-    Trace(prefix, "[", pCallbackData->messageIdNumber, "][", pCallbackData->pMessageIdName,
-          "] :", pCallbackData->pMessage);
+    else
+    {
+        logger->info("Validation {}", pCallbackData->pMessage);
+    }
+
     return VK_FALSE;
 }
 
 void Engine::init()
 {
-
+    debugLogger = spdlog::get("debugLogger");
     createInstance();
     vulkan->surface = vulkan->window->createSurface(vulkan->instance);
     pickPhysicalDevice();
@@ -48,16 +44,18 @@ void Engine::init()
     vulkan->shadowPass = createShadowPass(vulkan);
     vulkan->colorPass = createColorPass(vulkan);
     createCommandPool();
+    debugLogger->info("Engine Init Complete");
+}
 
-    scene->create();
-    overlay->create();
-
+void Engine::prepare()
+{
     createShadowFramebuffers();
     createColorFramebuffers();
     createSyncObjects();
 
     createCommandBuffers();
     vulkan->prepared = true;
+    debugLogger->info("Engine Prepared");
 }
 
 Engine::~Engine()
@@ -70,10 +68,20 @@ Engine::~Engine()
                                       commandBuffers.data());
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vulkan->device.destroySemaphore(renderFinishedSemaphores[i]);
-        vulkan->device.destroySemaphore(presentFinishedSemaphores[i]);
-        vulkan->device.destroyFence(waitFences[i]);
+        if (!renderFinishedSemaphores.empty() && renderFinishedSemaphores[i])
+        {
+            vulkan->device.destroySemaphore(renderFinishedSemaphores[i]);
+        }
+        if (!presentFinishedSemaphores.empty() && presentFinishedSemaphores[i])
+        {
+            vulkan->device.destroySemaphore(presentFinishedSemaphores[i]);
+        }
+        if (!waitFences.empty() && waitFences[i])
+        {
+            vulkan->device.destroyFence(waitFences[i]);
+        }
     }
+    debugLogger->info("Engine destroyed");
 }
 
 void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
@@ -336,7 +344,7 @@ void Engine::resizeWindow()
     vulkan->device.waitIdle();
 
     vulkan->prepared = true;
-    Trace("Resized window to ", width, "x", height, " at ", Timer::systemTime());
+    debugLogger->info("Resized window to {}x{}", width, height);
 }
 
 void Engine::createInstance()
@@ -364,6 +372,7 @@ void Engine::createInstance()
     }
 
     vulkan->instance = vk::createInstance(createInfo);
+    debugLogger->info("Created Vulkan instance");
 }
 
 void Engine::pickPhysicalDevice()
@@ -377,7 +386,7 @@ void Engine::pickPhysicalDevice()
         if (isDeviceSuitable(device))
         {
             vulkan->properties = device.getProperties();
-            Trace("Physical Device: ", vulkan->properties.deviceName);
+            debugLogger->info("Physical Device: {}", vulkan->properties.deviceName);
             vulkan->physicalDevice = device;
             vulkan->msaaSamples = getMaxUsableSampleCount();
             return;
@@ -480,9 +489,7 @@ void Engine::createLogicalDevice()
     vk::PhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.sampleRateShading = VK_TRUE;
-    // deviceFeatures.tessellationShader = VK_TRUE;
     deviceFeatures.geometryShader = VK_TRUE;
-    // deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
 
     vk::DeviceCreateInfo createInfo{};
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -516,6 +523,7 @@ void Engine::createLogicalDevice()
 
     vulkan->graphicsQueue = vulkan->device.getQueue(indices.graphicsFamily.value(), 0);
     vulkan->presentQueue = vulkan->device.getQueue(indices.presentFamily.value(), 0);
+    debugLogger->info("Created Logical Device");
 }
 
 void Engine::createAllocator()
@@ -525,6 +533,7 @@ void Engine::createAllocator()
     allocatorInfo.device = vulkan->device;
 
     CheckResult(vmaCreateAllocator(&allocatorInfo, &vulkan->allocator));
+    debugLogger->info("Created Allocator");
 }
 
 void Engine::createSwapChain()
@@ -592,6 +601,7 @@ void Engine::createSwapChain()
 
         vulkan->swapChainImageViews[i] = vulkan->device.createImageView(viewInfo);
     }
+    debugLogger->info("Created SwapChain");
 }
 
 void Engine::createShadowFramebuffers()
@@ -614,6 +624,7 @@ void Engine::createShadowFramebuffers()
         shadowFbs[i].attachments = {scene->shadow.imageView, shadowDepth.imageView};
         shadowFbs[i].create();
     }
+    debugLogger->info("Created Framebuffer for shadows");
 }
 
 void Engine::createColorFramebuffers()
@@ -648,6 +659,7 @@ void Engine::createColorFramebuffers()
                                        vulkan->swapChainImageViews[i]};
         swapChainFbs[i].create();
     }
+    debugLogger->info("Created Framebuffer for display");
 }
 
 void Engine::createCommandPool()
@@ -658,6 +670,7 @@ void Engine::createCommandPool()
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
     vulkan->commandPool = vulkan->device.createCommandPool(poolInfo);
+    debugLogger->info("Created Command Pool");
 }
 
 void Engine::createSyncObjects()
@@ -680,6 +693,7 @@ void Engine::createSyncObjects()
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
         fence = vulkan->device.createFence(fenceInfo);
     }
+    debugLogger->info("Created Sync Objects");
 }
 
 auto Engine::getRequiredExtensions() -> std::vector<const char *>

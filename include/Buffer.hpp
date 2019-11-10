@@ -24,6 +24,7 @@ class Buffer
     vk::Buffer buffer = nullptr;
     void *mapped = nullptr;
 
+    Buffer();
     ~Buffer();
 
     void allocate(VkDeviceSize s);
@@ -45,6 +46,7 @@ class Buffer
     };
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     VmaAllocation allocation{};
     vk::DeviceSize size = 0;
 };

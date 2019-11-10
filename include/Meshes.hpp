@@ -39,8 +39,10 @@ struct Mesh
 class Meshes
 {
   public:
+    Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath);
+    ~Meshes() = default;
+
     std::shared_ptr<Vulkan> vulkan;
-    void loadConfig(const MeshesConfig &config);
     auto getIndex(const std::string &name) -> int32_t;
     inline auto getMesh(int32_t index) -> Mesh *
     {
@@ -48,11 +50,12 @@ class Meshes
         {
             return &collection[index];
         }
-        //return default mesh if index out of range
+        // return default mesh if index out of range
         return &collection[0];
     };
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     // vector of empty Meshes until mesh has been loaded
     std::vector<Mesh> collection{};
     // string index = mesh index

@@ -28,10 +28,10 @@ struct Material
 class Materials
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
+    Materials(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath);
+    ~Materials() = default;
 
-    // copies Material configs into config vector
-    void loadConfig(const MaterialsConfig &config);
+    std::shared_ptr<Vulkan> vulkan;
 
     // returns meterial index of name
     // return 0 if name not found
@@ -50,6 +50,7 @@ class Materials
     };
 
   private:
+    std::shared_ptr<spdlog::logger> debugLogger;
     std::vector<Material> collection{};
 
     // vector of configs, use loadConfigs to populate
