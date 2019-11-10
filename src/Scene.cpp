@@ -184,7 +184,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
         vertBuffer.view = player->view();
         vertBuffer.projection = player->projection();
         vertBuffer.normalMatrix = glm::transpose(glm::inverse(player->projection() * player->view() * model.model()));
-        vertBuffer.camPos = glm::vec4(-1.F * player->position(), 1.F);
+        vertBuffer.camPos = glm::vec4(player->position(), 1.F);
 
         // create mvp for lightspace
         shadBuffer.model = model.model();

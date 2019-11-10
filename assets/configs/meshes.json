@@ -1,5 +1,13 @@
 {
     "meshes": {
+        "cube": {
+            "path": "assets/models/cube.glb",
+            "size": {
+                "x": 2,
+                "y": 2,
+                "z": 2
+            }
+        },
         "table": {
             "path": "assets/models/table.glb",
             "size": {

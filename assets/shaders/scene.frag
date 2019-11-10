@@ -97,7 +97,7 @@ float shadowCalc(vec3 lightVec, vec3 normal)
 
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 {
-    float NdotV = max(dot(N, V), 0.F);
+    float NdotV = clamp(abs(dot(N, V)), 0.001F, 1.F);
     vec3 f0 = vec3(0.04F);
 
     // compute diffuse
@@ -106,10 +106,11 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     vec3 diffuse = irradiance * diffuseColor;
 
     // compute specular
-    vec3 R = reflect(-V, N);
-    R.x *= -1.F;
+    vec3 R = normalize(reflect(-V, N));
+   
+    
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
-    vec2 brdf = texture(brdfMap, vec2(NdotV, roughness)).rg;
+    vec2 brdf = texture(brdfMap, vec2(NdotV, 1.F - roughness)).rg;
     vec3 specular = radiance * (mix(f0, vec3(irradiance), metallic) * brdf.x + brdf.y);
 
     return diffuse + specular;

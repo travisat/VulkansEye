@@ -19,6 +19,16 @@
                 "y": -15,
                 "z": -10
             }
+        },
+        "musichall": {
+            "color": "assets/backdrop/musichall/color.dds",
+            "radiance": "assets/backdrop/musichall/radiance.dds",
+            "irradiance": "assets/backdrop/musichall/irradiance.dds",
+            "light": {
+                "x": 0.01,
+                "y": -15,
+                "z": 0.01
+            }
         }
     }
 }

@@ -43,7 +43,7 @@ inline auto readFile(const std::string &filename) -> std::vector<char>
     std::ostringstream stream;
     (stream << ... << std::forward<Args>(args)) << '\n';
     std::clog << stream.str();
-}*/
+}
 
 inline auto CheckResult(vk::Result result) -> vk::Result
 {
@@ -68,5 +68,6 @@ template <typename T> auto CheckResult(T result) -> T
     }
     return result;
 }
+*/
 
 } // namespace tat

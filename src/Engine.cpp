@@ -1,6 +1,9 @@
 #include "Engine.hpp"
 #include "helpers.hpp"
+#include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_core.h"
 #include <cstdint>
+#include <stdexcept>
 
 namespace tat
 {
@@ -200,21 +203,34 @@ void Engine::drawFrame(float deltaTime)
         createCommandBuffers();
     }
 
-    CheckResult(vulkan->device.waitForFences(1, &waitFences[vulkan->currentImage], VK_FALSE, UINT64_MAX));
-    CheckResult(vulkan->device.resetFences(1, &waitFences[vulkan->currentImage]));
+    auto result = vulkan->device.waitForFences(1, &waitFences[vulkan->currentImage], VK_FALSE, UINT64_MAX);
+    if (result != vk::Result::eSuccess)
+    {
+        debugLogger->error("Unable to wait for fences. Error code {}", result);
+        throw std::runtime_error("Unable to wait for fences");
+        return;
+    }
+    result = vulkan->device.resetFences(1, &waitFences[vulkan->currentImage]);
+    if (result != vk::Result::eSuccess)
+    {
+        debugLogger->error("Unable to reset fences. Error code {}", result);
+        throw std::runtime_error("Unable to reset fences");
+        return;
+    }
 
     uint32_t currentBuffer;
-    auto result = vulkan->device.acquireNextImageKHR(
+    result = vulkan->device.acquireNextImageKHR(
         vulkan->swapChain, UINT64_MAX, presentFinishedSemaphores[vulkan->currentImage], nullptr, &currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
         resizeWindow();
-        // return;
     }
-    else
+    else if (result != vk::Result::eSuccess)
     {
-        CheckResult(result);
+        debugLogger->error("Unable to draw command buffer. Error code {}", result);
+        throw std::runtime_error("Unable to draw command buffer");
+        return;
     }
 
     scene->update(currentBuffer, deltaTime);
@@ -246,7 +262,9 @@ void Engine::drawFrame(float deltaTime)
     }
     if (result != vk::Result::eSuccess)
     {
-        CheckResult(result);
+        debugLogger->error("Unable to present command buffer. Error code {}", result);
+        throw std::runtime_error("Unable to present command buffer");
+        return;
     }
     if (vulkan->updateCommandBuffer)
     {
@@ -532,8 +550,14 @@ void Engine::createAllocator()
     allocatorInfo.physicalDevice = vulkan->physicalDevice;
     allocatorInfo.device = vulkan->device;
 
-    CheckResult(vmaCreateAllocator(&allocatorInfo, &vulkan->allocator));
-    debugLogger->info("Created Allocator");
+    auto result = vmaCreateAllocator(&allocatorInfo, &vulkan->allocator);
+    if (result != VK_SUCCESS)
+    {
+        debugLogger->error("Unable to create Memory Allocator. Error code {}", result);
+        throw std::runtime_error("Unable to create Memory Allocator");
+        return;
+    }
+    debugLogger->info("Created Memory Allocator");
 }
 
 void Engine::createSwapChain()

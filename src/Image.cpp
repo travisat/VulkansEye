@@ -1,5 +1,8 @@
 #include "Image.hpp"
+#include "gli/target.hpp"
 #include "helpers.hpp"
+#include "vulkan/vulkan_core.h"
+#include <stdexcept>
 
 namespace tat
 {
@@ -55,7 +58,11 @@ void Image::loadSTB(const std::string &path)
     channels = defaultChannels;
     size = width * height * channels;
     // TODO(travis) make this fall through and let default texture be used instead of halting
-    assert(pixels);
+    if (pixels == nullptr)
+    {
+        debugLogger->error("Unable to load {}", path);
+        throw std::runtime_error("Unable to load Image in Image::loadSTB");
+    }
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -78,7 +85,16 @@ void Image::loadGLI(const std::string &path)
     this->path = path;
     gli::texture texture = gli::load(path);
     // TODO(travis) make this fall through and let default texture be used instead of halting
-    assert(!texture.empty());
+    // this really isn't out of range, the enum in gli is done weird
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+    if (texture.target() == gli::TARGET_INVALID) // NOLINT
+#pragma clang diagnostic pop
+    {
+
+        debugLogger->error("Unable to load {}", path);
+        throw std::runtime_error("Unable to load Image in Image::loadGLI");
+    }
 
     Buffer stagingBuffer{};
     stagingBuffer.vulkan = vulkan;
@@ -185,8 +201,15 @@ void Image::allocate()
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memUsage;
 
-    CheckResult(vmaCreateImage(vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
-                               reinterpret_cast<VkImage *>(&image), &allocation, nullptr));
+    auto result = vmaCreateImage(vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
+                               reinterpret_cast<VkImage *>(&image), &allocation, nullptr);
+
+    if (result != VK_SUCCESS)
+    {
+        debugLogger->error("Unable to create image {}. Error Code {}", path, result);
+        throw std::runtime_error("Unable to create image");
+        return;
+    }
 
     if (layout != vk::ImageLayout::eUndefined)
     {

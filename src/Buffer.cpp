@@ -1,5 +1,7 @@
 #include "Buffer.hpp"
 #include "helpers.hpp"
+#include "vulkan/vulkan_core.h"
+#include <stdexcept>
 
 namespace tat
 {
@@ -57,8 +59,15 @@ void Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    CheckResult(vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
-                                reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info));
+    auto result = vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
+                                reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info);
+
+    if (result != VK_SUCCESS)
+    {
+        debugLogger->error("Unable to create buffer of size {}. Error code {}", size, result);
+        throw std::runtime_error("Unable to create buffer");
+        return;
+    }
     mapped = info.pMappedData;
 }
 

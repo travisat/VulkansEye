@@ -1,6 +1,7 @@
 #include "Window.hpp"
-#include "helpers.hpp"
 #include "vulkan/vulkan.hpp"
+#include "vulkan/vulkan_core.h"
+#include <stdexcept>
 
 namespace tat
 {
@@ -52,7 +53,13 @@ void Window::setClose(int value)
 auto Window::createSurface(vk::Instance &instance) -> vk::SurfaceKHR
 {
     vk::SurfaceKHR surface{};
-    CheckResult(glfwCreateWindowSurface(instance, window, nullptr, reinterpret_cast<VkSurfaceKHR *>(&surface)));
+    auto result = glfwCreateWindowSurface(instance, window, nullptr, reinterpret_cast<VkSurfaceKHR *>(&surface));
+    if (result != VK_SUCCESS)
+    {
+        debugLogger->error("Unable to create surface. Error code {}", result);
+        throw std::runtime_error("Unable to create surface");
+        return nullptr;
+    }
     return surface;
 }
 
