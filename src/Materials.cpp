@@ -52,7 +52,6 @@ void Materials::loadMaterial(int32_t index)
     loadImage(configs[index].metallic, material->metallic);
     loadImage(configs[index].roughness, material->roughness);
     loadImage(configs[index].ao, material->ao);
-    loadImage(configs[index].displacement, material->displacement);
 
     material->loaded = true;
 }
@@ -63,7 +62,7 @@ void Materials::loadImage(const std::string &path, Image &image)
     image.imageUsage =
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image.loadSTB(path);
+    image.load(path);
 
     image.createSampler();
 }

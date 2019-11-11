@@ -62,7 +62,7 @@ void Scene::createBrdf()
     brdf.vulkan = vulkan;
     brdf.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     brdf.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    brdf.loadGLI(vulkan->brdfPath);
+    brdf.load(vulkan->brdfPath);
 
     brdf.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     brdf.addressModeV = vk::SamplerAddressMode::eClampToEdge;

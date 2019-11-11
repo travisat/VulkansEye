@@ -57,7 +57,7 @@ void Backdrop::loadCubeMap(Image &cubeMap, const std::string &path)
     cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap.flags = vk::ImageCreateFlagBits::eCubeCompatible;
     cubeMap.viewType = vk::ImageViewType::eCube;
-    cubeMap.loadGLI(path);
+    cubeMap.load(path);
 
     cubeMap.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     cubeMap.addressModeV = vk::SamplerAddressMode::eClampToEdge;

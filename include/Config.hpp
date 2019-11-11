@@ -91,12 +91,11 @@ class BackdropsConfig
 struct MaterialConfig
 {
     std::string name = "default";
-    std::string diffuse = "assets/materials/default/diffuse.png";
-    std::string normal = "assets/materials/default/normal.png";
-    std::string roughness = "assets/materials/default/roughness.png";
-    std::string metallic = "assets/materials/default/metallic.png";
-    std::string ao = "assets/materials/default/ao.png";
-    std::string displacement = "assets/materials/default/displacement.png";
+    std::string diffuse = "assets/materials/default/diffuse.dds";
+    std::string normal = "assets/materials/default/normal.dds";
+    std::string roughness = "assets/materials/default/roughness.dds";
+    std::string metallic = "assets/materials/default/metallic.dds";
+    std::string ao = "assets/materials/default/ao.dds";
 };
 
 class MaterialsConfig

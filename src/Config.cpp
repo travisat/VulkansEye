@@ -171,7 +171,6 @@ MaterialsConfig::MaterialsConfig(const std::string &path)
                     load(m, key, "metallic", c.metallic);
                     load(m, key, "roughness", c.roughness);
                     load(m, key, "ao", c.ao);
-                    load(m, key, "displacement", c.displacement);
                     materials.push_back(c);
                 }
             }

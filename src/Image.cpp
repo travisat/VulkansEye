@@ -1,6 +1,5 @@
 #include "Image.hpp"
-#include "gli/target.hpp"
-#include "vulkan/vulkan_core.h"
+#include <filesystem>
 #include <stdexcept>
 
 namespace tat
@@ -27,72 +26,26 @@ Image::~Image()
     }
 }
 
-void Image::loadSTB(const std::string &path)
+void Image::load(const std::string &path)
 {
     this->path = path;
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-
-    int32_t defaultChannels = 4;
-    format = vk::Format::eR8G8B8A8Unorm;
-
-    stbi_info(path.c_str(), &width, &height, &channels);
-
-    if (channels == 1 && vulkan->checkFormat(vk::Format::eR8Unorm))
+    if (!std::filesystem::exists(path))
     {
-        defaultChannels = 1;
-        format = vk::Format::eR8Unorm;
+        debugLogger->warn("Image {} does not exist. Using default image", path);
+        auto config = MaterialConfig{};
+        this->path = config.diffuse;
     }
-    else if (channels == 2 && vulkan->checkFormat(vk::Format::eR8G8Unorm))
-    {
-        defaultChannels = 2;
-        format = vk::Format::eR8G8Unorm;
-    }
-    else if (channels == 3 && vulkan->checkFormat(vk::Format::eR8G8B8Unorm))
-    {
-        defaultChannels = 3;
-        format = vk::Format::eR8G8B8Unorm;
-    }
+    gli::texture texture = gli::load(this->path);
 
-    stbi_uc *pixels = stbi_load(path.c_str(), &width, &height, &channels, defaultChannels);
-    channels = defaultChannels;
-    size = width * height * channels;
-    // TODO(travis) make this fall through and let default texture be used instead of halting
-    if (pixels == nullptr)
-    {
-        debugLogger->error("Unable to load {}", path);
-        throw std::runtime_error("Unable to load Image in Image::loadSTB");
-    }
-
-    Buffer stagingBuffer{};
-    stagingBuffer.vulkan = vulkan;
-    stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
-    stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.update(pixels, size);
-
-    stbi_image_free(pixels);
-
-    layout = vk::ImageLayout::eTransferDstOptimal;
-    allocate();
-    copyFrom(stagingBuffer);
-
-    generateMipmaps();
-    debugLogger->info("Loaded Image {}", path);
-}
-
-void Image::loadGLI(const std::string &path)
-{
-    this->path = path;
-    gli::texture texture = gli::load(path);
-    // TODO(travis) make this fall through and let default texture be used instead of halting
-    // this really isn't out of range, the enum in gli is done weird
+    // this really isn't out of range, the enum in gli is weird
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
     if (texture.target() == gli::TARGET_INVALID) // NOLINT
 #pragma clang diagnostic pop
     {
-
-        debugLogger->error("Unable to load {}", path);
-        throw std::runtime_error("Unable to load Image in Image::loadGLI");
+        debugLogger->warn("Unable to load {}. Using default image", this->path);
+        auto config = MaterialConfig{};
+        texture = gli::load(config.diffuse);
     }
 
     Buffer stagingBuffer{};
@@ -157,7 +110,7 @@ void Image::loadGLI(const std::string &path)
     vulkan->endSingleTimeCommands(commandBuffer);
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    debugLogger->info("Loaded Image {}", path);
+    debugLogger->info("Loaded Image {}", this->path);
 }
 
 void Image::createSampler()
@@ -201,7 +154,7 @@ void Image::allocate()
     allocInfo.usage = memUsage;
 
     auto result = vmaCreateImage(vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
-                               reinterpret_cast<VkImage *>(&image), &allocation, nullptr);
+                                 reinterpret_cast<VkImage *>(&image), &allocation, nullptr);
 
     if (result != VK_SUCCESS)
     {

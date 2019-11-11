@@ -1,8 +1,6 @@
 #pragma once
 
 #include <gli/gli.hpp>
-#include <memory>
-#include <stb_image.h>
 
 #include "Buffer.hpp"
 #include "Vulkan.hpp"
@@ -53,8 +51,7 @@ class Image
     Image();
     ~Image();
 
-    void loadSTB(const std::string &path); // use stb_image.h to load most normal image formats
-    void loadGLI(const std::string &path); // use gli to load dds/ktx supports cubemaps
+    void load(const std::string &path); // use gli to load dds/ktx supports cubemaps
 
     void createSampler();
 

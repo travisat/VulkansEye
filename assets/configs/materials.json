@@ -1,25 +1,25 @@
 {
     "materials": {
         "concrete": {
-            "diffuse": "assets/materials/concrete/diffuse.png",
-            "normal": "assets/materials/concrete/normal.png",
-            "roughness": "assets/materials/concrete/roughness.png",
-            "metallic": "assets/materials/concrete/metallic.png",
-            "ao":"assets/materials/concrete/ao.png"
+            "diffuse": "assets/materials/concrete/diffuse.dds",
+            "normal": "assets/materials/concrete/normal.dds",
+            "roughness": "assets/materials/concrete/roughness.dds",
+            "metallic": "assets/materials/concrete/metallic.dds",
+            "ao":"assets/materials/concrete/ao.dds"
         },
         "rock": {
-            "diffuse": "assets/materials/rock/diffuse.png",
-            "normal": "assets/materials/rock/normal.png",
-            "roughness": "assets/materials/rock/roughness.png",
-            "ao": "assets/materials/rock/ao.png",
-            "metallic": "assets/materials/rock/metallic.png"
+            "diffuse": "assets/materials/rock/diffuse.dds",
+            "normal": "assets/materials/rock/normal.dds",
+            "roughness": "assets/materials/rock/roughness.dds",
+            "ao": "assets/materials/rock/ao.dds",
+            "metallic": "assets/materials/rock/metallic.dds"
         },
         "hammeredcopper": {
-            "diffuse": "assets/materials/hammeredcopper/diffuse.png",
-            "normal": "assets/materials/hammeredcopper/normal.png",
-            "metallic": "assets/materials/hammeredcopper/metallic.png",
-            "roughness": "assets/materials/hammeredcopper/roughness.png",
-            "ao": "assets/materials/hammeredcopper/ao.png"
+            "diffuse": "assets/materials/hammeredcopper/diffuse.dds",
+            "normal": "assets/materials/hammeredcopper/normal.dds",
+            "metallic": "assets/materials/hammeredcopper/metallic.dds",
+            "roughness": "assets/materials/hammeredcopper/roughness.dds",
+            "ao": "assets/materials/hammeredcopper/ao.dds"
         }
     }
 }

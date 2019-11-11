@@ -22,7 +22,6 @@ struct Material
     Image metallic{};
     Image roughness{};
     Image ao{};
-    Image displacement{};
 };
 
 class Materials

@@ -26,6 +26,7 @@
 
 
 #include "Window.hpp"
+#include "Config.hpp"
 
 namespace tat
 {
