@@ -1,125 +1,25 @@
 {
     "materials": {
-        "Concrete19": {
-            "diffuse": "assets/materials/Concrete19/Concrete19_col.jpg",
-            "normal": "assets/materials/Concrete19/Concrete19_nrm.jpg",
-            "roughness": "assets/materials/Concrete19/Concrete19_rgh.jpg",
-            "displacement": "assets/materials/Concrete19/Concrete19_disp.jpg"
+        "concrete": {
+            "diffuse": "assets/materials/concrete/diffuse.png",
+            "normal": "assets/materials/concrete/normal.png",
+            "roughness": "assets/materials/concrete/roughness.png",
+            "metallic": "assets/materials/concrete/metallic.png",
+            "ao":"assets/materials/concrete/ao.png"
         },
-        "Concrete23": {
-            "diffuse": "assets/materials/Concrete23/Concrete23_col.jpg",
-            "normal": "assets/materials/Concrete23/Concrete23_nrm.jpg",
-            "roughness": "assets/materials/Concrete23/Concrete23_rgh.jpg",
-            "displacement": "assets/materials/Concrete23/Concrete23_disp.jpg"
+        "rock": {
+            "diffuse": "assets/materials/rock/diffuse.png",
+            "normal": "assets/materials/rock/normal.png",
+            "roughness": "assets/materials/rock/roughness.png",
+            "ao": "assets/materials/rock/ao.png",
+            "metallic": "assets/materials/rock/metallic.png"
         },
-        "Fabric01": {
-            "diffuse": "assets/materials/Fabric01/Fabric01_col.jpg",
-            "normal": "assets/materials/Fabric01/Fabric01_nrm.jpg",
-            "roughness": "assets/materials/Fabric01/Fabric01_rgh.jpg",
-            "displacement": "assets/materials/Fabric01/Fabric01_disp.jpg"
-        },
-        "Fabric08": {
-            "diffuse": "assets/materials/Fabric08/Fabric08_col.jpg",
-            "normal": "assets/materials/Fabric08/Fabric08_nrm.jpg",
-            "roughness": "assets/materials/Fabric08/Fabric08_rgh.jpg",
-            "ao": "assets/materials/Fabric08/Fabric08_AO.jpg",
-            "displacement": "assets/materials/Fabric08/Fabric08_disp.jpg"
-        },
-        "Metal07": {
-            "diffuse": "assets/materials/Metal07/Metal07_col.jpg",
-            "normal": "assets/materials/Metal07/Metal07_nrm.jpg",
-            "metallic": "assets/materials/Metal07/Metal07_met.jpg",
-            "roughness": "assets/materials/Metal07/Metal07_rgh.jpg",
-            "displacement": "assets/materials/Metal07/Metal07_disp.jpg"
-        },
-        "Metal11": {
-            "diffuse": "assets/materials/Metal11/Metal11_col.jpg",
-            "normal": "assets/materials/Metal11/Metal11_nrm.jpg",
-            "metallic": "assets/materials/Metal11/Metal11_met.jpg",
-            "roughness": "assets/materials/Metal11/Metal11_rgh.jpg",
-            "displacement": "assets/materials/Metal11/Metal11_disp.jpg"
-        },
-        "Metal12": {
-            "diffuse": "assets/materials/Metal12/Metal12_col.jpg",
-            "normal": "assets/materials/Metal12/Metal12_nrm.jpg",
-            "metallic": "assets/materials/Metal12/Metal12_met.jpg",
-            "roughness": "assets/materials/Metal12/Metal12_rgh.jpg",
-            "displacement": "assets/materials/Metal12/Metal12_disp.jpg"
-        },
-        "Metal28": {
-            "diffuse": "assets/materials/Metal28/Metal28_col.jpg",
-            "normal": "assets/materials/Metal28/Metal28_nrm.jpg",
-            "metallic": "assets/materials/Metal28/Metal28_met.jpg",
-            "roughness": "assets/materials/Metal28/Metal28_rgh.jpg",
-            "displacement": "assets/materials/Metal28/Metal28_disp.jpg"
-        },
-        "PavingStones45": {
-            "diffuse": "assets/materials/PavingStones45/PavingStones45_col.jpg",
-            "normal": "assets/materials/PavingStones45/PavingStones45_nrm.jpg",
-            "roughness": "assets/materials/PavingStones45/PavingStones45_rgh.jpg",
-            "ao": "assets/materials/PavingStones45/PavingStones45_AO.jpg",
-            "displacement": "assets/materials/PavingStones45/PavingStones45_disp.jpg"
-        },
-        "Rock14": {
-            "diffuse": "assets/materials/Rock14/Rock14_col.jpg",
-            "normal": "assets/materials/Rock14/Rock14_nrm.jpg",
-            "roughness": "assets/materials/Rock14/Rock14_rgh.jpg",
-            "ao": "assets/materials/Rock14/Rock14_AO.jpg",
-            "displacement": "assets/materials/Rock14/Rock14_disp.jpg"
-        },
-        "Tiles20": {
-            "diffuse": "assets/materials/Tiles20/Tiles20_col.jpg",
-            "normal": "assets/materials/Tiles20/Tiles20_nrm.jpg",
-            "roughness": "assets/materials/Tiles20/Tiles20_rgh.jpg",
-            "displacement": "assets/materials/Tiles20/Tiles20_disp.jpg"
-        },
-        "Tiles32": {
-            "diffuse": "assets/materials/Tiles32/Tiles32_col.jpg",
-            "normal": "assets/materials/Tiles32/Tiles32_nrm.jpg",
-            "roughness": "assets/materials/Tiles32/Tiles32_rgh.jpg",
-            "displacement": "assets/materials/Tiles32/Tiles32_disp.jpg"
-        },
-        "Marble03": {
-            "diffuse": "assets/materials/Marble03/Marble03_col.jpg",
-            "normal": "assets/materials/Marble03/Marble03_nrm.jpg",
-            "roughness": "assets/materials/Marble03/Marble03_rgh.jpg",
-            "displacement": "assets/materials/Marble03/Marble03_disp.jpg"
-        },
-        "WoodFloor20": {
-            "diffuse": "assets/materials/WoodFloor20/WoodFloor20_col.jpg",
-            "normal": "assets/materials/WoodFloor20/WoodFloor20_nrm.jpg",
-            "roughness": "assets/materials/WoodFloor20/WoodFloor20_rgh.jpg",
-            "ao": "assets/materials/WoodFloor20/WoodFloor20_AO.jpg",
-            "displacement": "assets/materials/WoodFloor20/WoodFloor20_disp.jpg"
-        },
-        "WoodFloor26": {
-            "diffuse": "assets/materials/WoodFloor26/WoodFloor26_col.jpg",
-            "normal": "assets/materials/WoodFloor26/WoodFloor26_nrm.jpg",
-            "roughness": "assets/materials/WoodFloor26/WoodFloor26_rgh.jpg",
-            "ao": "assets/materials/WoodFloor26/WoodFloor26_AO.jpg",
-            "displacement": "assets/materials/WoodFloor26/WoodFloor26_disp.jpg"
-        },
-        "Plaster02": {
-            "diffuse": "assets/materials/Plaster02/Plaster02_col.jpg",
-            "normal": "assets/materials/Plaster02/Plaster02_nrm.jpg",
-            "roughness": "assets/materials/Plaster02/Plaster02_rgh.jpg",
-            "displacement": "assets/materials/Plaster02/Plaster02_disp.jpg"
-        },
-        "Planks19": {
-            "diffuse": "assets/materials/Planks19/Planks19_col.jpg",
-            "normal": "assets/materials/Planks19/Planks19_nrm.jpg",
-            "roughness": "assets/materials/Planks19/Planks19_rgh.jpg",
-            "metallic": "assets/materials/Planks19/Planks19_met.jpg",
-            "ao": "assets/materials/Planks19/Planks19_AO.jpg",
-            "displacement": "assets/materials/Planks19/Planks19_disp.jpg"
-        },
-        "Planks13": {
-            "diffuse": "assets/materials/Planks13/Planks13_col.jpg",
-            "normal": "assets/materials/Planks13/Planks13_nrm.jpg",
-            "roughness": "assets/materials/Planks13/Planks13_rgh.jpg",
-            "metallic": "assets/materials/Planks13/Planks13_met.jpg",
-            "ao": "assets/materials/Planks13/Planks13_AO.jpg",
-            "displacement": "assets/materials/Planks13/Planks13_disp.jpg"
+        "hammeredcopper": {
+            "diffuse": "assets/materials/hammeredcopper/diffuse.png",
+            "normal": "assets/materials/hammeredcopper/normal.png",
+            "metallic": "assets/materials/hammeredcopper/metallic.png",
+            "roughness": "assets/materials/hammeredcopper/roughness.png",
+            "ao": "assets/materials/hammeredcopper/ao.png"
         }
     }
 }

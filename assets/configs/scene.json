@@ -1,11 +1,11 @@
 {
     "scene": {
         "name": "default",
-        "backdrop": "musichall",
+        "backdrop": "studio",
         "models": {
             "table": {
                 "mesh": "table",
-                "material": "Metal07",
+                "material": "rock",
                 "mass": 10,
                 "position": {
                     "x": 4,
@@ -25,7 +25,7 @@
             },
             "cube": {
                 "mesh": "cube",
-                "material": "Metal07",
+                "material": "hammeredcopper",
                 "mass": 10,
                 "position": {
                     "x": -2,
@@ -45,7 +45,7 @@
             },
             "suzanne": {
                 "mesh": "suzanne",
-                "material": "Rock14",
+                "material": "rock",
                 "position": {
                     "x": -4,
                     "y": 0,
@@ -64,7 +64,7 @@
             },
             "floor": {
                 "mesh": "floor",
-                "material": "Tiles20",
+                "material": "concrete",
                 "position": {
                     "x": 0,
                     "y": 0,

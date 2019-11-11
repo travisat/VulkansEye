@@ -29,6 +29,17 @@
                 "y": -15,
                 "z": 0.01
             }
+        },
+        "studio": {
+            "color": "assets/backdrop/studio/color.dds",
+            "radiance": "assets/backdrop/studio/radiance.dds",
+            "irradiance": "assets/backdrop/studio/irradiance.dds",
+            "light": {
+                "x": 2,
+                "y": -15,
+                "z": 0.01
+            }
         }
+
     }
 }
