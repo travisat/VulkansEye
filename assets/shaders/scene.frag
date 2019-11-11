@@ -40,16 +40,6 @@ layout(location = 4) in vec4 camPos;
 
 layout(location = 0) out vec4 outColor;
 
-//[0] and [2]
-// convert from srgb color profile to linear color profile
-// for converting basecolor (diffuse)
-vec3 convertSRGBtoLinear(vec3 srgbIn)
-{
-    vec3 bLess = step(0.04045F, srgbIn);
-    vec3 linOut = mix(srgbIn / 12.92F, pow((srgbIn + 0.055F) / 1.055F, vec3(2.4F)), bLess);
-    return linOut;
-}
-
 //[0]
 // Find the normal for this fragment
 vec3 getNormal(vec3 position, vec3 normal)
@@ -106,8 +96,7 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     vec3 diffuse = irradiance * diffuseColor;
 
     // compute specular
-    vec3 R = -reflect(-V, N);
-    R.x *= -1.F;
+    vec3 R = reflect(-V, N);
     
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, 1.F - roughness)).rg;
@@ -118,7 +107,7 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 
 void main()
 {
-    vec3 baseColor = convertSRGBtoLinear(texture(diffuseMap, inUV).rgb);
+    vec3 baseColor = texture(diffuseMap, inUV).rgb;
     float metallic = texture(metallicMap, inUV).r;
     float roughness = texture(roughnessMap, inUV).r;
     float ambientOcclusion = texture(aoMap, inUV).r;
