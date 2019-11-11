@@ -20,6 +20,20 @@
             "metallic": "assets/materials/hammeredcopper/metallic.dds",
             "roughness": "assets/materials/hammeredcopper/roughness.dds",
             "ao": "assets/materials/hammeredcopper/ao.dds"
+        },
+        "planks": {
+            "diffuse": "assets/materials/planks/diffuse.dds",
+            "normal": "assets/materials/planks/normal.dds",
+            "metallic": "assets/materials/planks/metallic.dds",
+            "roughness": "assets/materials/planks/roughness.dds",
+            "ao": "assets/materials/planks/ao.dds"
+        },
+        "fabric": {
+            "diffuse": "assets/materials/fabric/diffuse.dds",
+            "normal": "assets/materials/fabric/normal.dds",
+            "metallic": "assets/materials/fabric/metallic.dds",
+            "roughness": "assets/materials/fabric/roughness.dds",
+            "ao": "assets/materials/fabric/ao.dds"
         }
     }
 }

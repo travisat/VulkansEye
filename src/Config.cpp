@@ -50,7 +50,7 @@ Config::Config(const std::string &path)
             load(j, "settings", "windowWidth", windowWidth);
             load(j, "settings", "windowHeight", windowHeight);
             load(j, "settings", "mouseSensitivity", mouseSensitivity);
-            load(j, "player", "FoV", FoV);
+            load(j, "settings", "FoV", FoV);
             load(j, "settings", "sync", sync);
             load(j, "settings", "shadowSize", shadowSize);
             load(j, "settings", "brdfPath", brdf);

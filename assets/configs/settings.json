@@ -1,12 +1,13 @@
 {
     "settings": {
+        "name": "Vulkan's Eye",
         "zNear": 0.1,
         "zFar": 512.0,
         "FoV": 67,
         "mouseSensitivity": 33.4,
         "windowWidth": 1024,
         "windowHeight": 768,
-        "sync": false,
+        "sync": true,
         "shadowSize": 4096,
         "brdfPath": "assets/brdf.dds",
         "playerConfigPath": "assets/configs/player.json",
