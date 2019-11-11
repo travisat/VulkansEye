@@ -2,6 +2,7 @@
 #include <memory>
 
 #include "Overlay.hpp"
+#include "Timer.hpp"
 
 namespace tat
 {

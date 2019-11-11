@@ -3,8 +3,6 @@
 #include "Camera.hpp"
 #include "Config.hpp"
 #include "Object.hpp"
-#include <memory>
-
 
 namespace tat
 {

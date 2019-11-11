@@ -1,8 +1,6 @@
 #pragma once
 
-#include "Vertex.hpp"
 #include "Vulkan.hpp"
-#include <memory>
 
 namespace tat
 {

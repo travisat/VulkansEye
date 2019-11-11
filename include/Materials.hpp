@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Config.hpp"
 #include "Image.hpp"

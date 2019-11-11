@@ -1,17 +1,11 @@
 #pragma once
 
-#include <cassert>
-#include <memory>
-#include <unordered_map>
-
 #include "Buffer.hpp"
 #include "Config.hpp"
 #include "Image.hpp"
 #include "Materials.hpp"
 #include "Meshes.hpp"
 #include "Object.hpp"
-#include "Timer.hpp"
-#include "Vertex.hpp"
 
 namespace tat
 {

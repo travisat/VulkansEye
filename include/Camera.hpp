@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Vulkan.hpp"
-#include <memory>
-#include <utility>
+
 namespace tat
 {
 

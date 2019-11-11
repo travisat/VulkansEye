@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -9,11 +7,8 @@
 #define GLM_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <json.hpp>
 
 #include <spdlog/spdlog.h>
-
-using json = nlohmann::json;
 
 namespace tat
 {

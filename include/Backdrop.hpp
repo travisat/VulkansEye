@@ -5,8 +5,6 @@
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Camera.hpp"
-#include "Timer.hpp"
-#include <memory>
 
 namespace tat
 {

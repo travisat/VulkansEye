@@ -1,11 +1,5 @@
 #pragma once
 
-#include <array>
-#include <chrono>
-#include <cstdint>
-#include <memory>
-#include <utility>
-
 #include "Backdrops.hpp"
 #include "Config.hpp"
 #include "Materials.hpp"

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <memory>
 #include <optional>
-#include <set>
 
 #include "Framebuffer.hpp"
 #include "Overlay.hpp"

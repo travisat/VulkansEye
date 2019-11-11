@@ -1,7 +1,12 @@
+#include <stdexcept>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
 #include "Meshes.hpp"
 #include "Config.hpp"
-#include <memory>
-#include <stdexcept>
+
 
 namespace tat
 {

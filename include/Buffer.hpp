@@ -1,11 +1,5 @@
 #pragma once
 
-#include <memory>
-#ifdef WINDOWS
-#include <vcruntime.h>
-#endif
-
-#include "Timer.hpp"
 #include "Vertex.hpp"
 #include "Vulkan.hpp"
 namespace tat

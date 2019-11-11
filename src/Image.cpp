@@ -1,6 +1,9 @@
-#include "Image.hpp"
 #include <filesystem>
 #include <stdexcept>
+
+#include <gli/gli.hpp>
+
+#include "Image.hpp"
 
 namespace tat
 {

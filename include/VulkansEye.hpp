@@ -7,7 +7,6 @@
 #include "Meshes.hpp"
 #include "Overlay.hpp"
 #include "Timer.hpp"
-#include <memory>
 
 namespace tat
 {

@@ -105,6 +105,7 @@ target_include_directories(VulkansEye
         "external/gli"
         "external/imgui"
         "external/spdlog/include"
+        "external/json/include"
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

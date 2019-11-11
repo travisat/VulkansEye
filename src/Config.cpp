@@ -1,7 +1,11 @@
-#include "Config.hpp"
-#include "Meshes.hpp"
-#include "spdlog/spdlog.h"
 #include <filesystem>
+#include <fstream>
+
+#include <nlohmann/json.hpp>
+
+#include "Config.hpp"
+
+using json = nlohmann::json;
 
 namespace tat
 {

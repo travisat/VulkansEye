@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gli/gli.hpp>
-
 #include "Buffer.hpp"
 #include "Vulkan.hpp"
 

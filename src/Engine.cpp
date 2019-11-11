@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cstdint>
+#include <set>
 #include <stdexcept>
 
 namespace tat

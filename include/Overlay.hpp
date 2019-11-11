@@ -1,14 +1,12 @@
 #pragma once
 
 #include <imgui.h>
-#include <memory>
 #include <string_view>
 
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Player.hpp"
-#include "Timer.hpp"
 #include "Vulkan.hpp"
 
 // sourced from

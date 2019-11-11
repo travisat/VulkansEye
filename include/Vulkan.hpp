@@ -14,8 +14,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vk_mem_alloc.h>
 
-#include <array>
-#include <iostream>
 #include <vector>
 #include <fstream>
 #include <filesystem>
@@ -23,7 +21,6 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
-
 
 #include "Window.hpp"
 #include "Config.hpp"
