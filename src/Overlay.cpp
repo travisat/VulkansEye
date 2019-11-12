@@ -3,6 +3,7 @@
 
 #include "Overlay.hpp"
 #include "Timer.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -35,7 +36,7 @@ Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Pl
     createPipeline();
     newFrame();
     createBuffers();
-    debugLogger->info("Loaded Overlay");
+    debugLogger->info("Created Overlay");
 }
 
 Overlay::~Overlay()
@@ -77,11 +78,11 @@ void Overlay::createFont()
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
     VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
-    fontImage.vulkan = vulkan;
-    fontImage.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-    fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    fontImage.layout = vk::ImageLayout::eTransferDstOptimal;
-    fontImage.resize(texWidth, texHeight);
+    fontImage = std::make_unique<Image>(vulkan);
+    fontImage->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+    fontImage->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    fontImage->resize(texWidth, texHeight);
+    fontImage->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     // Staging buffers for font data upload
     Buffer stagingBuffer;
@@ -101,19 +102,19 @@ void Overlay::createFont()
     bufferCopyRegion.imageExtent.height = texHeight;
     bufferCopyRegion.imageExtent.depth = 1;
 
-    copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage.image, vk::ImageLayout::eTransferDstOptimal, 1,
+    copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage->image, vk::ImageLayout::eTransferDstOptimal, 1,
                               &bufferCopyRegion);
 
     vulkan->endSingleTimeCommands(copyCmd);
 
-    fontImage.transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    fontImage->transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     // Font texture Sampler
-    fontImage.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    fontImage.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    fontImage.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    fontImage.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    fontImage.createSampler();
+    fontImage->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    fontImage->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    fontImage->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    fontImage->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    fontImage->createSampler();
 }
 
 void Overlay::createDescriptorPool()
@@ -165,8 +166,8 @@ void Overlay::createDescriptorSets()
     {
         vk::DescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        samplerInfo.imageView = fontImage.imageView;
-        samplerInfo.sampler = fontImage.sampler;
+        samplerInfo.imageView = fontImage->imageView;
+        samplerInfo.sampler = fontImage->sampler;
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];

@@ -1,7 +1,9 @@
 #include "Backdrop.hpp"
 
-#include <utility>
 #include <filesystem>
+#include <memory>
+#include <utility>
+
 
 namespace tat
 {
@@ -9,9 +11,9 @@ namespace tat
 void Backdrop::loadConfig(const BackdropConfig &config)
 {
     debugLogger = spdlog::get("debugLogger");
-    loadCubeMap(colorMap, config.colorPath);
-    loadCubeMap(radianceMap, config.radiancePath);
-    loadCubeMap(irradianceMap, config.irradiancePath);
+    colorMap = loadCubeMap(config.colorPath);
+    radianceMap = loadCubeMap(config.radiancePath);
+    irradianceMap = loadCubeMap(config.irradiancePath);
 
     light = config.light;
 
@@ -50,21 +52,22 @@ void Backdrop::recreate()
     createDescriptorSets();
 }
 
-void Backdrop::loadCubeMap(Image &cubeMap, const std::string &path)
+auto Backdrop::loadCubeMap(const std::string &path) -> std::shared_ptr<Image>
 {
-    cubeMap.vulkan = vulkan;
-    cubeMap.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    cubeMap.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    cubeMap.flags = vk::ImageCreateFlagBits::eCubeCompatible;
-    cubeMap.viewType = vk::ImageViewType::eCube;
-    cubeMap.load(path);
+    auto cubeMap = std::make_shared<Image>(vulkan);
+    cubeMap->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+    cubeMap->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    cubeMap->imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+    cubeMap->imageViewInfo.viewType = vk::ImageViewType::eCube;
+    cubeMap->load(path);
 
-    cubeMap.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    cubeMap.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    cubeMap.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    cubeMap.maxAnisotropy = 1.0F;
-    cubeMap.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    cubeMap.createSampler();
+    cubeMap->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    cubeMap->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    cubeMap->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    cubeMap->samplerInfo.maxAnisotropy = 1.0F;
+    cubeMap->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    cubeMap->createSampler();
+    return cubeMap;
 }
 
 void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
@@ -165,8 +168,8 @@ void Backdrop::createDescriptorSets()
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView = colorMap.imageView;
-        imageInfo.sampler = colorMap.sampler;
+        imageInfo.imageView = colorMap->imageView;
+        imageInfo.sampler = colorMap->sampler;
 
         std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -196,7 +199,7 @@ void Backdrop::createPipeline()
 
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
-    
+
     pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
     pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
 

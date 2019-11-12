@@ -1,5 +1,7 @@
 #include "Materials.hpp"
 #include "Config.hpp"
+#include <memory>
+#include <type_traits>
 
 namespace tat
 {
@@ -12,17 +14,18 @@ Materials::Materials(const std::shared_ptr<Vulkan> &vulkan, const std::string &c
     // resize and allow for 0 index to be default
     configs.resize(config.materials.size() + 1);
     collection.resize(configs.size() + 1);
+    collection[0] = std::make_shared<Material>();
     int32_t index = 1;
     for (const auto &materialConfig : config.materials)
     {
-        collection[index].name = materialConfig.name;
+        collection[index] = std::make_shared<Material>();
         // insert name into map for index retrieval
         names.insert(std::make_pair(materialConfig.name, index));
         // insert config into configs so material can be loaded when needed
         configs[index] = materialConfig;
         ++index;
     }
-    debugLogger->info("Loaded Materials");
+    debugLogger->info("Created Materials");
 }
 
 auto Materials::getIndex(const std::string &name) -> int32_t
@@ -31,7 +34,7 @@ auto Materials::getIndex(const std::string &name) -> int32_t
     int32_t index = 0;
     if (result != names.end())
     {
-       index = result->second;
+        index = result->second;
     }
     loadMaterial(index);
     return index;
@@ -40,31 +43,34 @@ auto Materials::getIndex(const std::string &name) -> int32_t
 void Materials::loadMaterial(int32_t index)
 {
     // get pointer to material
-    Material *material = &collection[index];
+    auto material = collection[index];
     // if already loaded return
     if (material->loaded == true)
     {
         return;
     }
+
     // otherwise load the material
-    loadImage(configs[index].diffuse, material->diffuse);
-    loadImage(configs[index].normal, material->normal);
-    loadImage(configs[index].metallic, material->metallic);
-    loadImage(configs[index].roughness, material->roughness);
-    loadImage(configs[index].ao, material->ao);
+    material->name = configs[index].name;
+    material->diffuse = loadImage(configs[index].diffuse);
+    material->normal = loadImage(configs[index].normal);
+    material->metallic = loadImage(configs[index].metallic);
+    material->roughness = loadImage(configs[index].roughness);
+    material->ao = loadImage(configs[index].ao);
 
     material->loaded = true;
 }
 
-void Materials::loadImage(const std::string &path, Image &image)
+auto Materials::loadImage(const std::string &path) -> std::shared_ptr<Image>
 {
-    image.vulkan = vulkan;
-    image.imageUsage =
+    auto image = std::make_shared<Image>(vulkan);
+    image->imageInfo.usage =
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    image.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image.load(path);
+    image->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    image->load(path);
 
-    image.createSampler();
+    image->createSampler();
+    return image;
 }
 
 } // namespace tat

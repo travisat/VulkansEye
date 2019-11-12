@@ -18,6 +18,7 @@ Player::Player(const std::shared_ptr<Camera> &camera, const std::string &configP
     velocityMax = config.velocityMax;
     timeToReachVMax = config.timeToReachVMax;
     timeToStopfromVMax = config.timeToStopfromVMax;
+    debugLogger->info("Created Player");
 }
 
 

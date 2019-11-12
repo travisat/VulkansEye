@@ -69,7 +69,7 @@ class Overlay
     int32_t vertexCount = 0;
     int32_t indexCount = 0;
 
-    Image fontImage{};
+    std::unique_ptr<Image> fontImage;
 
     Pipeline pipeline;
     vk::DescriptorPool descriptorPool;

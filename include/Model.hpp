@@ -21,10 +21,10 @@ class Model : public Object
 
     std::string name;
 
-    const Image *irradianceMap;
-    const Image *radianceMap;
-    const Image *brdf;
-    const Image *shadow;
+    std::shared_ptr<Image> irradianceMap;
+    std::shared_ptr<Image> radianceMap;
+    std::shared_ptr<Image> brdf;
+    std::shared_ptr<Image> shadow;
 
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertBuffers;
@@ -37,7 +37,7 @@ class Model : public Object
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
-    inline auto getMesh() -> Mesh *
+    inline auto getMesh() -> std::shared_ptr<Mesh>
     {
         return meshes->getMesh(meshIndex);
     };

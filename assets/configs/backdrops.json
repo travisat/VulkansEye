@@ -35,9 +35,9 @@
             "radiance": "assets/backdrop/studio/radiance.dds",
             "irradiance": "assets/backdrop/studio/irradiance.dds",
             "light": {
-                "x": 2,
+                "x": -10,
                 "y": -15,
-                "z": 4 
+                "z": 0 
             }
         }
 

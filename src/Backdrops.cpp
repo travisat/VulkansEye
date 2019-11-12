@@ -23,7 +23,7 @@ Backdrops::Backdrops(const std::shared_ptr<Vulkan>& vulkan, const std::shared_pt
         ++index;
     }
     
-    debugLogger->info("Loaded Backdrops");
+    debugLogger->info("Created Backdrops");
 }
 
 auto Backdrops::getBackdrop(const std::string &name) -> Backdrop *

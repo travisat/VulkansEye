@@ -39,25 +39,25 @@ class Meshes
 
     std::shared_ptr<Vulkan> vulkan;
     auto getIndex(const std::string &name) -> int32_t;
-    inline auto getMesh(int32_t index) -> Mesh *
+    inline auto getMesh(int32_t index) -> std::shared_ptr<Mesh>
     {
         if (index < collection.size() && index > 0)
         {
-            return &collection[index];
+            return collection[index];
         }
         // return default mesh if index out of range
-        return &collection[0];
+        return collection[0];
     };
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
     // vector of empty Meshes until mesh has been loaded
-    std::vector<Mesh> collection{};
+    std::vector<std::shared_ptr<Mesh>> collection;
     // string index = mesh index
     std::map<std::string, int32_t> names{};
 
     void loadMesh(int32_t index);
-    static void importMesh(Mesh *mesh);
+    static void importMesh(const std::shared_ptr<Mesh> &mesh);
 };
 
 }; // namespace tat

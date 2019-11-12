@@ -1,3 +1,4 @@
+#include <memory>
 #include <stdexcept>
 
 #include <assimp/Importer.hpp>
@@ -17,18 +18,20 @@ Meshes::Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configP
     auto config = MeshesConfig(configPath);
     //index 0 is default mesh
     collection.resize(config.meshes.size() + 1);
+    collection[0] = std::make_shared<Mesh>();
     int32_t index = 1;
     for (const auto &meshConfig : config.meshes)
     {
-        collection[index].name = meshConfig.name;
-        collection[index].path = meshConfig.path;
-        collection[index].size = meshConfig.size;
+        collection[index] = std::make_shared<Mesh>();
+        collection[index]->name = meshConfig.name;
+        collection[index]->path = meshConfig.path;
+        collection[index]->size = meshConfig.size;
         // insert name into map for index retrieval
         names.insert(std::make_pair(meshConfig.name, index));
         // insert config into configs so mesh can be loaded when needed
         ++index;
     }
-    debugLogger->info("Loaded Meshes");
+    debugLogger->info("Created Meshes");
 }
 
 auto Meshes::getIndex(const std::string &name) -> int32_t
@@ -46,7 +49,7 @@ auto Meshes::getIndex(const std::string &name) -> int32_t
 void Meshes::loadMesh(int32_t index)
 {
     // get pointer to mesh
-    Mesh *mesh = &collection[index];
+    auto mesh = collection[index];
     // if already loaded return
     if (mesh->loaded == true)
     {
@@ -77,7 +80,7 @@ void Meshes::loadMesh(int32_t index)
     debugLogger->info("Loaded Mesh {}", mesh->path);
 }
 
-void Meshes::importMesh(Mesh *mesh)
+void Meshes::importMesh(const std::shared_ptr<Mesh> &mesh)
 {
     Assimp::Importer importer;
     auto processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_PreTransformVertices |

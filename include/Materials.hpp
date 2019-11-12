@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <map>
@@ -16,11 +17,11 @@ struct Material
     std::string name = "";
     bool loaded = false;
 
-    Image diffuse{};
-    Image normal{};
-    Image metallic{};
-    Image roughness{};
-    Image ao{};
+    std::shared_ptr<Image> diffuse = nullptr;
+    std::shared_ptr<Image> normal = nullptr;
+    std::shared_ptr<Image> metallic = nullptr;
+    std::shared_ptr<Image> roughness = nullptr;
+    std::shared_ptr<Image> ao = nullptr;
 };
 
 class Materials
@@ -37,19 +38,19 @@ class Materials
     // loads material if not loaded yet
     auto getIndex(const std::string &name) -> int32_t;
 
-    inline auto getMaterial(int32_t index) -> Material *
+    inline auto getMaterial(int32_t index) -> std::shared_ptr<Material>
     {
         if (index < collection.size() && index > 0)
         {
-            return &collection[index];
+            return collection[index];
         }
         // if index out of bounds just return default material
-        return &collection[0];
+        return collection[0];
     };
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
-    std::vector<Material> collection{};
+    std::vector<std::shared_ptr<Material>> collection{};
 
     // vector of configs, use loadConfigs to populate
     std::vector<MaterialConfig> configs{};
@@ -58,7 +59,7 @@ class Materials
 
     // loads material at index
     void loadMaterial(int32_t index);
-    void loadImage(const std::string &path, Image &image);
+    auto loadImage(const std::string &path) -> std::shared_ptr<Image>;
 };
 
 } // namespace tat

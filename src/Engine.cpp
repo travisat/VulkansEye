@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cstdint>
+#include <memory>
 #include <set>
 #include <stdexcept>
 
@@ -630,13 +631,14 @@ void Engine::createSwapChain()
 
 void Engine::createShadowFramebuffers()
 {
-    shadowDepth.vulkan = vulkan;
-    shadowDepth.format = vulkan->findDepthFormat();
-    shadowDepth.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadowDepth.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    shadowDepth.aspect = vk::ImageAspectFlagBits::eDepth;
-    shadowDepth.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
+    shadowDepth = std::make_unique<Image>(vulkan);
+    shadowDepth->imageInfo.format = vulkan->findDepthFormat();
+    shadowDepth->imageInfo.usage =
+        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+    shadowDepth->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    shadowDepth->imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    shadowDepth->resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
+    shadowDepth->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     shadowFbs.resize(vulkan->swapChainImageViews.size());
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
@@ -645,7 +647,7 @@ void Engine::createShadowFramebuffers()
         shadowFbs[i].renderPass = vulkan->shadowPass;
         shadowFbs[i].width = vulkan->shadowSize;
         shadowFbs[i].height = vulkan->shadowSize;
-        shadowFbs[i].attachments = {scene->shadow.imageView, shadowDepth.imageView};
+        shadowFbs[i].attachments = {scene->shadow->imageView, shadowDepth->imageView};
         shadowFbs[i].create();
     }
     debugLogger->info("Created Framebuffer for shadows");
@@ -653,24 +655,25 @@ void Engine::createShadowFramebuffers()
 
 void Engine::createColorFramebuffers()
 {
-    colorAttachment.vulkan = vulkan;
-    colorAttachment.format = vulkan->swapChainImageFormat;
-    colorAttachment.numSamples = vulkan->msaaSamples;
-    colorAttachment.imageUsage =
+    colorAttachment = std::make_unique<Image>(vulkan);
+    colorAttachment->imageInfo.format = vulkan->swapChainImageFormat;
+    colorAttachment->imageInfo.samples = vulkan->msaaSamples;
+    colorAttachment->imageInfo.usage =
         vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment;
-    colorAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    colorAttachment.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    colorAttachment.resize(vulkan->swapChainExtent.width, vulkan->swapChainExtent.height);
+    colorAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    colorAttachment->resize(vulkan->swapChainExtent.width, vulkan->swapChainExtent.height);
+    colorAttachment->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
-    depthAttachment.vulkan = vulkan;
-    depthAttachment.format = vulkan->findDepthFormat();
-    depthAttachment.numSamples = vulkan->msaaSamples;
-    depthAttachment.imageUsage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    depthAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    depthAttachment.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-    depthAttachment.aspect = vk::ImageAspectFlagBits::eDepth;
-    depthAttachment.resize(vulkan->swapChainExtent.width, vulkan->swapChainExtent.height);
-
+    depthAttachment = std::make_unique<Image>(vulkan);
+    depthAttachment->imageInfo.format = vulkan->findDepthFormat();
+    depthAttachment->imageInfo.samples = vulkan->msaaSamples;
+    depthAttachment->imageInfo.usage =
+        vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+    depthAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    depthAttachment->imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    depthAttachment->resize(vulkan->swapChainExtent.width, vulkan->swapChainExtent.height);
+    depthAttachment->transitionImageLayout(vk::ImageLayout::eUndefined,
+                                           vk::ImageLayout::eDepthStencilAttachmentOptimal);
     swapChainFbs.resize(vulkan->swapChainImageViews.size());
 
     for (size_t i = 0; i < vulkan->swapChainImageViews.size(); i++)
@@ -679,7 +682,7 @@ void Engine::createColorFramebuffers()
         swapChainFbs[i].renderPass = vulkan->colorPass;
         swapChainFbs[i].width = vulkan->swapChainExtent.width;
         swapChainFbs[i].height = vulkan->swapChainExtent.height;
-        swapChainFbs[i].attachments = {colorAttachment.imageView, depthAttachment.imageView,
+        swapChainFbs[i].attachments = {colorAttachment->imageView, depthAttachment->imageView,
                                        vulkan->swapChainImageViews[i]};
         swapChainFbs[i].create();
     }

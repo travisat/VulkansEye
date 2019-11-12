@@ -1,8 +1,10 @@
 #include "Scene.hpp"
 #include "Config.hpp"
 #include "Vulkan.hpp"
+#include "spdlog/spdlog.h"
 #include "vulkan/vulkan.hpp"
 #include <filesystem>
+#include <memory>
 
 namespace tat
 {
@@ -35,7 +37,7 @@ Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera
     createShadowLayouts();
     createShadowSets();
     createShadowPipeline();
-    debugLogger->info("Loaded Scene");
+    debugLogger->info("Created Scene");
 }
 
 Scene::~Scene()
@@ -60,36 +62,36 @@ Scene::~Scene()
 
 void Scene::createBrdf()
 {
-    brdf.vulkan = vulkan;
-    brdf.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    brdf.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    brdf.load(vulkan->brdfPath);
+    brdf = std::make_shared<Image>(vulkan);
+    brdf->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+    brdf->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    brdf->load(vulkan->brdfPath);
 
-    brdf.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    brdf.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    brdf.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    brdf.maxAnisotropy = 1.0F;
-    brdf.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    brdf.createSampler();
+    brdf->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    brdf->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    brdf->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    brdf->samplerInfo.maxAnisotropy = 1.0F;
+    brdf->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    brdf->createSampler();
+    debugLogger->info("Created BRDF");
 }
 
 void Scene::createShadow()
 {
-    shadow.vulkan = vulkan;
-    shadow.format = vk::Format::eR32G32Sfloat;
-    shadow.layout = vk::ImageLayout::eColorAttachmentOptimal;
-    shadow.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
-    shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadow.aspect = vk::ImageAspectFlagBits::eColor;
-    shadow.numSamples = vk::SampleCountFlagBits::e1;
-    shadow.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
+    shadow = std::make_shared<Image>(vulkan);
+    shadow->imageInfo.format = vk::Format::eR32G32Sfloat;
+    shadow->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+    shadow->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    shadow->resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
+    shadow->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
-    shadow.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    shadow.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    shadow.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    shadow.maxAnisotropy = 1.F;
-    shadow.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    shadow.createSampler();
+    shadow->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    shadow->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    shadow->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    shadow->samplerInfo.maxAnisotropy = 1.F;
+    shadow->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    shadow->createSampler();
+    debugLogger->info("Created Shadow");
 }
 
 void Scene::loadBackdrop(const std::string &name)
@@ -107,13 +109,16 @@ void Scene::createModels(const std::vector<ModelConfig> &configs)
         models[index].vulkan = vulkan;
         models[index].materials = materials;
         models[index].meshes = meshes;
-        models[index].shadow = &shadow;
-        models[index].irradianceMap = &backdrop->irradianceMap;
-        models[index].radianceMap = &backdrop->radianceMap;
-        models[index].brdf = &brdf;
+        models[index].shadow = shadow;
+        models[index].irradianceMap = backdrop->irradianceMap;
+        models[index].radianceMap = backdrop->radianceMap;
+        models[index].brdf = brdf;
         models[index].create();
+        
+        debugLogger->info("Loaded Model {}", models[index].name);
         ++index;
     }
+    debugLogger->info("Created Models");
 }
 
 void Scene::cleanup()
@@ -176,7 +181,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
     glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
 
-    fragBuffer.radianceMipLevels = backdrop->radianceMap.mipLevels;
+    fragBuffer.radianceMipLevels = backdrop->radianceMap->imageInfo.mipLevels;
     fragBuffer.shadowSize = vulkan->shadowSize;
 
     for (auto &model : models)

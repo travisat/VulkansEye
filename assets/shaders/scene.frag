@@ -88,7 +88,7 @@ vec2 blurShadow(vec2 uv, vec2 direction)
 float shadowCalc(vec3 lightVec, vec3 normal)
 {
     float d = length(lightVec); // current distance
-    float bias = 0.004F;
+    float bias = 0.005F;
     vec2 direction = normalize(lightVec).xy;
     vec2 moments = blurShadow(lightPos.xy, direction);
     moments.x -= bias;
@@ -119,7 +119,9 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
     // compute specular
     vec3 R = reflect(-V, N);
 
+    // get radiance for reflection based on roughness, more rough gets a higher mipmap level
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
+    // use premade brdf to compute specular contribution
     vec2 brdf = texture(brdfMap, vec2(NdotV, 1.F - roughness)).rg;
     vec3 specular = radiance * (mix(f0, vec3(irradiance), metallic) * brdf.x + brdf.y);
 

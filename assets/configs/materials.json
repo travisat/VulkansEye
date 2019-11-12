@@ -34,6 +34,20 @@
             "metallic": "assets/materials/fabric/metallic.dds",
             "roughness": "assets/materials/fabric/roughness.dds",
             "ao": "assets/materials/fabric/ao.dds"
+        },
+        "prismcrete": {
+            "diffuse": "assets/materials/prismcrete/diffuse.dds",
+            "normal": "assets/materials/prismcrete/normal.dds",
+            "metallic": "assets/materials/prismcrete/metallic.dds",
+            "roughness": "assets/materials/prismcrete/roughness.dds",
+            "ao": "assets/materials/prismcrete/ao.dds"
+        },
+        "painted": {
+            "diffuse": "assets/materials/painted/diffuse.dds",
+            "normal": "assets/materials/painted/normal.dds",
+            "metallic": "assets/materials/painted/metallic.dds",
+            "roughness": "assets/materials/painted/roughness.dds",
+            "ao": "assets/materials/painted/ao.dds"
         }
     }
 }

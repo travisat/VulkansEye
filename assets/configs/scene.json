@@ -1,7 +1,7 @@
 {
     "scene": {
         "name": "default",
-        "backdrop": "musichall",
+        "backdrop": "studio",
         "models": {
             "table": {
                 "mesh": "table",
@@ -65,7 +65,7 @@
             },
             "floor": {
                 "mesh": "floor",
-                "material": "concrete",
+                "material": "planks",
                 "mass": 0,
                 "position": {
                     "x": 0,

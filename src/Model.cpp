@@ -33,7 +33,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    Material *material = materials->getMaterial(materialIndex);
+    std::shared_ptr<Material> material = materials->getMaterial(materialIndex);
 
     colorSets = vulkan->device.allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
@@ -55,28 +55,28 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
         vk::DescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        diffuseInfo.imageView = material->diffuse.imageView;
-        diffuseInfo.sampler = material->diffuse.sampler;
+        diffuseInfo.imageView = material->diffuse->imageView;
+        diffuseInfo.sampler = material->diffuse->sampler;
 
         vk::DescriptorImageInfo normalInfo = {};
         normalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        normalInfo.imageView = material->normal.imageView;
-        normalInfo.sampler = material->normal.sampler;
+        normalInfo.imageView = material->normal->imageView;
+        normalInfo.sampler = material->normal->sampler;
 
         vk::DescriptorImageInfo roughnessInfo = {};
         roughnessInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        roughnessInfo.imageView = material->roughness.imageView;
-        roughnessInfo.sampler = material->roughness.sampler;
+        roughnessInfo.imageView = material->roughness->imageView;
+        roughnessInfo.sampler = material->roughness->sampler;
 
         vk::DescriptorImageInfo metallicInfo = {};
         metallicInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        metallicInfo.imageView = material->metallic.imageView;
-        metallicInfo.sampler = material->metallic.sampler;
+        metallicInfo.imageView = material->metallic->imageView;
+        metallicInfo.sampler = material->metallic->sampler;
 
         vk::DescriptorImageInfo aoInfo = {};
         aoInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        aoInfo.imageView = material->ao.imageView;
-        aoInfo.sampler = material->ao.sampler;
+        aoInfo.imageView = material->ao->imageView;
+        aoInfo.sampler = material->ao->sampler;
 
         vk::DescriptorImageInfo irradianceInfo = {};
         irradianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

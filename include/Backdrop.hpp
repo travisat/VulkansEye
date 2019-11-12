@@ -5,6 +5,7 @@
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Camera.hpp"
+#include <memory>
 
 namespace tat
 {
@@ -23,9 +24,9 @@ class Backdrop
     Backdrop() = default;
     ~Backdrop();
 
-    Image colorMap{};
-    Image radianceMap{};
-    Image irradianceMap{};
+    std::shared_ptr<Image> colorMap;
+    std::shared_ptr<Image> radianceMap;
+    std::shared_ptr<Image> irradianceMap;
 
     void loadConfig(const BackdropConfig &config);
 
@@ -48,7 +49,7 @@ class Backdrop
     Pipeline pipeline;
     vk::DescriptorSetLayout descriptorSetLayout{};
 
-    void loadCubeMap(Image &cubeMap, const std::string &path);
+    auto loadCubeMap(const std::string &path) -> std::shared_ptr<Image>;
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

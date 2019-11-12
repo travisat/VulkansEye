@@ -9,6 +9,7 @@
 #include "Player.hpp"
 #include "Camera.hpp"
 #include "Vulkan.hpp"
+#include <memory>
 
 namespace tat
 {
@@ -18,8 +19,8 @@ class Scene
   public:
     std::string name = "Unknown";
 
-    Image shadow;
-    Image brdf;
+    std::shared_ptr<Image> shadow;
+    std::shared_ptr<Image> brdf;
 
     Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera, const std::shared_ptr<Player> &player,
           const std::shared_ptr<Materials> &materials, const std::shared_ptr<Meshes> &meshes,

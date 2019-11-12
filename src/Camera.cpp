@@ -12,6 +12,7 @@ Camera::Camera(const std::shared_ptr<Vulkan> &vulkan)
     setRotation(m_rotation);
     updateView();
     updateProjection();
+    spdlog::get("debugLogger")->info("Created Camera");
 }
 
 void Camera::look(double mouseX, double mouseY)

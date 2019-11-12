@@ -54,10 +54,10 @@ class Engine
     vk::DispatchLoaderDynamic dldy;
 
     std::vector<Framebuffer> shadowFbs{};
-    Image shadowDepth{};
+    std::unique_ptr<Image> shadowDepth;
     std::vector<Framebuffer> swapChainFbs{};
-    Image colorAttachment{};
-    Image depthAttachment{};
+    std::unique_ptr<Image> colorAttachment;
+    std::unique_ptr<Image> depthAttachment;
 
     const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
