@@ -28,7 +28,9 @@ Meshes::Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configP
         // insert name into map for index retrieval
         names.insert(std::make_pair(meshConfig.name, index));
         // insert config into configs so mesh can be loaded when needed
+        debugLogger->info("Meshes added Config for {} to collection at index {}", collection[index]->name, index);
         ++index;
+        
     }
     debugLogger->info("Created Meshes");
 }
