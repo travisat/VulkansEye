@@ -65,7 +65,7 @@
             },
             "floor": {
                 "mesh": "floor",
-                "material": "planks",
+                "material": "concrete",
                 "mass": 0,
                 "position": {
                     "x": 0,

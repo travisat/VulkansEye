@@ -4,7 +4,7 @@
 namespace tat
 {
 
-auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) ->vk::RenderPass
+auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
 {
     vk::AttachmentDescription colorAttachment = {};
     colorAttachment.format = vulkan->swapChainImageFormat;
@@ -91,7 +91,7 @@ auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) ->vk::RenderPass
 auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
 {
     vk::AttachmentDescription shadowAttachment = {};
-    shadowAttachment.format = vk::Format::eR32Sfloat;
+    shadowAttachment.format = vk::Format::eR32G32Sfloat;
     shadowAttachment.samples = vk::SampleCountFlagBits::e1;
     shadowAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     shadowAttachment.storeOp = vk::AttachmentStoreOp::eStore;

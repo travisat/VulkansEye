@@ -25,9 +25,9 @@
             "radiance": "assets/backdrop/musichall/radiance.dds",
             "irradiance": "assets/backdrop/musichall/irradiance.dds",
             "light": {
-                "x": 0.01,
+                "x": 2,
                 "y": -15,
-                "z": 0.01
+                "z": 2
             }
         },
         "studio": {
@@ -37,7 +37,7 @@
             "light": {
                 "x": 2,
                 "y": -15,
-                "z": 0.01
+                "z": 4 
             }
         }
 

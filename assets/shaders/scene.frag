@@ -1,5 +1,7 @@
 #version 450
 
+// References for shader stuff
+// Not all are used anymore
 //[0] https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbrtexture/pbrtexture.frag
 //[1] https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
 //[2] https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
@@ -9,15 +11,13 @@
 //[6] https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows
 //[7] https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/shadowmapping/scene.frag
 //[8] https://github.com/SaschaWillems/Vulkan/blob/master/data/shaders/pbribl/pbribl.frag
-
-const int numLights = 1;
+//[9] https://github.com/Jam3/glsl-fast-gaussian-blur
+//[10] https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html
 
 layout(binding = 1) uniform UniformLights
 {
     vec4 position;
     float radianceMipLevels;
-    float exposure;
-    float gamma;
     float shadowSize;
 }
 lights;
@@ -35,7 +35,7 @@ layout(binding = 10) uniform sampler2D brdfMap;
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
-layout(location = 3) in vec4 lightWorldPos;
+layout(location = 3) in vec4 lightPos;
 layout(location = 4) in vec4 camPos;
 
 layout(location = 0) out vec4 outColor;
@@ -60,29 +60,50 @@ vec3 getNormal(vec3 position, vec3 normal)
     return normalize(TBN * tangentNormal);
 }
 
-vec2 sampleOffsets[9] = vec2[](vec2(1.F, 1.F), vec2(1.F, 0.F), vec2(1.F, -1.F), //
-                               vec2(0.F, 1.F), vec2(0.F, 0.F), vec2(0.F, -1.F), //
-                               vec2(-1.0, 1.F), vec2(-1.F, 0.F), vec2(-1.F, -1.F));
+// [9]
+vec2 blurpass(vec2 uv, vec2 direction)
+{
+    vec2 color = vec2(0.0);
+    vec2 off1 = vec2(1.3846153846) * direction;
+    vec2 off2 = vec2(3.2307692308) * direction;
+    color += texture(shadowMap, uv).rg * 0.2270270270;
+    color += texture(shadowMap, uv + (off1 / lights.shadowSize)).rg * 0.3162162162;
+    color += texture(shadowMap, uv - (off1 / lights.shadowSize)).rg * 0.3162162162;
+    color += texture(shadowMap, uv + (off2 / lights.shadowSize)).rg * 0.0702702703;
+    color += texture(shadowMap, uv - (off2 / lights.shadowSize)).rg * 0.0702702703;
+    return color;
+}
+// [9]
+vec2 blurShadow(vec2 uv, vec2 direction)
+{
+    // blur in shadow direction
+    vec2 color1 = blurpass(uv, direction);
+    // blur perpendicular to shadow direction
+    vec2 color2 = blurpass(uv, vec2(-direction.y, direction.x));
+    // return average of blurs;
+    return (color1 + color2) / 2.F;
+}
 
+// [10]
 float shadowCalc(vec3 lightVec, vec3 normal)
 {
-    float shadow = 0.F;
-    // compute bias based off NdotL
-    float bias = max(0.05F * (1.F - dot(normal, normalize(lightVec))), 0.005F);
-    int samples = 9;                           // number of samples in sampleOffsets
-    float texelSize = 1.F / lights.shadowSize; // size of texel that will be checked
-
-    float currentDistanceToLight = length(lightVec);
-    for (int i = 0; i < samples; ++i)
+    float d = length(lightVec); // current distance
+    float bias = 0.004F;
+    vec2 direction = normalize(lightVec).xy;
+    vec2 moments = blurShadow(lightPos.xy, direction);
+    moments.x -= bias;
+    if (d <= moments.x)
     {
-        float closestDistanceToLight = texture(shadowMap, lightWorldPos.xy + sampleOffsets[i] * texelSize).r;
-        if (currentDistanceToLight - bias > closestDistanceToLight)
-        {
-            shadow += 0.5F; // shadow instensity 0.0 = no shadow, 1.0 = full shadow
-        }
+        return 1.F;
     }
-    shadow /= float(samples); // average all the samples to create shadow intensity
-    return 1.F - shadow;      // sub from 1.0 here instead of later
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, bias);
+    d = d - moments.x;
+    float pmax = variance / (variance + d * d);
+    // remove light bleeding
+    float shadow = smoothstep(0.5, 1.0, pmax);
+    // map to [0.7-1.0]
+    return shadow * 0.3 + 0.7;
 }
 
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
@@ -97,7 +118,7 @@ vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)
 
     // compute specular
     vec3 R = reflect(-V, N);
-    
+
     vec3 radiance = textureLod(radianceMap, R, roughness * (lights.radianceMipLevels - 1)).rgb;
     vec2 brdf = texture(brdfMap, vec2(NdotV, 1.F - roughness)).rg;
     vec3 specular = radiance * (mix(f0, vec3(irradiance), metallic) * brdf.x + brdf.y);

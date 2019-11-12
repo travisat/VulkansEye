@@ -63,8 +63,6 @@ struct UniformFrag
 {
     glm::vec4 position{};
     float radianceMipLevels = 0.F;
-    float exposure = 2.2F;
-    float gamma = 4.5F;
     float shadowSize = 1024.F;
 };
 

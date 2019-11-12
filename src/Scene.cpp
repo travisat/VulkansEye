@@ -1,6 +1,7 @@
 #include "Scene.hpp"
 #include "Config.hpp"
 #include "Vulkan.hpp"
+#include "vulkan/vulkan.hpp"
 #include <filesystem>
 
 namespace tat
@@ -75,11 +76,12 @@ void Scene::createBrdf()
 void Scene::createShadow()
 {
     shadow.vulkan = vulkan;
-    shadow.format = vk::Format::eR32Sfloat;
+    shadow.format = vk::Format::eR32G32Sfloat;
     shadow.layout = vk::ImageLayout::eColorAttachmentOptimal;
     shadow.imageUsage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     shadow.aspect = vk::ImageAspectFlagBits::eColor;
+    shadow.numSamples = vk::SampleCountFlagBits::e1;
     shadow.resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
 
     shadow.addressModeU = vk::SamplerAddressMode::eClampToEdge;
@@ -407,6 +409,7 @@ void Scene::createShadowPipeline()
     shadowPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
     shadowPipeline.multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
+    shadowPipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     shadowPipeline.create();
 }
