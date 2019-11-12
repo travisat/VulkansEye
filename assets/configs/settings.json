@@ -11,7 +11,7 @@
         "shadowSize": 4096,
         "brdfPath": "assets/brdf.dds",
         "playerConfigPath": "assets/configs/player.json",
-        "materialsConfigPath": "assets/configs/materials.json",
+        "materialsPath": "assets/materials/",
         "meshesConfigPath": "assets/configs/meshes.json",
         "backdropsConfigPath": "assets/configs/backdrops.json",
         "sceneConfigPath": "assets/configs/scene.json"

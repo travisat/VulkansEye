@@ -54,7 +54,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
 
     camera = std::make_shared<Camera>(vulkan);
     player = std::make_shared<Player>(camera, config.playerConfigPath);
-    materials = std::make_shared<Materials>(vulkan, config.materialsConfigPath);
+    materials = std::make_shared<Materials>(vulkan, config.materialsPath);
     meshes = std::make_shared<Meshes>(vulkan, config.meshesConfigPath);
     backdrops = std::make_shared<Backdrops>(vulkan, camera, config.backdropsConfigPath);
     scene = std::make_shared<Scene>(vulkan, camera, player, materials, meshes, backdrops, config.sceneConfigPath);

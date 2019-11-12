@@ -5,18 +5,17 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "Meshes.hpp"
 #include "Config.hpp"
-
+#include "Meshes.hpp"
 
 namespace tat
 {
 Meshes::Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath)
 {
     debugLogger = spdlog::get("debugLogger");
-    this-> vulkan = vulkan;
+    this->vulkan = vulkan;
     auto config = MeshesConfig(configPath);
-    //index 0 is default mesh
+    // index 0 is default mesh
     collection.resize(config.meshes.size() + 1);
     collection[0] = std::make_shared<Mesh>();
     int32_t index = 1;
@@ -34,28 +33,28 @@ Meshes::Meshes(const std::shared_ptr<Vulkan> &vulkan, const std::string &configP
     debugLogger->info("Created Meshes");
 }
 
-auto Meshes::getIndex(const std::string &name) -> int32_t
+auto Meshes::getMesh(const std::string &name) -> std::shared_ptr<Mesh>
 {
     auto result = names.find(name);
     int32_t index = 0;
     if (result != names.end())
     {
-       index = result->second;
+        index = result->second;
     }
-    loadMesh(index);
-    return index;
-}
+
+    if (collection[index]->loaded == false)
+    {
+       loadMesh(index);
+    }
+    
+    return collection[index];
+};
 
 void Meshes::loadMesh(int32_t index)
 {
     // get pointer to mesh
     auto mesh = collection[index];
-    // if already loaded return
-    if (mesh->loaded == true)
-    {
-        return;
-    }
-    // otherwise load the mesh
+    
     importMesh(mesh);
 
     // copy buffers to gpu only memory
@@ -84,7 +83,7 @@ void Meshes::importMesh(const std::shared_ptr<Mesh> &mesh)
 {
     Assimp::Importer importer;
     auto processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_PreTransformVertices |
-                            aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
+                        aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
     auto pScene = importer.ReadFile(mesh->path, processFlags);
 
     const aiVector3D zero3D(0.F, 0.F, 0.F);
@@ -98,7 +97,7 @@ void Meshes::importMesh(const std::shared_ptr<Mesh> &mesh)
     for (int i = 0; i < pScene->mNumMeshes; ++i)
     {
         auto aimesh = pScene->mMeshes[i];
-        
+
         for (int j = 0; j < aimesh->mNumFaces; ++j)
         {
             const aiFace *face = &aimesh->mFaces[j];
@@ -126,7 +125,5 @@ void Meshes::importMesh(const std::shared_ptr<Mesh> &mesh)
         }
     }
 }
-
-
 
 } // namespace tat

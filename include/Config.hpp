@@ -33,7 +33,7 @@ class Config
     float shadowSize = 1024.F;
     std::string brdf = "assets/brdf.dds";
     std::string playerConfigPath = "assets/configs/player.json";
-    std::string materialsConfigPath = "assets/configs/materials.json";
+    std::string materialsPath = "assets/materials";
     std::string meshesConfigPath = "assets/configs/meshes.json";
     std::string backdropsConfigPath = "assets/configs/backdrops.json";
     std::string sceneConfigPath = "assets/configs/scene.json";
@@ -83,24 +83,20 @@ class BackdropsConfig
     std::shared_ptr<spdlog::logger> debugLogger;
 };
 
-struct MaterialConfig
-{
-    std::string name = "default";
-    std::string diffuse = "assets/materials/default/diffuse.dds";
-    std::string normal = "assets/materials/default/normal.dds";
-    std::string roughness = "assets/materials/default/roughness.dds";
-    std::string metallic = "assets/materials/default/metallic.dds";
-    std::string ao = "assets/materials/default/ao.dds";
-};
-
-class MaterialsConfig
+class MaterialConfig
 {
   public:
-    MaterialsConfig() = default;
-    explicit MaterialsConfig(const std::string &path);
-    ~MaterialsConfig() = default;
+    MaterialConfig() = default;
+    explicit MaterialConfig(const std::string &path);
+    ~MaterialConfig() = default;
 
-    std::vector<MaterialConfig> materials{};
+    std::string name = "default";
+    std::string path = "assets/materials/.default/";
+    std::string diffuse = "diffuse.dds";
+    std::string normal = "normal.dds";
+    std::string roughness = "roughness.dds";
+    std::string metallic = "metallic.dds";
+    std::string ao = "ao.dds";
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;

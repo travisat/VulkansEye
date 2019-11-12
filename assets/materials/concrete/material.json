@@ -1,0 +1,9 @@
+{
+    "concrete": {
+        "diffuse": "diffuse.dds",
+        "normal": "normal.dds",
+        "roughness": "roughness.dds",
+        "metallic": "metallic.dds",
+        "ao": "ao.dds"
+    }
+}

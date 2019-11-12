@@ -1,5 +1,8 @@
 #include "Model.hpp"
 #include "Vulkan.hpp"
+#include "spdlog/spdlog.h"
+#include <exception>
+#include <stdexcept>
 
 namespace tat
 {
@@ -11,9 +14,9 @@ void Model::create()
     name = config.name;
 
     // get material/mesh from their collections
-    materialIndex = materials->getIndex(config.material);
-    meshIndex = meshes->getIndex(config.mesh);
-    m_size = meshes->getMesh(meshIndex)->size;
+    material = materials->getMaterial(config.material);
+    mesh = meshes->getMesh(config.mesh);
+    m_size = mesh->size;
     m_mass = config.mass;
 
     // move/rotate/scale
@@ -32,8 +35,6 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
-
-    std::shared_ptr<Material> material = materials->getMaterial(materialIndex);
 
     colorSets = vulkan->device.allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)

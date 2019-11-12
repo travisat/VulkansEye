@@ -20,7 +20,7 @@ class Model : public Object
     std::shared_ptr<Meshes> meshes;
 
     std::string name;
-
+   
     std::shared_ptr<Image> irradianceMap;
     std::shared_ptr<Image> radianceMap;
     std::shared_ptr<Image> brdf;
@@ -39,13 +39,13 @@ class Model : public Object
 
     inline auto getMesh() -> std::shared_ptr<Mesh>
     {
-        return meshes->getMesh(meshIndex);
+        return mesh;
     };
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
-    int32_t meshIndex;
-    int32_t materialIndex;
+    std::shared_ptr<Material> material;
+    std::shared_ptr<Mesh> mesh;
 };
 
 } // namespace tat

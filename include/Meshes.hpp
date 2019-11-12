@@ -38,16 +38,8 @@ class Meshes
     ~Meshes() = default;
 
     std::shared_ptr<Vulkan> vulkan;
-    auto getIndex(const std::string &name) -> int32_t;
-    inline auto getMesh(int32_t index) -> std::shared_ptr<Mesh>
-    {
-        if (index < collection.size() && index > 0)
-        {
-            return collection[index];
-        }
-        // return default mesh if index out of range
-        return collection[0];
-    };
+
+    auto getMesh(const std::string &name) -> std::shared_ptr<Mesh>;
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;

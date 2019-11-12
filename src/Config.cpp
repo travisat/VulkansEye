@@ -35,6 +35,7 @@ template <typename T> void load(const json &j, const std::string &type, const st
 Config::Config(const std::string &path)
 {
     debugLogger = spdlog::get("debugLogger");
+
     if (std::filesystem::exists(path))
     { // if path exists load it
         try
@@ -56,7 +57,7 @@ Config::Config(const std::string &path)
             load(j, "settings", "brdfPath", brdf);
             load(j, "settings", "playerConfigPath", playerConfigPath);
             load(j, "settings", "backdropsConfigPath", backdropsConfigPath);
-            load(j, "settings", "materialsConfigPath", materialsConfigPath);
+            load(j, "settings", "materialsPath", materialsPath);
             load(j, "settings", "meshesConfigPath", meshesConfigPath);
             load(j, "settings", "sceneConfigPath", sceneConfigPath);
         }
@@ -151,49 +152,51 @@ BackdropsConfig::BackdropsConfig(const std::string &path)
     }
 }
 
-MaterialsConfig::MaterialsConfig(const std::string &path)
+MaterialConfig::MaterialConfig(const std::string &path)
 {
     debugLogger = spdlog::get("debugLogger");
+
+    if (path.empty())
+    {
+        debugLogger->info("Config loading default vaules for Material");
+        return;
+    }
+
     if (std::filesystem::exists(path))
     {
         try
         {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
+            debugLogger->info("Loading Config {}", path + "/material.json");
+            std::ifstream file(path + "/material.json");
             json j;
             file >> j;
 
-            if (j.find("materials") != j.end())
-            {
-                auto m = j.at("materials");
-                for (auto &[key, material] : m.items())
-                {
-                    MaterialConfig c{};
-                    c.name = key;
-                    load(m, key, "diffuse", c.diffuse);
-                    load(m, key, "normal", c.normal);
-                    load(m, key, "metallic", c.metallic);
-                    load(m, key, "roughness", c.roughness);
-                    load(m, key, "ao", c.ao);
-                    materials.push_back(c);
-                }
+            if (j.size() != 1)
+            { // print error but load defaults
+                debugLogger->error("Malformed json in {}", path + "/material.json");
             }
             else
-            {
-                debugLogger->warn("Unable to find materials in {}", path);
-                materials.resize(1);
+            { // load the json
+                for (auto &[key, material] : j.items())
+                {
+                    name = key;
+                    this->path = path;
+                    load(j, key, "diffuse", diffuse);
+                    load(j, key, "normal", normal);
+                    load(j, key, "metallic", metallic);
+                    load(j, key, "roughness", roughness);
+                    load(j, key, "ao", ao);
+                }
             }
         }
         catch (json::exception &e)
         {
             debugLogger->error("Error {}", e.what());
-            materials.resize(1);
         }
     }
     else
-    { // otherwise resize to 1 using default material
-        materials.resize(1);
-        debugLogger->warn("Unable to load {}", path);
+    {
+        debugLogger->warn("Unable to find {}", path + "/material.json");
     }
 }
 

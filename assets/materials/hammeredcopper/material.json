@@ -1,0 +1,9 @@
+{
+    "hammeredcopper": {
+        "diffuse": "diffuse.dds",
+        "normal": "normal.dds",
+        "metallic": "metallic.dds",
+        "roughness": "roughness.dds",
+        "ao": "ao.dds"
+    }
+}

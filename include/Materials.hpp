@@ -1,9 +1,9 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
 
 #include "Config.hpp"
 #include "Image.hpp"
@@ -12,54 +12,48 @@
 namespace tat
 {
 
-struct Material
+class Material
 {
+  public:
+    // this constructor loads the material
+    explicit Material(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<MaterialConfig> &config);
+    // this loads default values loaded should be false until loaded
+    Material() = default;
+    ~Material() = default;
+    std::shared_ptr<Vulkan> vulkan = nullptr;
+
     std::string name = "";
     bool loaded = false;
+    std::string path = "";
 
     std::shared_ptr<Image> diffuse = nullptr;
     std::shared_ptr<Image> normal = nullptr;
     std::shared_ptr<Image> metallic = nullptr;
     std::shared_ptr<Image> roughness = nullptr;
     std::shared_ptr<Image> ao = nullptr;
+
+  private:
+    auto loadImage(const std::string &name) -> std::shared_ptr<Image>;
 };
 
 class Materials
 {
   public:
-    Materials(const std::shared_ptr<Vulkan> &vulkan, const std::string &configPath);
+    Materials(const std::shared_ptr<Vulkan> &vulkan, const std::string &path);
     ~Materials() = default;
 
     std::shared_ptr<Vulkan> vulkan;
 
-    // returns meterial index of name
-    // return 0 if name not found
-    // 0 is default material
-    // loads material if not loaded yet
-    auto getIndex(const std::string &name) -> int32_t;
-
-    inline auto getMaterial(int32_t index) -> std::shared_ptr<Material>
-    {
-        if (index < collection.size() && index > 0)
-        {
-            return collection[index];
-        }
-        // if index out of bounds just return default material
-        return collection[0];
-    };
+    auto getMaterial(const std::string &name) -> std::shared_ptr<Material>;
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
     std::vector<std::shared_ptr<Material>> collection{};
 
     // vector of configs, use loadConfigs to populate
-    std::vector<MaterialConfig> configs{};
+    std::vector<std::shared_ptr<MaterialConfig>> configs;
     // string index = material index
     std::map<std::string, int32_t> names{};
-
-    // loads material at index
-    void loadMaterial(int32_t index);
-    auto loadImage(const std::string &path) -> std::shared_ptr<Image>;
 };
 
 } // namespace tat
