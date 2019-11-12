@@ -23,13 +23,13 @@ Material::Material(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<
     logger->info("Loaded Material {}", name);
 }
 
-auto Material::loadImage(const std::string &name) -> std::shared_ptr<Image>
+auto Material::loadImage(const std::string &file) -> std::shared_ptr<Image>
 {
     auto image = std::make_shared<Image>(vulkan);
     image->imageInfo.usage =
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     image->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    image->load(path + "/" + name);
+    image->load(path + "/" + file);
 
     image->createSampler();
     return image;

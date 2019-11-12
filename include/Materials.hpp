@@ -33,7 +33,7 @@ class Material
     std::shared_ptr<Image> ao = nullptr;
 
   private:
-    auto loadImage(const std::string &name) -> std::shared_ptr<Image>;
+    auto loadImage(const std::string &file) -> std::shared_ptr<Image>;
 };
 
 class Materials
