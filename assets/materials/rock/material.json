@@ -1,9 +1,7 @@
 {
-    "rock": {
-        "diffuse": "diffuse.dds",
-        "normal": "normal.dds",
-        "roughness": "roughness.dds",
-        "ao": "ao.dds",
-        "metallic": "metallic.dds"
-    }
+    "diffuse": "diffuse.dds",
+    "normal": "normal.dds",
+    "roughness": "roughness.dds",
+    "ao": "ao.dds",
+    "metallic": "metallic.dds"
 }

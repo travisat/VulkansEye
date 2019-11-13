@@ -1,0 +1,20 @@
+{
+    "mesh": "suzanne",
+    "material": "rock",
+    "mass": 100,
+    "position": {
+        "x": -4,
+        "y": -1,
+        "z": -4
+    },
+    "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+    }
+}

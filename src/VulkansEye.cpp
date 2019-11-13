@@ -10,7 +10,9 @@ namespace tat
 
 VulkansEye::VulkansEye(const std::string &configPath)
 {
+    //get logger
     debugLogger = spdlog::get("debugLogger");
+    
     // start timers
     Timer::getInstance();
     Timer::time();

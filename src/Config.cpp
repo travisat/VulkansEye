@@ -4,320 +4,272 @@
 #include <nlohmann/json.hpp>
 
 #include "Config.hpp"
+#include "State.hpp"
 
 using json = nlohmann::json;
 
 namespace tat
 {
 
-template <typename T> void load(const json &j, const std::string &type, const std::string &key, T &t)
-{
-    auto logger = spdlog::get("debugLogger");
-    if (j.find(type) != j.end())
-    {
-
-        if (j.at(type).find(key) == j.at(type).end())
-        {
-            logger->warn("Config value in {} for {} not found", type, key);
-        }
-        else
-        {
-            t = j.at(type).at(key);
-        }
-    }
-    else
-    {
-        logger->warn("Config {} not found", type);
-    }
-    logger->info("Config {} {}={} ", type, key, t);
-}
-
 Config::Config(const std::string &path)
 {
-    debugLogger = spdlog::get("debugLogger");
+    logger = spdlog::get("debugLogger");
 
+    try
+    {
+        // setup state with default vaules
+        auto &state = State::instance();
+
+        state["materials"] = json::object();
+        state["materials"]["default"] = material;
+        state["meshes"] = json::object();
+        state["meshes"]["cube"] = mesh;
+        state["models"] = json::object();
+        state["models"]["cube"] = model;
+
+        // load settings
+        loadSettings(path);
+        loadPlayer(state["settings"]["playerConfig"]);
+        loadScene(state["settings"]["sceneConfig"]);
+        loadBackdrops(state["settings"]["backdropsPath"]);
+        loadMaterials(state["settings"]["materialsPath"]);
+        loadMeshes(state["settings"]["meshesPath"]);
+        loadModels(state["settings"]["modelsPath"]);
+    }
+    catch (json::exception &e)
+    {
+        logger->error("Error {}", e.what());
+    }
+} // namespace tat
+
+void Config::loadSettings(const std::string &path)
+{
+    auto &state = State::instance();
+    state["settings"] = settings;
+    // load settings
     if (std::filesystem::exists(path))
     { // if path exists load it
-        try
-        {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
-            json j;
-            file >> j;
 
-            load(j, "settings", "name", name);
-            load(j, "settings", "zNear", zNear);
-            load(j, "settings", "zFar", zFar);
-            load(j, "settings", "windowWidth", windowWidth);
-            load(j, "settings", "windowHeight", windowHeight);
-            load(j, "settings", "mouseSensitivity", mouseSensitivity);
-            load(j, "settings", "FoV", FoV);
-            load(j, "settings", "sync", sync);
-            load(j, "settings", "shadowSize", shadowSize);
-            load(j, "settings", "brdfPath", brdf);
-            load(j, "settings", "playerConfigPath", playerConfigPath);
-            load(j, "settings", "backdropsConfigPath", backdropsConfigPath);
-            load(j, "settings", "materialsPath", materialsPath);
-            load(j, "settings", "meshesConfigPath", meshesConfigPath);
-            load(j, "settings", "sceneConfigPath", sceneConfigPath);
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
-        }
+        logger->info("Loading Config {}", path);
+        std::ifstream file(path);
+        json j;
+        file >> j;
+
+        state["settings"].update(j);
     }
     else
     { // just let default values be used
-        debugLogger->warn("Unable to load {}", path);
+        logger->warn("Unable to load {}", path);
     }
 }
 
-PlayerConfig::PlayerConfig(const std::string &path)
+void Config::loadPlayer(const std::string &path)
 {
-    debugLogger = spdlog::get("debugLogger");
+    auto &state = State::instance();
+    state["player"] = player;
+
     if (std::filesystem::exists(path))
-    { // if path exists load it
-        try
-        {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
-            json j;
-            file >> j;
-            load(j, "player", "height", height);
-            load(j, "player", "mass", mass);
-            load(j, "player", "velocityMax", velocityMax);
-            load(j, "player", "timeToReachVMax", timeToReachVMax);
-            load(j, "player", "timeToStopFromVMax", timeToStopfromVMax);
-            load(j, "player", "jumpHeight", jumpHeight);
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
-        }
+    {
+        logger->info("Loading Config {}", path);
+        std::ifstream file(path);
+        json j;
+        file >> j;
+
+        state["player"].update(j);
     }
     else
-    { // just let default values be used
-        debugLogger->warn("Unable to load {}", path);
+    {
+        logger->warn("Unable to load {}", path);
     }
 }
 
-BackdropsConfig::BackdropsConfig(const std::string &path)
+void Config::loadScene(const std::string &path)
 {
-    debugLogger = spdlog::get("debugLogger");
+    auto &state = State::instance();
+    state["scene"] = scene;
     if (std::filesystem::exists(path))
-    { // if path exists load it
-        try
+    {
+        logger->info("Loading Config {}", path);
+        std::ifstream file(path);
+        json j;
+        file >> j;
+
+        state["scene"].update(j);
+    }
+    else
+    {
+        logger->warn("Unable to load {}", path);
+    }
+}
+
+void Config::loadBackdrops(const std::string &path)
+{
+    auto &state = State::instance();
+    state["backdrops"] = json::object();
+    state["backdrops"]["default"] = backdrop;
+
+    if (std::filesystem::exists(path))
+    {
+        for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
-            json j;
-            file >> j;
-            if (j.find("backdrops") != j.end())
+            auto configFile = config.path().string() + "/backdrop.json";
+            if (std::filesystem::exists(configFile))
             {
-                auto b = j.at("backdrops");
-                for (auto &[key, backdrop] : b.items())
+                logger->info("Loading Config {}", config.path().string());
+
+                std::ifstream file(config.path().string());
+                json j;
+                file >> j;
+
+                // Don't just copy json in
+                // Update existing correct values if available
+                // extra entries don't matter*, missing ones do
+                // TODO(travis) *they probably do matter
+                auto name = config.path().filename().string();
+                state["backdrops"][name] = backdrop;
+                for (auto &item : j.items())
                 {
-                    BackdropConfig c{};
-                    c.name = key;
-                    load(b, key, "color", c.colorPath);
-                    load(b, key, "radiance", c.radiancePath);
-                    load(b, key, "irradiance", c.irradiancePath);
-
-                    if (backdrop.find("light") != backdrop.end())
-                    {
-                        load(backdrop, "light", "x", c.light.x);
-                        load(backdrop, "light", "y", c.light.y);
-                        load(backdrop, "light", "z", c.light.z);
-                    }
-
-                    backdrops.push_back(c);
+                    state["backdrops"][name].update(item);
                 }
             }
             else
             {
-                debugLogger->warn("Unable to find backdrops in {}", path);
-                backdrops.reserve(1);
+                logger->warn("Unable to load {}", configFile);
             }
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
-            backdrops.resize(1);
-        }
-    }
-    else
-    { // otherwise resize to 1 using default backdrop
-        backdrops.resize(1);
-        debugLogger->warn("Unable to load {}", path);
-    }
-}
-
-MaterialConfig::MaterialConfig(const std::string &path)
-{
-    debugLogger = spdlog::get("debugLogger");
-
-    if (path.empty())
-    {
-        debugLogger->info("Config loading default vaules for Material");
-        return;
-    }
-
-    if (std::filesystem::exists(path))
-    {
-        try
-        {
-            debugLogger->info("Loading Config {}", path + "/material.json");
-            std::ifstream file(path + "/material.json");
-            json j;
-            file >> j;
-
-            if (j.size() != 1)
-            { // print error but load defaults
-                debugLogger->error("Malformed json in {}", path + "/material.json");
-            }
-            else
-            { // load the json
-                for (auto &[key, material] : j.items())
-                {
-                    name = key;
-                    this->path = path;
-                    load(j, key, "diffuse", diffuse);
-                    load(j, key, "normal", normal);
-                    load(j, key, "metallic", metallic);
-                    load(j, key, "roughness", roughness);
-                    load(j, key, "ao", ao);
-                }
-            }
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
         }
     }
     else
     {
-        debugLogger->warn("Unable to find {}", path + "/material.json");
+        logger->warn("Unable to load backdrop path {}", path);
     }
 }
 
-MeshesConfig::MeshesConfig(const std::string &path)
+void Config::loadMaterials(const std::string &path)
 {
-    debugLogger = spdlog::get("debugLogger");
-    if (std::filesystem::exists(path))
-    { // if meshes file exists load it
-        try
-        {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
-            json j;
-            file >> j;
+    auto &state = State::instance();
+    state["materials"] = json::object();
+    state["materials"]["default"] = material;
 
-            if (j.find("meshes") != j.end())
+    if (std::filesystem::exists(path))
+    {
+        for (const auto &config : std::filesystem::directory_iterator(path))
+        {
+            auto configFile = config.path().string() + "/material.json";
+            if (std::filesystem::exists(configFile))
             {
-                auto m = j.at("meshes");
-                for (auto &[key, mesh] : m.items())
+                logger->info("Loading Config {}", config.path().string());
+
+                std::ifstream file(config.path().string());
+                json j;
+                file >> j;
+
+                // Don't just copy json in
+                // Update existing correct values if available
+                // extra entries don't matter*, missing ones do
+                // TODO(travis) *they probably do matter
+                auto name = config.path().filename().string();
+                state["materials"][name] = material;
+                for (auto &item : j.items())
                 {
-                    MeshConfig c{};
-                    c.name = key;
-                    load(m, key, "path", c.path);
-                    if (mesh.find("size") != mesh.end())
-                    {
-                        load(mesh, "size", "x", c.size.x);
-                        load(mesh, "size", "y", c.size.y);
-                        load(mesh, "size", "z", c.size.z);
-                    }
-                    meshes.push_back(c);
+                    state["materials"][name].update(item);
                 }
             }
             else
             {
-                debugLogger->warn("Unable to find meshes in {}", path);
-                meshes.resize(1);
+                logger->warn("Unable to load {}", configFile);
             }
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
-            meshes.resize(1);
         }
     }
     else
-    { // otherwise resize to 1 using default mesh
-        meshes.resize(1);
-        debugLogger->warn("Unable to load {}", path);
+    {
+        logger->warn("Unable to load material path {}", path);
     }
 }
 
-SceneConfig::SceneConfig(const std::string &path)
+void Config::loadMeshes(const std::string &path)
 {
-    debugLogger = spdlog::get("debugLogger");
+    auto &state = State::instance();
+    state["meshs"] = json::object();
+    state["meshs"]["default"] = mesh;
+
     if (std::filesystem::exists(path))
-    { // if file exists load it
-        try
+    {
+        for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            debugLogger->info("Loading Config {}", path);
-            std::ifstream file(path);
-            json j;
-            file >> j;
-
-            if (j.find("scene") != j.end())
+            auto configFile = config.path().string() + "/mesh.json";
+            if (std::filesystem::exists(configFile))
             {
-                auto s = j.at("scene");
-                name = s.value("name", name);
-                backdrop = s.value("backdrop", backdrop);
+                logger->info("Loading Config {}", config.path().string());
 
-                if (s.find("models") == s.end())
+                std::ifstream file(config.path().string());
+                json j;
+                file >> j;
+
+                // Don't just copy json in
+                // Update existing correct values if available
+                // extra entries don't matter*, missing ones do
+                // TODO(travis) *they probably do matter
+                auto name = config.path().filename().string();
+                state["meshs"][name] = mesh;
+                for (auto &item : j.items())
                 {
-                    models.resize(1);
+                    state["meshs"][name].update(item);
                 }
-                else
-                {
-                    auto m = s.at("models");
-                    for (auto &[key, model] : m.items())
-                    {
-                        ModelConfig c{};
-                        c.name = key;
-                        load(m, key, "mesh", c.mesh);
-                        load(m, key, "material", c.material);
-                        load(m, key, "mass", c.mass);
-                        if (model.find("rotation") != model.end())
-                        {
-                            load(model, "rotation", "x", c.rotation.x);
-                            load(model, "rotation", "y", c.rotation.y);
-                            load(model, "rotation", "z", c.rotation.z);
-                        }
-                        if (model.find("scale") != model.end())
-                        {
-                            load(model, "scale", "x", c.scale.x);
-                            load(model, "scale", "y", c.scale.y);
-                            load(model, "scale", "z", c.scale.z);
-                        }
-                        if (model.find("position") != model.end())
-                        {
-                            load(model, "position", "x", c.position.x);
-                            load(model, "position", "y", c.position.y);
-                            load(model, "position", "z", c.position.z);
-                        }
+            }
+            else
+            {
+                logger->warn("Unable to load {}", configFile);
+            }
+        }
+    }
+    else
+    {
+        logger->warn("Unable to load mesh path {}", path);
+    }
+}
 
-                        models.push_back(c);
+void Config::loadModels(const std::string &path)
+{
+    auto &state = State::instance();
+    state["models"] = json::object();
+    state["models"]["default"] = model;
+
+    if (std::filesystem::exists(path))
+    {
+        for (const auto &config : std::filesystem::directory_iterator(path))
+        {
+            auto configFile = config.path().string();
+            if (std::filesystem::exists(configFile))
+            {
+                if (config.path().extension() == ".json")
+                {
+                    logger->info("Loading Config {}", config.path().string());
+
+                    std::ifstream file(config.path().string());
+                    json j;
+                    file >> j;
+
+                    // Don't just copy json in
+                    // Update existing correct values if available
+                    // extra entries don't matter*, missing ones do
+                    // TODO(travis) *they probably do matter
+                    auto name = config.path().filename().stem().string();
+                    state["models"][name] = model;
+                    for (auto &item : j.items())
+                    {
+                        state["models"][name].update(item);
                     }
                 }
             }
             else
             {
-                debugLogger->warn("Unable to find scene in {}", path);
+                logger->warn("Unable to load {}", configFile);
             }
-        }
-        catch (json::exception &e)
-        {
-            debugLogger->error("Error {}", e.what());
-            models.resize(1);
         }
     }
     else
-    { // otherwise resize to 1 using default model
-        models.resize(1);
-        debugLogger->warn("Unable to load {} using default values.", path);
+    {
+        logger->warn("Unable to load model path {}", path);
     }
 }
 

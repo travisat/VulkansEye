@@ -30,31 +30,31 @@ namespace tat
 
 struct UniformVert
 {
-    glm::mat4 model{};
-    glm::mat4 view{};
-    glm::mat4 projection{};
-    glm::mat4 lightMVP{};
-    glm::mat4 normalMatrix{};
-    glm::vec4 camPos{};
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::mat4 lightMVP;
+    glm::mat4 normalMatrix;
+    glm::vec4 camPos;
 };
 
 struct UniformBack
 {
-    glm::mat4 inverseMVP{};
+    glm::mat4 inverseMVP;
 };
 
 struct UniformFrag
 {
-    glm::vec4 position{};
-    float radianceMipLevels = 0.F;
-    float shadowSize = 1024.F;
+    glm::vec4 position;
+    float radianceMipLevels;
+    float shadowSize;
 };
 
 struct UniformShad
 {
-    glm::mat4 model{};
-    glm::mat4 view{};
-    glm::mat4 projection{};
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
 };
 
 class Vulkan
@@ -77,7 +77,6 @@ class Vulkan
         instance.destroy();
     };
 
-    std::string name;
     std::shared_ptr<Window> window;
     vk::Instance instance;
     vk::SurfaceKHR surface;
@@ -97,14 +96,6 @@ class Vulkan
     vk::Extent2D swapChainExtent;
     std::vector<vk::ImageView> swapChainImageViews;
 
-    uint32_t width = 0;
-    uint32_t height = 0;
-    uint32_t currentImage = 0;
-    float zNear = 0.01F;
-    float zFar = 512.F;
-    float FoV = 67.F;
-    float mouseSensitivity = 33.4F;
-    float shadowSize = 1024.F;
     bool prepared = false;
     bool showOverlay = false;
     bool updateCommandBuffer = false;

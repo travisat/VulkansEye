@@ -1,3 +1,5 @@
+#include <memory>
+#include <system_error>
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION

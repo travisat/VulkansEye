@@ -7,6 +7,7 @@
 #include "Meshes.hpp"
 #include "Overlay.hpp"
 #include "Timer.hpp"
+#include "State.hpp"
 
 namespace tat
 {
@@ -20,6 +21,7 @@ class VulkansEye
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
+    State &state = State::instance();
 
     std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};

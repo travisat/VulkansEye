@@ -1,19 +1,17 @@
 {
-    "settings": {
-        "name": "Vulkan's Eye",
-        "zNear": 0.1,
-        "zFar": 256.0,
-        "FoV": 67,
-        "mouseSensitivity": 33.4,
-        "windowWidth": 1024,
-        "windowHeight": 768,
-        "sync": true,
-        "shadowSize": 4096,
-        "brdfPath": "assets/brdf.dds",
-        "playerConfigPath": "assets/configs/player.json",
-        "materialsPath": "assets/materials/",
-        "meshesConfigPath": "assets/configs/meshes.json",
-        "backdropsConfigPath": "assets/configs/backdrops.json",
-        "sceneConfigPath": "assets/configs/scene.json"
-    }
+    "name": "Vulkan's Eye",
+    "zNear": 0.1,
+    "zFar": 256.0,
+    "FoV": 67,
+    "mouseSensitivity": 33.4,
+    "windowWidth": 1024,
+    "windowHeight": 768,
+    "vsync": true,
+    "shadowSize": 4096,
+    "brdfPath": "assets/brdf.dds",
+    "playerConfig": "assets/configs/player.json",
+    "sceneConfig": "assets/configs/scene.json",
+    "materialsPath": "assets/materials/",
+    "meshesPath": "assets/meshes/",
+    "backdropsPath": "assets/backdrops/"    
 }

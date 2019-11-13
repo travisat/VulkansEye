@@ -8,14 +8,18 @@
 namespace tat
 {
 
-void Backdrop::loadConfig(const BackdropConfig &config)
+void Backdrop::load()
 {
     debugLogger = spdlog::get("debugLogger");
-    colorMap = loadCubeMap(config.colorPath);
-    radianceMap = loadCubeMap(config.radiancePath);
-    irradianceMap = loadCubeMap(config.irradiancePath);
+    auto& state = State::instance();
 
-    light = config.light;
+    colorMap = loadCubeMap(state["backdrops"][name]["colorPath"]);
+    radianceMap = loadCubeMap(state["backdrops"][name]["radiancePath"]);
+    irradianceMap = loadCubeMap(state["backdrops"][name]["irradiancePath"]);
+
+    light.x = state["backdrops"][name]["light"]["x"];
+    light.y = state["backdrops"][name]["light"]["y"];
+    light.z = state["backdrops"][name]["light"]["z"];
 
     createDescriptorPool();
     createDescriptorSetLayouts();

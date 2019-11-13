@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Buffer.hpp"
-#include "Config.hpp"
+#include "State.hpp"
 #include "Image.hpp"
 #include "Pipeline.hpp"
 #include "Camera.hpp"
@@ -28,7 +28,7 @@ class Backdrop
     std::shared_ptr<Image> radianceMap;
     std::shared_ptr<Image> irradianceMap;
 
-    void loadConfig(const BackdropConfig &config);
+    void load();
 
     void cleanup();
     void recreate();
@@ -38,9 +38,8 @@ class Backdrop
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
-    BackdropConfig config;
 
-    UniformBack backBuffer;
+    UniformBack backBuffer{};
 
     std::vector<vk::DescriptorSet> descriptorSets;
     std::vector<Buffer> backBuffers;
