@@ -11,8 +11,6 @@ class Camera
     explicit Camera(const std::shared_ptr<Vulkan> &vulkan);
     ~Camera() = default;
 
-    bool mouseMode = true;
-
     void look(double mouseX, double mouseY);
     void update();
 

@@ -28,22 +28,6 @@
 namespace tat
 {
 
-enum class DisplayMode
-{
-    cursor = 0,
-    nocursor = 1
-};
-
-enum class Mode
-{
-    Game,
-    Dbug,
-    Nput,
-    Free,
-    Save,
-    Load
-};
-
 struct UniformVert
 {
     glm::mat4 model{};
@@ -122,9 +106,8 @@ class Vulkan
     float mouseSensitivity = 33.4F;
     float shadowSize = 1024.F;
     bool prepared = false;
-    bool showOverlay = true;
+    bool showOverlay = false;
     bool updateCommandBuffer = false;
-    Mode mode = Mode::Dbug;
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
 
     std::string brdfPath;

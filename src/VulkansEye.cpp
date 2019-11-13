@@ -2,6 +2,7 @@
 #include "Backdrops.hpp"
 #include "Config.hpp"
 #include "Input.hpp"
+#include "Vulkan.hpp"
 #include <memory>
 
 namespace tat
@@ -96,72 +97,75 @@ void VulkansEye::run()
 
 void VulkansEye::handleInput(float deltaTime)
 {
-    // game mode
+    //Normal Mode
     if (Input::wasKeyReleased(GLFW_KEY_F1))
     {
-        if (vulkan->mode != Mode::Game)
+        if (Input::getMode() != InputMode::Normal)
         {
-            if (displayMode == DisplayMode::cursor)
+            // if mode is insert set glfw to take over cursor before switching
+            if (Input::getMode() == InputMode::Insert)
             {
                 vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 vulkan->window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                camera->mouseMode = true;
-                displayMode = DisplayMode::nocursor;
             }
+
             vulkan->showOverlay = false;
             vulkan->updateCommandBuffer = true;
-            vulkan->mode = Mode::Game;
-            debugLogger->info("Changed Mode to Game");
+            Input::switchMode(InputMode::Normal);
+            debugLogger->info("Changed Mode to Normal");
         }
     }
-    // dbug mode
+    //Visual Mode
     if (Input::wasKeyReleased(GLFW_KEY_F2))
     {
-        if (vulkan->mode != Mode::Dbug)
+        if (Input::getMode() != InputMode::Visual)
         {
-            if (displayMode == DisplayMode::cursor)
+            // if mode is insert set glfw to take over cursor before switching
+            if (Input::getMode() == InputMode::Insert)
             {
                 vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 vulkan->window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-                camera->mouseMode = true;
-                displayMode = DisplayMode::nocursor;
             }
+
             vulkan->showOverlay = true;
             vulkan->updateCommandBuffer = true;
-            vulkan->mode = Mode::Dbug;
+            Input::switchMode(InputMode::Visual);
+            debugLogger->info("Changed Mode to Visual");
         }
-        debugLogger->info("Changed Mode to Dbug");
     }
 
-    // nput mode
+    //Insert Mode
     if (Input::wasKeyReleased(GLFW_KEY_F3))
     {
-        if (vulkan->mode != Mode::Nput)
+        if (Input::getMode() != InputMode::Insert)
         {
-            if (displayMode != DisplayMode::cursor)
-            {
-                vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                camera->mouseMode = false;
-                displayMode = DisplayMode::cursor;
-            }
-            vulkan->mode = Mode::Nput;
-            debugLogger->info("Changed Mode to Nput");
+            // all other modes glfw owns cursor
+            // switch it back
+            vulkan->window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            vulkan->showOverlay = true;
+            vulkan->updateCommandBuffer = true;
+            Input::switchMode(InputMode::Insert);
+            debugLogger->info("Changed Mode to Insert");
         }
     }
 
-    camera->look(Input::getMouseX(), Input::getMouseY());
-
     auto moveDir = glm::vec2(0.F);
-    moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
-    moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
-    moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
-    moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
-    player->move(moveDir, deltaTime);
+    if (Input::getMode() != InputMode::Insert)
+    { // don't move camera/character in insert mode
+        camera->look(Input::getMouseX(), Input::getMouseY());
 
-    if (Input::isKeyPressed(GLFW_KEY_SPACE) != 0)
-    {
-        player->jump();
+        moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
+        moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
+        moveDir.x += static_cast<float>(Input::isKeyPressed(GLFW_KEY_A));
+        moveDir.x -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_D));
+
+        if (Input::isKeyPressed(GLFW_KEY_SPACE) != 0)
+        {
+            player->jump();
+        }
     }
+    //still update player for friction
+    player->move(moveDir, deltaTime);
 
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {

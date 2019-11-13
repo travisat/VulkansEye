@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include "Input.hpp"
 
 namespace tat
 {
@@ -22,21 +23,22 @@ void Camera::look(double mouseX, double mouseY)
     mouseY = (mouseY / (height / 2)) - 1.F;
     glm::vec2 mousePosition(mouseX, mouseY);
 
-    // discard old lastMousePosition so mouse doesn't jump changing modes
-    if (mouseMode == false)
+    // discard old lastMousePosition so mouse doesn't jump when leaving insert
+    if (Input::getMode() == InputMode::Insert)
     {
         lastMousePosition = mousePosition;
     }
-    if (lastMousePosition != mousePosition)
-    {
+    else if (lastMousePosition != mousePosition)
+    { // don't update rotation  unless mouse is moved
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
         m_rotation.x -= deltaMousePosition.y * vulkan->mouseSensitivity;
         m_rotation.x = std::clamp(m_rotation.x, -90.0F, 90.0F);
         m_rotation.y += deltaMousePosition.x * vulkan->mouseSensitivity;
-        if  (m_rotation.y > 360.F)
+        if (m_rotation.y > 360.F)
         {
-            m_rotation.y -=  360.F;
-        } else if (m_rotation.y < 0.F)
+            m_rotation.y -= 360.F;
+        }
+        else if (m_rotation.y < 0.F)
         {
             m_rotation.y += 360.F;
         }

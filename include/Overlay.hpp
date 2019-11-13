@@ -26,7 +26,7 @@ struct UISettings
     int32_t modeNum = 0;
 };
 
-constexpr std::array<std::string_view, 6> mode = {"Game", "Dbug", "Nput", "Free", "Save", "Load"};
+constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
 
 // ----------------------------------------------------------------------------
 // Overlay class

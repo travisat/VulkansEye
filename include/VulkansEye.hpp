@@ -31,8 +31,6 @@ class VulkansEye
     std::shared_ptr<Meshes> meshes;
     std::shared_ptr<Scene> scene;
 
-    DisplayMode displayMode = DisplayMode::nocursor;
-
     void handleInput(float deltaTime);
 };
 

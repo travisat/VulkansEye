@@ -3,6 +3,7 @@
 
 #include "Overlay.hpp"
 #include "Timer.hpp"
+#include "Input.hpp"
 #include "vulkan/vulkan.hpp"
 
 namespace tat
@@ -71,7 +72,7 @@ void Overlay::createBuffers()
 
 void Overlay::createFont()
 {
-    ImGuiIO &io = ImGui::GetIO();
+    auto &io = ImGui::GetIO();
     unsigned char *fontData;
     int texWidth;
     int texHeight;
@@ -260,25 +261,17 @@ void Overlay::newFrame()
         uiSettings.rotation = camera->rotation();
         uiSettings.fps = 1.F / deltaTime;
 
-        switch (vulkan->mode)
+        switch (Input::getMode())
         {
-        case Mode::Game:
+        case InputMode::Normal:
             uiSettings.modeNum = 0;
             break;
-        case Mode::Dbug:
+        case InputMode::Visual:
             uiSettings.modeNum = 1;
             break;
-        case Mode::Nput:
+        case InputMode::Insert:
             uiSettings.modeNum = 2;
             break;
-        case Mode::Free:
-            uiSettings.modeNum = 3;
-            break;
-        case Mode::Save:
-            uiSettings.modeNum = 4;
-            break;
-        case Mode::Load:
-            uiSettings.modeNum = 5;
         }
     }
 
