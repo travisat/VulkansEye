@@ -1,13 +1,4 @@
-#include "Backdrops.hpp"
-#include "Config.hpp"
-#include "Camera.hpp"
 #include "Engine.hpp"
-#include "Input.hpp"
-#include "Materials.hpp"
-#include "Meshes.hpp"
-#include "Overlay.hpp"
-#include "Timer.hpp"
-#include "State.hpp"
 
 namespace tat
 {
@@ -21,17 +12,7 @@ class VulkansEye
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
-    State &state = State::instance();
-
-    std::shared_ptr<Vulkan> vulkan = std::make_shared<Vulkan>();
     Engine engine{};
-    std::shared_ptr<Camera> camera;
-    std::shared_ptr<Player> player;
-    std::shared_ptr<Overlay> overlay;
-    std::shared_ptr<Backdrops> backdrops;
-    std::shared_ptr<Materials> materials;
-    std::shared_ptr<Meshes> meshes;
-    std::shared_ptr<Scene> scene;
 
     void handleInput(float deltaTime);
 };

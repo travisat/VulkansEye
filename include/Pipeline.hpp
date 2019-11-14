@@ -1,13 +1,16 @@
 #pragma once
 
-#include "Vulkan.hpp"
+#include <memory>
+
+#include <vulkan/vulkan.hpp>
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
+
 class Pipeline
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
     vk::DescriptorSetLayout descriptorSetLayout;
 
     vk::Pipeline pipeline;
@@ -41,4 +44,5 @@ class Pipeline
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
 };
+
 } // namespace tat

@@ -1,4 +1,5 @@
 #include "Pipeline.hpp"
+#include "State.hpp"
 
 namespace tat
 {
@@ -10,49 +11,52 @@ Pipeline::~Pipeline()
 
 void Pipeline::create()
 {
+    auto& state = State::instance();
     debugLogger = spdlog::get("debugLogger");
-    pipelineLayout = vulkan->device.createPipelineLayout(pipelineLayoutInfo);
+    pipelineLayout = state.vulkan->device.createPipelineLayout(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = vulkan->device.createGraphicsPipeline(nullptr, pipelineInfo); // TODO(travis) create pipeline cache
+    pipeline = state.vulkan->device.createGraphicsPipeline(nullptr, pipelineInfo); // TODO(travis) create pipeline cache
 }
 
 void Pipeline::cleanup()
 {
+    auto& state = State::instance();
     if (vertShaderStageInfo.module)
     {
-        vulkan->device.destroyShaderModule(vertShaderStageInfo.module);
+        state.vulkan->device.destroyShaderModule(vertShaderStageInfo.module);
     }
     if (fragShaderStageInfo.module)
     {
-        vulkan->device.destroyShaderModule(fragShaderStageInfo.module);
+        state.vulkan->device.destroyShaderModule(fragShaderStageInfo.module);
     }
     if (tescShaderStageInfo.module)
     {
-        vulkan->device.destroyShaderModule(tescShaderStageInfo.module);
+        state.vulkan->device.destroyShaderModule(tescShaderStageInfo.module);
     }
     if (teseShaderStageInfo.module)
     {
-        vulkan->device.destroyShaderModule(teseShaderStageInfo.module);
+        state.vulkan->device.destroyShaderModule(teseShaderStageInfo.module);
     }
     if (geomShaderStageInfo.module)
     {
-        vulkan->device.destroyShaderModule(geomShaderStageInfo.module);
+        state.vulkan->device.destroyShaderModule(geomShaderStageInfo.module);
     }
 
     if (pipeline)
     {
-        vulkan->device.destroyPipeline(pipeline);
+        state.vulkan->device.destroyPipeline(pipeline);
     }
     if (pipelineLayout)
     {
-        vulkan->device.destroyPipelineLayout(pipelineLayout);
+        state.vulkan->device.destroyPipelineLayout(pipelineLayout);
     }
 }
 
 void Pipeline::loadDefaults(vk::RenderPass renderPass)
 {
+    auto& state = State::instance();
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
@@ -98,7 +102,7 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     rasterizer.depthBiasEnable = VK_FALSE;
 
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = vulkan->msaaSamples;
+    multisampling.rasterizationSamples = state.vulkan->msaaSamples;
 
     colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;

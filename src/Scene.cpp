@@ -1,33 +1,16 @@
 #include "Scene.hpp"
-#include "Config.hpp"
-#include "Vulkan.hpp"
-#include "spdlog/spdlog.h"
-#include "vulkan/vulkan.hpp"
-#include <filesystem>
-#include <memory>
-
+#include "State.hpp"
 namespace tat
 {
 
-Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera,
-             const std::shared_ptr<Player> &player, const std::shared_ptr<Materials> &materials,
-             const std::shared_ptr<Meshes> &meshes, const std::shared_ptr<Backdrops> &backdrops,
-             const std::string &configPath)
+Scene::Scene()
 {
     debugLogger = spdlog::get("debugLogger");
-    this->vulkan = vulkan;
-    this->camera = camera;
-    this->player = player;
-    this->materials = materials;
-    this->meshes = meshes;
-    this->backdrops = backdrops;
-
-    auto config = SceneConfig(configPath);
 
     createBrdf();
     createShadow();
-    loadBackdrop(config.backdrop);
-    createModels(config.models);
+    loadBackdrop();
+    loadModels();
 
     createColorPool(); // needs stage/lights/actors to know number of descriptors
     createColorLayouts();
@@ -42,30 +25,32 @@ Scene::Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera
 
 Scene::~Scene()
 {
+    auto& state = State::instance();
     if (shadowLayout)
     {
-        vulkan->device.destroyDescriptorSetLayout(shadowLayout);
+        state.vulkan->device.destroyDescriptorSetLayout(shadowLayout);
     }
     if (colorLayout)
     {
-        vulkan->device.destroyDescriptorSetLayout(colorLayout);
+        state.vulkan->device.destroyDescriptorSetLayout(colorLayout);
     }
     if (colorPool)
     {
-        vulkan->device.destroyDescriptorPool(colorPool);
+        state.vulkan->device.destroyDescriptorPool(colorPool);
     }
     if (shadowPool)
     {
-        vulkan->device.destroyDescriptorPool(shadowPool);
+        state.vulkan->device.destroyDescriptorPool(shadowPool);
     }
 }
 
 void Scene::createBrdf()
 {
-    brdf = std::make_shared<Image>(vulkan);
+    auto& settings = State::instance().at("settings");
+    brdf = std::make_shared<Image>();
     brdf->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     brdf->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    brdf->load(vulkan->brdfPath);
+    brdf->load(settings["brdfPath"]);
 
     brdf->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
     brdf->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
@@ -78,11 +63,12 @@ void Scene::createBrdf()
 
 void Scene::createShadow()
 {
-    shadow = std::make_shared<Image>(vulkan);
+   auto& settings = State::instance().at("settings");
+    shadow = std::make_shared<Image>();
     shadow->imageInfo.format = vk::Format::eR32G32Sfloat;
     shadow->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
     shadow->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadow->resize(static_cast<int>(vulkan->shadowSize), static_cast<int>(vulkan->shadowSize));
+    shadow->resize(settings["shadowSize"], settings["shadowSize"]);
     shadow->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
     shadow->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
@@ -94,43 +80,37 @@ void Scene::createShadow()
     debugLogger->info("Created Shadow");
 }
 
-void Scene::loadBackdrop(const std::string &name)
+void Scene::loadBackdrop()
 {
-    backdrop = backdrops->getBackdrop(name);
+    auto& state = State::instance();
+    backdrop = state.backdrops->get(name);
 }
 
-void Scene::createModels(const std::vector<ModelConfig> &configs)
+void Scene::loadModels()
 {
-    models.resize(configs.size());
-    int32_t index = 0;
-    for (auto &modelConfig : configs)
+    auto& state = State::instance();
+    auto& scene = state.at("scene");
+    for (auto &model : scene.at("models"))
     {
-        models[index].config = modelConfig;
-        models[index].vulkan = vulkan;
-        models[index].materials = materials;
-        models[index].meshes = meshes;
-        models[index].shadow = shadow;
-        models[index].irradianceMap = backdrop->irradianceMap;
-        models[index].radianceMap = backdrop->radianceMap;
-        models[index].brdf = brdf;
-        models[index].create();
-        
-        debugLogger->info("Loaded Model {}", models[index].name);
-        ++index;
+        models.push_back(state.models->get(model["name"]));
+        debugLogger->info("Loaded Model {}", model["name"].get<std::string>());
     }
     debugLogger->info("Created Models");
 }
 
 void Scene::cleanup()
 {
+    auto& state = State::instance();
     backdrop->cleanup();
     colorPipeline.cleanup();
-    vulkan->device.destroyDescriptorPool(colorPool);
+    state.vulkan->device.destroyDescriptorPool(colorPool);
 }
 
 void Scene::recreate()
 {
-    camera->updateProjection();
+    auto& state = State::instance();
+    auto& window = state.at("settings").at("window");
+    state.camera->updateProjection(window["width"], window["height"]);
 
     backdrop->recreate();
     createColorPool();
@@ -147,11 +127,11 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        auto mesh = model.getMesh();
+        auto mesh = model->getMesh();
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout, 0, 1,
-                                         &model.colorSets[currentImage], 0, nullptr);
+                                         &model->colorSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
@@ -163,51 +143,53 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
     {
-        auto mesh = model.getMesh();
+        auto mesh = model->getMesh();
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout, 0, 1,
-                                         &model.shadowSets[currentImage], 0, nullptr);
+                                         &model->shadowSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
 
 void Scene::update(uint32_t currentImage, float deltaTime)
 {
+    auto& state = State::instance();
     backdrop->update(currentImage);
 
     fragBuffer.position = glm::vec4(backdrop->light, 1.F);
 
-    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, vulkan->zNear, vulkan->zFar);
+    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, state["settings"]["zNear"].get<float>(), state["settings"]["zFar"].get<float>());
     glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
 
     fragBuffer.radianceMipLevels = backdrop->radianceMap->imageInfo.mipLevels;
-    fragBuffer.shadowSize = vulkan->shadowSize;
+    fragBuffer.shadowSize = state["settings"]["shadowSize"];
 
     for (auto &model : models)
     {
-        model.update(deltaTime);
+        model->update(deltaTime);
         // create mvp for player space
-        vertBuffer.model = model.model();
-        vertBuffer.view = camera->view();
-        vertBuffer.projection = camera->projection();
-        vertBuffer.normalMatrix = glm::transpose(glm::inverse(camera->projection() * camera->view() * model.model()));
-        vertBuffer.camPos = glm::vec4(-camera->position(), 1.F);
+        vertBuffer.model = model->model();
+        vertBuffer.view = state.camera->view();
+        vertBuffer.projection = state.camera->projection();
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(state.camera->projection() * state.camera->view() * model->model()));
+        vertBuffer.camPos = glm::vec4(state.camera->position(), 1.F);
 
         // create mvp for lightspace
-        shadBuffer.model = model.model();
+        shadBuffer.model = model->model();
         shadBuffer.view = depthViewMatrix;
         shadBuffer.projection = depthProjectionMatrix;
-        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * model.model();
-        model.vertBuffers[currentImage].update(&vertBuffer, sizeof(vertBuffer));
-        model.fragBuffers[currentImage].update(&fragBuffer, sizeof(fragBuffer));
-        model.shadBuffers[currentImage].update(&shadBuffer, sizeof(shadBuffer));
+        vertBuffer.lightMVP = depthProjectionMatrix * depthViewMatrix * model->model();
+        model->vertBuffers[currentImage].update(&vertBuffer, sizeof(vertBuffer));
+        model->fragBuffers[currentImage].update(&fragBuffer, sizeof(fragBuffer));
+        model->shadBuffers[currentImage].update(&shadBuffer, sizeof(shadBuffer));
     }
 }
 
 void Scene::createColorPool()
 {
-    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto& state = State::instance();
+    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -223,11 +205,12 @@ void Scene::createColorPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    colorPool = vulkan->device.createDescriptorPool(poolInfo);
+    colorPool = state.vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createColorLayouts()
 {
+    auto& state = State::instance();
     std::array<vk::DescriptorSetLayoutBinding, 11> bindings{};
 
     // UniformBuffer
@@ -311,7 +294,7 @@ void Scene::createColorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    colorLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
+    colorLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createColorSets()
@@ -320,21 +303,21 @@ void Scene::createColorSets()
     for (auto &model : models)
     {
 
-        model.createColorSets(colorPool, colorLayout);
+        model->createColorSets(colorPool, colorLayout);
     }
 }
 
 void Scene::createColorPipeline()
 {
-    colorPipeline.vulkan = vulkan;
+    auto& state = State::instance();
     colorPipeline.descriptorSetLayout = colorLayout;
-    colorPipeline.loadDefaults(vulkan->colorPass);
+    colorPipeline.loadDefaults(state.vulkan->colorPass);
 
     auto vertPath = "assets/shaders/scene.vert.spv";
     auto fragPath = "assets/shaders/scene.frag.spv";
 
-    colorPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
-    colorPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
+    colorPipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
+    colorPipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
 
     colorPipeline.shaderStages = {colorPipeline.vertShaderStageInfo, colorPipeline.fragShaderStageInfo};
 
@@ -350,7 +333,8 @@ void Scene::createColorPipeline()
 
 void Scene::createShadowPool()
 {
-    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto& state = State::instance();
+    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -363,11 +347,12 @@ void Scene::createShadowPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    shadowPool = vulkan->device.createDescriptorPool(poolInfo);
+    shadowPool = state.vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createShadowLayouts()
 {
+    auto& state = State::instance();
     vk::DescriptorSetLayoutBinding shadowLayoutBinding = {};
     shadowLayoutBinding.binding = 0;
     shadowLayoutBinding.descriptorCount = 1;
@@ -381,28 +366,28 @@ void Scene::createShadowLayouts()
     layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
     layoutInfo.pBindings = layouts.data();
 
-    shadowLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
+    shadowLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createShadowSets()
 {
     for (auto &model : models)
     {
-        model.createShadowSets(shadowPool, shadowLayout);
+        model->createShadowSets(shadowPool, shadowLayout);
     }
 }
 
 void Scene::createShadowPipeline()
 {
-    shadowPipeline.vulkan = vulkan;
+    auto& state = State::instance();
     shadowPipeline.descriptorSetLayout = shadowLayout;
-    shadowPipeline.loadDefaults(vulkan->shadowPass);
+    shadowPipeline.loadDefaults(state.vulkan->shadowPass);
 
     auto vertPath = "assets/shaders/shadow.vert.spv";
     auto fragPath = "assets/shaders/shadow.frag.spv";
 
-    shadowPipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
-    shadowPipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
+    shadowPipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
+    shadowPipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
 
     shadowPipeline.shaderStages = {shadowPipeline.vertShaderStageInfo, shadowPipeline.fragShaderStageInfo};
 

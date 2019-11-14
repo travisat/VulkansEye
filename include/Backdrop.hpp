@@ -1,34 +1,32 @@
 #pragma once
 
+#include <memory>
+
 #include "Buffer.hpp"
-#include "State.hpp"
+#include "Camera.hpp"
+#include "Collection.hpp"
 #include "Image.hpp"
 #include "Pipeline.hpp"
-#include "Camera.hpp"
-#include <memory>
 
 namespace tat
 {
 
-class Backdrop
+struct UniformBack
+{
+    glm::mat4 inverseMVP;
+};
+
+class Backdrop : public Entry
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Camera> camera;
-    std::string name;
-
+    virtual ~Backdrop();
     glm::vec3 light{};
-
-    bool loaded = false;
-
-    Backdrop() = default;
-    ~Backdrop();
 
     std::shared_ptr<Image> colorMap;
     std::shared_ptr<Image> radianceMap;
     std::shared_ptr<Image> irradianceMap;
 
-    void load();
+    void load() override;
 
     void cleanup();
     void recreate();
@@ -48,7 +46,7 @@ class Backdrop
     Pipeline pipeline;
     vk::DescriptorSetLayout descriptorSetLayout{};
 
-    auto loadCubeMap(const std::string &path) -> std::shared_ptr<Image>;
+    static auto loadCubeMap(const std::string &path) -> std::shared_ptr<Image>;
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

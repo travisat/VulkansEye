@@ -1,20 +1,17 @@
 #include <filesystem>
 #include <memory>
 
+#include "Input.hpp"
 #include "Overlay.hpp"
 #include "Timer.hpp"
-#include "Input.hpp"
-#include "vulkan/vulkan.hpp"
+#include "State.hpp"
 
 namespace tat
 {
 
-Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player, const std::shared_ptr<Camera> &camera)
+Overlay::Overlay()
 {
     debugLogger = spdlog::get("debugLogger");
-    this->vulkan = vulkan;
-    this->player = player;
-    this->camera = camera;
 
     ImGui::CreateContext();
     // Color scheme
@@ -26,7 +23,8 @@ Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Pl
     style.Colors[ImGuiCol_CheckMark] = ImVec4(1.F, 1.F, 1.F, 1.F);
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float)vulkan->width, (float)vulkan->height);
+    auto &window = State::instance().at("settings").at("window");
+    io.DisplaySize = ImVec2(window["width"], window["height"]);
     io.DisplayFramebufferScale = ImVec2(1.F, 1.F);
 
     createFont();
@@ -42,9 +40,10 @@ Overlay::Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Pl
 
 Overlay::~Overlay()
 {
+    auto& state = State::instance();
     ImGui::DestroyContext();
-    vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
-    vulkan->device.destroyDescriptorPool(descriptorPool);
+    state.vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    state.vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Overlay::recreate()
@@ -56,8 +55,9 @@ void Overlay::recreate()
 
 void Overlay::cleanup()
 {
+    auto& state = State::instance();
     pipeline.cleanup();
-    vulkan->device.destroyDescriptorPool(descriptorPool);
+    state.vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Overlay::createBuffers()
@@ -72,6 +72,7 @@ void Overlay::createBuffers()
 
 void Overlay::createFont()
 {
+    auto& state = State::instance();
     auto &io = ImGui::GetIO();
     unsigned char *fontData;
     int texWidth;
@@ -79,7 +80,7 @@ void Overlay::createFont()
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
     VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
-    fontImage = std::make_unique<Image>(vulkan);
+    fontImage = std::make_unique<Image>();
     fontImage->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
     fontImage->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     fontImage->resize(texWidth, texHeight);
@@ -87,13 +88,12 @@ void Overlay::createFont()
 
     // Staging buffers for font data upload
     Buffer stagingBuffer;
-    stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
-    vk::CommandBuffer copyCmd = vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer copyCmd = state.vulkan->beginSingleTimeCommands();
 
     // Copy
     vk::BufferImageCopy bufferCopyRegion = {};
@@ -106,7 +106,7 @@ void Overlay::createFont()
     copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage->image, vk::ImageLayout::eTransferDstOptimal, 1,
                               &bufferCopyRegion);
 
-    vulkan->endSingleTimeCommands(copyCmd);
+    state.vulkan->endSingleTimeCommands(copyCmd);
 
     fontImage->transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -120,7 +120,8 @@ void Overlay::createFont()
 
 void Overlay::createDescriptorPool()
 {
-    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto& state = State::instance();
+    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
@@ -132,12 +133,13 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = vulkan->device.createDescriptorPool(poolInfo);
+    descriptorPool = state.vulkan->device.createDescriptorPool(poolInfo);
     // Trace("Created overlay descriptor pool at ", Timer::systemTime());
 }
 
 void Overlay::createDescriptorLayouts()
 {
+    auto& state = State::instance();
     vk::DescriptorSetLayoutBinding samplerBinding = {};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
@@ -150,20 +152,21 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Overlay::createDescriptorSets()
 {
-    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+    auto& state = State::instance();
+    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = vulkan->device.allocateDescriptorSets(allocInfo);
+    descriptorSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
 
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
+    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); i++)
     {
         vk::DescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -178,16 +181,16 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                             nullptr);
     }
 }
 
 void Overlay::createPipeline()
 {
-    pipeline.vulkan = vulkan;
+    auto& state = State::instance();
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults(vulkan->colorPass);
+    pipeline.loadDefaults(state.vulkan->colorPass);
 
     // Push constants for UI rendering parameters
     vk::PushConstantRange pushConstantRange = {};
@@ -200,8 +203,8 @@ void Overlay::createPipeline()
 
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
-    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
-    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
+    pipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
+    pipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
@@ -257,8 +260,6 @@ void Overlay::newFrame()
     if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
     {
         lastUpdateTime = frameTime;
-        uiSettings.position = player->position();
-        uiSettings.rotation = camera->rotation();
         uiSettings.fps = 1.F / deltaTime;
 
         switch (Input::getMode())
@@ -274,14 +275,10 @@ void Overlay::newFrame()
             break;
         }
     }
-
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    ImGui::Begin(vulkan->name.c_str());
     ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
     ImGui::InputFloat("Fps", &uiSettings.fps);
-    ImGui::InputFloat3("Position", &uiSettings.position.x, 2);
-    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x, 2);
 
     ImGui::End();
 
@@ -290,6 +287,7 @@ void Overlay::newFrame()
 
 void Overlay::updateBuffers()
 {
+    auto& state = State::instance();
     ImDrawData *imDrawData = ImGui::GetDrawData();
 
     if (imDrawData != nullptr)
@@ -306,13 +304,11 @@ void Overlay::updateBuffers()
 
         if (update)
         {
-            vulkan->device.waitIdle();
+            state.vulkan->device.waitIdle();
 
-            vertexBuffer.vulkan = vulkan;
             vertexBuffer.resize(vertexBufferSize);
             vertexCount = imDrawData->TotalVtxCount;
 
-            indexBuffer.vulkan = vulkan;
             indexBuffer.resize(indexBufferSize);
             indexCount = imDrawData->TotalIdxCount;
         }

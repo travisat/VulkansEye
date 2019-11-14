@@ -9,6 +9,14 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include "Vulkan.hpp"
+#include "Window.hpp"
+#include "Camera.hpp"
+#include "Player.hpp"
+#include "Overlay.hpp"
+#include "Scene.hpp"
+#include "Collection.hpp"
+
 namespace tat
 {
 
@@ -25,6 +33,16 @@ class State: public json
         static State instance;
         return instance;
     };
+    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Window> window;
+    std::shared_ptr<Camera> camera;
+    std::shared_ptr<Player> player;
+    std::shared_ptr<Overlay> overlay;
+    std::shared_ptr<Scene> scene;
+    std::shared_ptr<Collection<Backdrop>> backdrops;
+    std::shared_ptr<Collection<Material>> materials;
+    std::shared_ptr<Collection<Mesh>> meshes;
+    std::shared_ptr<Collection<Model>> models;
 
   private:
     State() = default;

@@ -1,9 +1,9 @@
-#include "Backdrop.hpp"
-
 #include <filesystem>
 #include <memory>
 #include <utility>
 
+#include "Backdrop.hpp"
+#include "State.hpp"
 
 namespace tat
 {
@@ -11,7 +11,7 @@ namespace tat
 void Backdrop::load()
 {
     debugLogger = spdlog::get("debugLogger");
-    auto& state = State::instance();
+    auto &state = State::instance();
 
     colorMap = loadCubeMap(state["backdrops"][name]["colorPath"]);
     radianceMap = loadCubeMap(state["backdrops"][name]["radiancePath"]);
@@ -32,20 +32,22 @@ void Backdrop::load()
 
 Backdrop::~Backdrop()
 {
+    auto &state = State::instance();
     if (descriptorSetLayout)
     {
-        vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
+        state.vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
     }
     if (descriptorPool)
     {
-        vulkan->device.destroyDescriptorPool(descriptorPool);
+        state.vulkan->device.destroyDescriptorPool(descriptorPool);
     }
 }
 
 void Backdrop::cleanup()
 {
+    auto &state = State::instance();
     pipeline.cleanup();
-    vulkan->device.destroyDescriptorPool(descriptorPool);
+    state.vulkan->device.destroyDescriptorPool(descriptorPool);
 }
 
 void Backdrop::recreate()
@@ -58,7 +60,7 @@ void Backdrop::recreate()
 
 auto Backdrop::loadCubeMap(const std::string &path) -> std::shared_ptr<Image>
 {
-    auto cubeMap = std::make_shared<Image>(vulkan);
+    auto cubeMap = std::make_shared<Image>();
     cubeMap->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     cubeMap->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     cubeMap->imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
@@ -84,10 +86,10 @@ void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Backdrop::createUniformBuffers()
 {
-    backBuffers.resize(vulkan->swapChainImages.size());
+    auto &state = State::instance();
+    backBuffers.resize(state.vulkan->swapChainImages.size());
     for (auto &buffer : backBuffers)
     {
-        buffer.vulkan = vulkan;
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -99,19 +101,21 @@ void Backdrop::createUniformBuffers()
 
 void Backdrop::update(uint32_t currentImage)
 {
+    auto &state = State::instance();
     // skybox is a quad that fills the screen
     // https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
     // by unprojecting the mvp (ie applying the inverse backwards)
-    glm::mat4 inverseProjection = inverse(camera->projection());
-    glm::mat4 inverseModelView = transpose(camera->view());
+    glm::mat4 inverseProjection = inverse(state.camera->projection());
+    glm::mat4 inverseModelView = transpose(state.camera->view());
     backBuffer.inverseMVP = inverseModelView * inverseProjection;
     memcpy(backBuffers[currentImage].mapped, &backBuffer, sizeof(backBuffer));
 }
 
 void Backdrop::createDescriptorPool()
 {
+    auto &state = State::instance();
 
-    auto numSwapChainImages = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -124,11 +128,12 @@ void Backdrop::createDescriptorPool()
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = vulkan->device.createDescriptorPool(poolInfo);
+    descriptorPool = state.vulkan->device.createDescriptorPool(poolInfo);
 }
 
 void Backdrop::createDescriptorSetLayouts()
 {
+    auto &state = State::instance();
     vk::DescriptorSetLayoutBinding vertexLayoutBinding = {};
     vertexLayoutBinding.binding = 0;
     vertexLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -149,20 +154,21 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = vulkan->device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Backdrop::createDescriptorSets()
 {
-    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), descriptorSetLayout);
+     auto& state = State::instance();
+    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = vulkan->device.allocateDescriptorSets(allocInfo);
+    descriptorSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
 
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); i++)
+    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); i++)
     {
 
         vk::DescriptorBufferInfo bufferInfo = {};
@@ -190,22 +196,22 @@ void Backdrop::createDescriptorSets()
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                             nullptr);
     }
 };
 
 void Backdrop::createPipeline()
 {
-    pipeline.vulkan = vulkan;
+     auto& state = State::instance();
     pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults(vulkan->colorPass);
+    pipeline.loadDefaults(state.vulkan->colorPass);
 
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
 
-    pipeline.vertShaderStageInfo.module = vulkan->createShaderModule(vertPath);
-    pipeline.fragShaderStageInfo.module = vulkan->createShaderModule(fragPath);
+    pipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
+    pipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 

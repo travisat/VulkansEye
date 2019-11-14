@@ -1,14 +1,19 @@
 #include "Camera.hpp"
 #include "Input.hpp"
+#include "State.hpp"
 
 namespace tat
 {
 
-Camera::Camera(const std::shared_ptr<Vulkan> &vulkan)
+Camera::Camera()
 {
-    this->vulkan = vulkan;
-    width = static_cast<float>(vulkan->width);
-    height = static_cast<float>(vulkan->height);
+    auto &settings = State::instance().at("settings");
+    width = settings["/window/width"];
+    height = settings["/window/height"];
+    FoV = settings["FoV"];
+    zNear = settings["zNear"];
+    zFar = settings["zFar"];
+    mouseSensitivity = settings["mouseSensitivity"];
     setPosition(m_position);
     setRotation(m_rotation);
     updateView();
@@ -31,9 +36,9 @@ void Camera::look(double mouseX, double mouseY)
     else if (lastMousePosition != mousePosition)
     { // don't update rotation  unless mouse is moved
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
-        m_rotation.x -= deltaMousePosition.y * vulkan->mouseSensitivity;
+        m_rotation.x -= deltaMousePosition.y * mouseSensitivity;
         m_rotation.x = std::clamp(m_rotation.x, -90.0F, 90.0F);
-        m_rotation.y += deltaMousePosition.x * vulkan->mouseSensitivity;
+        m_rotation.y += deltaMousePosition.x * mouseSensitivity;
         if (m_rotation.y > 360.F)
         {
             m_rotation.y -= 360.F;
@@ -82,7 +87,14 @@ void Camera::updateView()
 
 void Camera::updateProjection()
 {
-    P = glm::perspective(glm::radians(vulkan->FoV), width / height, vulkan->zNear, vulkan->zFar);
+    P = glm::perspective(glm::radians(FoV), width / height, zNear, zFar);
+}
+
+void Camera::updateProjection(float width, float height)
+{
+    this->width = width;
+    this->height = height;
+    updateProjection();
 }
 
 auto Camera::view() -> glm::mat4
@@ -93,6 +105,30 @@ auto Camera::view() -> glm::mat4
 auto Camera::projection() -> glm::mat4
 {
     return P;
+}
+
+void Camera::updateFov(float FoV)
+{
+    this->FoV = FoV;
+    auto &settings = State::instance().at("settings");
+    settings["FoV"] = FoV;
+    updateProjection();
+}
+
+void Camera::updateZNear(float zNear)
+{
+    this->zNear = zNear;
+    auto &settings = State::instance().at("settings");
+    settings["zNear"] = zNear;
+    updateProjection();
+}
+
+void Camera::updateZFar(float zFar)
+{
+    this->zFar = zFar;
+    auto &settings = State::instance().at("settings");
+    settings["zFar"] = zFar;
+    updateProjection();
 }
 
 } // namespace tat

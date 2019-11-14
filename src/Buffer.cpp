@@ -1,4 +1,5 @@
 #include "Buffer.hpp"
+#include "State.hpp"
 #include "vulkan/vulkan_core.h"
 #include <stdexcept>
 
@@ -29,6 +30,7 @@ void Buffer::resize(VkDeviceSize s)
 
 void Buffer::update(void *t, size_t s)
 {
+    auto& state = State::instance();
     if (s != size)
     {
         if (buffer)
@@ -38,13 +40,14 @@ void Buffer::update(void *t, size_t s)
         allocate(s);
     }
     void *data = nullptr;
-    vmaMapMemory(vulkan->allocator, allocation, &data);
+    vmaMapMemory(state.vulkan->allocator, allocation, &data);
     memcpy(data, t, s);
-    vmaUnmapMemory(vulkan->allocator, allocation);
+    vmaUnmapMemory(state.vulkan->allocator, allocation);
 }
 
 void Buffer::allocate(VkDeviceSize s)
 {
+    auto& state = State::instance();
     size = s;
 
     vk::BufferCreateInfo bufferInfo{};
@@ -58,8 +61,8 @@ void Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    auto result = vmaCreateBuffer(vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
-                                reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info);
+    auto result = vmaCreateBuffer(state.vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
+                                  reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info);
 
     if (result != VK_SUCCESS)
     {
@@ -72,11 +75,13 @@ void Buffer::allocate(VkDeviceSize s)
 
 void Buffer::deallocate()
 {
-    vmaDestroyBuffer(vulkan->allocator, buffer, allocation);
+    auto& state = State::instance();
+    vmaDestroyBuffer(state.vulkan->allocator, buffer, allocation);
 }
 
 void Buffer::copyTo(Buffer &destination)
 {
+    auto& state = State::instance();
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
@@ -87,13 +92,19 @@ void Buffer::copyTo(Buffer &destination)
         destination.allocate(size);
     }
 
-    vk::CommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = state.vulkan->beginSingleTimeCommands();
 
     vk::BufferCopy copyRegion = {};
     copyRegion.size = size;
     commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
-    vulkan->endSingleTimeCommands(commandBuffer);
+    state.vulkan->endSingleTimeCommands(commandBuffer);
 }
+
+void Buffer::flush(size_t size, vk::DeviceSize offset)
+{
+    auto& state = State::instance();
+    vmaFlushAllocation(state.vulkan->allocator, allocation, offset, size);
+};
 
 } // namespace tat

@@ -6,8 +6,6 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "Pipeline.hpp"
-#include "Player.hpp"
-#include "Vulkan.hpp"
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -34,10 +32,6 @@ constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
 class Overlay
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Player> player;
-    std::shared_ptr<Camera> camera;
-
     bool update = false;
     // UI params are set via push constants
     struct PushConstBlock
@@ -46,7 +40,7 @@ class Overlay
         glm::vec2 translate;
     } pushConstBlock{};
 
-    Overlay(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Player> &player, const std::shared_ptr<Camera> &camera);
+    Overlay();
     ~Overlay();
 
     void recreate();

@@ -1,5 +1,7 @@
 #pragma once
-#include "Vulkan.hpp"
+
+#include <vulkan/vulkan.hpp>
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -7,7 +9,6 @@ namespace tat
 class Framebuffer
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
     vk::RenderPass renderPass;
     int32_t width;
     int32_t height;

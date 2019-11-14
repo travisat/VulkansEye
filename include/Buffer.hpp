@@ -1,7 +1,11 @@
 #pragma once
 
+#include <vk_mem_alloc.h>
+#include <vulkan/vulkan.hpp>
+#include <spdlog/spdlog.h>
+#include <memory>
+
 #include "Vertex.hpp"
-#include "Vulkan.hpp"
 namespace tat
 {
 
@@ -9,7 +13,6 @@ class Buffer
 {
   public:
     // required settings
-    std::shared_ptr<Vulkan> vulkan;
     vk::BufferUsageFlags flags{};
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
     VmaAllocationCreateFlags memFlags = 0;
@@ -34,10 +37,8 @@ class Buffer
         return size;
     };
 
-    void flush(size_t size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0)
-    {
-        vmaFlushAllocation(vulkan->allocator, allocation, offset, size);
-    };
+    void flush(size_t size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
+    
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;

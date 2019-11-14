@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Vulkan.hpp"
+#define GLM_FORCE_RADIANS
+#define GLM_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
 
 namespace tat
 {
@@ -8,7 +11,7 @@ namespace tat
 class Camera
 {
   public:
-    explicit Camera(const std::shared_ptr<Vulkan> &vulkan);
+    Camera();
     ~Camera() = default;
 
     void look(double mouseX, double mouseY);
@@ -21,11 +24,15 @@ class Camera
 
     void updateView();
     void updateProjection();
+    void updateProjection(float width, float height);
     auto view() -> glm::mat4;
     auto projection() -> glm::mat4;
 
+    void updateFov(float FoV);
+    void updateZNear(float zNear);
+    void updateZFar(float zFar);
+
   private:
-    std::shared_ptr<Vulkan> vulkan;
     glm::mat4 T{}; // translation matrix
     glm::mat4 R{}; // rotation matrix
 
@@ -37,7 +44,11 @@ class Camera
 
     float width;
     float height;
+    float FoV;
+    float zNear;
+    float zFar;
     glm::vec2 lastMousePosition = glm::vec2(0.F);
+    float mouseSensitivity;
 };
 
 } // namespace tat

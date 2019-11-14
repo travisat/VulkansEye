@@ -1,14 +1,15 @@
 #include "RenderPass.hpp"
-#include <memory>
+#include "State.hpp"
 
 namespace tat
 {
 
-auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
+auto createColorPass() -> vk::RenderPass
 {
+    auto& state = State::instance();
     vk::AttachmentDescription colorAttachment = {};
-    colorAttachment.format = vulkan->swapChainImageFormat;
-    colorAttachment.samples = vulkan->msaaSamples;
+    colorAttachment.format = state.vulkan->swapChainImageFormat;
+    colorAttachment.samples = state.vulkan->msaaSamples;
     colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -17,7 +18,7 @@ auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
     colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription colorAttachmentResolve = {};
-    colorAttachmentResolve.format = vulkan->swapChainImageFormat;
+    colorAttachmentResolve.format = state.vulkan->swapChainImageFormat;
     colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eStore;
@@ -31,8 +32,8 @@ auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
     colorAttachmentResolveRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription depthAttachment = {};
-    depthAttachment.format = vulkan->findDepthFormat();
-    depthAttachment.samples = vulkan->msaaSamples;
+    depthAttachment.format = state.vulkan->findDepthFormat();
+    depthAttachment.samples = state.vulkan->msaaSamples;
     depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
     depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -85,11 +86,12 @@ auto createColorPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    return vulkan->device.createRenderPass(renderPassInfo);
+    return state.vulkan->device.createRenderPass(renderPassInfo);
 }
 
-auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
+auto createShadowPass() -> vk::RenderPass
 {
+    auto& state = State::instance();
     vk::AttachmentDescription shadowAttachment = {};
     shadowAttachment.format = vk::Format::eR32G32Sfloat;
     shadowAttachment.samples = vk::SampleCountFlagBits::e1;
@@ -101,7 +103,7 @@ auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
     shadowAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     vk::AttachmentDescription depthAttachment = {};
-    depthAttachment.format = vulkan->findDepthFormat();
+    depthAttachment.format = state.vulkan->findDepthFormat();
     depthAttachment.samples = vk::SampleCountFlagBits::e1;
     depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -154,7 +156,7 @@ auto createShadowPass(const std::shared_ptr<Vulkan> &vulkan) -> vk::RenderPass
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    return vulkan->device.createRenderPass(renderPassInfo);
+    return state.vulkan->device.createRenderPass(renderPassInfo);
 }
 
 } // namespace tat

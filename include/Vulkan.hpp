@@ -2,6 +2,10 @@
 
 #include <memory>
 #include <stdexcept>
+#include <vector>
+#include <fstream>
+#include <filesystem>
+
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -13,49 +17,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vk_mem_alloc.h>
-
-#include <vector>
-#include <fstream>
-#include <filesystem>
-
-#include <spdlog/async.h>
-#include <spdlog/sinks/basic_file_sink.h>
+#include <vulkan/vulkan.hpp>
 #include <spdlog/spdlog.h>
-
-#include "Window.hpp"
-#include "Config.hpp"
 
 namespace tat
 {
-
-struct UniformVert
-{
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
-    glm::mat4 lightMVP;
-    glm::mat4 normalMatrix;
-    glm::vec4 camPos;
-};
-
-struct UniformBack
-{
-    glm::mat4 inverseMVP;
-};
-
-struct UniformFrag
-{
-    glm::vec4 position;
-    float radianceMipLevels;
-    float shadowSize;
-};
-
-struct UniformShad
-{
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
-};
 
 class Vulkan
 {
@@ -64,10 +30,7 @@ class Vulkan
     {
         device.destroyRenderPass(colorPass);
         device.destroyRenderPass(shadowPass);
-        for (auto imageView : swapChainImageViews)
-        {
-            device.destroyImageView(imageView);
-        }
+        
         device.destroySwapchainKHR(swapChain);
         device.destroyCommandPool(commandPool);
         vmaDestroyAllocator(allocator);
@@ -76,8 +39,7 @@ class Vulkan
         instance.destroySurfaceKHR(surface);
         instance.destroy();
     };
-
-    std::shared_ptr<Window> window;
+    
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::PhysicalDevice physicalDevice;
@@ -94,14 +56,9 @@ class Vulkan
     vk::Queue presentQueue;
     vk::Format swapChainImageFormat;
     vk::Extent2D swapChainExtent;
-    std::vector<vk::ImageView> swapChainImageViews;
-
-    bool prepared = false;
-    bool showOverlay = false;
-    bool updateCommandBuffer = false;
+    
+    
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
-
-    std::string brdfPath;
 
     auto checkFormat(vk::Format format) -> bool
     {

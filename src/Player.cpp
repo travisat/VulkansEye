@@ -1,31 +1,33 @@
 #include "Player.hpp"
+#include "State.hpp"
 
 namespace tat
 {
 
-Player::Player(const std::shared_ptr<Camera> &camera, const std::string &configPath)
+Player::Player()
 {
-    this->camera = camera;
+    auto& state = State::instance();
+    auto& player = state.at("player");
     debugLogger = spdlog::get("debugLogger");
-    auto config = PlayerConfig(configPath);
-    auto size = glm::vec3(0.5F, config.height * 2.F, 0.25F);
-    translate(config.position + size / 2.F);
-    rotate(config.rotation);
+    auto size = glm::vec3(0.5F, player["height"].get<float>() * 2.F, 0.25F);
+    translate(size / 2.F);
+    rotate();
     m_size = size;
-    m_mass = config.mass;
+    m_mass = player["mass"];
 
-    jumpVelocity = glm::sqrt(2.0F * 9.8F * config.jumpHeight);
-    velocityMax = config.velocityMax;
-    timeToReachVMax = config.timeToReachVMax;
-    timeToStopfromVMax = config.timeToStopfromVMax;
+    jumpVelocity = glm::sqrt(2.0F * 9.8F * player["jumpHeight"].get<float>());
+    velocityMax = player["velocityMax"];
+    timeToReachVMax = player["timeToReachVMax"];
+    timeToStopfromVMax = player["timeToStopfromVMax"];
     debugLogger->info("Created Player");
 }
 
 
 void Player::move(glm::vec2 direction, float deltaTime)
 {
+    auto& state = State::instance();
     glm::vec3 camFront;
-    glm::vec3 rotation = camera->rotation();
+    glm::vec3 rotation = state.camera->rotation();
     camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
     camFront.y = sin(glm::radians(rotation.x));
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));

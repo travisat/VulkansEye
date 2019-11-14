@@ -1,15 +1,11 @@
 #pragma once
 
-#include "Backdrops.hpp"
-#include "Config.hpp"
-#include "Materials.hpp"
-#include "Meshes.hpp"
-#include "Model.hpp"
-#include "Pipeline.hpp"
-#include "Player.hpp"
-#include "Camera.hpp"
-#include "Vulkan.hpp"
 #include <memory>
+
+#include "Image.hpp"
+#include "Pipeline.hpp"
+#include "Model.hpp"
+#include "Backdrop.hpp"
 
 namespace tat
 {
@@ -22,9 +18,7 @@ class Scene
     std::shared_ptr<Image> shadow;
     std::shared_ptr<Image> brdf;
 
-    Scene(const std::shared_ptr<Vulkan> &vulkan, const std::shared_ptr<Camera> &camera, const std::shared_ptr<Player> &player,
-          const std::shared_ptr<Materials> &materials, const std::shared_ptr<Meshes> &meshes,
-          const std::shared_ptr<Backdrops> &backdrops, const std::string &configPath);
+    Scene();
     ~Scene();
 
     void cleanup();
@@ -35,34 +29,28 @@ class Scene
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
-    std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Camera> camera;
-    std::shared_ptr<Player> player;
-    std::shared_ptr<Materials> materials;
-    std::shared_ptr<Meshes> meshes;
-    std::shared_ptr<Backdrops> backdrops;
+
+    std::shared_ptr<Backdrop> backdrop;
 
     vk::DescriptorPool colorPool;
     vk::DescriptorSetLayout colorLayout;
     vk::DescriptorPool shadowPool;
     vk::DescriptorSetLayout shadowLayout;
 
-    Backdrop *backdrop = nullptr;
-
     UniformVert vertBuffer{};
     UniformFrag fragBuffer{};
     UniformShad shadBuffer{};
 
     Pipeline colorPipeline;
-    std::vector<Model> models;
+    std::vector<std::shared_ptr<Model>> models {};
 
     Pipeline shadowPipeline;
 
     void createBrdf();
     void createShadow();
-    void createModels(const std::vector<ModelConfig> &configs);
 
-    void loadBackdrop(const std::string &name);
+    void loadModels();
+    void loadBackdrop();
 
     void createColorPool();
     void createColorLayouts();

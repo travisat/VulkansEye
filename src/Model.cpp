@@ -1,28 +1,40 @@
-#include "Model.hpp"
-#include "Vulkan.hpp"
-#include "spdlog/spdlog.h"
 #include <exception>
 #include <stdexcept>
+
+#include "State.hpp"
+#include "Model.hpp"
 
 namespace tat
 {
 
-void Model::create()
+void Model::load()
 {
     debugLogger = spdlog::get("debugLogger");
-    // load config
-    name = config.name;
+    auto& state = State::instance();
+    auto& model = state.at("models").at(name);
 
     // get material/mesh from their collections
-    material = materials->getMaterial(config.material);
-    mesh = meshes->getMesh(config.mesh);
+    material = state.materials->get(model["material"]);
+    mesh = state.meshes->get(model["mesh"]);
     m_size = mesh->size;
-    m_mass = config.mass;
+    m_mass = model["mass"];
 
     // move/rotate/scale
-    translate(config.position);
-    rotate(config.rotation);
-    scale(config.scale);
+    glm::vec3 p;
+    p.x = model["position"]["x"];
+    p.y = model["position"]["y"];
+    p.z = model["position"]["z"];
+    glm::vec3 r;
+    r.x = model["rotation"]["x"];
+    r.y = model["rotation"]["y"];
+    r.z = model["rotation"]["z"];
+    glm::vec3 s;
+    s.x = model["scale"]["x"];
+    s.y = model["scale"]["y"];
+    s.z = model["scale"]["z"];
+    translate(p);
+    rotate(r);
+    scale(s);
     updateModel();
 
     createUniformBuffers();
@@ -30,14 +42,15 @@ void Model::create()
 
 void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
-    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
+    auto& state = State::instance();
+    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    colorSets = vulkan->device.allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    colorSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
+    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
         vertexInfo.buffer = vertBuffers[i].buffer;
@@ -184,21 +197,22 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[10].descriptorCount = 1;
         descriptorWrites[10].pImageInfo = &brdfInfo;
 
-        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                             nullptr);
     }
 }
 
 void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
-    std::vector<vk::DescriptorSetLayout> layouts(vulkan->swapChainImages.size(), layout);
+    auto& state = State::instance();
+    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(vulkan->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    shadowSets = vulkan->device.allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    shadowSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
+    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};
         shadowInfo.buffer = shadBuffers[i].buffer;
@@ -215,30 +229,28 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &shadowInfo;
 
-        vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                             nullptr);
     }
 }
 
 void Model::createUniformBuffers()
 {
-    vertBuffers.resize(vulkan->swapChainImages.size());
-    fragBuffers.resize(vulkan->swapChainImages.size());
-    shadBuffers.resize(vulkan->swapChainImages.size());
+    auto& state = State::instance();
+    vertBuffers.resize(state.vulkan->swapChainImages.size());
+    fragBuffers.resize(state.vulkan->swapChainImages.size());
+    shadBuffers.resize(state.vulkan->swapChainImages.size());
 
-    for (size_t i = 0; i < vulkan->swapChainImages.size(); ++i)
+    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); ++i)
     {
-        vertBuffers[i].vulkan = vulkan;
         vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         vertBuffers[i].resize(sizeof(UniformVert));
 
-        fragBuffers[i].vulkan = vulkan;
         fragBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         fragBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         fragBuffers[i].resize(sizeof(UniformFrag));
 
-        shadBuffers[i].vulkan = vulkan;
         shadBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         shadBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         shadBuffers[i].resize(sizeof(UniformShad));

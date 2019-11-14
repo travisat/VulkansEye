@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Buffer.hpp"
-#include "Vulkan.hpp"
-#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -10,7 +8,6 @@ namespace tat
 class Image
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
     vk::Image image = nullptr;
     vk::ImageView imageView = nullptr;
     vk::Sampler sampler = nullptr;
@@ -23,7 +20,7 @@ class Image
     // default createinfo settings for image/imageview/sampler
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
 
-    explicit Image(const std::shared_ptr<Vulkan>& vulkan);
+    Image();
     ~Image();
 
     //load info into image

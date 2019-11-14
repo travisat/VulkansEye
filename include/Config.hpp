@@ -10,8 +10,8 @@
 #include <glm/glm.hpp>
 
 #include <spdlog/spdlog.h>
-
-#include "State.hpp"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 namespace tat
 {

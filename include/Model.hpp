@@ -1,26 +1,46 @@
 #pragma once
 
 #include "Buffer.hpp"
-#include "Config.hpp"
+#include "Collection.hpp"
 #include "Image.hpp"
-#include "Materials.hpp"
-#include "Meshes.hpp"
+#include "Material.hpp"
+#include "Mesh.hpp"
 #include "Object.hpp"
+#include <memory>
 
 namespace tat
 {
+  
+struct UniformVert
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::mat4 lightMVP;
+    glm::mat4 normalMatrix;
+    glm::vec4 camPos;
+};
+struct UniformFrag
+{
+    glm::vec4 position;
+    float radianceMipLevels;
+    float shadowSize;
+};
 
-class Model : public Object
+struct UniformShad
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+};
+
+class Model : public Object, public Entry
 {
   public:
-    // config values
-    std::shared_ptr<Vulkan> vulkan;
-    ModelConfig config;
-    std::shared_ptr<Materials> materials;
-    std::shared_ptr<Meshes> meshes;
+    void load() override;
 
-    std::string name;
-   
+    virtual ~Model() = default;
+
     std::shared_ptr<Image> irradianceMap;
     std::shared_ptr<Image> radianceMap;
     std::shared_ptr<Image> brdf;
@@ -32,7 +52,6 @@ class Model : public Object
     std::vector<vk::DescriptorSet> shadowSets;
     std::vector<Buffer> shadBuffers;
 
-    void create();
     void createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();

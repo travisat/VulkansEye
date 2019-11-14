@@ -4,14 +4,12 @@
 #include <gli/gli.hpp>
 
 #include "Image.hpp"
-#include "vulkan/vulkan.hpp"
-
+#include "State.hpp"
 namespace tat
 {
 
-Image::Image(const std::shared_ptr<Vulkan> &vulkan)
+Image::Image()
 {
-    this->vulkan = vulkan;
     debugLogger = spdlog::get("debugLogger");
 
     // image createinfo defaults
@@ -56,28 +54,29 @@ Image::Image(const std::shared_ptr<Vulkan> &vulkan)
 
 Image::~Image()
 {
+    auto& state = State::instance();
     if (image)
     {
-        vmaDestroyImage(vulkan->allocator, image, allocation);
+        vmaDestroyImage(state.vulkan->allocator, image, allocation);
     }
     if (imageView)
     {
-        vulkan->device.destroyImageView(imageView);
+        state.vulkan->device.destroyImageView(imageView);
     }
     if (sampler)
     {
-        vulkan->device.destroySampler(sampler);
+        state.vulkan->device.destroySampler(sampler);
     }
 }
 
 void Image::load(const std::string &path)
 {
+    auto& state = State::instance();
     this->path = path;
     if (!std::filesystem::exists(path))
     {
-        debugLogger->warn("Image {} does not exist. Using default image", path);
-        auto config = MaterialConfig{};
-        this->path = config.diffuse;
+        debugLogger->warn("Unable to load {}.", path);
+        return;
     }
     gli::texture texture = gli::load(this->path);
 
@@ -87,13 +86,11 @@ void Image::load(const std::string &path)
     if (texture.target() == gli::TARGET_INVALID) // NOLINT
 #pragma clang diagnostic pop
     {
-        debugLogger->warn("Unable to load {}. Using default image", this->path);
-        auto config = MaterialConfig{};
-        texture = gli::load(config.diffuse);
+        debugLogger->warn("Unable to load {}.", this->path);
+        return;
     }
 
     Buffer stagingBuffer{};
-    stagingBuffer.vulkan = vulkan;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
     stagingBuffer.update(texture.data(), texture.size());
@@ -120,9 +117,9 @@ void Image::load(const std::string &path)
     imageViewInfo.format = imageInfo.format;
     imageViewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
     imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
-    imageView = vulkan->device.createImageView(imageViewInfo);
+    imageView = state.vulkan->device.createImageView(imageViewInfo);
 
-    vk::CommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = state.vulkan->beginSingleTimeCommands();
     std::vector<vk::BufferImageCopy> bufferCopyRegions;
 
     // loop through faces/mipLevels in gli loaded texture and create regions to
@@ -160,7 +157,7 @@ void Image::load(const std::string &path)
     commandBuffer.copyBufferToImage(stagingBuffer.buffer, image, vk::ImageLayout::eTransferDstOptimal,
                                     static_cast<uint32_t>(bufferCopyRegions.size()), bufferCopyRegions.data());
 
-    vulkan->endSingleTimeCommands(commandBuffer);
+    state.vulkan->endSingleTimeCommands(commandBuffer);
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
     debugLogger->info("Loaded Image {}", this->path);
@@ -168,18 +165,20 @@ void Image::load(const std::string &path)
 
 void Image::createSampler()
 {
-    sampler = vulkan->device.createSampler(samplerInfo);
+    auto& state = State::instance();
+    sampler = state.vulkan->device.createSampler(samplerInfo);
 }
 
 void Image::allocate()
 {
+    auto& state = State::instance();
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memUsage;
 
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     currentLayout = vk::ImageLayout::eUndefined;
 
-    auto result = vmaCreateImage(vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
+    auto result = vmaCreateImage(state.vulkan->allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &allocInfo,
                                  reinterpret_cast<VkImage *>(&image), &allocation, nullptr);
 
     if (result != VK_SUCCESS)
@@ -192,23 +191,25 @@ void Image::allocate()
 
 void Image::deallocate()
 {
+    auto& state = State::instance();
     if (image)
     {
-        vmaDestroyImage(vulkan->allocator, image, allocation);
+        vmaDestroyImage(state.vulkan->allocator, image, allocation);
     }
     if (imageView)
     {
-        vulkan->device.destroyImageView(imageView);
+        state.vulkan->device.destroyImageView(imageView);
     }
 }
 
 void Image::resize(int width, int height)
 {
+    auto& state = State::instance();
     if (imageInfo.extent != vk::Extent3D(width, height, imageInfo.extent.depth))
     {
         if (imageView)
         {
-            vulkan->device.destroyImageView(imageView);
+            state.vulkan->device.destroyImageView(imageView);
             imageView = nullptr;
         }
         deallocate();
@@ -224,15 +225,16 @@ void Image::resize(int width, int height)
         imageViewInfo.format = imageInfo.format;
         imageViewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
         imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
-        imageView = vulkan->device.createImageView(imageViewInfo);
+        imageView = state.vulkan->device.createImageView(imageViewInfo);
     }
 }
 
 void Image::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
-    vk::CommandBuffer commandBuffer = vulkan->beginSingleTimeCommands();
+    auto& state = State::instance();
+    vk::CommandBuffer commandBuffer = state.vulkan->beginSingleTimeCommands();
     transitionImageLayout(commandBuffer, oldLayout, newLayout);
-    vulkan->endSingleTimeCommands(commandBuffer);
+    state.vulkan->endSingleTimeCommands(commandBuffer);
 }
 
 void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)

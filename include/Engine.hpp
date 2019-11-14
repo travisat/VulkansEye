@@ -6,7 +6,6 @@
 #include "Overlay.hpp"
 #include "RenderPass.hpp"
 #include "Scene.hpp"
-#include "Vulkan.hpp"
 
 namespace tat
 {
@@ -40,14 +39,14 @@ struct QueueFamilyIndices
 class Engine
 {
   public:
-    std::shared_ptr<Vulkan> vulkan;
-    std::shared_ptr<Scene> scene;
-    std::shared_ptr<Overlay> overlay;
-
+    Engine() = default;
     ~Engine();
     void init();
     void prepare();
     void drawFrame(float deltaTime);
+    
+    bool showOverlay = false;
+    bool updateCommandBuffer = false;
 
   private:
     std::shared_ptr<spdlog::logger> debugLogger;
@@ -63,10 +62,13 @@ class Engine
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     std::vector<vk::CommandBuffer> commandBuffers{};
-
+    std::vector<vk::ImageView> swapChainImageViews;
     std::vector<vk::Semaphore> presentFinishedSemaphores{};
     std::vector<vk::Semaphore> renderFinishedSemaphores{};
     std::vector<vk::Fence> waitFences{};
+
+    int32_t currentImage = 0;
+    bool prepared = false;
 
     void createCommandBuffers();
     // void recordColorCommandBuffers();
@@ -88,16 +90,16 @@ class Engine
     void createSyncObjects();
 
     static auto getRequiredExtensions() -> std::vector<const char *>;
-    auto getMaxUsableSampleCount() -> vk::SampleCountFlagBits;
+    static auto getMaxUsableSampleCount() -> vk::SampleCountFlagBits;
     static auto chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
         -> vk::SurfaceFormatKHR;
-    auto chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes) -> vk::PresentModeKHR;
+    static auto chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes) -> vk::PresentModeKHR;
     static auto chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities, uint32_t windowWidth,
                                  uint32_t windowHeight) -> vk::Extent2D;
 
     auto isDeviceSuitable(vk::PhysicalDevice const &device) -> bool;
-    auto findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIndices;
-    auto querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails;
+    static auto findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIndices;
+    static auto querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails;
     auto checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> bool;
 };
 
