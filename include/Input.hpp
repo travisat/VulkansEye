@@ -31,7 +31,6 @@ class Input
     Input(Input const &) = delete;          // prevent copies
     void operator=(Input const &) = delete; // prevent assignments
 
-
     static auto getInstance() -> Input & // Singleton is accessed via getInstance()
     {
         static Input instance; // lazy singleton, instantiated on first use
@@ -69,25 +68,6 @@ class Input
     // in array of mouse buttons the correspondin button is true while pressed
     void mouseButtonCallbackImpl(GLFWwindow * /*window*/, int button, int action, int /*mods*/)
     {
-        if (mode == InputMode::Normal || mode == InputMode::Visual)
-        {
-            if (action == GLFW_PRESS)
-            {
-                if (button >= 0 && button < 8)
-                {
-                    mouseButtons[button] = true;
-                }
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                if (button >= 0 && button < 8)
-                {
-                    mouseButtons[button] = false;
-                }
-            }
-            return;
-        }
-
         if (mode == InputMode::Insert)
         {
             auto &io = ImGui::GetIO();
@@ -109,6 +89,21 @@ class Input
             }
             return;
         }
+
+        if (action == GLFW_PRESS)
+        {
+            if (button >= 0 && button < 8)
+            {
+                mouseButtons[button] = true;
+            }
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            if (button >= 0 && button < 8)
+            {
+                mouseButtons[button] = false;
+            }
+        }
     }
 
     static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos)
@@ -118,23 +113,15 @@ class Input
 
     void cursorPosCallbackIMPL(GLFWwindow * /*window*/, double xpos, double ypos)
     {
-        if (mode == InputMode::Normal || mode == InputMode::Visual)
-        {
 
-            mouseX = xpos;
-            mouseY = ypos;
-            return;
-        }
+        mouseX = xpos;
+        mouseY = ypos;
 
         if (mode == InputMode::Insert)
         {
-            mouseX = xpos;
-            mouseY = ypos;
-
             auto &io = ImGui::GetIO();
             io.MousePos.x = static_cast<float>(xpos);
             io.MousePos.y = static_cast<float>(ypos);
-            return;
         }
     }
 
@@ -145,27 +132,6 @@ class Input
 
     void keyCallbackImpl(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
     {
-        if (mode == InputMode::Normal || mode == InputMode::Visual)
-        {
-            if (action == GLFW_PRESS)
-            {
-                if (key >= 0 && key < 349)
-                {
-                    pressed[key] = 1;
-                    released[key] = 0;
-                }
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                if (key >= 0 && key < 349)
-                {
-                    pressed[key] = 0;
-                    released[key] = 1;
-                }
-            }
-            return;
-        }
-
         if (mode == InputMode::Insert)
         {
             auto &io = ImGui::GetIO();
@@ -188,6 +154,23 @@ class Input
                 io.KeysDown[key] = false;
             }
             return;
+        }
+
+        if (action == GLFW_PRESS)
+        {
+            if (key >= 0 && key < 349)
+            {
+                pressed[key] = 1;
+                released[key] = 0;
+            }
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            if (key >= 0 && key < 349)
+            {
+                pressed[key] = 0;
+                released[key] = 1;
+            }
         }
     }
 

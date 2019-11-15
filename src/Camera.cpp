@@ -18,6 +18,7 @@ Camera::Camera()
     setRotation(m_rotation);
     updateView();
     updateProjection();
+    currentMode = Input::getMode();
     spdlog::info("Created Camera");
 }
 
@@ -33,6 +34,7 @@ void Camera::look(double mouseX, double mouseY)
     {
         lastMousePosition = mousePosition;
     }
+    
     else if (lastMousePosition != mousePosition)
     { // don't update rotation  unless mouse is moved
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;

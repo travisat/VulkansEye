@@ -5,6 +5,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
+#include "Input.hpp"
+
 namespace tat
 {
 
@@ -48,7 +50,9 @@ class Camera
 
     float width;
     float height;
-    
+
+    InputMode currentMode;
+
     glm::vec2 lastMousePosition = glm::vec2(0.F);
     float mouseSensitivity;
 };
