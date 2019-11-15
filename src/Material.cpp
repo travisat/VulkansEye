@@ -16,7 +16,7 @@ void Material::load()
     normal = loadImage(material.at("normal"));
     metallic = loadImage(material.at("metallic"));
     roughness = loadImage(material.at("roughness"));
-    ao = loadImage(material.at("roughness"));
+    ao = loadImage(material.at("ao"));
     loaded = true;
     spdlog::info("Loaded Material {}", name);
 }

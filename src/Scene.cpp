@@ -82,7 +82,7 @@ void Scene::createShadow()
 void Scene::loadBackdrop()
 {
     auto &state = State::instance();
-    backdrop = state.backdrops->get(name);
+    backdrop = state.backdrops->get(state.at("scene").at("backdrop"));
 }
 
 void Scene::loadModels()
@@ -174,7 +174,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
         vertBuffer.projection = state.camera->projection();
         vertBuffer.normalMatrix =
             glm::transpose(glm::inverse(state.camera->projection() * state.camera->view() * model->model()));
-        vertBuffer.camPos = glm::vec4(state.player->position(), 1.F);
+        vertBuffer.camPos = glm::vec4(-state.camera->position(), 1.F);
 
         // create mvp for lightspace
         shadBuffer.model = model->model();

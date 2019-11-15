@@ -55,7 +55,7 @@ class Config
                    {"timeToStopFromVMax", 0.1}, //
                    {"jumpHeight", 1.0}};        //
 
-    json scene = {{"backrop", "default"},   //
+    json scene = {{"backdrop", "default"},   //
                   {"models", {}}}; //
 
     json backdrop = {{"color", "assets/backdrops/default/color.dds"},           //
