@@ -5,8 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
-#include <spdlog/spdlog.h>
-
 namespace tat
 {
 
@@ -32,9 +30,6 @@ class Window
     {
         glfwWaitEvents();
     };
-
-  private:
-    std::shared_ptr<spdlog::logger> debugLogger;
 };
 
 } // namespace tat

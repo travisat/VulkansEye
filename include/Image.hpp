@@ -34,7 +34,6 @@ class Image
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     VmaAllocation allocation{};
     std::string path;
     // create VkImage allocation

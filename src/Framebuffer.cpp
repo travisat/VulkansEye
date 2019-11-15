@@ -12,7 +12,6 @@ Framebuffer::~Framebuffer()
 void Framebuffer::create()
 {
     auto& state = State::instance();
-    debugLogger = spdlog::get("debugLogger");
     vk::FramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());

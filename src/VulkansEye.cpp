@@ -80,7 +80,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
 void VulkansEye::run()
 {
     auto& state = State::instance();
-    spdlog::info("Start Main Loop");
+    spdlog::info("Begin Main Loop");
     float lastFrameTime = 0.0F;
     while (state.window->shouldClose() == 0)
     {
@@ -104,6 +104,9 @@ void VulkansEye::run()
     }
     vkDeviceWaitIdle(state.vulkan->device);
     spdlog::info("End Main Loop");
+
+    //dump state
+    spdlog::get("state")->info(State::instance().dump(4));
 }
 
 void VulkansEye::handleInput(float deltaTime)

@@ -21,9 +21,10 @@ auto main(int argc, char *argv[]) -> int
 
     try
     {
-        auto debugLogger = spdlog::basic_logger_mt<spdlog::async_factory>("debugLogger", "logs/debug.log", true);
-        spdlog::set_default_logger(debugLogger);
-        debugLogger->info("BEGIN");
+        auto debug = spdlog::basic_logger_mt<spdlog::async_factory>("debug", "logs/debug.log", true);
+        auto state = spdlog::basic_logger_mt<spdlog::async_factory>("state", "logs/state.log", true);
+        spdlog::set_default_logger(debug);
+        spdlog::info("BEGIN");
 
         try
         {
@@ -49,12 +50,12 @@ auto main(int argc, char *argv[]) -> int
         }
         catch (const std::exception &e)
         {
-            debugLogger->error("Error {}", e.what());
-            debugLogger->error("Stopping");
+            spdlog::error("Error {}", e.what());
+            spdlog::error("Stopping");
             return EXIT_FAILURE;
         }
 
-        debugLogger->info("END");
+        spdlog::info("END");
     }
     catch (const spdlog::spdlog_ex &ex)
     {

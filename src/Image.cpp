@@ -10,8 +10,6 @@ namespace tat
 
 Image::Image()
 {
-    debugLogger = spdlog::get("debugLogger");
-
     // image createinfo defaults
     imageInfo.imageType = vk::ImageType::e2D;
     imageInfo.format = vk::Format::eR8G8B8A8Unorm;
@@ -75,7 +73,7 @@ void Image::load(const std::string &path)
     this->path = path;
     if (!std::filesystem::exists(path))
     {
-        debugLogger->warn("Unable to load {}.", path);
+        spdlog::warn("Unable to load {}", path);
         return;
     }
     gli::texture texture = gli::load(this->path);
@@ -86,7 +84,7 @@ void Image::load(const std::string &path)
     if (texture.target() == gli::TARGET_INVALID) // NOLINT
 #pragma clang diagnostic pop
     {
-        debugLogger->warn("Unable to load {}.", this->path);
+       spdlog::warn("Unable to load {}", this->path);
         return;
     }
 
@@ -160,7 +158,7 @@ void Image::load(const std::string &path)
     state.vulkan->endSingleTimeCommands(commandBuffer);
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
-    debugLogger->info("Loaded Image {}", this->path);
+    spdlog::info("Loaded Image {}", this->path);
 }
 
 void Image::createSampler()
@@ -183,7 +181,7 @@ void Image::allocate()
 
     if (result != VK_SUCCESS)
     {
-        debugLogger->error("Unable to create image {}. Error Code {}", path, result);
+        spdlog::error("Unable to create image {}. Error Code {}", path, result);
         throw std::runtime_error("Unable to create image");
         return;
     }
@@ -288,7 +286,7 @@ void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
         barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
         break;
     default:
-        debugLogger->warn("Warning unsupported layout transition");
+        spdlog::warn("Warning unsupported layout transition");
         break;
     }
 
@@ -323,7 +321,7 @@ void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
         break;
     default:
         // Other source layouts aren't handled (yet)
-        debugLogger->warn("Warning unsupported layout transition");
+        spdlog::warn("Warning unsupported layout transition");
         break;
     }
 

@@ -126,7 +126,7 @@ class Vulkan
     {
         if (!std::filesystem::exists(filename))
         {
-            spdlog::get("debugLogger")->error("Shader {} does not exist", filename);
+            spdlog::error("Shader {} does not exist", filename);
             throw std::runtime_error("Shader does not exist");
             return nullptr;
         }

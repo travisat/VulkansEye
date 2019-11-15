@@ -1,15 +1,9 @@
 #include "Buffer.hpp"
 #include "State.hpp"
-#include "vulkan/vulkan_core.h"
 #include <stdexcept>
 
 namespace tat
 {
-
-Buffer::Buffer()
-{
-    debugLogger = spdlog::get("debugLogger");
-}
 
 Buffer::~Buffer()
 {
@@ -66,7 +60,7 @@ void Buffer::allocate(VkDeviceSize s)
 
     if (result != VK_SUCCESS)
     {
-        debugLogger->error("Unable to create buffer of size {}. Error code {}", size, result);
+        spdlog::error("Unable to create buffer of size {}. Error code {}", size, result);
         throw std::runtime_error("Unable to create buffer");
         return;
     }

@@ -14,10 +14,9 @@ namespace tat
 
 Config::Config(const std::string &path)
 {
-    logger = spdlog::default_logger();
-
     try
     {
+        spdlog::info("Loading Config");
         // setup state with default vaules
         auto &state = State::instance();
 
@@ -28,7 +27,7 @@ Config::Config(const std::string &path)
         state["meshes"]["default"] = mesh;
         state["models"]["default"] = model;
         state["scene"] = scene;
-       
+
         // load settings
         loadSettings(path);
         loadPlayer(state["settings"]["playerConfig"]);
@@ -37,13 +36,14 @@ Config::Config(const std::string &path)
         loadMaterials(state["settings"]["materialsPath"]);
         loadMeshes(state["settings"]["meshesPath"]);
         loadModels(state["settings"]["modelsPath"]);
-        logger->info("Config Loaded"); 
+
+        spdlog::info("Loaded Config");
     }
     catch (json::exception &e)
     {
-        logger->error("Error {}", e.what());
+        spdlog::error("Error {}", e.what());
     }
-} 
+}
 
 void Config::loadSettings(const std::string &path)
 {
@@ -51,17 +51,17 @@ void Config::loadSettings(const std::string &path)
     // load settings
     if (std::filesystem::exists(path))
     { // if path exists load it
-
-        logger->info("Loading Config {}", path);
         std::ifstream file(path);
         json j;
         file >> j;
 
         state["settings"].update(j);
+
+        spdlog::info("Loaded Config {}", path);
     }
     else
     { // just let default values be used
-        logger->warn("Unable to load {}", path);
+        spdlog::warn("Unable to load {}", path);
     }
 }
 
@@ -71,16 +71,16 @@ void Config::loadPlayer(const std::string &path)
 
     if (std::filesystem::exists(path))
     {
-        logger->info("Loading Config {}", path);
         std::ifstream file(path);
         json j;
         file >> j;
 
         state["player"].update(j);
+        spdlog::info("Loaded Config {}", path);
     }
     else
     {
-        logger->warn("Unable to load {}", path);
+        spdlog::warn("Unable to load {}", path);
     }
 }
 
@@ -89,16 +89,16 @@ void Config::loadScene(const std::string &path)
     auto &state = State::instance();
     if (std::filesystem::exists(path))
     {
-        logger->info("Loading Config {}", path);
         std::ifstream file(path);
         json j;
         file >> j;
 
         state["scene"].update(j);
+        spdlog::info("Loaded Config {}", path);
     }
     else
     {
-        logger->warn("Unable to load {}", path);
+        spdlog::warn("Unable to load {}", path);
     }
 }
 
@@ -113,8 +113,6 @@ void Config::loadBackdrops(const std::string &path)
             auto configFile = config.path().string() + "/backdrop.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", configFile);
-
                 std::ifstream file(configFile);
                 json j;
                 file >> j;
@@ -129,16 +127,17 @@ void Config::loadBackdrops(const std::string &path)
                 {
                     state["backdrops"][name].update(item);
                 }
+                spdlog::info("Loaded Config {}", configFile);
             }
             else
             {
-                logger->warn("Unable to load {}", configFile);
+                spdlog::warn("Unable to load {}", configFile);
             }
         }
     }
     else
     {
-        logger->warn("Unable to load backdrop path {}", path);
+        spdlog::warn("Unable to load backdrop path {}", path);
     }
 }
 
@@ -153,8 +152,6 @@ void Config::loadMaterials(const std::string &path)
             auto configFile = config.path().string() + "/material.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", configFile);
-
                 std::ifstream file(configFile);
                 json j;
                 file >> j;
@@ -169,16 +166,17 @@ void Config::loadMaterials(const std::string &path)
                 {
                     state["materials"][name].update(item);
                 }
+                spdlog::info("Loaded Config {}", configFile);
             }
             else
             {
-                logger->warn("Unable to load {}", configFile);
+                spdlog::warn("Unable to load {}", configFile);
             }
         }
     }
     else
     {
-        logger->warn("Unable to load material path {}", path);
+        spdlog::warn("Unable to load material path {}", path);
     }
 }
 
@@ -193,8 +191,6 @@ void Config::loadMeshes(const std::string &path)
             auto configFile = config.path().string() + "/mesh.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", configFile);
-
                 std::ifstream file(configFile);
                 json j;
                 file >> j;
@@ -209,16 +205,17 @@ void Config::loadMeshes(const std::string &path)
                 {
                     state["meshes"][name].update(item);
                 }
+                spdlog::info("Loaded Config {}", configFile);
             }
             else
             {
-                logger->warn("Unable to load {}", configFile);
+                spdlog::warn("Unable to load {}", configFile);
             }
         }
     }
     else
     {
-        logger->warn("Unable to load mesh path {}", path);
+        spdlog::warn("Unable to load mesh path {}", path);
     }
 }
 
@@ -235,8 +232,6 @@ void Config::loadModels(const std::string &path)
             {
                 if (config.path().extension() == ".json")
                 {
-                    logger->info("Loading Config {}", configFile);
-
                     std::ifstream file(configFile);
                     json j;
                     file >> j;
@@ -251,17 +246,18 @@ void Config::loadModels(const std::string &path)
                     {
                         state["models"][name].update(item);
                     }
+                    spdlog::info("Loaded Config {}", configFile);
                 }
             }
             else
             {
-                logger->warn("Unable to load {}", configFile);
+                spdlog::warn("Unable to load {}", configFile);
             }
         }
     }
     else
     {
-        logger->warn("Unable to load model path {}", path);
+        spdlog::warn("Unable to load model path {}", path);
     }
 }
 

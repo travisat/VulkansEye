@@ -12,7 +12,6 @@ Pipeline::~Pipeline()
 void Pipeline::create()
 {
     auto& state = State::instance();
-    debugLogger = spdlog::get("debugLogger");
     pipelineLayout = state.vulkan->device.createPipelineLayout(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());

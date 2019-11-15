@@ -1,9 +1,6 @@
 #pragma once
 
-#include <memory>
-
 #include <vulkan/vulkan.hpp>
-#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -40,9 +37,6 @@ class Pipeline
     vk::PipelineColorBlendStateCreateInfo colorBlending = {};
     vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
     vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-
-  private:
-    std::shared_ptr<spdlog::logger> debugLogger;
 };
 
 } // namespace tat

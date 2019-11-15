@@ -58,7 +58,7 @@ auto Window::createSurface(vk::Instance &instance) -> vk::SurfaceKHR
     auto result = glfwCreateWindowSurface(instance, window, nullptr, reinterpret_cast<VkSurfaceKHR *>(&surface));
     if (result != VK_SUCCESS)
     {
-        debugLogger->error("Unable to create surface. Error code {}", result);
+        spdlog::error("Unable to create surface. Error code {}", result);
         throw std::runtime_error("Unable to create surface");
         return nullptr;
     }

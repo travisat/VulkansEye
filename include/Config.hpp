@@ -10,7 +10,6 @@
 #include <glm/glm.hpp>
 
 #include <nlohmann/json.hpp>
-#include <spdlog/spdlog.h>
 
 using json = nlohmann::json;
 
@@ -24,11 +23,9 @@ class Config
     ~Config() = default;
 
   private:
-    std::shared_ptr<spdlog::logger> logger;
-
-    void loadSettings(const std::string &path);
-    void loadPlayer(const std::string &path);
-    void loadScene(const std::string &path);
+    static void loadSettings(const std::string &path);
+    static void loadPlayer(const std::string &path);
+    static void loadScene(const std::string &path);
     void loadBackdrops(const std::string &path);
     void loadMaterials(const std::string &path);
     void loadMeshes(const std::string &path);

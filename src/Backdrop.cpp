@@ -11,12 +11,10 @@ namespace tat
 void Backdrop::load()
 {
     auto &backdrop = State::instance().at("backdrops").at(name);
-    
 
     colorMap = loadCubeMap(backdrop.at("color").get<std::string>());
     radianceMap = loadCubeMap(backdrop.at("radiance").get<std::string>());
     irradianceMap = loadCubeMap(backdrop.at("irradiance").get<std::string>());
-
 
     light.x = backdrop.at("light").at(0);
     light.y = backdrop.at("light").at(1);

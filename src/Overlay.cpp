@@ -259,6 +259,8 @@ void Overlay::newFrame()
     {
         lastUpdateTime = frameTime;
         uiSettings.fps = 1.F / deltaTime;
+        uiSettings.position = State::instance().player->position();
+        uiSettings.rotation = State::instance().camera->rotation();
 
         switch (Input::getMode())
         {
@@ -278,6 +280,8 @@ void Overlay::newFrame()
     ImGui::Begin("Temp");
     ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
     ImGui::InputFloat("Fps", &uiSettings.fps);
+    ImGui::InputFloat3("Position", &uiSettings.position.x);
+    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
 
     ImGui::End();
 

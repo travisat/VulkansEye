@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -22,7 +21,6 @@ class Framebuffer
     void cleanup();
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     void createRenderPass();
 };
 

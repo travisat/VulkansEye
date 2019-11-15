@@ -36,6 +36,8 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
 
 void Engine::init()
 {
+    spdlog::info("Begin Engine Init");
+
     auto &state = State::instance();
     createInstance();
     state.vulkan->surface = state.window->createSurface(state.vulkan->instance);
@@ -47,7 +49,8 @@ void Engine::init()
     state.vulkan->shadowPass = createShadowPass();
     state.vulkan->colorPass = createColorPass();
     createCommandPool();
-    spdlog::info("Engine Init Complete");
+
+    spdlog::info("End Engine Init");
 }
 
 void Engine::prepare()
@@ -389,7 +392,7 @@ void Engine::createInstance()
 {
     auto &state = State::instance();
     vk::ApplicationInfo appInfo = {};
-    appInfo.pApplicationName = state["settings"]["name"].get<std::string>().c_str();
+    appInfo.pApplicationName = state.at("settings").at("name").get<std::string>().c_str();
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "vulcanned";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);

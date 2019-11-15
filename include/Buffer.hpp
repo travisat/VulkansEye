@@ -2,7 +2,6 @@
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
-#include <spdlog/spdlog.h>
 #include <memory>
 
 #include "Vertex.hpp"
@@ -21,7 +20,7 @@ class Buffer
     vk::Buffer buffer = nullptr;
     void *mapped = nullptr;
 
-    Buffer();
+    Buffer() = default;
     ~Buffer();
 
     void allocate(VkDeviceSize s);
@@ -41,7 +40,6 @@ class Buffer
     
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     VmaAllocation allocation{};
     vk::DeviceSize size = 0;
 };
