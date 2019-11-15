@@ -43,6 +43,12 @@ class Vulkan
         {
             device.destroySwapchainKHR(swapChain);
         }
+
+        if (pipelineCache)
+        {
+            device.destroyPipelineCache(pipelineCache);
+        }
+        
         if (commandPool)
         {
             device.destroyCommandPool(commandPool);
@@ -82,6 +88,7 @@ class Vulkan
     vk::Queue presentQueue;
     vk::Format swapChainImageFormat;
     vk::Extent2D swapChainExtent;
+    vk::PipelineCache pipelineCache;
 
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
 

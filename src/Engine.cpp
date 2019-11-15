@@ -5,6 +5,7 @@
 
 #include "Engine.hpp"
 #include "State.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -49,6 +50,7 @@ void Engine::init()
     state.vulkan->shadowPass = createShadowPass();
     state.vulkan->colorPass = createColorPass();
     createCommandPool();
+    createPipelineCache();
 
     spdlog::info("End Engine Init");
 }
@@ -428,7 +430,11 @@ void Engine::pickPhysicalDevice()
         if (isDeviceSuitable(device))
         {
             state.vulkan->properties = device.getProperties();
-            spdlog::info("Physical Device: {}", state.vulkan->properties.deviceName);
+            spdlog::info("Device: {}", state.vulkan->properties.deviceName);
+            spdlog::info("ID: {}", state.vulkan->properties.deviceID);
+            spdlog::info("Type: {}", state.vulkan->properties.deviceType);
+            spdlog::info("Driver: {}", state.vulkan->properties.driverVersion);
+            spdlog::info("API: {}", state.vulkan->properties.apiVersion);
             state.vulkan->physicalDevice = device;
             state.vulkan->msaaSamples = getMaxUsableSampleCount();
             return;
@@ -732,6 +738,14 @@ void Engine::createCommandPool()
 
     state.vulkan->commandPool = state.vulkan->device.createCommandPool(poolInfo);
     spdlog::info("Created Command Pool");
+}
+
+void Engine::createPipelineCache()
+{
+    auto &state = State::instance();
+    vk::PipelineCacheCreateInfo createInfo {};
+    state.vulkan->pipelineCache = state.vulkan->device.createPipelineCache(createInfo);
+    spdlog::info("Created Pipeline Cache");
 }
 
 void Engine::createSyncObjects()

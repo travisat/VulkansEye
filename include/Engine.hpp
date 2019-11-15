@@ -86,6 +86,7 @@ class Engine
     void createColorFramebuffers();
     void createShadowFramebuffers();
     static void createCommandPool();
+    static void createPipelineCache();
     void createSyncObjects();
 
     static auto getRequiredExtensions() -> std::vector<const char *>;

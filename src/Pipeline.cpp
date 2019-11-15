@@ -16,7 +16,7 @@ void Pipeline::create()
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = state.vulkan->device.createGraphicsPipeline(nullptr, pipelineInfo); // TODO(travis) create pipeline cache
+    pipeline = state.vulkan->device.createGraphicsPipeline(state.vulkan->pipelineCache, pipelineInfo);
 }
 
 void Pipeline::cleanup()

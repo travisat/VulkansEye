@@ -52,11 +52,6 @@ template <class T> class Collection
             names.insert(std::make_pair(key, index));
             ++index;
         }
-        if (index == 0)
-        { // load a default in if none was found
-            collection.push_back(std::make_shared<T>());
-            names.insert(std::make_pair("default", 0));
-        }
     };
 
     ~Collection() = default;
@@ -78,21 +73,21 @@ template <class T> class Collection
         { // if name is found return value of map (index)
             return it->second;
         }
-        // else return 0 which should always exist
-        return 0;
+        // else return -1
+        return -1;
     }
 
     // loads entry at index if not loaded and return shared_ptr to it
     // if index does not exist it returns item at index 0
     auto load(int32_t index) -> std::shared_ptr<T>
     {
-        // load default entry so we always have an entry
-        auto &entry = collection[0];
-        if (index < collection.size() && index > 0)
-        { // if the index  is in bounds get that entry
-            entry = collection[index];
+        if (index > collection.size() || index < 0)
+        { //return null if index out of range
+            return nullptr;
         }
-
+        // load default entry so we always have an entry
+        auto entry = collection[index]; 
+        
         if (entry->loaded == true)
         { // if already loaded return
             return entry;
