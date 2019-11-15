@@ -9,8 +9,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
-#include <spdlog/spdlog.h>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
+
 using json = nlohmann::json;
 
 namespace tat
@@ -19,7 +20,6 @@ namespace tat
 class Config
 {
   public:
-    Config() = default;
     explicit Config(const std::string &path);
     ~Config() = default;
 
@@ -40,7 +40,7 @@ class Config
                      {"zFar", 256.0},                                //
                      {"FoV", 70},                                    //
                      {"mouseSensitivity", 35},                       //
-                     {"window", {{"width", 1024}, {"height", 768}}}, //
+                     {"window", {1024, 768}},                        //
                      {"vsync", true},                                //
                      {"shadowSize", 1024},                           //
                      {"brdfPath", "assets/brdf.dds"},                //
@@ -48,7 +48,8 @@ class Config
                      {"sceneConfig", "assets/configs/scene.json"},   //
                      {"materialsPath", "assets/materials/"},         //
                      {"meshesPath", "assets/meshes/"},               //
-                     {"backdropsPath", "assets/backdrops/"}};        //
+                     {"backdropsPath", "assets/backdrops/"},
+                     {"modelsPath", "assets/models/"}};        //
 
     json player = {{"height", 1.7},             //
                    {"mass", 100},               //
@@ -57,13 +58,13 @@ class Config
                    {"timeToStopFromVMax", 0.1}, //
                    {"jumpHeight", 1.0}};        //
 
-    json scene = {{"backrop", "default"},              //
-                  {"models", json::object({"default"})}}; //
+    json scene = {{"backrop", "default"},   //
+                  {"models", {}}}; //
 
-    json backdrop = {{"color", "assets/backdrop/default/color.dds"},           //
-                     {"radiance", "assets/backdrop/default/radiance.dds"},     //
-                     {"irradiance", "assets/backdrop/default/irradiance.dds"}, //
-                     {"light", {{"x", -10}, {"y", -15}, {"z", 0}}}};           //
+    json backdrop = {{"color", "assets/backdrops/default/color.dds"},           //
+                     {"radiance", "assets/backdrops/default/radiance.dds"},     //
+                     {"irradiance", "assets/backdrops/default/irradiance.dds"}, //
+                     {"light", {-10, -15, 0}}};                                //
 
     json material = {{"diffuse", "diffuse.dds"},     //
                      {"normal", "normal.dds"},       //
@@ -71,15 +72,15 @@ class Config
                      {"roughness", "roughness.dds"}, //
                      {"ao", "ao.dds"}};              //
 
-    json mesh = {{"file", "default.glb"},                      //
-                 {"size", {{"x", 2}, {"y", 2}, {"z", 2}}}}; //
+    json mesh = {{"file", "default.glb"}, //
+                 {"size", {2, 2, 2}}};    //
 
-    json model = {{"mesh", "default"},                              //
-                  {"material", "default"},                       //
-                  {"mass", 0},                                   //
-                  {"position", {{"x", 0}, {"y", 0}, {"z", 0}}}, //
-                  {"rotation", {{"x", 0}, {"y", 0}, {"z", 0}}},  //
-                  {"scale", {{"x", 1}, {"y", 1}, {"z", 1}}}};    //
+    json model = {{"mesh", "default"},     //
+                  {"material", "default"}, //
+                  {"mass", 0},             //
+                  {"position", {0, 0, 0}}, //
+                  {"rotation", {0, 0, 0}}, //
+                  {"scale", {1, 1, 1}}};   //
 };
 
 }; // namespace tat

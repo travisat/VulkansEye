@@ -8,17 +8,17 @@ namespace tat
 Camera::Camera()
 {
     auto &settings = State::instance().at("settings");
-    width = settings["/window/width"];
-    height = settings["/window/height"];
-    FoV = settings["FoV"];
-    zNear = settings["zNear"];
-    zFar = settings["zFar"];
-    mouseSensitivity = settings["mouseSensitivity"];
+    width = settings.at("window").at(0);
+    height = settings.at("window").at(1);
+    FoV = settings.at("FoV");
+    zNear = settings.at("zNear");
+    zFar = settings.at("zFar");
+    mouseSensitivity = settings.at("mouseSensitivity");
     setPosition(m_position);
     setRotation(m_rotation);
     updateView();
     updateProjection();
-    spdlog::get("debugLogger")->info("Created Camera");
+    spdlog::info("Created Camera");
 }
 
 void Camera::look(double mouseX, double mouseY)

@@ -11,7 +11,6 @@ class VulkansEye
     void run();
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     Engine engine{};
 
     void handleInput(float deltaTime);

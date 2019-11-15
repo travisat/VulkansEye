@@ -3,16 +3,15 @@
 
 #include "Input.hpp"
 #include "Overlay.hpp"
-#include "Timer.hpp"
 #include "State.hpp"
+#include "Timer.hpp"
+
 
 namespace tat
 {
 
 Overlay::Overlay()
 {
-    debugLogger = spdlog::get("debugLogger");
-
     ImGui::CreateContext();
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
@@ -24,7 +23,7 @@ Overlay::Overlay()
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
     auto &window = State::instance().at("settings").at("window");
-    io.DisplaySize = ImVec2(window["width"], window["height"]);
+    io.DisplaySize = ImVec2(window.at(0), window.at(1));
     io.DisplayFramebufferScale = ImVec2(1.F, 1.F);
 
     createFont();
@@ -35,12 +34,12 @@ Overlay::Overlay()
     createPipeline();
     newFrame();
     createBuffers();
-    debugLogger->info("Created Overlay");
+    spdlog::info("Created Overlay");
 }
 
 Overlay::~Overlay()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     ImGui::DestroyContext();
     state.vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
     state.vulkan->device.destroyDescriptorPool(descriptorPool);
@@ -55,7 +54,7 @@ void Overlay::recreate()
 
 void Overlay::cleanup()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     pipeline.cleanup();
     state.vulkan->device.destroyDescriptorPool(descriptorPool);
 }
@@ -72,7 +71,7 @@ void Overlay::createBuffers()
 
 void Overlay::createFont()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     auto &io = ImGui::GetIO();
     unsigned char *fontData;
     int texWidth;
@@ -120,7 +119,7 @@ void Overlay::createFont()
 
 void Overlay::createDescriptorPool()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
@@ -134,12 +133,11 @@ void Overlay::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = state.vulkan->device.createDescriptorPool(poolInfo);
-    // Trace("Created overlay descriptor pool at ", Timer::systemTime());
 }
 
 void Overlay::createDescriptorLayouts()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     vk::DescriptorSetLayoutBinding samplerBinding = {};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
@@ -157,7 +155,7 @@ void Overlay::createDescriptorLayouts()
 
 void Overlay::createDescriptorSets()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
@@ -181,14 +179,14 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                            nullptr);
+        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()),
+                                                  descriptorWrites.data(), 0, nullptr);
     }
 }
 
 void Overlay::createPipeline()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     pipeline.descriptorSetLayout = descriptorSetLayout;
     pipeline.loadDefaults(state.vulkan->colorPass);
 
@@ -277,6 +275,7 @@ void Overlay::newFrame()
     }
     ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::Begin("Temp");
     ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
     ImGui::InputFloat("Fps", &uiSettings.fps);
 
@@ -287,7 +286,7 @@ void Overlay::newFrame()
 
 void Overlay::updateBuffers()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     ImDrawData *imDrawData = ImGui::GetDrawData();
 
     if (imDrawData != nullptr)

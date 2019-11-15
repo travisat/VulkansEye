@@ -56,7 +56,6 @@ class Overlay
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     // Vulkan resources for rendering the UI
     Buffer vertexBuffer{};
     Buffer indexBuffer{};

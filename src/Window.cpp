@@ -2,6 +2,7 @@
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_core.h"
 #include <stdexcept>
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -12,6 +13,7 @@ Window::Window(void *user, int width, int height, const std::string &name)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(window, user);
+    spdlog::info("Created window {} with dimensions {}x{}", name.c_str(), width, height);
 }
 
 Window::~Window()

@@ -14,6 +14,10 @@ class Camera
     Camera();
     ~Camera() = default;
 
+    float FoV;
+    float zNear;
+    float zFar;
+
     void look(double mouseX, double mouseY);
     void update();
 
@@ -44,9 +48,7 @@ class Camera
 
     float width;
     float height;
-    float FoV;
-    float zNear;
-    float zFar;
+    
     glm::vec2 lastMousePosition = glm::vec2(0.F);
     float mouseSensitivity;
 };

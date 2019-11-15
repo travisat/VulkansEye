@@ -17,10 +17,14 @@ class Scene
 
     std::shared_ptr<Image> shadow;
     std::shared_ptr<Image> brdf;
+    std::shared_ptr<Backdrop> backdrop;
 
-    Scene();
+    float shadowSize = 1024.F;
+
+    Scene() = default;
     ~Scene();
 
+    void load();
     void cleanup();
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -28,10 +32,6 @@ class Scene
     void update(uint32_t currentImage, float deltaTime);
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
-
-    std::shared_ptr<Backdrop> backdrop;
-
     vk::DescriptorPool colorPool;
     vk::DescriptorSetLayout colorLayout;
     vk::DescriptorPool shadowPool;

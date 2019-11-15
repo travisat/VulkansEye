@@ -22,6 +22,7 @@ auto main(int argc, char *argv[]) -> int
     try
     {
         auto debugLogger = spdlog::basic_logger_mt<spdlog::async_factory>("debugLogger", "logs/debug.log", true);
+        spdlog::set_default_logger(debugLogger);
         debugLogger->info("BEGIN");
 
         try

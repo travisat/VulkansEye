@@ -17,8 +17,6 @@ class Material : public Entry
     void load() override;
     virtual ~Material() = default;
 
-    std::string path = "";
-
     std::shared_ptr<Image> diffuse = nullptr;
     std::shared_ptr<Image> normal = nullptr;
     std::shared_ptr<Image> metallic = nullptr;

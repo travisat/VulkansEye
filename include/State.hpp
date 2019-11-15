@@ -33,6 +33,7 @@ class State: public json
         static State instance;
         return instance;
     };
+    
     std::shared_ptr<Vulkan> vulkan;
     std::shared_ptr<Window> window;
     std::shared_ptr<Camera> camera;

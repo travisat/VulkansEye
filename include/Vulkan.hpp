@@ -1,10 +1,11 @@
 #pragma once
 
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
-#include <fstream>
-#include <filesystem>
+
 
 #ifdef WIN32
 #define NOMINMAX
@@ -16,9 +17,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
-#include <spdlog/spdlog.h>
+
 
 namespace tat
 {
@@ -28,18 +30,42 @@ class Vulkan
   public:
     ~Vulkan()
     {
-        device.destroyRenderPass(colorPass);
-        device.destroyRenderPass(shadowPass);
-        
-        device.destroySwapchainKHR(swapChain);
-        device.destroyCommandPool(commandPool);
-        vmaDestroyAllocator(allocator);
-        device.destroy(nullptr);
+        if (colorPass)
+        {
+            device.destroyRenderPass(colorPass);
+        }
+        if (shadowPass)
+        {
+            device.destroyRenderPass(shadowPass);
+        }
 
-        instance.destroySurfaceKHR(surface);
-        instance.destroy();
+        if (swapChain)
+        {
+            device.destroySwapchainKHR(swapChain);
+        }
+        if (commandPool)
+        {
+            device.destroyCommandPool(commandPool);
+        }
+        if (allocator != nullptr)
+        {
+            vmaDestroyAllocator(allocator);
+        }
+        if (device)
+        {
+            device.destroy(nullptr);
+        }
+
+        if (surface)
+        {
+            instance.destroySurfaceKHR(surface);
+        }
+        if (instance)
+        {
+            instance.destroy();
+        }
     };
-    
+
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::PhysicalDevice physicalDevice;
@@ -56,8 +82,7 @@ class Vulkan
     vk::Queue presentQueue;
     vk::Format swapChainImageFormat;
     vk::Extent2D swapChainExtent;
-    
-    
+
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
 
     auto checkFormat(vk::Format format) -> bool

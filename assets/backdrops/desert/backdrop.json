@@ -2,9 +2,9 @@
     "color": "color.dds",
     "radiance": "radiance.dds",
     "irradiance": "irradiance.dds",
-    "light": {
-        "x": -15,
-        "y": -15,
-        "z": -10
-    }
+    "light": [
+        -20,
+        -15,
+        -8
+    ]
 }

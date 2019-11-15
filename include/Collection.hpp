@@ -29,9 +29,10 @@ template <class T> class Collection
         auto &state = State::instance();
 
         int32_t index = 0;
-        for (auto &[key, config] : state[type].items())
+        for (auto &[key, config] : state.at(type).items())
         {
             collection.push_back(std::make_shared<T>());
+            collection[index]->name = key;
             names.insert(std::make_pair(key, index));
             ++index;
         }
@@ -40,8 +41,6 @@ template <class T> class Collection
             collection.push_back(std::make_shared<T>());
             names.insert(std::make_pair("default", 0));
         }
-
-        spdlog::get("deugLogger")->info("Created Collection {}", type);
     };
 
     ~Collection() = default;
@@ -64,7 +63,6 @@ template <class T> class Collection
         entry->load();
         return entry;
     }
-
   private:
     // collection of shared ptrs
     // shared_ptrs objects are lazy loaded so name isn't in collection until loaded

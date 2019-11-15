@@ -13,5 +13,6 @@
     "sceneConfig": "assets/configs/scene.json",
     "materialsPath": "assets/materials/",
     "meshesPath": "assets/meshes/",
-    "backdropsPath": "assets/backdrops/"    
+    "backdropsPath": "assets/backdrops/",
+    "modelsPath": "assets/models/"
 }

@@ -17,12 +17,11 @@ namespace tat
 void Mesh::load()
 {
     auto& mesh = State::instance().at("meshes").at(name);
-    path = mesh["path"];
-    size.x = mesh["size"]["x"];
-    size.y = mesh["size"]["y"];
-    size.z = mesh["size"]["z"];
+    size.x = mesh.at("size").at(0);
+    size.y = mesh.at("size").at(1);
+    size.z = mesh.at("size").at(2);
     
-    import();
+    import(mesh.at("file"));
 
     // copy buffers to gpu only memory
     Buffer stagingBuffer{};
@@ -40,11 +39,14 @@ void Mesh::load()
     stagingBuffer.copyTo(buffers.index);
 
     loaded = true;
-    spdlog::get("debugLogger")->info("Loaded Mesh {}", name);
+    spdlog::info("Loaded Mesh {}", name);
 }
 
-void Mesh::import()
+void Mesh::import(const std::string &file)
 {
+    auto path = State::instance().at("settings").at("meshesPath").get<std::string>();
+    path = path + name + "/" + file;
+
     Assimp::Importer importer;
     auto processFlags = aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_PreTransformVertices |
                         aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded;
@@ -54,7 +56,7 @@ void Mesh::import()
 
     if (pScene == nullptr)
     {
-        spdlog::get("debugLogger")->error("Unable to load {}", path);
+        spdlog::error("Unable to load {}", path);
         throw std::runtime_error("Unable to load mesh");
     }
 

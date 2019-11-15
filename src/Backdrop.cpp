@@ -10,16 +10,17 @@ namespace tat
 
 void Backdrop::load()
 {
-    debugLogger = spdlog::get("debugLogger");
-    auto &state = State::instance();
+    auto &backdrop = State::instance().at("backdrops").at(name);
+    
 
-    colorMap = loadCubeMap(state["backdrops"][name]["colorPath"]);
-    radianceMap = loadCubeMap(state["backdrops"][name]["radiancePath"]);
-    irradianceMap = loadCubeMap(state["backdrops"][name]["irradiancePath"]);
+    colorMap = loadCubeMap(backdrop.at("color").get<std::string>());
+    radianceMap = loadCubeMap(backdrop.at("radiance").get<std::string>());
+    irradianceMap = loadCubeMap(backdrop.at("irradiance").get<std::string>());
 
-    light.x = state["backdrops"][name]["light"]["x"];
-    light.y = state["backdrops"][name]["light"]["y"];
-    light.z = state["backdrops"][name]["light"]["z"];
+
+    light.x = backdrop.at("light").at(0);
+    light.y = backdrop.at("light").at(1);
+    light.z = backdrop.at("light").at(2);
 
     createDescriptorPool();
     createDescriptorSetLayouts();
@@ -27,7 +28,7 @@ void Backdrop::load()
     createUniformBuffers();
     createDescriptorSets();
     loaded = true;
-    debugLogger->info("Loaded Backdrop {}", name);
+    spdlog::info("Loaded Backdrop {}", name);
 }
 
 Backdrop::~Backdrop()
@@ -58,8 +59,11 @@ void Backdrop::recreate()
     createDescriptorSets();
 }
 
-auto Backdrop::loadCubeMap(const std::string &path) -> std::shared_ptr<Image>
+auto Backdrop::loadCubeMap(const std::string &file) -> std::shared_ptr<Image>
 {
+    auto path = State::instance().at("settings").at("backdropsPath").get<std::string>();
+    path = path + name + "/" + file;
+
     auto cubeMap = std::make_shared<Image>();
     cubeMap->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     cubeMap->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;

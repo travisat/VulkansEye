@@ -3,6 +3,8 @@
 #include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
+#include "spdlog/spdlog.h"
+#include <exception>
 #include <memory>
 
 namespace tat
@@ -10,9 +12,6 @@ namespace tat
 
 VulkansEye::VulkansEye(const std::string &configPath)
 {
-    // get logger
-    debugLogger = spdlog::get("debugLogger");
-
     // init state
     auto &state = State::instance();
     state.vulkan = std::make_shared<Vulkan>();
@@ -21,16 +20,16 @@ VulkansEye::VulkansEye(const std::string &configPath)
     Timer::getInstance();
     Timer::time();
     Timer::systemTime();
-    debugLogger->info("Started Timers");
+    spdlog::info("Started Timers");
 
     // load config
     auto config = Config(configPath);
 
     //get settings
-    auto &settings = state["settings"];
+    auto &settings = state.at("settings");
 
     // load display settings
-    if (settings["vsync"].get<bool>() == true)
+    if (settings.at("vsync").get<bool>() == true)
     {
         state.vulkan->defaultPresentMode = vk::PresentModeKHR::eFifo;
     }
@@ -40,7 +39,8 @@ VulkansEye::VulkansEye(const std::string &configPath)
     }
 
     // setup glfw window
-    state.window = std::make_shared<Window>(this, settings["window"]["width"].get<float>(), settings["window"]["height"].get<float>(), "Vulkans Eye");
+    auto& window = settings.at("window");
+    state.window = std::make_shared<Window>(this, window.at(0), window.at(1), "Vulkans Eye");
 
     // setup input
     Input::getInstance();
@@ -49,20 +49,28 @@ VulkansEye::VulkansEye(const std::string &configPath)
     state.window->setCursorPosCallback(&Input::cursorPosCallback);
     state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     state.window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    spdlog::info("Created Input");
 
     // init engine
     engine.init();
 
     // init collections
+   
     state.backdrops = std::make_shared<Collection<Backdrop>>("backdrops");
+    spdlog::info("Created Collection backdrops");
     state.materials = std::make_shared<Collection<Material>>("materials");
+    spdlog::info("Created Collection materials");
     state.meshes = std::make_shared<Collection<Mesh>>("meshes");
+    spdlog::info("Created Collection meshes");
     state.models = std::make_shared<Collection<Model>>("models");
+    spdlog::info("Created Collection models");
+    
 
     //init other objects
     state.camera = std::make_shared<Camera>();
     state.player = std::make_shared<Player>();
     state.scene = std::make_shared<Scene>();
+    state.scene->load();
     state.overlay = std::make_shared<Overlay>();
 
     // prepare engine
@@ -72,7 +80,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
 void VulkansEye::run()
 {
     auto& state = State::instance();
-    debugLogger->info("Start Main Loop");
+    spdlog::info("Start Main Loop");
     float lastFrameTime = 0.0F;
     while (state.window->shouldClose() == 0)
     {
@@ -95,7 +103,7 @@ void VulkansEye::run()
         engine.drawFrame(deltaTime);
     }
     vkDeviceWaitIdle(state.vulkan->device);
-    debugLogger->info("End Main Loop");
+    spdlog::info("End Main Loop");
 }
 
 void VulkansEye::handleInput(float deltaTime)
@@ -116,7 +124,7 @@ void VulkansEye::handleInput(float deltaTime)
             engine.showOverlay = false;
             engine.updateCommandBuffer = true;
             Input::switchMode(InputMode::Normal);
-            debugLogger->info("Changed Mode to Normal");
+            spdlog::info("Changed Mode to Normal");
         }
     }
     // Visual Mode
@@ -134,7 +142,7 @@ void VulkansEye::handleInput(float deltaTime)
             engine.showOverlay = true;
             engine.updateCommandBuffer = true;
             Input::switchMode(InputMode::Visual);
-            debugLogger->info("Changed Mode to Visual");
+            spdlog::info("Changed Mode to Visual");
         }
     }
 
@@ -149,7 +157,7 @@ void VulkansEye::handleInput(float deltaTime)
             engine.showOverlay = true;
             engine.updateCommandBuffer = true;
             Input::switchMode(InputMode::Insert);
-            debugLogger->info("Changed Mode to Insert");
+            spdlog::info("Changed Mode to Insert");
         }
     }
 
@@ -173,7 +181,7 @@ void VulkansEye::handleInput(float deltaTime)
 
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
-        debugLogger->info("Pressed Escape Closing");
+        spdlog::info("Pressed Escape Closing");
         state.window->setClose(1);
     }
 }

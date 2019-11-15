@@ -35,8 +35,6 @@ class Backdrop : public Entry
     void update(uint32_t currentImage);
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
-
     UniformBack backBuffer{};
 
     std::vector<vk::DescriptorSet> descriptorSets;
@@ -46,7 +44,7 @@ class Backdrop : public Entry
     Pipeline pipeline;
     vk::DescriptorSetLayout descriptorSetLayout{};
 
-    static auto loadCubeMap(const std::string &path) -> std::shared_ptr<Image>;
+    auto loadCubeMap(const std::string &file) -> std::shared_ptr<Image>;
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

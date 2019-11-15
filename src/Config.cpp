@@ -5,6 +5,7 @@
 
 #include "Config.hpp"
 #include "State.hpp"
+#include "spdlog/spdlog.h"
 
 using json = nlohmann::json;
 
@@ -13,20 +14,21 @@ namespace tat
 
 Config::Config(const std::string &path)
 {
-    logger = spdlog::get("debugLogger");
+    logger = spdlog::default_logger();
 
     try
     {
         // setup state with default vaules
         auto &state = State::instance();
 
-        state["materials"] = json::object();
+        state["settings"] = settings;
+        state["player"] = player;
+        state["backdrops"]["default"] = backdrop;
         state["materials"]["default"] = material;
-        state["meshes"] = json::object();
-        state["meshes"]["cube"] = mesh;
-        state["models"] = json::object();
-        state["models"]["cube"] = model;
-
+        state["meshes"]["default"] = mesh;
+        state["models"]["default"] = model;
+        state["scene"] = scene;
+       
         // load settings
         loadSettings(path);
         loadPlayer(state["settings"]["playerConfig"]);
@@ -35,17 +37,17 @@ Config::Config(const std::string &path)
         loadMaterials(state["settings"]["materialsPath"]);
         loadMeshes(state["settings"]["meshesPath"]);
         loadModels(state["settings"]["modelsPath"]);
+        logger->info("Config Loaded"); 
     }
     catch (json::exception &e)
     {
         logger->error("Error {}", e.what());
     }
-} // namespace tat
+} 
 
 void Config::loadSettings(const std::string &path)
 {
     auto &state = State::instance();
-    state["settings"] = settings;
     // load settings
     if (std::filesystem::exists(path))
     { // if path exists load it
@@ -66,7 +68,6 @@ void Config::loadSettings(const std::string &path)
 void Config::loadPlayer(const std::string &path)
 {
     auto &state = State::instance();
-    state["player"] = player;
 
     if (std::filesystem::exists(path))
     {
@@ -86,7 +87,6 @@ void Config::loadPlayer(const std::string &path)
 void Config::loadScene(const std::string &path)
 {
     auto &state = State::instance();
-    state["scene"] = scene;
     if (std::filesystem::exists(path))
     {
         logger->info("Loading Config {}", path);
@@ -105,8 +105,6 @@ void Config::loadScene(const std::string &path)
 void Config::loadBackdrops(const std::string &path)
 {
     auto &state = State::instance();
-    state["backdrops"] = json::object();
-    state["backdrops"]["default"] = backdrop;
 
     if (std::filesystem::exists(path))
     {
@@ -115,9 +113,9 @@ void Config::loadBackdrops(const std::string &path)
             auto configFile = config.path().string() + "/backdrop.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", config.path().string());
+                logger->info("Loading Config {}", configFile);
 
-                std::ifstream file(config.path().string());
+                std::ifstream file(configFile);
                 json j;
                 file >> j;
 
@@ -147,8 +145,6 @@ void Config::loadBackdrops(const std::string &path)
 void Config::loadMaterials(const std::string &path)
 {
     auto &state = State::instance();
-    state["materials"] = json::object();
-    state["materials"]["default"] = material;
 
     if (std::filesystem::exists(path))
     {
@@ -157,9 +153,9 @@ void Config::loadMaterials(const std::string &path)
             auto configFile = config.path().string() + "/material.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", config.path().string());
+                logger->info("Loading Config {}", configFile);
 
-                std::ifstream file(config.path().string());
+                std::ifstream file(configFile);
                 json j;
                 file >> j;
 
@@ -189,8 +185,6 @@ void Config::loadMaterials(const std::string &path)
 void Config::loadMeshes(const std::string &path)
 {
     auto &state = State::instance();
-    state["meshs"] = json::object();
-    state["meshs"]["default"] = mesh;
 
     if (std::filesystem::exists(path))
     {
@@ -199,9 +193,9 @@ void Config::loadMeshes(const std::string &path)
             auto configFile = config.path().string() + "/mesh.json";
             if (std::filesystem::exists(configFile))
             {
-                logger->info("Loading Config {}", config.path().string());
+                logger->info("Loading Config {}", configFile);
 
-                std::ifstream file(config.path().string());
+                std::ifstream file(configFile);
                 json j;
                 file >> j;
 
@@ -210,10 +204,10 @@ void Config::loadMeshes(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
-                state["meshs"][name] = mesh;
+                state["meshes"][name] = mesh;
                 for (auto &item : j.items())
                 {
-                    state["meshs"][name].update(item);
+                    state["meshes"][name].update(item);
                 }
             }
             else
@@ -231,8 +225,6 @@ void Config::loadMeshes(const std::string &path)
 void Config::loadModels(const std::string &path)
 {
     auto &state = State::instance();
-    state["models"] = json::object();
-    state["models"]["default"] = model;
 
     if (std::filesystem::exists(path))
     {
@@ -243,9 +235,9 @@ void Config::loadModels(const std::string &path)
             {
                 if (config.path().extension() == ".json")
                 {
-                    logger->info("Loading Config {}", config.path().string());
+                    logger->info("Loading Config {}", configFile);
 
-                    std::ifstream file(config.path().string());
+                    std::ifstream file(configFile);
                     json j;
                     file >> j;
 

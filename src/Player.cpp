@@ -6,26 +6,23 @@ namespace tat
 
 Player::Player()
 {
-    auto& state = State::instance();
-    auto& player = state.at("player");
-    debugLogger = spdlog::get("debugLogger");
-    auto size = glm::vec3(0.5F, player["height"].get<float>() * 2.F, 0.25F);
+    auto &player = State::instance().at("player");
+    auto size = glm::vec3(0.5F, player.at("height").get<float>() * 2.F, 0.25F);
     translate(size / 2.F);
     rotate();
     m_size = size;
-    m_mass = player["mass"];
+    m_mass = player.at("mass");
 
-    jumpVelocity = glm::sqrt(2.0F * 9.8F * player["jumpHeight"].get<float>());
-    velocityMax = player["velocityMax"];
-    timeToReachVMax = player["timeToReachVMax"];
-    timeToStopfromVMax = player["timeToStopfromVMax"];
-    debugLogger->info("Created Player");
+    jumpVelocity = glm::sqrt(2.0F * 9.8F * player.at("jumpHeight").get<float>());
+    velocityMax = player.at("velocityMax");
+    timeToReachVMax = player.at("timeToReachVMax");
+    timeToStopfromVMax = player.at("timeToStopFromVMax");
+    spdlog::info("Created Player");
 }
-
 
 void Player::move(glm::vec2 direction, float deltaTime)
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     glm::vec3 camFront;
     glm::vec3 rotation = state.camera->rotation();
     camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));

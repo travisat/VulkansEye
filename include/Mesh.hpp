@@ -15,7 +15,6 @@ class Mesh : public Entry
   public:
     void load() override;
     virtual ~Mesh() = default;
-    std::string path = "";
     glm::vec3 size{};
 
     struct
@@ -31,7 +30,7 @@ class Mesh : public Entry
     } buffers;
 
   private:
-    void import();
+    void import(const std::string &file);
 };
 
 }; // namespace tat

@@ -24,8 +24,6 @@ class Player : public Object
     };
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
-
     float jumpVelocity = 0.F; // sqrt(2.0 * Gravity * heightofJump)
     // force applied while walking
     float velocityMax;        // m/s

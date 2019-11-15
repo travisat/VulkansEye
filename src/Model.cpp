@@ -9,35 +9,23 @@ namespace tat
 
 void Model::load()
 {
-    debugLogger = spdlog::get("debugLogger");
     auto& state = State::instance();
     auto& model = state.at("models").at(name);
 
     // get material/mesh from their collections
-    material = state.materials->get(model["material"]);
-    mesh = state.meshes->get(model["mesh"]);
+    material = state.materials->get(model.at("material"));
+    mesh = state.meshes->get(model.at("mesh"));
     m_size = mesh->size;
-    m_mass = model["mass"];
+    m_mass = model.at("mass");
 
     // move/rotate/scale
-    glm::vec3 p;
-    p.x = model["position"]["x"];
-    p.y = model["position"]["y"];
-    p.z = model["position"]["z"];
-    glm::vec3 r;
-    r.x = model["rotation"]["x"];
-    r.y = model["rotation"]["y"];
-    r.z = model["rotation"]["z"];
-    glm::vec3 s;
-    s.x = model["scale"]["x"];
-    s.y = model["scale"]["y"];
-    s.z = model["scale"]["z"];
-    translate(p);
-    rotate(r);
-    scale(s);
+    translate(glm::vec3(model.at("position").at(0), model.at("position").at(1), model.at("position").at(2)));
+    rotate(glm::vec3(model.at("rotation").at(0), model.at("rotation").at(1), model.at("rotation").at(2)));
+    scale(glm::vec3(model.at("scale").at(0), model.at("scale").at(1), model.at("scale").at(2)));
     updateModel();
 
     createUniformBuffers();
+    loaded = true;
 }
 
 void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
@@ -64,8 +52,8 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
         vk::DescriptorImageInfo shadowInfo = {};
         shadowInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        shadowInfo.imageView = shadow->imageView;
-        shadowInfo.sampler = shadow->sampler;
+        shadowInfo.imageView = state.scene->shadow->imageView;
+        shadowInfo.sampler = state.scene->shadow->sampler;
 
         vk::DescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -94,18 +82,18 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
         vk::DescriptorImageInfo irradianceInfo = {};
         irradianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        irradianceInfo.imageView = irradianceMap->imageView;
-        irradianceInfo.sampler = irradianceMap->sampler;
+        irradianceInfo.imageView = state.scene->backdrop->irradianceMap->imageView;
+        irradianceInfo.sampler = state.scene->backdrop->irradianceMap->sampler;
 
         vk::DescriptorImageInfo radianceInfo = {};
         radianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        radianceInfo.imageView = radianceMap->imageView;
-        radianceInfo.sampler = radianceMap->sampler;
+        radianceInfo.imageView = state.scene->backdrop->radianceMap->imageView;
+        radianceInfo.sampler = state.scene->backdrop->radianceMap->sampler;
 
         vk::DescriptorImageInfo brdfInfo = {};
         brdfInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        brdfInfo.imageView = brdf->imageView;
-        brdfInfo.sampler = brdf->sampler;
+        brdfInfo.imageView = state.scene->brdf->imageView;
+        brdfInfo.sampler = state.scene->brdf->sampler;
 
         std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
 

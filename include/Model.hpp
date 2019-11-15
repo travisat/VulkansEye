@@ -43,8 +43,6 @@ class Model : public Object, public Entry
 
     std::shared_ptr<Image> irradianceMap;
     std::shared_ptr<Image> radianceMap;
-    std::shared_ptr<Image> brdf;
-    std::shared_ptr<Image> shadow;
 
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertBuffers;
@@ -62,7 +60,6 @@ class Model : public Object, public Entry
     };
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     std::shared_ptr<Material> material;
     std::shared_ptr<Mesh> mesh;
 };

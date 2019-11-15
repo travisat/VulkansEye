@@ -49,7 +49,6 @@ class Engine
     bool updateCommandBuffer = false;
 
   private:
-    std::shared_ptr<spdlog::logger> debugLogger;
     vk::DispatchLoaderDynamic dldy;
 
     std::vector<Framebuffer> shadowFbs{};
@@ -82,11 +81,11 @@ class Engine
     void createInstance();
     void pickPhysicalDevice();
     void createLogicalDevice();
-    void createAllocator();
+    static void createAllocator();
     void createSwapChain();
     void createColorFramebuffers();
     void createShadowFramebuffers();
-    void createCommandPool();
+    static void createCommandPool();
     void createSyncObjects();
 
     static auto getRequiredExtensions() -> std::vector<const char *>;
