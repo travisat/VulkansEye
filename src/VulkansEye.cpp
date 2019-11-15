@@ -1,11 +1,13 @@
+#include <exception>
+#include <memory>
+
+#include <spdlog/spdlog.h>
+
 #include "VulkansEye.hpp"
 #include "Config.hpp"
 #include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
-#include "spdlog/spdlog.h"
-#include <exception>
-#include <memory>
 
 namespace tat
 {
@@ -55,7 +57,6 @@ VulkansEye::VulkansEye(const std::string &configPath)
     engine.init();
 
     // init collections
-   
     state.backdrops = std::make_shared<Collection<Backdrop>>("backdrops");
     spdlog::info("Created Collection backdrops");
     state.materials = std::make_shared<Collection<Material>>("materials");
