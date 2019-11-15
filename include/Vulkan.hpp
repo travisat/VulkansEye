@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <vector>
 
-
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -20,7 +19,6 @@
 #include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
-
 
 namespace tat
 {
@@ -48,7 +46,7 @@ class Vulkan
         {
             device.destroyPipelineCache(pipelineCache);
         }
-        
+
         if (commandPool)
         {
             device.destroyCommandPool(commandPool);
@@ -91,13 +89,6 @@ class Vulkan
     vk::PipelineCache pipelineCache;
 
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
-
-    auto checkFormat(vk::Format format) -> bool
-    {
-        vk::FormatProperties props = physicalDevice.getFormatProperties(format);
-        return (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImage) ==
-               vk::FormatFeatureFlagBits::eSampledImage;
-    };
 
     auto beginSingleTimeCommands() -> vk::CommandBuffer
     {
@@ -159,29 +150,20 @@ class Vulkan
         return device.createShaderModule(createInfo, nullptr);
     }
 
-    auto findSupportedFormat(const std::vector<vk::Format> &candidates, vk::ImageTiling tiling,
-                             const vk::FormatFeatureFlags &features) -> vk::Format
+    auto findDepthFormat() -> vk::Format
     {
+        std::vector<vk::Format> candidates = {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
+                                              vk::Format::eD24UnormS8Uint};
+
         for (vk::Format format : candidates)
         {
             auto props = physicalDevice.getFormatProperties(format);
-
-            if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features))
-            {
-                return format;
-            }
-            if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features))
+            if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
             {
                 return format;
             }
         }
-        throw std::runtime_error("Failed to find supported format");
-    }
-
-    auto findDepthFormat() -> vk::Format
-    {
-        return findSupportedFormat({vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint},
-                                   vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        throw std::runtime_error("Failed to find supported depth format");
     }
 };
 

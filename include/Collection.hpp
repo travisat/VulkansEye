@@ -64,7 +64,7 @@ template <class T> class Collection
         return load(index);
     }
 
-    // return index of entry if exists, 0 otherwise
+    // return index of entry if exists, -1 otherwise
     // does not load entry
     auto getIndex(const std::string &name) -> int32_t
     {
