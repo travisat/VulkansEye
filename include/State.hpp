@@ -20,6 +20,13 @@ using json = nlohmann::json;
 namespace tat
 {
 
+// State is stored in json, this is a singleton
+// There cannot be more than one state.
+// This setup is intended to make operating on state using scripts
+// or another interface easy/possible
+// ie being able to have a terminal like interface to move/create/update state
+// Right now it holds initial state from config and some members are updated
+// Additionally holds shared ptrs to the state classes that are single
 class State: public json
 {
   public:

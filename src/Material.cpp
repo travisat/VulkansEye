@@ -11,12 +11,15 @@ namespace tat
 
 void Material::load()
 {
+    //get json for material
     auto& material = State::instance().at("materials").at(name);
+    //load textures in json
     diffuse = loadImage(material.at("diffuse"));
     normal = loadImage(material.at("normal"));
     metallic = loadImage(material.at("metallic"));
     roughness = loadImage(material.at("roughness"));
     ao = loadImage(material.at("ao"));
+    //we are now loaded
     loaded = true;
     spdlog::info("Loaded Material {}", name);
 }
