@@ -1,11 +1,12 @@
-#include <filesystem>
-#include <memory>
-
-#include "Input.hpp"
 #include "Overlay.hpp"
+#include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
 
+#include <filesystem>
+#include <memory>
+
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -39,24 +40,17 @@ Overlay::Overlay()
 
 Overlay::~Overlay()
 {
-    auto &state = State::instance();
     ImGui::DestroyContext();
-    state.vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
-    state.vulkan->device.destroyDescriptorPool(descriptorPool);
+    spdlog::info("Destroyed Overlay");
 }
 
 void Overlay::recreate()
 {
-    createPipeline();
+    descriptorPool.reset();
     createDescriptorPool();
+    descriptorSets.clear();
     createDescriptorSets();
-}
-
-void Overlay::cleanup()
-{
-    auto &state = State::instance();
-    pipeline.cleanup();
-    state.vulkan->device.destroyDescriptorPool(descriptorPool);
+    createPipeline();
 }
 
 void Overlay::createBuffers()
@@ -71,7 +65,7 @@ void Overlay::createBuffers()
 
 void Overlay::createFont()
 {
-    auto &state = State::instance();
+    auto &engine = State::instance().engine;
     auto &io = ImGui::GetIO();
     unsigned char *fontData;
     int texWidth;
@@ -92,7 +86,7 @@ void Overlay::createFont()
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
-    vk::CommandBuffer copyCmd = state.vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer copyCmd = engine->beginSingleTimeCommands();
 
     // Copy
     vk::BufferImageCopy bufferCopyRegion = {};
@@ -105,7 +99,7 @@ void Overlay::createFont()
     copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage->image, vk::ImageLayout::eTransferDstOptimal, 1,
                               &bufferCopyRegion);
 
-    state.vulkan->endSingleTimeCommands(copyCmd);
+    engine->endSingleTimeCommands(copyCmd);
 
     fontImage->transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -119,8 +113,8 @@ void Overlay::createFont()
 
 void Overlay::createDescriptorPool()
 {
-    auto &state = State::instance();
-    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
+    auto &engine = State::instance().engine;
+    auto numSwapChainImages = static_cast<uint32_t>(engine->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
@@ -132,12 +126,12 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = state.vulkan->device.createDescriptorPool(poolInfo);
+    descriptorPool = engine->device->createDescriptorPoolUnique(poolInfo);
 }
 
 void Overlay::createDescriptorLayouts()
 {
-    auto &state = State::instance();
+    auto &engine = State::instance().engine;
     vk::DescriptorSetLayoutBinding samplerBinding = {};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
@@ -150,45 +144,50 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
 }
 
 void Overlay::createDescriptorSets()
 {
-    auto &state = State::instance();
-    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), descriptorSetLayout);
+    auto &engine = State::instance().engine;
+    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout.get());
     vk::DescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
+    allocInfo.descriptorPool = descriptorPool.get();
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
+    descriptorSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
 
-    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); i++)
+    for (size_t i = 0; i < engine->swapChainImages.size(); i++)
     {
         vk::DescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        samplerInfo.imageView = fontImage->imageView;
-        samplerInfo.sampler = fontImage->sampler;
+        samplerInfo.imageView = fontImage->imageView.get();
+        samplerInfo.sampler = fontImage->sampler.get();
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
-        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstSet = descriptorSets[i].get();
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()),
-                                                  descriptorWrites.data(), 0, nullptr);
+        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                             nullptr);
     }
 }
 
 void Overlay::createPipeline()
 {
-    auto &state = State::instance();
-    pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults(state.vulkan->colorPass);
+    auto &engine = State::instance().engine;
+    pipeline.descriptorSetLayout = descriptorSetLayout.get();
+    auto vertPath = "assets/shaders/ui.vert.spv";
+    auto fragPath = "assets/shaders/ui.frag.spv";
+    pipeline.vertShader = engine->createShaderModule(vertPath);
+    pipeline.fragShader = engine->createShaderModule(fragPath);
+
+    pipeline.loadDefaults(engine->colorPass.get());
 
     // Push constants for UI rendering parameters
     vk::PushConstantRange pushConstantRange = {};
@@ -198,11 +197,6 @@ void Overlay::createPipeline()
 
     pipeline.pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipeline.pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-
-    auto vertPath = "assets/shaders/ui.vert.spv";
-    auto fragPath = "assets/shaders/ui.frag.spv";
-    pipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
-    pipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
@@ -290,7 +284,7 @@ void Overlay::newFrame()
 
 void Overlay::updateBuffers()
 {
-    auto &state = State::instance();
+    auto &engine = State::instance().engine;
     ImDrawData *imDrawData = ImGui::GetDrawData();
 
     if (imDrawData != nullptr)
@@ -302,12 +296,12 @@ void Overlay::updateBuffers()
         // Update buffers only if vertex or index count has been changed compared to
         // current buffer size
 
-        update = (!vertexBuffer.buffer) || (vertexCount != imDrawData->TotalVtxCount) || (!indexBuffer.buffer) ||
-                 (indexCount != imDrawData->TotalIdxCount);
+        update = (!vertexBuffer.buffer) || (vertexCount < imDrawData->TotalVtxCount) || (!indexBuffer.buffer) ||
+                 (indexCount < imDrawData->TotalIdxCount);
 
         if (update)
         {
-            state.vulkan->device.waitIdle();
+            engine->device->waitIdle();
 
             vertexBuffer.resize(vertexBufferSize);
             vertexCount = imDrawData->TotalVtxCount;
@@ -342,15 +336,15 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         updateBuffers();
     }
     ImGuiIO &io = ImGui::GetIO();
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
-                                     &descriptorSets[currentImage], 0, nullptr);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout.get(), 0, 1,
+                                     &descriptorSets[currentImage].get(), 0, nullptr);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
 
     // UI scale and translate via push constants
     pushConstBlock.scale = glm::vec2(2.F / io.DisplaySize.x, 2.F / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.F);
-    commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstBlock),
-                                &pushConstBlock);
+    commandBuffer.pushConstants(pipeline.pipelineLayout.get(), vk::ShaderStageFlagBits::eVertex, 0,
+                                sizeof(PushConstBlock), &pushConstBlock);
 
     // Render commands
     ImDrawData *imDrawData = ImGui::GetDrawData();

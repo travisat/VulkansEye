@@ -4,14 +4,9 @@
 namespace tat
 {
 
-Framebuffer::~Framebuffer()
-{
-    cleanup();
-}
-
 void Framebuffer::create()
 {
-    auto& state = State::instance();
+    auto& engine = State::instance().engine;
     vk::FramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -19,16 +14,7 @@ void Framebuffer::create()
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    framebuffer = state.vulkan->device.createFramebuffer(framebufferInfo);
-}
-
-void Framebuffer::cleanup()
-{
-    if (framebuffer)
-    {
-        auto& state = State::instance();
-        state.vulkan->device.destroyFramebuffer(framebuffer);
-    }
+    framebuffer = engine->device->createFramebufferUnique(framebufferInfo);
 }
 
 } // namespace tat

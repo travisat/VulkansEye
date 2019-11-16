@@ -1,6 +1,10 @@
 #pragma once
-
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 #include <vk_mem_alloc.h>
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 #include <memory>
 
@@ -11,12 +15,11 @@ namespace tat
 class Buffer
 {
   public:
-    // required settings
     vk::BufferUsageFlags flags{};
     VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
     VmaAllocationCreateFlags memFlags = 0;
 
-    // created values
+    //don't use uniquebuffer, vma is used for memory for it
     vk::Buffer buffer = nullptr;
     void *mapped = nullptr;
 
@@ -40,6 +43,7 @@ class Buffer
     
 
   private:
+    bool allocated = false;
     VmaAllocation allocation{};
     vk::DeviceSize size = 0;
 };

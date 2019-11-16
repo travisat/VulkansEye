@@ -1,47 +1,42 @@
 #include "Buffer.hpp"
 #include "State.hpp"
+
 #include <stdexcept>
+
+#include <spdlog/spdlog.h>
+#include <vk_mem_alloc.h>
 
 namespace tat
 {
 
 Buffer::~Buffer()
 {
-    if (buffer)
-    {
-        deallocate();
-    }
+    deallocate();
 }
 
 void Buffer::resize(VkDeviceSize s)
 {
-    if (buffer)
-    {
-        deallocate();
-    }
     allocate(s);
 }
 
 void Buffer::update(void *t, size_t s)
 {
-    auto& state = State::instance();
+    auto &engine = State::instance().engine;
     if (s != size)
     {
-        if (buffer)
-        {
-            deallocate();
-        }
         allocate(s);
     }
     void *data = nullptr;
-    vmaMapMemory(state.vulkan->allocator, allocation, &data);
+    vmaMapMemory(engine->allocator, allocation, &data);
     memcpy(data, t, s);
-    vmaUnmapMemory(state.vulkan->allocator, allocation);
+    vmaUnmapMemory(engine->allocator, allocation);
 }
 
 void Buffer::allocate(VkDeviceSize s)
 {
-    auto& state = State::instance();
+    deallocate();
+
+    auto &engine = State::instance().engine;
     size = s;
 
     vk::BufferCreateInfo bufferInfo{};
@@ -55,7 +50,7 @@ void Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    auto result = vmaCreateBuffer(state.vulkan->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
+    auto result = vmaCreateBuffer(engine->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
                                   reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info);
 
     if (result != VK_SUCCESS)
@@ -65,40 +60,42 @@ void Buffer::allocate(VkDeviceSize s)
         return;
     }
     mapped = info.pMappedData;
+    allocated = true;
 }
 
 void Buffer::deallocate()
 {
-    auto& state = State::instance();
-    vmaDestroyBuffer(state.vulkan->allocator, buffer, allocation);
+    if (allocated)
+    {
+        auto &state = State::instance();
+        vmaDestroyBuffer(state.engine->allocator, buffer, allocation);
+        allocated = false;
+        buffer = nullptr;
+    }
 }
 
 void Buffer::copyTo(Buffer &destination)
 {
-    auto& state = State::instance();
+    auto &engine = State::instance().engine;
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
-        if (destination.buffer)
-        {
-            destination.deallocate();
-        }
         destination.allocate(size);
     }
 
-    vk::CommandBuffer commandBuffer = state.vulkan->beginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = engine->beginSingleTimeCommands();
 
     vk::BufferCopy copyRegion = {};
     copyRegion.size = size;
     commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
-    state.vulkan->endSingleTimeCommands(commandBuffer);
+    engine->endSingleTimeCommands(commandBuffer);
 }
 
 void Buffer::flush(size_t size, vk::DeviceSize offset)
 {
-    auto& state = State::instance();
-    vmaFlushAllocation(state.vulkan->allocator, allocation, offset, size);
+    auto &state = State::instance();
+    vmaFlushAllocation(state.engine->allocator, allocation, offset, size);
 };
 
 } // namespace tat

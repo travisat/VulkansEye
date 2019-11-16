@@ -1,6 +1,8 @@
 #include "Player.hpp"
 #include "State.hpp"
 
+#include <spdlog/spdlog.h>
+
 namespace tat
 {
 
@@ -20,11 +22,16 @@ Player::Player()
     spdlog::info("Created Player");
 }
 
+Player::~Player()
+{
+    spdlog::info("Destroyed Player");
+}
+
 void Player::move(glm::vec2 direction, float deltaTime)
 {
-    auto &state = State::instance();
+    auto &camera = State::instance().camera;
     glm::vec3 camFront;
-    glm::vec3 rotation = state.camera->rotation();
+    glm::vec3 rotation = camera->rotation();
     camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
     camFront.y = sin(glm::radians(rotation.x));
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));

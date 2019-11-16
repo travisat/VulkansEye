@@ -1,11 +1,8 @@
 #pragma once
 
-#include <map>
-
 #include "Buffer.hpp"
 #include "Collection.hpp"
 #include "Vertex.hpp"
-
 
 namespace tat
 {

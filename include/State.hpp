@@ -9,7 +9,7 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include "Vulkan.hpp"
+#include "Engine.hpp"
 #include "Window.hpp"
 #include "Camera.hpp"
 #include "Player.hpp"
@@ -41,7 +41,7 @@ class State: public json
         return instance;
     };
     
-    std::shared_ptr<Vulkan> vulkan;
+    std::shared_ptr<Engine> engine;
     std::shared_ptr<Window> window;
     std::shared_ptr<Camera> camera;
     std::shared_ptr<Player> player;

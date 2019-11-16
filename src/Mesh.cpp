@@ -1,15 +1,14 @@
+#include "Mesh.hpp"
+#include "State.hpp"
+
 #include <memory>
 #include <stdexcept>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <spdlog/spdlog.h>
 
-#include "Config.hpp"
-#include "Mesh.hpp"
-#include "State.hpp"
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
 namespace tat
 {

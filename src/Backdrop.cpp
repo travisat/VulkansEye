@@ -1,9 +1,12 @@
+#include "Backdrop.hpp"
+#include "State.hpp"
+#include "spdlog/async.h"
+
 #include <filesystem>
 #include <memory>
 #include <utility>
 
-#include "Backdrop.hpp"
-#include "State.hpp"
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -29,31 +32,13 @@ void Backdrop::load()
     spdlog::info("Loaded Backdrop {}", name);
 }
 
-Backdrop::~Backdrop()
-{
-    auto &state = State::instance();
-    if (descriptorSetLayout)
-    {
-        state.vulkan->device.destroyDescriptorSetLayout(descriptorSetLayout);
-    }
-    if (descriptorPool)
-    {
-        state.vulkan->device.destroyDescriptorPool(descriptorPool);
-    }
-}
-
-void Backdrop::cleanup()
-{
-    auto &state = State::instance();
-    pipeline.cleanup();
-    state.vulkan->device.destroyDescriptorPool(descriptorPool);
-}
-
 void Backdrop::recreate()
 {
     createPipeline();
     createUniformBuffers();
+    descriptorPool.reset();
     createDescriptorPool();
+    descriptorSets.clear();
     createDescriptorSets();
 }
 
@@ -80,16 +65,16 @@ auto Backdrop::loadCubeMap(const std::string &file) -> std::shared_ptr<Image>
 
 void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
-                                     &descriptorSets[currentImage], 0, nullptr);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout.get(), 0, 1,
+                                     &descriptorSets[currentImage].get(), 0, nullptr);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
     commandBuffer.draw(3, 1, 0, 0);
 }
 
 void Backdrop::createUniformBuffers()
 {
-    auto &state = State::instance();
-    backBuffers.resize(state.vulkan->swapChainImages.size());
+    auto &engine = State::instance().engine;
+    backBuffers.resize(engine->swapChainImages.size());
     for (auto &buffer : backBuffers)
     {
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
@@ -103,21 +88,21 @@ void Backdrop::createUniformBuffers()
 
 void Backdrop::update(uint32_t currentImage)
 {
-    auto &state = State::instance();
+    auto &camera = State::instance().camera;
     // skybox is a quad that fills the screen
     // https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
     // by unprojecting the mvp (ie applying the inverse backwards)
-    glm::mat4 inverseProjection = inverse(state.camera->projection());
-    glm::mat4 inverseModelView = transpose(state.camera->view());
+    glm::mat4 inverseProjection = inverse(camera->projection());
+    glm::mat4 inverseModelView = transpose(camera->view());
     backBuffer.inverseMVP = inverseModelView * inverseProjection;
     memcpy(backBuffers[currentImage].mapped, &backBuffer, sizeof(backBuffer));
 }
 
 void Backdrop::createDescriptorPool()
 {
-    auto &state = State::instance();
+    auto &engine = State::instance().engine;
 
-    auto numSwapChainImages = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(engine->swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -130,12 +115,12 @@ void Backdrop::createDescriptorPool()
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = state.vulkan->device.createDescriptorPool(poolInfo);
+    descriptorPool = engine->device->createDescriptorPoolUnique(poolInfo);
 }
 
 void Backdrop::createDescriptorSetLayouts()
 {
-    auto &state = State::instance();
+    auto &engine = State::instance().engine;
     vk::DescriptorSetLayoutBinding vertexLayoutBinding = {};
     vertexLayoutBinding.binding = 0;
     vertexLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -156,21 +141,21 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = state.vulkan->device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
 }
 
 void Backdrop::createDescriptorSets()
 {
-     auto& state = State::instance();
-    std::vector<vk::DescriptorSetLayout> layouts(state.vulkan->swapChainImages.size(), descriptorSetLayout);
+    auto &engine = State::instance().engine;
+    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout.get());
     vk::DescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(state.vulkan->swapChainImages.size());
+    allocInfo.descriptorPool = descriptorPool.get();
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = state.vulkan->device.allocateDescriptorSets(allocInfo);
+    descriptorSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
 
-    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); i++)
+    for (size_t i = 0; i < engine->swapChainImages.size(); i++)
     {
 
         vk::DescriptorBufferInfo bufferInfo = {};
@@ -180,44 +165,41 @@ void Backdrop::createDescriptorSets()
 
         vk::DescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView = colorMap->imageView;
-        imageInfo.sampler = colorMap->sampler;
+        imageInfo.imageView = colorMap->imageView.get();
+        imageInfo.sampler = colorMap->sampler.get();
 
         std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
-        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstSet = descriptorSets[i].get();
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstSet = descriptorSets[i].get();
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        state.vulkan->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                            nullptr);
+        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                                             nullptr);
     }
 };
 
 void Backdrop::createPipeline()
 {
-     auto& state = State::instance();
-    pipeline.descriptorSetLayout = descriptorSetLayout;
-    pipeline.loadDefaults(state.vulkan->colorPass);
+    auto &engine = State::instance().engine;
+    pipeline.descriptorSetLayout = descriptorSetLayout.get();
 
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
+    pipeline.vertShader = engine->createShaderModule(vertPath);
+    pipeline.fragShader = engine->createShaderModule(fragPath);
 
-    pipeline.vertShaderStageInfo.module = state.vulkan->createShaderModule(vertPath);
-    pipeline.fragShaderStageInfo.module = state.vulkan->createShaderModule(fragPath);
-
+    pipeline.loadDefaults(engine->colorPass.get());
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
-
-    // pipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;

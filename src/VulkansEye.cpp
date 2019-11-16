@@ -1,13 +1,13 @@
-#include <exception>
-#include <memory>
-
-#include <spdlog/spdlog.h>
-
 #include "VulkansEye.hpp"
 #include "Config.hpp"
 #include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
+
+#include <exception>
+#include <memory>
+
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -16,7 +16,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
 {
     // init state
     auto &state = State::instance();
-    state.vulkan = std::make_shared<Vulkan>();
+    state.engine = std::make_shared<Engine>();
 
     // start timers
     Timer::getInstance();
@@ -27,21 +27,21 @@ VulkansEye::VulkansEye(const std::string &configPath)
     // load config
     auto config = Config(configPath);
 
-    //get settings
+    // get settings
     auto &settings = state.at("settings");
 
     // load display settings
     if (settings.at("vsync").get<bool>() == true)
     {
-        state.vulkan->defaultPresentMode = vk::PresentModeKHR::eFifo;
+        state.engine->defaultPresentMode = vk::PresentModeKHR::eFifo;
     }
     else
     {
-        state.vulkan->defaultPresentMode = vk::PresentModeKHR::eMailbox;
+        state.engine->defaultPresentMode = vk::PresentModeKHR::eMailbox;
     }
 
     // setup glfw window
-    auto& window = settings.at("window");
+    auto &window = settings.at("window");
     state.window = std::make_shared<Window>(this, window.at(0), window.at(1), "Vulkans Eye");
 
     // setup input
@@ -54,7 +54,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
     spdlog::info("Created Input");
 
     // init engine
-    engine.init();
+    state.engine->init();
 
     // init collections
     state.backdrops = std::make_shared<Collection<Backdrop>>("backdrops");
@@ -65,9 +65,8 @@ VulkansEye::VulkansEye(const std::string &configPath)
     spdlog::info("Created Collection meshes");
     state.models = std::make_shared<Collection<Model>>("models");
     spdlog::info("Created Collection models");
-    
 
-    //init other objects
+    // init other objects
     state.camera = std::make_shared<Camera>();
     state.player = std::make_shared<Player>();
     state.scene = std::make_shared<Scene>();
@@ -75,12 +74,12 @@ VulkansEye::VulkansEye(const std::string &configPath)
     state.overlay = std::make_shared<Overlay>();
 
     // prepare engine
-    engine.prepare();
+    state.engine->prepare();
 }
 
 void VulkansEye::run()
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     spdlog::info("Begin Main Loop");
     float lastFrameTime = 0.0F;
     while (state.window->shouldClose() == 0)
@@ -101,74 +100,42 @@ void VulkansEye::run()
         state.camera->setPosition(glm::vec3(-1.F, -1.F, -1.F) * state.player->position());
         state.camera->update();
 
-        engine.drawFrame(deltaTime);
+        state.engine->drawFrame(deltaTime);
     }
-    vkDeviceWaitIdle(state.vulkan->device);
+    
+    state.engine->device->waitIdle();
     spdlog::info("End Main Loop");
 
-    //dump state
+    // dump state
     spdlog::get("state")->info(State::instance().dump(4));
 }
 
 void VulkansEye::handleInput(float deltaTime)
 {
-    auto& state = State::instance();
+    auto &state = State::instance();
     // Normal Mode
     if (Input::wasKeyReleased(GLFW_KEY_F1))
     {
-        if (Input::getMode() != InputMode::Normal)
-        {
-            // if mode is insert set glfw to take over cursor before switching
-            if (Input::getMode() == InputMode::Insert)
-            {
-                state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                state.window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            }
-
-            engine.showOverlay = false;
-            engine.updateCommandBuffer = true;
-            Input::switchMode(InputMode::Normal);
-            spdlog::info("Changed Mode to Normal");
-        }
+        switchToNormalMode();
     }
+
     // Visual Mode
     if (Input::wasKeyReleased(GLFW_KEY_F2))
     {
-        if (Input::getMode() != InputMode::Visual)
-        {
-            // if mode is insert set glfw to take over cursor before switching
-            if (Input::getMode() == InputMode::Insert)
-            {
-                state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                state.window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-            }
-
-            engine.showOverlay = true;
-            engine.updateCommandBuffer = true;
-            Input::switchMode(InputMode::Visual);
-            spdlog::info("Changed Mode to Visual");
-        }
+        switchToVisualMode();
     }
 
     // Insert Mode
     if (Input::wasKeyReleased(GLFW_KEY_F3))
     {
-        if (Input::getMode() != InputMode::Insert)
-        {
-            // all other modes glfw owns cursor
-            // switch it back
-            state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            engine.showOverlay = true;
-            engine.updateCommandBuffer = true;
-            Input::switchMode(InputMode::Insert);
-            spdlog::info("Changed Mode to Insert");
-        }
+        switchToInsertMode();
     }
+
+    state.camera->look(Input::getMouseX(), Input::getMouseY());
 
     auto moveDir = glm::vec2(0.F);
     if (Input::getMode() != InputMode::Insert)
     { // don't move camera/character in insert mode
-        state.camera->look(Input::getMouseX(), Input::getMouseY());
 
         moveDir.y -= static_cast<float>(Input::isKeyPressed(GLFW_KEY_W));
         moveDir.y += static_cast<float>(Input::isKeyPressed(GLFW_KEY_S));
@@ -185,9 +152,69 @@ void VulkansEye::handleInput(float deltaTime)
 
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
-        spdlog::info("Pressed Escape Closing");
-        state.window->setClose(1);
+        close();
     }
+}
+
+void VulkansEye::switchToNormalMode()
+{
+    auto &state = State::instance();
+    if (Input::getMode() != InputMode::Normal)
+    {
+        // if mode is insert set glfw to take over cursor before switching
+        if (Input::getMode() == InputMode::Insert)
+        {
+            state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            state.window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
+
+        state.engine->showOverlay = false;
+        state.engine->updateCommandBuffer = true;
+        Input::switchMode(InputMode::Normal);
+        spdlog::info("Changed Mode to Normal");
+    }
+}
+
+void VulkansEye::switchToVisualMode()
+{
+    auto &state = State::instance();
+
+    if (Input::getMode() != InputMode::Visual)
+    {
+        // if mode is insert set glfw to take over cursor before switching
+        if (Input::getMode() == InputMode::Insert)
+        {
+            state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            state.window->setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
+
+        state.engine->showOverlay = true;
+        state.engine->updateCommandBuffer = true;
+        Input::switchMode(InputMode::Visual);
+        spdlog::info("Changed Mode to Visual");
+    }
+}
+
+void VulkansEye::switchToInsertMode()
+{
+    auto &state = State::instance();
+    if (Input::getMode() != InputMode::Insert)
+    {
+        // all other modes glfw owns cursor
+        // switch it back
+        state.window->setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        state.engine->showOverlay = true;
+        state.engine->updateCommandBuffer = true;
+        Input::switchMode(InputMode::Insert);
+        spdlog::info("Changed Mode to Insert");
+    }
+}
+
+void VulkansEye::close()
+{
+    auto& state = State::instance();
+    spdlog::info("Closing");
+    state.window->setClose(1);
 }
 
 } // namespace tat

@@ -1,8 +1,12 @@
 #pragma once
-
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 #include <utility>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
 namespace tat

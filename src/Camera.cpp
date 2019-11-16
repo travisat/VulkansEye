@@ -2,6 +2,8 @@
 #include "Input.hpp"
 #include "State.hpp"
 
+#include <spdlog/spdlog.h>
+
 namespace tat
 {
 
@@ -92,10 +94,10 @@ void Camera::updateProjection()
     P = glm::perspective(glm::radians(FoV), width / height, zNear, zFar);
 }
 
-void Camera::updateProjection(float width, float height)
+void Camera::updateProjection(std::pair<int, int> size)
 {
-    this->width = width;
-    this->height = height;
+    width = static_cast<float>(size.first);
+    height = static_cast<float>(size.second);
     updateProjection();
 }
 

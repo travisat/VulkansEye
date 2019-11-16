@@ -1,5 +1,9 @@
 #pragma once
-
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
 namespace tat
@@ -13,12 +17,10 @@ class Framebuffer
     int32_t height;
     int32_t layers = 1;
 
-    vk::Framebuffer framebuffer;
+    vk::UniqueFramebuffer framebuffer;
     std::vector<vk::ImageView> attachments;
 
-    ~Framebuffer();
     void create();
-    void cleanup();
 
   private:
     void createRenderPass();

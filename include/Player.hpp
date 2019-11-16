@@ -9,7 +9,7 @@ class Player : public Object
 {
   public:
     Player();
-    ~Player() = default;
+    ~Player();
 
     void move(glm::vec2 direction, float deltaTime);
     void jump();

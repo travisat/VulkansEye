@@ -44,7 +44,6 @@ class Overlay
     ~Overlay();
 
     void recreate();
-    void cleanup();
 
     // Starts a new imGui frame and sets up windows and ui elements
     void newFrame();
@@ -65,9 +64,9 @@ class Overlay
     std::unique_ptr<Image> fontImage;
 
     Pipeline pipeline;
-    vk::DescriptorPool descriptorPool;
-    vk::DescriptorSetLayout descriptorSetLayout;
-    std::vector<vk::DescriptorSet> descriptorSets;
+    vk::UniqueDescriptorPool descriptorPool;
+    vk::UniqueDescriptorSetLayout descriptorSetLayout;
+    std::vector<vk::UniqueDescriptorSet> descriptorSets;
 
     UISettings uiSettings;
 

@@ -1,10 +1,11 @@
 #include "Material.hpp"
-#include "Config.hpp"
 #include "State.hpp"
-#include "spdlog/spdlog.h"
+
 #include <filesystem>
 #include <memory>
 #include <type_traits>
+
+#include <spdlog/spdlog.h>
 
 namespace tat
 {

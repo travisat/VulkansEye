@@ -25,17 +25,16 @@ class Scene
     ~Scene();
 
     void load();
-    void cleanup();
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage, float deltaTime);
 
   private:
-    vk::DescriptorPool colorPool;
-    vk::DescriptorSetLayout colorLayout;
-    vk::DescriptorPool shadowPool;
-    vk::DescriptorSetLayout shadowLayout;
+    vk::UniqueDescriptorPool colorPool;
+    vk::UniqueDescriptorSetLayout colorLayout;
+    vk::UniqueDescriptorPool shadowPool;
+    vk::UniqueDescriptorSetLayout shadowLayout;
 
     UniformVert vertBuffer{};
     UniformFrag fragBuffer{};
@@ -56,6 +55,7 @@ class Scene
     void createColorLayouts();
     void createColorPipeline();
     void createColorSets();
+    void recreateColorSets();
 
     void createShadowPool();
     void createShadowLayouts();

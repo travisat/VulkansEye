@@ -1,11 +1,11 @@
+#include "Config.hpp"
+#include "State.hpp"
+
 #include <filesystem>
 #include <fstream>
 
 #include <nlohmann/json.hpp>
-
-#include "Config.hpp"
-#include "State.hpp"
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
 using json = nlohmann::json;
 
@@ -30,12 +30,12 @@ Config::Config(const std::string &path)
 
         // load settings
         loadSettings(path);
-        loadPlayer(state["settings"]["playerConfig"]);
-        loadScene(state["settings"]["sceneConfig"]);
-        loadBackdrops(state["settings"]["backdropsPath"]);
-        loadMaterials(state["settings"]["materialsPath"]);
-        loadMeshes(state["settings"]["meshesPath"]);
-        loadModels(state["settings"]["modelsPath"]);
+        loadPlayer(state.at("settings").at("playerConfig"));
+        loadScene(state.at("settings").at("sceneConfig"));
+        loadBackdrops(state.at("settings").at("backdropsPath"));
+        loadMaterials(state.at("settings").at("materialsPath"));
+        loadMeshes(state.at("settings").at("meshesPath"));
+        loadModels(state.at("settings").at("modelsPath"));
 
         spdlog::info("Loaded Config");
     }
@@ -55,7 +55,7 @@ void Config::loadSettings(const std::string &path)
         json j;
         file >> j;
 
-        state["settings"].update(j);
+        state.at("settings").update(j);
 
         spdlog::info("Loaded Config {}", path);
     }
@@ -75,7 +75,7 @@ void Config::loadPlayer(const std::string &path)
         json j;
         file >> j;
 
-        state["player"].update(j);
+        state.at("player").update(j);
         spdlog::info("Loaded Config {}", path);
     }
     else
@@ -93,7 +93,7 @@ void Config::loadScene(const std::string &path)
         json j;
         file >> j;
 
-        state["scene"].update(j);
+        state.at("scene").update(j);
         spdlog::info("Loaded Config {}", path);
     }
     else
@@ -122,10 +122,10 @@ void Config::loadBackdrops(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
-                state["backdrops"][name] = backdrop;
+                state.at("backdrops")[name] = backdrop;
                 for (auto &item : j.items())
                 {
-                    state["backdrops"][name].update(item);
+                    state.at("backdrops").at(name).update(item);
                 }
                 spdlog::info("Loaded Config {}", configFile);
             }
@@ -161,10 +161,10 @@ void Config::loadMaterials(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
-                state["materials"][name] = material;
+                state.at("materials")[name] = material;
                 for (auto &item : j.items())
                 {
-                    state["materials"][name].update(item);
+                    state.at("materials").at(name).update(item);
                 }
                 spdlog::info("Loaded Config {}", configFile);
             }
@@ -200,10 +200,10 @@ void Config::loadMeshes(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
-                state["meshes"][name] = mesh;
+                state.at("meshes")[name] = mesh;
                 for (auto &item : j.items())
                 {
-                    state["meshes"][name].update(item);
+                    state.at("meshes").at(name).update(item);
                 }
                 spdlog::info("Loaded Config {}", configFile);
             }
@@ -241,10 +241,10 @@ void Config::loadModels(const std::string &path)
                     // extra entries don't matter*, missing ones do
                     // TODO(travis) *they probably do matter
                     auto name = config.path().filename().stem().string();
-                    state["models"][name] = model;
+                    state.at("models")[name] = model;
                     for (auto &item : j.items())
                     {
-                        state["models"][name].update(item);
+                        state.at("models").at(name).update(item);
                     }
                     spdlog::info("Loaded Config {}", configFile);
                 }

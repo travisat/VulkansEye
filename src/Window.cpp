@@ -1,6 +1,5 @@
 #include "Window.hpp"
-#include "vulkan/vulkan.hpp"
-#include "vulkan/vulkan_core.h"
+
 #include <stdexcept>
 #include <spdlog/spdlog.h>
 
@@ -20,6 +19,7 @@ Window::~Window()
 {
     glfwDestroyWindow(window);
     glfwTerminate();
+    spdlog::info("Destroyed Window");
 }
 
 void Window::setKeyCallBack(GLFWkeyfun callback)
@@ -60,7 +60,6 @@ auto Window::createSurface(vk::Instance &instance) -> vk::SurfaceKHR
     {
         spdlog::error("Unable to create surface. Error code {}", result);
         throw std::runtime_error("Unable to create surface");
-        return nullptr;
     }
     return surface;
 }

@@ -1,13 +1,7 @@
 #pragma once
 
-#include "spdlog/logger.h"
 #include <string>
 #include <vector>
-
-#define GLM_FORCE_RADIANS
-#define GLM_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
 
 #include <nlohmann/json.hpp>
 

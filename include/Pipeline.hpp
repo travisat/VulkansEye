@@ -1,5 +1,9 @@
 #pragma once
-
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
 namespace tat
@@ -10,12 +14,16 @@ class Pipeline
   public:
     vk::DescriptorSetLayout descriptorSetLayout;
 
-    vk::Pipeline pipeline;
-    vk::PipelineLayout pipelineLayout;
+    vk::UniquePipeline pipeline;
+    vk::UniquePipelineLayout pipelineLayout;
 
-    ~Pipeline();
+    vk::UniqueShaderModule vertShader;
+    vk::UniqueShaderModule fragShader;
+    vk::UniqueShaderModule geomShader;
+    vk::UniqueShaderModule tescShader;
+    vk::UniqueShaderModule teseShader;
+
     void create();
-    void cleanup();
     void loadDefaults(vk::RenderPass renderPass);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};

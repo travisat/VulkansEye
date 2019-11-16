@@ -1,6 +1,12 @@
 #pragma once
 
 #include <memory>
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
 
 #include "Buffer.hpp"
 #include "Camera.hpp"
@@ -19,8 +25,8 @@ struct UniformBack
 class Backdrop : public Entry
 {
   public:
-    virtual ~Backdrop();
     glm::vec3 light{};
+    virtual ~Backdrop() = default;
 
     std::shared_ptr<Image> colorMap;
     std::shared_ptr<Image> radianceMap;
@@ -28,7 +34,6 @@ class Backdrop : public Entry
 
     void load() override;
 
-    void cleanup();
     void recreate();
 
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -37,12 +42,12 @@ class Backdrop : public Entry
   private:
     UniformBack backBuffer{};
 
-    std::vector<vk::DescriptorSet> descriptorSets;
+    std::vector<vk::UniqueDescriptorSet> descriptorSets;
     std::vector<Buffer> backBuffers;
-    vk::DescriptorPool descriptorPool;
+    vk::UniqueDescriptorPool descriptorPool;
 
     Pipeline pipeline;
-    vk::DescriptorSetLayout descriptorSetLayout{};
+    vk::UniqueDescriptorSetLayout descriptorSetLayout{};
 
     auto loadCubeMap(const std::string &file) -> std::shared_ptr<Image>;
     void createDescriptorPool();

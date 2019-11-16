@@ -4,12 +4,12 @@
 namespace tat
 {
 
-auto createColorPass() -> vk::RenderPass
+auto createColorPass() -> vk::UniqueRenderPass
 {
-    auto& state = State::instance();
+    auto& engine = State::instance().engine;
     vk::AttachmentDescription colorAttachment = {};
-    colorAttachment.format = state.vulkan->swapChainImageFormat;
-    colorAttachment.samples = state.vulkan->msaaSamples;
+    colorAttachment.format = engine->swapChainImageFormat;
+    colorAttachment.samples = engine->msaaSamples;
     colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
     colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -18,7 +18,7 @@ auto createColorPass() -> vk::RenderPass
     colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription colorAttachmentResolve = {};
-    colorAttachmentResolve.format = state.vulkan->swapChainImageFormat;
+    colorAttachmentResolve.format = engine->swapChainImageFormat;
     colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
     colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eStore;
@@ -32,8 +32,8 @@ auto createColorPass() -> vk::RenderPass
     colorAttachmentResolveRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
     vk::AttachmentDescription depthAttachment = {};
-    depthAttachment.format = state.vulkan->findDepthFormat();
-    depthAttachment.samples = state.vulkan->msaaSamples;
+    depthAttachment.format = engine->findDepthFormat();
+    depthAttachment.samples = engine->msaaSamples;
     depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
     depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -86,12 +86,12 @@ auto createColorPass() -> vk::RenderPass
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    return state.vulkan->device.createRenderPass(renderPassInfo);
+    return engine->device->createRenderPassUnique(renderPassInfo);
 }
 
-auto createShadowPass() -> vk::RenderPass
+auto createShadowPass() -> vk::UniqueRenderPass
 {
-    auto& state = State::instance();
+    auto& engine = State::instance().engine;
     vk::AttachmentDescription shadowAttachment = {};
     shadowAttachment.format = vk::Format::eR32G32Sfloat;
     shadowAttachment.samples = vk::SampleCountFlagBits::e1;
@@ -103,7 +103,7 @@ auto createShadowPass() -> vk::RenderPass
     shadowAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     vk::AttachmentDescription depthAttachment = {};
-    depthAttachment.format = state.vulkan->findDepthFormat();
+    depthAttachment.format = engine->findDepthFormat();
     depthAttachment.samples = vk::SampleCountFlagBits::e1;
     depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -156,7 +156,7 @@ auto createShadowPass() -> vk::RenderPass
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    return state.vulkan->device.createRenderPass(renderPassInfo);
+    return engine->device->createRenderPassUnique(renderPassInfo);
 }
 
 } // namespace tat

@@ -30,7 +30,7 @@ class Camera
 
     void updateView();
     void updateProjection();
-    void updateProjection(float width, float height);
+    void updateProjection(std::pair<int, int>);
     auto view() -> glm::mat4;
     auto projection() -> glm::mat4;
 

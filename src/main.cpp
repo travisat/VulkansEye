@@ -1,24 +1,21 @@
 #include <memory>
 #include <system_error>
-#define STB_IMAGE_IMPLEMENTATION
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
-#define VMA_IMPLEMENTATION
-
 #include <filesystem>
 #include <iostream>
+
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
 #include "VulkansEye.hpp"
 
-#define DEFAULT_CONFIG "assets/configs/settings.json"
+constexpr auto defaultConfig = "assets/configs/settings.json";
 
 auto main(int argc, char *argv[]) -> int
 {
-
     try
     {
         auto debug = spdlog::basic_logger_mt<spdlog::async_factory>("debug", "logs/debug.log", true);
@@ -28,7 +25,7 @@ auto main(int argc, char *argv[]) -> int
 
         try
         {
-            std::string config = DEFAULT_CONFIG;
+            std::string config = defaultConfig;
             switch (argc)
             {
             case 0:
@@ -46,7 +43,7 @@ auto main(int argc, char *argv[]) -> int
             }
 
             tat::VulkansEye app(config);
-            app.run();
+            //tat::VulkansEye::run();
         }
         catch (const std::exception &e)
         {
@@ -54,8 +51,6 @@ auto main(int argc, char *argv[]) -> int
             spdlog::error("Stopping");
             return EXIT_FAILURE;
         }
-
-        spdlog::info("END");
     }
     catch (const spdlog::spdlog_ex &ex)
     {

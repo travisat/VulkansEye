@@ -1,11 +1,20 @@
-#include <cstdint>
-#include <memory>
-#include <set>
-#include <stdexcept>
-
 #include "Engine.hpp"
 #include "State.hpp"
 #include "vulkan/vulkan.hpp"
+
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <optional>
+#include <set>
+#include <stdexcept>
+#include <vector>
+
+#include <spdlog/spdlog.h>
+#include <vk_mem_alloc.h>
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace tat
 {
@@ -41,14 +50,14 @@ void Engine::init()
 
     auto &state = State::instance();
     createInstance();
-    state.vulkan->surface = state.window->createSurface(state.vulkan->instance);
+    surface.reset(state.window->createSurface(instance.get()));
     pickPhysicalDevice();
     createLogicalDevice();
     createAllocator();
 
     createSwapChain();
-    state.vulkan->shadowPass = createShadowPass();
-    state.vulkan->colorPass = createColorPass();
+    shadowPass = createShadowPass();
+    colorPass = createColorPass();
     createCommandPool();
     createPipelineCache();
 
@@ -68,39 +77,24 @@ void Engine::prepare()
 
 Engine::~Engine()
 {
-    auto &state = State::instance();
     if (enableValidationLayers)
     {
         if (debugMessenger != nullptr)
         {
-            state.vulkan->instance.destroyDebugUtilsMessengerEXT(debugMessenger, nullptr, dldy);
+            instance->destroyDebugUtilsMessengerEXT(debugMessenger);
         }
     }
-    if (!commandBuffers.empty())
+    // manually delete
+    colorAttachment.reset();
+    depthAttachment.reset();
+    shadowDepth.reset();
+
+    if (allocator != nullptr)
     {
-        state.vulkan->device.freeCommandBuffers(state.vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()),
-                                                commandBuffers.data());
+        vmaDestroyAllocator(allocator);
     }
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        if (!renderFinishedSemaphores.empty() && renderFinishedSemaphores[i])
-        {
-            state.vulkan->device.destroySemaphore(renderFinishedSemaphores[i]);
-        }
-        if (!presentFinishedSemaphores.empty() && presentFinishedSemaphores[i])
-        {
-            state.vulkan->device.destroySemaphore(presentFinishedSemaphores[i]);
-        }
-        if (!waitFences.empty() && waitFences[i])
-        {
-            state.vulkan->device.destroyFence(waitFences[i]);
-        }
-    }
-    for (auto imageView : swapChainImageViews)
-    {
-        state.vulkan->device.destroyImageView(imageView);
-    }
-    spdlog::info("Engine destroyed");
+
+    spdlog::info("Destroyed Engine");
 }
 
 void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
@@ -128,13 +122,13 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo sunPassInfo = {};
-    sunPassInfo.renderPass = state.vulkan->shadowPass;
+    sunPassInfo.renderPass = shadowPass.get();
     sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     sunPassInfo.renderArea.extent.width = settings.at("shadowSize");
     sunPassInfo.renderArea.extent.height = settings.at("shadowSize");
     sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     sunPassInfo.pClearValues = clearValues.data();
-    sunPassInfo.framebuffer = shadowFbs[currentImage].framebuffer;
+    sunPassInfo.framebuffer = shadowFbs[currentImage].framebuffer.get();
 
     commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
     state.scene->drawShadow(commandBuffer, currentImage);
@@ -153,7 +147,7 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     commandBuffer.setViewport(0, 1, &viewport);
 
     vk::Rect2D scissor{};
-    scissor.extent = state.vulkan->swapChainExtent;
+    scissor.extent = swapChainExtent;
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     commandBuffer.setScissor(0, 1, &scissor);
@@ -165,12 +159,12 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo colorPassInfo = {};
-    colorPassInfo.renderPass = state.vulkan->colorPass;
+    colorPassInfo.renderPass = colorPass.get();
     colorPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    colorPassInfo.renderArea.extent = state.vulkan->swapChainExtent;
+    colorPassInfo.renderArea.extent = swapChainExtent;
     colorPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     colorPassInfo.pClearValues = clearValues.data();
-    colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer;
+    colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer.get();
 
     commandBuffer.beginRenderPass(colorPassInfo, vk::SubpassContents::eInline);
     state.scene->drawColor(commandBuffer, currentImage);
@@ -183,20 +177,19 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
 
 void Engine::createCommandBuffers()
 {
-    auto &state = State::instance();
     commandBuffers.resize(swapChainFbs.size());
 
     vk::CommandBufferAllocateInfo allocInfo = {};
-    allocInfo.commandPool = state.vulkan->commandPool;
+    allocInfo.commandPool = commandPool.get();
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-    commandBuffers = state.vulkan->device.allocateCommandBuffers(allocInfo);
+    commandBuffers = device->allocateCommandBuffersUnique(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
 
-        vk::CommandBuffer commandBuffer = commandBuffers[i];
+        vk::CommandBuffer commandBuffer = commandBuffers[i].get();
         vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
 
@@ -220,19 +213,18 @@ void Engine::drawFrame(float deltaTime)
 
     if (state.overlay->update)
     {
-        state.overlay->cleanup();
         state.overlay->recreate();
         createCommandBuffers();
     }
 
-    auto result = state.vulkan->device.waitForFences(1, &waitFences[currentImage], VK_FALSE, UINT64_MAX);
+    auto result = device->waitForFences(1, &waitFences[currentImage].get(), VK_FALSE, UINT64_MAX);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to wait for fences. Error code {}", result);
         throw std::runtime_error("Unable to wait for fences");
         return;
     }
-    result = state.vulkan->device.resetFences(1, &waitFences[currentImage]);
+    result = device->resetFences(1, &waitFences[currentImage].get());
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to reset fences. Error code {}", result);
@@ -241,8 +233,8 @@ void Engine::drawFrame(float deltaTime)
     }
 
     uint32_t currentBuffer;
-    result = state.vulkan->device.acquireNextImageKHR(state.vulkan->swapChain, UINT64_MAX,
-                                                      presentFinishedSemaphores[currentImage], nullptr, &currentBuffer);
+    result = device->acquireNextImageKHR(swapChain.get(), UINT64_MAX, presentFinishedSemaphores[currentImage].get(),
+                                         nullptr, &currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
@@ -260,22 +252,22 @@ void Engine::drawFrame(float deltaTime)
     const vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     vk::SubmitInfo submitInfo = {};
     submitInfo.pWaitDstStageMask = &waitStages;
-    submitInfo.pWaitSemaphores = &presentFinishedSemaphores[currentImage];
+    submitInfo.pWaitSemaphores = &presentFinishedSemaphores[currentImage].get();
     submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentImage];
+    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentImage].get();
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[currentBuffer];
+    submitInfo.pCommandBuffers = &commandBuffers[currentBuffer].get();
     submitInfo.commandBufferCount = 1;
-    state.vulkan->graphicsQueue.submit(1, &submitInfo, waitFences[currentImage]);
+    graphicsQueue.submit(1, &submitInfo, waitFences[currentImage].get());
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &state.vulkan->swapChain;
+    presentInfo.pSwapchains = &swapChain.get();
     presentInfo.pImageIndices = &currentBuffer;
-    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentImage];
+    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentImage].get();
     presentInfo.waitSemaphoreCount = 1;
-    result = state.vulkan->presentQueue.presentKHR(&presentInfo);
+    result = presentQueue.presentKHR(&presentInfo);
 
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
@@ -299,37 +291,25 @@ void Engine::drawFrame(float deltaTime)
 
 void Engine::updateWindow()
 {
-    auto &state = State::instance();
     if (!prepared)
     {
         return;
     }
     prepared = false;
 
-    state.vulkan->device.waitIdle();
+    device->waitIdle();
 
-    for (auto &framebuffer : swapChainFbs)
-    {
-        framebuffer.cleanup();
-    }
-
-    state.vulkan->device.destroyRenderPass(state.vulkan->colorPass);
-
-    for (auto imageView : swapChainImageViews)
-    {
-        state.vulkan->device.destroyImageView(imageView);
-    }
-
-    state.vulkan->device.destroySwapchainKHR(state.vulkan->swapChain);
-
-    state.vulkan->device.freeCommandBuffers(state.vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()),
-                                            commandBuffers.data());
-
+    swapChain.reset();
+    swapChainImageViews.clear();
     createSwapChain();
-    state.vulkan->colorPass = createColorPass();
+    colorPass.reset();
+    colorPass = createColorPass();
+
+    swapChainFbs.clear();
     createColorFramebuffers();
+    commandBuffers.clear();
     createCommandBuffers();
-    state.vulkan->device.waitIdle();
+    device->waitIdle();
 
     prepared = true;
 }
@@ -350,41 +330,26 @@ void Engine::resizeWindow()
         std::tie(width, height) = state.window->getFrameBufferSize();
         state.window->wait();
     }
-    state.vulkan->device.waitIdle();
+    device->waitIdle();
     auto &window = state.at("settings").at("window");
-    window["width"] = width;
-    window["height"] = height;
+    window.at(0) = width;
+    window.at(1) = height;
 
-    for (auto &framebuffer : swapChainFbs)
-    {
-        framebuffer.cleanup();
-    }
-
-    state.vulkan->device.destroyRenderPass(state.vulkan->colorPass);
-
-    for (auto imageView : swapChainImageViews)
-    {
-        state.vulkan->device.destroyImageView(imageView);
-    }
-
-    state.vulkan->device.destroySwapchainKHR(state.vulkan->swapChain);
-
-    state.vulkan->device.freeCommandBuffers(state.vulkan->commandPool, static_cast<uint32_t>(commandBuffers.size()),
-                                            commandBuffers.data());
-
-    state.scene->cleanup();
-    state.overlay->cleanup();
-
+    swapChain.reset();
+    swapChainImageViews.clear();
     createSwapChain();
-    state.vulkan->colorPass = createColorPass();
+    colorPass.reset();
+    colorPass = createColorPass();
 
     state.scene->recreate();
     state.overlay->recreate();
 
+    swapChainFbs.clear();
     createColorFramebuffers();
 
+    commandBuffers.clear();
     createCommandBuffers();
-    state.vulkan->device.waitIdle();
+    device->waitIdle();
 
     prepared = true;
     spdlog::info("Resized window to {}x{}", width, height);
@@ -414,34 +379,39 @@ void Engine::createInstance()
         createInfo.ppEnabledLayerNames = validationLayers.data();
     }
 
-    state.vulkan->instance = vk::createInstance(createInfo);
+    vk::DynamicLoader dl;
+    auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
+    instance = vk::createInstanceUnique(createInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
+
     spdlog::info("Created Vulkan instance");
 }
 
 void Engine::pickPhysicalDevice()
 {
-    auto &state = State::instance();
-    auto devices = state.vulkan->instance.enumeratePhysicalDevices();
+    auto devs = instance->enumeratePhysicalDevices();
 
-    assert(!devices.empty());
+    assert(!devs.empty());
 
-    for (const auto &device : devices)
+    for (const auto &dev : devs)
     {
-        if (isDeviceSuitable(device))
+        if (isDeviceSuitable(dev))
         {
-            state.vulkan->properties = device.getProperties();
-            spdlog::info("Device: {}", state.vulkan->properties.deviceName);
-            spdlog::info("ID: {}", state.vulkan->properties.deviceID);
-            spdlog::info("Type: {}", state.vulkan->properties.deviceType);
-            spdlog::info("Driver: {}", state.vulkan->properties.driverVersion);
-            spdlog::info("API: {}", state.vulkan->properties.apiVersion);
-            state.vulkan->physicalDevice = device;
-            state.vulkan->msaaSamples = getMaxUsableSampleCount();
+            properties = dev.getProperties();
+            spdlog::info("Device: {}", properties.deviceName);
+            spdlog::info("ID: {}", properties.deviceID);
+            spdlog::info("Type: {}", properties.deviceType);
+            spdlog::info("Driver: {}", properties.driverVersion);
+            spdlog::info("API: {}", properties.apiVersion);
+            physicalDevice = dev;
+            msaaSamples = getMaxUsableSampleCount();
             return;
         }
     }
 
-    if (!state.vulkan->physicalDevice)
+    if (!physicalDevice)
     {
         spdlog::error("Unable to find suitable physical device");
         throw std::runtime_error("Unable to find suitable physical device");
@@ -470,7 +440,6 @@ auto Engine::isDeviceSuitable(vk::PhysicalDevice const &device) -> bool
 
 auto Engine::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIndices
 {
-    auto &state = State::instance();
     QueueFamilyIndices indices;
 
     auto queueFamilies = device.getQueueFamilyProperties();
@@ -483,7 +452,7 @@ auto Engine::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIn
             indices.graphicsFamily = i;
         }
 
-        auto presentSupport = device.getSurfaceSupportKHR(i, state.vulkan->surface);
+        auto presentSupport = device.getSurfaceSupportKHR(i, surface.get());
 
         if (queueFamily.queueCount > 0 && (presentSupport != VK_FALSE))
         {
@@ -501,11 +470,10 @@ auto Engine::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIn
 
 auto Engine::querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails
 {
-    auto &state = State::instance();
     SwapChainSupportDetails details{};
-    details.capabilities = device.getSurfaceCapabilitiesKHR(state.vulkan->surface);
-    details.formats = device.getSurfaceFormatsKHR(state.vulkan->surface);
-    details.presentModes = device.getSurfacePresentModesKHR(state.vulkan->surface);
+    details.capabilities = device.getSurfaceCapabilitiesKHR(surface.get());
+    details.formats = device.getSurfaceFormatsKHR(surface.get());
+    details.presentModes = device.getSurfacePresentModesKHR(surface.get());
     return details;
 }
 
@@ -525,8 +493,7 @@ auto Engine::checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> b
 
 void Engine::createLogicalDevice()
 {
-    auto &state = State::instance();
-    QueueFamilyIndices indices = findQueueFamiles(state.vulkan->physicalDevice);
+    QueueFamilyIndices indices = findQueueFamiles(physicalDevice);
 
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -553,12 +520,8 @@ void Engine::createLogicalDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0;
-
     if (enableValidationLayers)
     {
-
-        dldy.init(state.vulkan->instance);
-
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
@@ -568,27 +531,24 @@ void Engine::createLogicalDevice()
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
         debugInfo.pfnUserCallback = debugCallback;
 
-        debugMessenger = state.vulkan->instance.createDebugUtilsMessengerEXT(debugInfo, nullptr, dldy);
-        state.vulkan->device = state.vulkan->physicalDevice.createDevice(createInfo, nullptr, dldy);
-    }
-    else
-    {
-        state.vulkan->device = state.vulkan->physicalDevice.createDevice(createInfo);
+        debugMessenger = instance->createDebugUtilsMessengerEXT(debugInfo);
     }
 
-    state.vulkan->graphicsQueue = state.vulkan->device.getQueue(indices.graphicsFamily.value(), 0);
-    state.vulkan->presentQueue = state.vulkan->device.getQueue(indices.presentFamily.value(), 0);
+    device = physicalDevice.createDeviceUnique(createInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(device.get());
+
+    graphicsQueue = device->getQueue(indices.graphicsFamily.value(), 0);
+    presentQueue = device->getQueue(indices.presentFamily.value(), 0);
     spdlog::info("Created Logical Device");
 }
 
 void Engine::createAllocator()
 {
-    auto &state = State::instance();
     VmaAllocatorCreateInfo allocatorInfo{};
-    allocatorInfo.physicalDevice = state.vulkan->physicalDevice;
-    allocatorInfo.device = state.vulkan->device;
+    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.device = device.get();
 
-    auto result = vmaCreateAllocator(&allocatorInfo, &state.vulkan->allocator);
+    auto result = vmaCreateAllocator(&allocatorInfo, &allocator);
     if (result != VK_SUCCESS)
     {
         spdlog::error("Unable to create Memory Allocator. Error code {}", result);
@@ -602,7 +562,7 @@ void Engine::createSwapChain()
 {
     auto &state = State::instance();
     auto &window = state.at("settings").at("window");
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(state.vulkan->physicalDevice);
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
     vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -615,7 +575,7 @@ void Engine::createSwapChain()
     }
 
     vk::SwapchainCreateInfoKHR createInfo{};
-    createInfo.surface = state.vulkan->surface;
+    createInfo.surface = surface.get();
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -623,7 +583,7 @@ void Engine::createSwapChain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
-    QueueFamilyIndices indices = findQueueFamiles(state.vulkan->physicalDevice);
+    QueueFamilyIndices indices = findQueueFamiles(physicalDevice);
     std::array<uint32_t, 2> queueFamilyIndices = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily)
@@ -644,26 +604,26 @@ void Engine::createSwapChain()
 
     createInfo.oldSwapchain = nullptr;
 
-    state.vulkan->swapChain = state.vulkan->device.createSwapchainKHR(createInfo);
+    swapChain = device->createSwapchainKHRUnique(createInfo);
 
-    state.vulkan->swapChainImages = state.vulkan->device.getSwapchainImagesKHR(state.vulkan->swapChain);
-    state.vulkan->swapChainImageFormat = surfaceFormat.format;
-    state.vulkan->swapChainExtent = extent;
-    swapChainImageViews.resize(state.vulkan->swapChainImages.size());
+    swapChainImages = device->getSwapchainImagesKHR(swapChain.get());
+    swapChainImageFormat = surfaceFormat.format;
+    swapChainExtent = extent;
+    swapChainImageViews.resize(swapChainImages.size());
 
-    for (size_t i = 0; i < state.vulkan->swapChainImages.size(); i++)
+    for (size_t i = 0; i < swapChainImages.size(); i++)
     {
         vk::ImageViewCreateInfo viewInfo{};
-        viewInfo.image = state.vulkan->swapChainImages[i];
+        viewInfo.image = swapChainImages[i];
         viewInfo.viewType = vk::ImageViewType::e2D;
-        viewInfo.format = state.vulkan->swapChainImageFormat;
+        viewInfo.format = swapChainImageFormat;
         viewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        swapChainImageViews[i] = state.vulkan->device.createImageView(viewInfo);
+        swapChainImageViews[i] = device->createImageViewUnique(viewInfo);
     }
     spdlog::info("Created SwapChain");
 }
@@ -673,7 +633,7 @@ void Engine::createShadowFramebuffers()
     auto &state = State::instance();
     auto &settings = state.at("settings");
     shadowDepth = std::make_unique<Image>();
-    shadowDepth->imageInfo.format = state.vulkan->findDepthFormat();
+    shadowDepth->imageInfo.format = findDepthFormat();
     shadowDepth->imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     shadowDepth->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -684,10 +644,10 @@ void Engine::createShadowFramebuffers()
     shadowFbs.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        shadowFbs[i].renderPass = state.vulkan->shadowPass;
+        shadowFbs[i].renderPass = shadowPass.get();
         shadowFbs[i].width = settings.at("shadowSize");
         shadowFbs[i].height = settings.at("shadowSize");
-        shadowFbs[i].attachments = {state.scene->shadow->imageView, shadowDepth->imageView};
+        shadowFbs[i].attachments = {state.scene->shadow->imageView.get(), shadowDepth->imageView.get()};
         shadowFbs[i].create();
     }
     spdlog::info("Created Framebuffer for shadows");
@@ -695,34 +655,34 @@ void Engine::createShadowFramebuffers()
 
 void Engine::createColorFramebuffers()
 {
-    auto &state = State::instance();
     colorAttachment = std::make_unique<Image>();
-    colorAttachment->imageInfo.format = state.vulkan->swapChainImageFormat;
-    colorAttachment->imageInfo.samples = state.vulkan->msaaSamples;
+    colorAttachment->imageInfo.format = swapChainImageFormat;
+    colorAttachment->imageInfo.samples = msaaSamples;
     colorAttachment->imageInfo.usage =
         vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment;
     colorAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    colorAttachment->resize(state.vulkan->swapChainExtent.width, state.vulkan->swapChainExtent.height);
+    colorAttachment->resize(swapChainExtent.width, swapChainExtent.height);
     colorAttachment->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
     depthAttachment = std::make_unique<Image>();
-    depthAttachment->imageInfo.format = state.vulkan->findDepthFormat();
-    depthAttachment->imageInfo.samples = state.vulkan->msaaSamples;
+    depthAttachment->imageInfo.format = findDepthFormat();
+    depthAttachment->imageInfo.samples = msaaSamples;
     depthAttachment->imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     depthAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     depthAttachment->imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    depthAttachment->resize(state.vulkan->swapChainExtent.width, state.vulkan->swapChainExtent.height);
+    depthAttachment->resize(swapChainExtent.width, swapChainExtent.height);
     depthAttachment->transitionImageLayout(vk::ImageLayout::eUndefined,
                                            vk::ImageLayout::eDepthStencilAttachmentOptimal);
     swapChainFbs.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        swapChainFbs[i].renderPass = state.vulkan->colorPass;
-        swapChainFbs[i].width = state.vulkan->swapChainExtent.width;
-        swapChainFbs[i].height = state.vulkan->swapChainExtent.height;
-        swapChainFbs[i].attachments = {colorAttachment->imageView, depthAttachment->imageView, swapChainImageViews[i]};
+        swapChainFbs[i].renderPass = colorPass.get();
+        swapChainFbs[i].width = swapChainExtent.width;
+        swapChainFbs[i].height = swapChainExtent.height;
+        swapChainFbs[i].attachments = {colorAttachment->imageView.get(), depthAttachment->imageView.get(),
+                                       swapChainImageViews[i].get()};
         swapChainFbs[i].create();
     }
     spdlog::info("Created Framebuffer for display");
@@ -730,46 +690,102 @@ void Engine::createColorFramebuffers()
 
 void Engine::createCommandPool()
 {
-    auto &state = State::instance();
-    QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(state.vulkan->physicalDevice);
+    QueueFamilyIndices QueueFamilyIndices = findQueueFamiles(physicalDevice);
 
     vk::CommandPoolCreateInfo poolInfo = {};
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
-    state.vulkan->commandPool = state.vulkan->device.createCommandPool(poolInfo);
+    commandPool = device->createCommandPoolUnique(poolInfo);
     spdlog::info("Created Command Pool");
 }
 
 void Engine::createPipelineCache()
 {
-    auto &state = State::instance();
-    vk::PipelineCacheCreateInfo createInfo {};
-    state.vulkan->pipelineCache = state.vulkan->device.createPipelineCache(createInfo);
+    vk::PipelineCacheCreateInfo createInfo{};
+    pipelineCache = device->createPipelineCacheUnique(createInfo);
     spdlog::info("Created Pipeline Cache");
 }
 
 void Engine::createSyncObjects()
 {
-    auto &state = State::instance();
     presentFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     waitFences.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (auto &semaphore : presentFinishedSemaphores)
     {
-        semaphore = state.vulkan->device.createSemaphore({});
+        semaphore = device->createSemaphoreUnique({});
     }
     for (auto &semaphore : renderFinishedSemaphores)
     {
-        semaphore = state.vulkan->device.createSemaphore({});
+        semaphore = device->createSemaphoreUnique({});
     }
     for (auto &fence : waitFences)
     {
         vk::FenceCreateInfo fenceInfo = {};
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-        fence = state.vulkan->device.createFence(fenceInfo);
+        fence = device->createFenceUnique(fenceInfo);
     }
     spdlog::info("Created Sync Objects");
+}
+
+auto Engine::beginSingleTimeCommands() -> vk::CommandBuffer
+{
+    vk::CommandBufferAllocateInfo allocInfo = {};
+    allocInfo.level = vk::CommandBufferLevel::ePrimary;
+    allocInfo.commandPool = commandPool.get();
+    allocInfo.commandBufferCount = 1;
+
+    auto commandBuffer = device->allocateCommandBuffers(allocInfo);
+
+    vk::CommandBufferBeginInfo beginInfo = {};
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+    commandBuffer[0].begin(beginInfo);
+
+    return commandBuffer[0];
+};
+
+void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
+{
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo = {};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    graphicsQueue.submit(submitInfo, nullptr);
+    graphicsQueue.waitIdle();
+    device->freeCommandBuffers(commandPool.get(), 1, &commandBuffer);
+};
+
+auto Engine::createShaderModule(const std::string &filename) -> vk::UniqueShaderModule
+{
+    if (!std::filesystem::exists(filename))
+    {
+        spdlog::error("Shader {} does not exist", filename);
+        throw std::runtime_error("Shader does not exist");
+    }
+
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error("failed to open file");
+    }
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
+
+    vk::ShaderModuleCreateInfo createInfo = {};
+    createInfo.codeSize = buffer.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
+
+    return device->createShaderModuleUnique(createInfo, nullptr);
 }
 
 auto Engine::getRequiredExtensions() -> std::vector<const char *>
@@ -779,20 +795,17 @@ auto Engine::getRequiredExtensions() -> std::vector<const char *>
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
     if (enableValidationLayers)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
-
     return extensions;
 };
 
 auto Engine::getMaxUsableSampleCount() -> vk::SampleCountFlagBits
 {
-    auto &state = State::instance();
-    const auto &colorCounts = state.vulkan->properties.limits.framebufferColorSampleCounts;
-    const auto &depthCounts = state.vulkan->properties.limits.framebufferDepthSampleCounts;
+    const auto &colorCounts = properties.limits.framebufferColorSampleCounts;
+    const auto &depthCounts = properties.limits.framebufferDepthSampleCounts;
 
     // Scoped enums are stupid
 
@@ -893,10 +906,9 @@ auto Engine::chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &av
 
 auto Engine::chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> &availablePresentModes) -> vk::PresentModeKHR
 {
-    auto &state = State::instance();
     for (const auto &availablePresentMode : availablePresentModes)
     {
-        if (availablePresentMode == state.vulkan->defaultPresentMode)
+        if (availablePresentMode == defaultPresentMode)
         {
             return availablePresentMode;
         }
@@ -920,6 +932,22 @@ auto Engine::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities, ui
         std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
     return actualExtent;
+}
+
+auto Engine::findDepthFormat() -> vk::Format
+{
+    std::vector<vk::Format> candidates = {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
+                                          vk::Format::eD24UnormS8Uint};
+
+    for (vk::Format format : candidates)
+    {
+        auto props = physicalDevice.getFormatProperties(format);
+        if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+        {
+            return format;
+        }
+    }
+    throw std::runtime_error("Failed to find supported depth format");
 }
 
 } // namespace tat

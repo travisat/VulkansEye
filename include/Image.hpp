@@ -8,9 +8,10 @@ namespace tat
 class Image
 {
   public:
-    vk::Image image = nullptr;
-    vk::ImageView imageView = nullptr;
-    vk::Sampler sampler = nullptr;
+    //don't use uniqueimage, vma is used for memory for it
+    vk::Image image;
+    vk::UniqueImageView imageView;
+    vk::UniqueSampler sampler;
 
     vk::ImageCreateInfo imageInfo {};
     vk::SamplerCreateInfo samplerInfo {};
@@ -33,13 +34,15 @@ class Image
     void transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
-  private:
-    VmaAllocation allocation{};
-    std::string path;
-    // create VkImage allocation
     void allocate();
     // destroy VkImage and VkImageView if they exist
     void deallocate();
+
+  private:
+    VmaAllocation allocation{};
+    bool allocated = false;
+    std::string path;
+    
     void createImageView();
 };
 
