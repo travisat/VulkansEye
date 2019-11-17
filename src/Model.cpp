@@ -41,7 +41,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    colorSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
+    colorSets = engine->device->allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < engine->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
@@ -102,7 +102,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
 
         // vert uniform buffer
-        descriptorWrites[0].dstSet = colorSets[i].get();
+        descriptorWrites[0].dstSet = colorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -110,7 +110,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[0].pBufferInfo = &vertexInfo;
 
         // frag uniform buffer
-        descriptorWrites[1].dstSet = colorSets[i].get();
+        descriptorWrites[1].dstSet = colorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -118,7 +118,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[1].pBufferInfo = &fragInfo;
 
         // shadow
-        descriptorWrites[2].dstSet = colorSets[i].get();
+        descriptorWrites[2].dstSet = colorSets[i];
         descriptorWrites[2].dstBinding = 2;
         descriptorWrites[2].dstArrayElement = 0;
         descriptorWrites[2].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -126,7 +126,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[2].pImageInfo = &shadowInfo;
 
         // diffuse
-        descriptorWrites[3].dstSet = colorSets[i].get();
+        descriptorWrites[3].dstSet = colorSets[i];
         descriptorWrites[3].dstBinding = 3;
         descriptorWrites[3].dstArrayElement = 0;
         descriptorWrites[3].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -134,7 +134,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[3].pImageInfo = &diffuseInfo;
 
         // normal
-        descriptorWrites[4].dstSet = colorSets[i].get();
+        descriptorWrites[4].dstSet = colorSets[i];
         descriptorWrites[4].dstBinding = 4;
         descriptorWrites[4].dstArrayElement = 0;
         descriptorWrites[4].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -142,7 +142,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[4].pImageInfo = &normalInfo;
 
         // roughness
-        descriptorWrites[5].dstSet = colorSets[i].get();
+        descriptorWrites[5].dstSet = colorSets[i];
         descriptorWrites[5].dstBinding = 5;
         descriptorWrites[5].dstArrayElement = 0;
         descriptorWrites[5].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -150,7 +150,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[5].pImageInfo = &roughnessInfo;
 
         // metallic
-        descriptorWrites[6].dstSet = colorSets[i].get();
+        descriptorWrites[6].dstSet = colorSets[i];
         descriptorWrites[6].dstBinding = 6;
         descriptorWrites[6].dstArrayElement = 0;
         descriptorWrites[6].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -158,7 +158,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[6].pImageInfo = &metallicInfo;
 
         // ao
-        descriptorWrites[7].dstSet = colorSets[i].get();
+        descriptorWrites[7].dstSet = colorSets[i];
         descriptorWrites[7].dstBinding = 7;
         descriptorWrites[7].dstArrayElement = 0;
         descriptorWrites[7].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -166,7 +166,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[7].pImageInfo = &aoInfo;
 
         // irradiance
-        descriptorWrites[8].dstSet = colorSets[i].get();
+        descriptorWrites[8].dstSet = colorSets[i];
         descriptorWrites[8].dstBinding = 8;
         descriptorWrites[8].dstArrayElement = 0;
         descriptorWrites[8].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -174,7 +174,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[8].pImageInfo = &irradianceInfo;
 
         // radiance
-        descriptorWrites[9].dstSet = colorSets[i].get();
+        descriptorWrites[9].dstSet = colorSets[i];
         descriptorWrites[9].dstBinding = 9;
         descriptorWrites[9].dstArrayElement = 0;
         descriptorWrites[9].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -182,7 +182,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[9].pImageInfo = &radianceInfo;
 
         // pregenned brdf sampler
-        descriptorWrites[10].dstSet = colorSets[i].get();
+        descriptorWrites[10].dstSet = colorSets[i];
         descriptorWrites[10].dstBinding = 10;
         descriptorWrites[10].dstArrayElement = 0;
         descriptorWrites[10].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -203,7 +203,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    shadowSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
+    shadowSets = engine->device->allocateDescriptorSets(allocInfo);
     for (size_t i = 0; i < engine->swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};
@@ -214,7 +214,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites{};
 
         // shadow
-        descriptorWrites[0].dstSet = shadowSets[i].get();
+        descriptorWrites[0].dstSet = shadowSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;

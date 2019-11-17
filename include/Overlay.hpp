@@ -5,7 +5,7 @@
 
 #include "Buffer.hpp"
 #include "Image.hpp"
-#include "Pipeline.hpp"
+#include "engine/Pipeline.hpp"
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -64,9 +64,9 @@ class Overlay
     std::unique_ptr<Image> fontImage;
 
     Pipeline pipeline;
-    vk::UniqueDescriptorPool descriptorPool;
-    vk::UniqueDescriptorSetLayout descriptorSetLayout;
-    std::vector<vk::UniqueDescriptorSet> descriptorSets;
+    vk::DescriptorPool descriptorPool;
+    vk::DescriptorSetLayout descriptorSetLayout;
+    std::vector<vk::DescriptorSet> descriptorSets;
 
     UISettings uiSettings;
 

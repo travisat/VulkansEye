@@ -9,8 +9,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include "Engine.hpp"
-#include "Window.hpp"
+#include "engine/Engine.hpp"
+#include "engine/Window.hpp"
 #include "Camera.hpp"
 #include "Player.hpp"
 #include "Overlay.hpp"

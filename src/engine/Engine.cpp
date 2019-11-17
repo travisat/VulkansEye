@@ -1,6 +1,5 @@
-#include "Engine.hpp"
+#include "engine/Engine.hpp"
 #include "State.hpp"
-#include "vulkan/vulkan.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -13,13 +12,13 @@
 
 #include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace tat
 {
-
-VkDebugUtilsMessengerEXT debugMessenger;
 
 VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                          VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
@@ -31,14 +30,17 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
     if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
     {
         spdlog::warn("Validation {}", pCallbackData->pMessage);
+        std::cerr << pCallbackData->pMessage << std::endl;
     }
     else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
     {
         spdlog::error("Validation {}", pCallbackData->pMessage);
+        std::cerr << pCallbackData->pMessage << std::endl;
     }
     else
     {
         spdlog::info("Validation {}", pCallbackData->pMessage);
+        std::cout << pCallbackData->pMessage << std::endl;
     }
 
     return VK_FALSE;
@@ -50,14 +52,16 @@ void Engine::init()
 
     auto &state = State::instance();
     createInstance();
-    surface.reset(state.window->createSurface(instance.get()));
+    surface = state.window->createSurface(instance);
     pickPhysicalDevice();
     createLogicalDevice();
     createAllocator();
 
     createSwapChain();
-    shadowPass = createShadowPass();
-    colorPass = createColorPass();
+    shadowPass.loadShadow();
+    shadowPass.create();
+    colorPass.loadColor();
+    colorPass.create();
     createCommandPool();
     createPipelineCache();
 
@@ -77,13 +81,6 @@ void Engine::prepare()
 
 Engine::~Engine()
 {
-    if (enableValidationLayers)
-    {
-        if (debugMessenger != nullptr)
-        {
-            instance->destroyDebugUtilsMessengerEXT(debugMessenger);
-        }
-    }
     // manually delete
     colorAttachment.reset();
     depthAttachment.reset();
@@ -122,13 +119,13 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo sunPassInfo = {};
-    sunPassInfo.renderPass = shadowPass.get();
+    sunPassInfo.renderPass = shadowPass.renderPass.get();
     sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     sunPassInfo.renderArea.extent.width = settings.at("shadowSize");
     sunPassInfo.renderArea.extent.height = settings.at("shadowSize");
     sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     sunPassInfo.pClearValues = clearValues.data();
-    sunPassInfo.framebuffer = shadowFbs[currentImage].framebuffer.get();
+    sunPassInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer.get();
 
     commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
     state.scene->drawShadow(commandBuffer, currentImage);
@@ -159,12 +156,12 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo colorPassInfo = {};
-    colorPassInfo.renderPass = colorPass.get();
+    colorPassInfo.renderPass = colorPass.renderPass.get();
     colorPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     colorPassInfo.renderArea.extent = swapChainExtent;
     colorPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     colorPassInfo.pClearValues = clearValues.data();
-    colorPassInfo.framebuffer = swapChainFbs[currentImage].framebuffer.get();
+    colorPassInfo.framebuffer = colorFramebuffers[currentImage].framebuffer.get();
 
     commandBuffer.beginRenderPass(colorPassInfo, vk::SubpassContents::eInline);
     state.scene->drawColor(commandBuffer, currentImage);
@@ -177,19 +174,19 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
 
 void Engine::createCommandBuffers()
 {
-    commandBuffers.resize(swapChainFbs.size());
+    commandBuffers.resize(colorFramebuffers.size());
 
     vk::CommandBufferAllocateInfo allocInfo = {};
-    allocInfo.commandPool = commandPool.get();
+    allocInfo.commandPool = commandPool;
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-    commandBuffers = device->allocateCommandBuffersUnique(allocInfo);
+    commandBuffers = device.allocateCommandBuffers(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
 
-        vk::CommandBuffer commandBuffer = commandBuffers[i].get();
+        vk::CommandBuffer commandBuffer = commandBuffers[i];
         vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
 
@@ -217,14 +214,14 @@ void Engine::drawFrame(float deltaTime)
         createCommandBuffers();
     }
 
-    auto result = device->waitForFences(1, &waitFences[currentImage].get(), VK_FALSE, UINT64_MAX);
+    auto result = device.waitForFences(1, &waitFences[currentImage], VK_FALSE, UINT64_MAX);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to wait for fences. Error code {}", result);
         throw std::runtime_error("Unable to wait for fences");
         return;
     }
-    result = device->resetFences(1, &waitFences[currentImage].get());
+    result = device.resetFences(1, &waitFences[currentImage]);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to reset fences. Error code {}", result);
@@ -233,8 +230,8 @@ void Engine::drawFrame(float deltaTime)
     }
 
     uint32_t currentBuffer;
-    result = device->acquireNextImageKHR(swapChain.get(), UINT64_MAX, presentFinishedSemaphores[currentImage].get(),
-                                         nullptr, &currentBuffer);
+    result = device.acquireNextImageKHR(swapChain, UINT64_MAX, presentFinishedSemaphores[currentImage], nullptr,
+                                        &currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
@@ -252,20 +249,20 @@ void Engine::drawFrame(float deltaTime)
     const vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     vk::SubmitInfo submitInfo = {};
     submitInfo.pWaitDstStageMask = &waitStages;
-    submitInfo.pWaitSemaphores = &presentFinishedSemaphores[currentImage].get();
+    submitInfo.pWaitSemaphores = &presentFinishedSemaphores[currentImage];
     submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentImage].get();
+    submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentImage];
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[currentBuffer].get();
+    submitInfo.pCommandBuffers = &commandBuffers[currentBuffer];
     submitInfo.commandBufferCount = 1;
-    graphicsQueue.submit(1, &submitInfo, waitFences[currentImage].get());
+    graphicsQueue.submit(1, &submitInfo, waitFences[currentImage]);
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
     presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = &swapChain.get();
+    presentInfo.pSwapchains = &swapChain;
     presentInfo.pImageIndices = &currentBuffer;
-    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentImage].get();
+    presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentImage];
     presentInfo.waitSemaphoreCount = 1;
     result = presentQueue.presentKHR(&presentInfo);
 
@@ -297,19 +294,23 @@ void Engine::updateWindow()
     }
     prepared = false;
 
-    device->waitIdle();
+    device.waitIdle();
 
-    swapChain.reset();
-    swapChainImageViews.clear();
+    device.destroySwapchainKHR(swapChain);
+    for (auto &imageView : swapChainImageViews)
+    {
+        device.destroyImageView(imageView);
+    }
     createSwapChain();
-    colorPass.reset();
-    colorPass = createColorPass();
 
-    swapChainFbs.clear();
-    createColorFramebuffers();
-    commandBuffers.clear();
+    colorPass.recreate();
+
+    for (auto &frameBuffer : colorFramebuffers)
+    {
+        frameBuffer.recreate();
+    }
     createCommandBuffers();
-    device->waitIdle();
+    device.waitIdle();
 
     prepared = true;
 }
@@ -330,26 +331,29 @@ void Engine::resizeWindow()
         std::tie(width, height) = state.window->getFrameBufferSize();
         state.window->wait();
     }
-    device->waitIdle();
+    device.waitIdle();
     auto &window = state.at("settings").at("window");
     window.at(0) = width;
     window.at(1) = height;
 
-    swapChain.reset();
-    swapChainImageViews.clear();
+    device.destroySwapchainKHR(swapChain);
+    for (auto &imageView : swapChainImageViews)
+    {
+        device.destroyImageView(imageView);
+    }
     createSwapChain();
-    colorPass.reset();
-    colorPass = createColorPass();
+
+    colorPass.recreate();
 
     state.scene->recreate();
     state.overlay->recreate();
 
-    swapChainFbs.clear();
-    createColorFramebuffers();
-
-    commandBuffers.clear();
+    for (auto &frameBuffer : colorFramebuffers)
+    {
+        frameBuffer.recreate();
+    }
     createCommandBuffers();
-    device->waitIdle();
+    device.waitIdle();
 
     prepared = true;
     spdlog::info("Resized window to {}x{}", width, height);
@@ -383,15 +387,15 @@ void Engine::createInstance()
     auto vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-    instance = vk::createInstanceUnique(createInfo);
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance.get());
+    instance = vk::createInstance(createInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
     spdlog::info("Created Vulkan instance");
 }
 
 void Engine::pickPhysicalDevice()
 {
-    auto devs = instance->enumeratePhysicalDevices();
+    auto devs = instance.enumeratePhysicalDevices();
 
     assert(!devs.empty());
 
@@ -452,7 +456,7 @@ auto Engine::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIn
             indices.graphicsFamily = i;
         }
 
-        auto presentSupport = device.getSurfaceSupportKHR(i, surface.get());
+        auto presentSupport = device.getSurfaceSupportKHR(i, surface);
 
         if (queueFamily.queueCount > 0 && (presentSupport != VK_FALSE))
         {
@@ -471,9 +475,9 @@ auto Engine::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIn
 auto Engine::querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails
 {
     SwapChainSupportDetails details{};
-    details.capabilities = device.getSurfaceCapabilitiesKHR(surface.get());
-    details.formats = device.getSurfaceFormatsKHR(surface.get());
-    details.presentModes = device.getSurfacePresentModesKHR(surface.get());
+    details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
+    details.formats = device.getSurfaceFormatsKHR(surface);
+    details.presentModes = device.getSurfacePresentModesKHR(surface);
     return details;
 }
 
@@ -531,14 +535,14 @@ void Engine::createLogicalDevice()
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
         debugInfo.pfnUserCallback = debugCallback;
 
-        debugMessenger = instance->createDebugUtilsMessengerEXT(debugInfo);
+        debugMessenger = instance.createDebugUtilsMessengerEXT(debugInfo);
     }
 
-    device = physicalDevice.createDeviceUnique(createInfo);
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(device.get());
+    device = physicalDevice.createDevice(createInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
 
-    graphicsQueue = device->getQueue(indices.graphicsFamily.value(), 0);
-    presentQueue = device->getQueue(indices.presentFamily.value(), 0);
+    graphicsQueue = device.getQueue(indices.graphicsFamily.value(), 0);
+    presentQueue = device.getQueue(indices.presentFamily.value(), 0);
     spdlog::info("Created Logical Device");
 }
 
@@ -546,7 +550,7 @@ void Engine::createAllocator()
 {
     VmaAllocatorCreateInfo allocatorInfo{};
     allocatorInfo.physicalDevice = physicalDevice;
-    allocatorInfo.device = device.get();
+    allocatorInfo.device = device;
 
     auto result = vmaCreateAllocator(&allocatorInfo, &allocator);
     if (result != VK_SUCCESS)
@@ -575,7 +579,7 @@ void Engine::createSwapChain()
     }
 
     vk::SwapchainCreateInfoKHR createInfo{};
-    createInfo.surface = surface.get();
+    createInfo.surface = surface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -604,9 +608,9 @@ void Engine::createSwapChain()
 
     createInfo.oldSwapchain = nullptr;
 
-    swapChain = device->createSwapchainKHRUnique(createInfo);
+    swapChain = device.createSwapchainKHR(createInfo);
 
-    swapChainImages = device->getSwapchainImagesKHR(swapChain.get());
+    swapChainImages = device.getSwapchainImagesKHR(swapChain);
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
     swapChainImageViews.resize(swapChainImages.size());
@@ -623,7 +627,7 @@ void Engine::createSwapChain()
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        swapChainImageViews[i] = device->createImageViewUnique(viewInfo);
+        swapChainImageViews[i] = device.createImageView(viewInfo);
     }
     spdlog::info("Created SwapChain");
 }
@@ -641,14 +645,14 @@ void Engine::createShadowFramebuffers()
     shadowDepth->resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    shadowFbs.resize(swapChainImageViews.size());
+    shadowFramebuffers.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        shadowFbs[i].renderPass = shadowPass.get();
-        shadowFbs[i].width = settings.at("shadowSize");
-        shadowFbs[i].height = settings.at("shadowSize");
-        shadowFbs[i].attachments = {state.scene->shadow->imageView.get(), shadowDepth->imageView.get()};
-        shadowFbs[i].create();
+        shadowFramebuffers[i].renderPass = shadowPass.renderPass.get();
+        shadowFramebuffers[i].width = settings.at("shadowSize");
+        shadowFramebuffers[i].height = settings.at("shadowSize");
+        shadowFramebuffers[i].attachments = {state.scene->shadow->imageView.get(), shadowDepth->imageView.get()};
+        shadowFramebuffers[i].create();
     }
     spdlog::info("Created Framebuffer for shadows");
 }
@@ -674,16 +678,16 @@ void Engine::createColorFramebuffers()
     depthAttachment->resize(swapChainExtent.width, swapChainExtent.height);
     depthAttachment->transitionImageLayout(vk::ImageLayout::eUndefined,
                                            vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    swapChainFbs.resize(swapChainImageViews.size());
+    colorFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        swapChainFbs[i].renderPass = colorPass.get();
-        swapChainFbs[i].width = swapChainExtent.width;
-        swapChainFbs[i].height = swapChainExtent.height;
-        swapChainFbs[i].attachments = {colorAttachment->imageView.get(), depthAttachment->imageView.get(),
-                                       swapChainImageViews[i].get()};
-        swapChainFbs[i].create();
+        colorFramebuffers[i].renderPass = colorPass.renderPass.get();
+        colorFramebuffers[i].width = swapChainExtent.width;
+        colorFramebuffers[i].height = swapChainExtent.height;
+        colorFramebuffers[i].attachments = {colorAttachment->imageView.get(), depthAttachment->imageView.get(),
+                                       swapChainImageViews[i]};
+        colorFramebuffers[i].create();
     }
     spdlog::info("Created Framebuffer for display");
 }
@@ -695,14 +699,14 @@ void Engine::createCommandPool()
     vk::CommandPoolCreateInfo poolInfo = {};
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
-    commandPool = device->createCommandPoolUnique(poolInfo);
+    commandPool = device.createCommandPool(poolInfo);
     spdlog::info("Created Command Pool");
 }
 
 void Engine::createPipelineCache()
 {
     vk::PipelineCacheCreateInfo createInfo{};
-    pipelineCache = device->createPipelineCacheUnique(createInfo);
+    pipelineCache = device.createPipelineCache(createInfo);
     spdlog::info("Created Pipeline Cache");
 }
 
@@ -714,17 +718,17 @@ void Engine::createSyncObjects()
 
     for (auto &semaphore : presentFinishedSemaphores)
     {
-        semaphore = device->createSemaphoreUnique({});
+        semaphore = device.createSemaphore({});
     }
     for (auto &semaphore : renderFinishedSemaphores)
     {
-        semaphore = device->createSemaphoreUnique({});
+        semaphore = device.createSemaphore({});
     }
     for (auto &fence : waitFences)
     {
         vk::FenceCreateInfo fenceInfo = {};
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-        fence = device->createFenceUnique(fenceInfo);
+        fence = device.createFence(fenceInfo);
     }
     spdlog::info("Created Sync Objects");
 }
@@ -733,10 +737,10 @@ auto Engine::beginSingleTimeCommands() -> vk::CommandBuffer
 {
     vk::CommandBufferAllocateInfo allocInfo = {};
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocInfo.commandPool = commandPool.get();
+    allocInfo.commandPool = commandPool;
     allocInfo.commandBufferCount = 1;
 
-    auto commandBuffer = device->allocateCommandBuffers(allocInfo);
+    auto commandBuffer = device.allocateCommandBuffers(allocInfo);
 
     vk::CommandBufferBeginInfo beginInfo = {};
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -756,7 +760,7 @@ void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
 
     graphicsQueue.submit(submitInfo, nullptr);
     graphicsQueue.waitIdle();
-    device->freeCommandBuffers(commandPool.get(), 1, &commandBuffer);
+    device.freeCommandBuffers(commandPool, 1, &commandBuffer);
 };
 
 auto Engine::createShaderModule(const std::string &filename) -> vk::UniqueShaderModule
@@ -785,7 +789,7 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::UniqueShader
     createInfo.codeSize = buffer.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
-    return device->createShaderModuleUnique(createInfo, nullptr);
+    return device.createShaderModuleUnique(createInfo, nullptr);
 }
 
 auto Engine::getRequiredExtensions() -> std::vector<const char *>

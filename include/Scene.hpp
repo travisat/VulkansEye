@@ -2,10 +2,11 @@
 
 #include <memory>
 
-#include "Image.hpp"
-#include "Pipeline.hpp"
-#include "Model.hpp"
 #include "Backdrop.hpp"
+#include "Image.hpp"
+#include "Model.hpp"
+#include "engine/Pipeline.hpp"
+
 
 namespace tat
 {
@@ -13,6 +14,9 @@ namespace tat
 class Scene
 {
   public:
+    Scene() = default;
+    ~Scene();
+
     std::string name = "Unknown";
 
     std::shared_ptr<Image> shadow;
@@ -21,9 +25,6 @@ class Scene
 
     float shadowSize = 1024.F;
 
-    Scene() = default;
-    ~Scene();
-
     void load();
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -31,19 +32,19 @@ class Scene
     void update(uint32_t currentImage, float deltaTime);
 
   private:
-    vk::UniqueDescriptorPool colorPool;
-    vk::UniqueDescriptorSetLayout colorLayout;
-    vk::UniqueDescriptorPool shadowPool;
-    vk::UniqueDescriptorSetLayout shadowLayout;
+    Pipeline colorPipeline;
+    Pipeline shadowPipeline;
+    
+    vk::DescriptorPool colorPool;
+    vk::DescriptorSetLayout colorLayout;
+    vk::DescriptorPool shadowPool;
+    vk::DescriptorSetLayout shadowLayout;
 
     UniformVert vertBuffer{};
     UniformFrag fragBuffer{};
     UniformShad shadBuffer{};
 
-    Pipeline colorPipeline;
-    std::vector<std::shared_ptr<Model>> models {};
-
-    Pipeline shadowPipeline;
+    std::vector<std::shared_ptr<Model>> models{};
 
     void createBrdf();
     void createShadow();
@@ -55,7 +56,6 @@ class Scene
     void createColorLayouts();
     void createColorPipeline();
     void createColorSets();
-    void recreateColorSets();
 
     void createShadowPool();
     void createShadowLayouts();

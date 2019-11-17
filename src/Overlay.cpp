@@ -40,15 +40,18 @@ Overlay::Overlay()
 
 Overlay::~Overlay()
 {
+    auto &engine = State::instance().engine;
     ImGui::DestroyContext();
+    engine->device->destroyDescriptorSetLayout(descriptorSetLayout);
+    engine->device->destroyDescriptorPool(descriptorPool);
     spdlog::info("Destroyed Overlay");
 }
 
 void Overlay::recreate()
 {
-    descriptorPool.reset();
+    auto &engine = State::instance().engine;
+    engine->device->destroyDescriptorPool(descriptorPool);
     createDescriptorPool();
-    descriptorSets.clear();
     createDescriptorSets();
     createPipeline();
 }
@@ -126,7 +129,7 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = engine->device->createDescriptorPoolUnique(poolInfo);
+    descriptorPool = engine->device->createDescriptorPool(poolInfo);
 }
 
 void Overlay::createDescriptorLayouts()
@@ -144,19 +147,19 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
+    descriptorSetLayout = engine->device->createDescriptorSetLayout(layoutInfo);
 }
 
 void Overlay::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout.get());
+    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.descriptorPool = descriptorPool.get();
+    allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
+    descriptorSets = engine->device->allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < engine->swapChainImages.size(); i++)
     {
@@ -166,7 +169,7 @@ void Overlay::createDescriptorSets()
         samplerInfo.sampler = fontImage->sampler.get();
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
-        descriptorWrites[0].dstSet = descriptorSets[i].get();
+        descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -181,7 +184,7 @@ void Overlay::createDescriptorSets()
 void Overlay::createPipeline()
 {
     auto &engine = State::instance().engine;
-    pipeline.descriptorSetLayout = descriptorSetLayout.get();
+    pipeline.descriptorSetLayout = descriptorSetLayout;
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
     pipeline.vertShader = engine->createShaderModule(vertPath);
@@ -337,7 +340,7 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     }
     ImGuiIO &io = ImGui::GetIO();
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout.get(), 0, 1,
-                                     &descriptorSets[currentImage].get(), 0, nullptr);
+                                     &descriptorSets[currentImage], 0, nullptr);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
 
     // UI scale and translate via push constants

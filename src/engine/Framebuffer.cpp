@@ -1,4 +1,4 @@
-#include "Framebuffer.hpp"
+#include "engine/Framebuffer.hpp"
 #include "State.hpp"
 
 namespace tat
@@ -14,7 +14,13 @@ void Framebuffer::create()
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    framebuffer = engine->device->createFramebufferUnique(framebufferInfo);
+    framebuffer = engine->device.createFramebufferUnique(framebufferInfo);
+}
+
+void Framebuffer::recreate()
+{
+    framebuffer.reset();
+    create();
 }
 
 } // namespace tat

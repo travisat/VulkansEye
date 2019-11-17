@@ -6,6 +6,28 @@
 namespace tat
 {
 
+Scene::~Scene()
+{
+    auto &engine = State::instance().engine;
+    if (shadowLayout)
+    {
+        engine->device->destroyDescriptorSetLayout(shadowLayout);
+    }
+    if (colorLayout)
+    {
+        engine->device->destroyDescriptorSetLayout(colorLayout);
+    }
+    if (colorPool)
+    {
+        engine->device->destroyDescriptorPool(colorPool);
+    }
+    if (shadowPool)
+    {
+        engine->device->destroyDescriptorPool(shadowPool);
+    }
+
+}
+
 // can't be constructor cause models require pointer to scene which wouldn't exist yet
 void Scene::load()
 {
@@ -23,11 +45,6 @@ void Scene::load()
     createShadowSets();
     createShadowPipeline();
     spdlog::info("Loaded Scene");
-}
-
-Scene::~Scene()
-{
-    spdlog::info("Destroyed Scene");
 }
 
 void Scene::createBrdf()
@@ -87,14 +104,16 @@ void Scene::loadModels()
 
 void Scene::recreate()
 {
+    auto &engine = State::instance().engine;
     auto &camera = State::instance().camera;
     auto &window = State::instance().window;
     camera->updateProjection(window->getFrameBufferSize());
 
     backdrop->recreate();
-    colorPool.reset();
+    engine->device->destroyDescriptorPool(colorPool);
+    
     createColorPool();
-    recreateColorSets();
+    createColorSets();
     createColorPipeline();
 }
 
@@ -111,7 +130,7 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout.get(), 0, 1,
-                                         &model->colorSets[currentImage].get(), 0, nullptr);
+                                         &model->colorSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
@@ -127,7 +146,7 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout.get(), 0, 1,
-                                         &model->shadowSets[currentImage].get(), 0, nullptr);
+                                         &model->shadowSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
 }
@@ -185,7 +204,7 @@ void Scene::createColorPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    colorPool = engine->device->createDescriptorPoolUnique(poolInfo);
+    colorPool = engine->device->createDescriptorPool(poolInfo);
 }
 
 void Scene::createColorLayouts()
@@ -274,30 +293,21 @@ void Scene::createColorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    colorLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
+    colorLayout = engine->device->createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createColorSets()
 {
     for (auto &model : models)
     {
-        model->createColorSets(colorPool.get(), colorLayout.get());
-    }
-}
-
-void Scene::recreateColorSets()
-{
-    for (auto &model : models)
-    {
-        model->colorSets.clear();
-        model->createColorSets(colorPool.get(), colorLayout.get());
+        model->createColorSets(colorPool, colorLayout);
     }
 }
 
 void Scene::createColorPipeline()
 {
     auto &engine = State::instance().engine;
-    colorPipeline.descriptorSetLayout = colorLayout.get();
+    colorPipeline.descriptorSetLayout = colorLayout;
 
     auto vertPath = "assets/shaders/scene.vert.spv";
     auto fragPath = "assets/shaders/scene.frag.spv";
@@ -333,7 +343,7 @@ void Scene::createShadowPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    shadowPool = engine->device->createDescriptorPoolUnique(poolInfo);
+    shadowPool = engine->device->createDescriptorPool(poolInfo);
 }
 
 void Scene::createShadowLayouts()
@@ -352,21 +362,21 @@ void Scene::createShadowLayouts()
     layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
     layoutInfo.pBindings = layouts.data();
 
-    shadowLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
+    shadowLayout = engine->device->createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createShadowSets()
 {
     for (auto &model : models)
     {
-        model->createShadowSets(shadowPool.get(), shadowLayout.get());
+        model->createShadowSets(shadowPool, shadowLayout);
     }
 }
 
 void Scene::createShadowPipeline()
 {
     auto &engine = State::instance().engine;
-    shadowPipeline.descriptorSetLayout = shadowLayout.get();
+    shadowPipeline.descriptorSetLayout = shadowLayout;
 
     auto vertPath = "assets/shaders/shadow.vert.spv";
     auto fragPath = "assets/shaders/shadow.frag.spv";

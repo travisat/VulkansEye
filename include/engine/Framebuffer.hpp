@@ -21,6 +21,7 @@ class Framebuffer
     std::vector<vk::ImageView> attachments;
 
     void create();
+    void recreate();
 
   private:
     void createRenderPass();

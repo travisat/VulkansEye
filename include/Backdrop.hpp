@@ -12,7 +12,7 @@
 #include "Camera.hpp"
 #include "Collection.hpp"
 #include "Image.hpp"
-#include "Pipeline.hpp"
+#include "engine/Pipeline.hpp"
 
 namespace tat
 {
@@ -26,7 +26,9 @@ class Backdrop : public Entry
 {
   public:
     glm::vec3 light{};
-    virtual ~Backdrop() = default;
+
+    Backdrop() = default;
+    virtual ~Backdrop();
 
     std::shared_ptr<Image> colorMap;
     std::shared_ptr<Image> radianceMap;
@@ -40,14 +42,14 @@ class Backdrop : public Entry
     void update(uint32_t currentImage);
 
   private:
-    UniformBack backBuffer{};
-
-    std::vector<vk::UniqueDescriptorSet> descriptorSets;
-    std::vector<Buffer> backBuffers;
-    vk::UniqueDescriptorPool descriptorPool;
-
     Pipeline pipeline;
-    vk::UniqueDescriptorSetLayout descriptorSetLayout{};
+    
+    vk::DescriptorPool descriptorPool;
+    vk::DescriptorSetLayout descriptorSetLayout{};
+    std::vector<vk::DescriptorSet> descriptorSets;
+
+    UniformBack backBuffer{};
+    std::vector<Buffer> backBuffers;
 
     auto loadCubeMap(const std::string &file) -> std::shared_ptr<Image>;
     void createDescriptorPool();

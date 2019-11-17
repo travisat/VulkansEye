@@ -56,15 +56,15 @@ class Engine
     bool showOverlay = false;
     bool updateCommandBuffer = false;
 
-    vk::UniqueInstance instance;
-    vk::UniqueSurfaceKHR surface;
-    vk::UniqueDevice device;
-    
+    vk::Instance instance;
+    vk::SurfaceKHR surface;
+    vk::Device device;
+
     VmaAllocator allocator{};
 
-    vk::UniquePipelineCache pipelineCache;
-    vk::UniqueRenderPass colorPass;
-    vk::UniqueRenderPass shadowPass;
+    vk::PipelineCache pipelineCache;
+    RenderPass colorPass;
+    RenderPass shadowPass;
 
     std::vector<vk::Image> swapChainImages{};
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
@@ -78,30 +78,31 @@ class Engine
     auto findDepthFormat() -> vk::Format;
 
   private:
-    std::vector<Framebuffer> shadowFbs{};
+    vk::DebugUtilsMessengerEXT debugMessenger;
+    std::vector<Framebuffer> shadowFramebuffers{};
     std::unique_ptr<Image> shadowDepth;
-    std::vector<Framebuffer> swapChainFbs{};
+    std::vector<Framebuffer> colorFramebuffers{};
     std::unique_ptr<Image> colorAttachment;
     std::unique_ptr<Image> depthAttachment;
-    const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
 
+    const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-    std::vector<vk::UniqueCommandBuffer> commandBuffers{};
-    std::vector<vk::UniqueImageView> swapChainImageViews;
-    std::vector<vk::UniqueSemaphore> presentFinishedSemaphores{};
-    std::vector<vk::UniqueSemaphore> renderFinishedSemaphores{};
-    std::vector<vk::UniqueFence> waitFences{};
+    std::vector<vk::CommandBuffer> commandBuffers{};
+    std::vector<vk::ImageView> swapChainImageViews;
+    std::vector<vk::Semaphore> presentFinishedSemaphores{};
+    std::vector<vk::Semaphore> renderFinishedSemaphores{};
+    std::vector<vk::Fence> waitFences{};
 
     vk::PhysicalDevice physicalDevice;
     vk::PhysicalDeviceProperties properties;
 
-    vk::UniqueCommandPool commandPool;
-    vk::UniqueSwapchainKHR swapChain;
+    vk::CommandPool commandPool;
+    vk::SwapchainKHR swapChain;
 
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
-    
+
     vk::Extent2D swapChainExtent;
 
     int32_t currentImage = 0;

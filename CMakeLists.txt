@@ -42,13 +42,13 @@ endforeach()
 
 set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
-${CMAKE_SOURCE_DIR}/src/Window.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Window.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Engine.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
+${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/Config.cpp
-${CMAKE_SOURCE_DIR}/src/Engine.cpp
-${CMAKE_SOURCE_DIR}/src/Pipeline.cpp
-${CMAKE_SOURCE_DIR}/src/Framebuffer.cpp
-${CMAKE_SOURCE_DIR}/src/RenderPass.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp
 ${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Camera.cpp

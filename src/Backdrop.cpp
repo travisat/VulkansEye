@@ -1,6 +1,5 @@
 #include "Backdrop.hpp"
 #include "State.hpp"
-#include "spdlog/async.h"
 
 #include <filesystem>
 #include <memory>
@@ -32,13 +31,27 @@ void Backdrop::load()
     spdlog::info("Loaded Backdrop {}", name);
 }
 
+Backdrop::~Backdrop()
+{
+    auto &engine = State::instance().engine;
+    if (descriptorSetLayout)
+    {
+        engine->device.destroyDescriptorSetLayout(descriptorSetLayout);
+    }
+    if (descriptorPool)
+    {
+        engine->device.destroyDescriptorPool(descriptorPool);
+    }
+}
+
 void Backdrop::recreate()
 {
+    auto &engine = State::instance().engine;
+
     createPipeline();
     createUniformBuffers();
-    descriptorPool.reset();
+    engine->device.destroyDescriptorPool(descriptorPool);
     createDescriptorPool();
-    descriptorSets.clear();
     createDescriptorSets();
 }
 
@@ -66,7 +79,7 @@ auto Backdrop::loadCubeMap(const std::string &file) -> std::shared_ptr<Image>
 void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout.get(), 0, 1,
-                                     &descriptorSets[currentImage].get(), 0, nullptr);
+                                     &descriptorSets[currentImage], 0, nullptr);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
     commandBuffer.draw(3, 1, 0, 0);
 }
@@ -115,7 +128,7 @@ void Backdrop::createDescriptorPool()
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = engine->device->createDescriptorPoolUnique(poolInfo);
+    descriptorPool = engine->device.createDescriptorPool(poolInfo);
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -141,19 +154,19 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = engine->device->createDescriptorSetLayoutUnique(layoutInfo);
+    descriptorSetLayout = engine->device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Backdrop::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout.get());
+    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.descriptorPool = descriptorPool.get();
+    allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = engine->device->allocateDescriptorSetsUnique(allocInfo);
+    descriptorSets = engine->device.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < engine->swapChainImages.size(); i++)
     {
@@ -169,21 +182,21 @@ void Backdrop::createDescriptorSets()
         imageInfo.sampler = colorMap->sampler.get();
 
         std::array<vk::WriteDescriptorSet, 2> descriptorWrites = {};
-        descriptorWrites[0].dstSet = descriptorSets[i].get();
+        descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
         descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-        descriptorWrites[1].dstSet = descriptorSets[i].get();
+        descriptorWrites[1].dstSet = descriptorSets[i];
         descriptorWrites[1].dstBinding = 1;
         descriptorWrites[1].dstArrayElement = 0;
         descriptorWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        engine->device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                              nullptr);
     }
 };
@@ -191,14 +204,14 @@ void Backdrop::createDescriptorSets()
 void Backdrop::createPipeline()
 {
     auto &engine = State::instance().engine;
-    pipeline.descriptorSetLayout = descriptorSetLayout.get();
+    pipeline.descriptorSetLayout = descriptorSetLayout;
 
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
     pipeline.vertShader = engine->createShaderModule(vertPath);
     pipeline.fragShader = engine->createShaderModule(fragPath);
 
-    pipeline.loadDefaults(engine->colorPass.get());
+    pipeline.loadDefaults(engine->colorPass);
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
     pipeline.depthStencil.depthTestEnable = VK_FALSE;

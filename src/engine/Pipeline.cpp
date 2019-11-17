@@ -1,5 +1,6 @@
-#include "Pipeline.hpp"
+#include "engine/Pipeline.hpp"
 #include "State.hpp"
+#include <spdlog/spdlog.h>
 
 namespace tat
 {
@@ -7,11 +8,11 @@ namespace tat
 void Pipeline::create()
 {
     auto& engine = State::instance().engine;
-    pipelineLayout = engine->device->createPipelineLayoutUnique(pipelineLayoutInfo);
+    pipelineLayout = engine->device.createPipelineLayoutUnique(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout.get();
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = engine->device->createGraphicsPipelineUnique(engine->pipelineCache.get(), pipelineInfo);
+    pipeline = engine->device.createGraphicsPipelineUnique(engine->pipelineCache, pipelineInfo);
 }
 
 void Pipeline::loadDefaults(vk::RenderPass renderPass)
