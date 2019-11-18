@@ -6,7 +6,7 @@
 namespace tat
 {
 
-Window::Window(void *user, int width, int height, const std::string &name)
+void Window::create(void *user, int width, int height, const std::string &name)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -15,7 +15,7 @@ Window::Window(void *user, int width, int height, const std::string &name)
     spdlog::info("Created window {} with dimensions {}x{}", name.c_str(), width, height);
 }
 
-Window::~Window()
+void Window::destroy()
 {
     glfwDestroyWindow(window);
     glfwTerminate();

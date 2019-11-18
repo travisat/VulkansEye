@@ -1,5 +1,7 @@
 #include "engine/Engine.hpp"
 #include "State.hpp"
+#include "engine/Window.hpp"
+#include "vulkan/vulkan_core.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -20,42 +22,14 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace tat
 {
 
-VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                         VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
-                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *
-                                         /*pUserData*/) -> VkBool32
+void Engine::create()
 {
-    std::string prefix;
-
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
-    {
-        spdlog::warn("Validation {}", pCallbackData->pMessage);
-        std::cerr << pCallbackData->pMessage << std::endl;
-    }
-    else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
-    {
-        spdlog::error("Validation {}", pCallbackData->pMessage);
-        std::cerr << pCallbackData->pMessage << std::endl;
-    }
-    else
-    {
-        spdlog::info("Validation {}", pCallbackData->pMessage);
-        std::cout << pCallbackData->pMessage << std::endl;
-    }
-
-    return VK_FALSE;
-}
-
-void Engine::init()
-{
-    spdlog::info("Begin Engine Init");
-
     auto &state = State::instance();
     createInstance();
-    surface = state.window->createSurface(instance);
+    surface = state.window.createSurface(instance);
     pickPhysicalDevice();
     createLogicalDevice();
-    createAllocator();
+    allocator.create(physicalDevice, device);
 
     createSwapChain();
     shadowPass.loadShadow();
@@ -65,7 +39,7 @@ void Engine::init()
     createCommandPool();
     createPipelineCache();
 
-    spdlog::info("End Engine Init");
+    spdlog::info("Created Engine");
 }
 
 void Engine::prepare()
@@ -76,19 +50,93 @@ void Engine::prepare()
 
     createCommandBuffers();
     prepared = true;
-    spdlog::info("Engine Prepared");
+    spdlog::info("Prepared Engine");
 }
 
-Engine::~Engine()
+void Engine::destroy()
 {
     // manually delete
-    colorAttachment.reset();
-    depthAttachment.reset();
-    shadowDepth.reset();
+    colorAttachment.destroy();
+    depthAttachment.destroy();
+    shadowDepth.destroy();
 
-    if (allocator != nullptr)
+    if (debug.enableValidationLayers)
     {
-        vmaDestroyAllocator(allocator);
+        debug.destroy();
+    }
+
+    if (!commandBuffers.empty())
+    {
+        device.freeCommandBuffers(commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    }
+    for (auto &semaphore : renderFinishedSemaphores)
+    {
+        if (semaphore)
+        {
+            device.destroySemaphore(semaphore);
+        }
+    }
+    for (auto &semaphore : presentFinishedSemaphores)
+    {
+        if (semaphore)
+        {
+            device.destroySemaphore(semaphore);
+        }
+    }
+    for (auto &fence : waitFences)
+    {
+        if (fence)
+        {
+            device.destroyFence(fence);
+        }
+    }
+
+    for (auto imageView : swapChainImageViews)
+    {
+        device.destroyImageView(imageView);
+    }
+
+    colorPass.destroy();
+    shadowPass.destroy();
+
+    if (swapChain)
+    {
+        device.destroySwapchainKHR(swapChain);
+    }
+
+    if (pipelineCache)
+    {
+        device.destroyPipelineCache(pipelineCache);
+    }
+
+    if (commandPool)
+    {
+        device.destroyCommandPool(commandPool);
+    }
+
+    for (auto& frameBuffer : colorFramebuffers)
+    {
+        frameBuffer.destroy();
+    }
+    for (auto& frameBuffer :shadowFramebuffers)
+    {
+        frameBuffer.destroy();
+    }
+
+    allocator.destroy(); 
+
+    if (device)
+    {
+        device.destroy(nullptr);
+    }
+
+    if (surface)
+    {
+        instance.destroySurfaceKHR(surface);
+    }
+    if (instance)
+    {
+        instance.destroy();
     }
 
     spdlog::info("Destroyed Engine");
@@ -119,16 +167,16 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo sunPassInfo = {};
-    sunPassInfo.renderPass = shadowPass.renderPass.get();
+    sunPassInfo.renderPass = shadowPass.renderPass;
     sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     sunPassInfo.renderArea.extent.width = settings.at("shadowSize");
     sunPassInfo.renderArea.extent.height = settings.at("shadowSize");
     sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     sunPassInfo.pClearValues = clearValues.data();
-    sunPassInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer.get();
+    sunPassInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer;
 
     commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
-    state.scene->drawShadow(commandBuffer, currentImage);
+    state.scene.drawShadow(commandBuffer, currentImage);
     commandBuffer.endRenderPass();
 }
 
@@ -156,18 +204,18 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
     vk::RenderPassBeginInfo colorPassInfo = {};
-    colorPassInfo.renderPass = colorPass.renderPass.get();
+    colorPassInfo.renderPass = colorPass.renderPass;
     colorPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     colorPassInfo.renderArea.extent = swapChainExtent;
     colorPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     colorPassInfo.pClearValues = clearValues.data();
-    colorPassInfo.framebuffer = colorFramebuffers[currentImage].framebuffer.get();
+    colorPassInfo.framebuffer = colorFramebuffers[currentImage].framebuffer;
 
     commandBuffer.beginRenderPass(colorPassInfo, vk::SubpassContents::eInline);
-    state.scene->drawColor(commandBuffer, currentImage);
+    state.scene.drawColor(commandBuffer, currentImage);
     if (showOverlay)
     {
-        state.overlay->draw(commandBuffer, currentImage);
+        state.overlay.draw(commandBuffer, currentImage);
     }
     commandBuffer.endRenderPass();
 }
@@ -208,9 +256,9 @@ void Engine::drawFrame(float deltaTime)
         return;
     }
 
-    if (state.overlay->update)
+    if (state.overlay.update)
     {
-        state.overlay->recreate();
+        state.overlay.recreate();
         createCommandBuffers();
     }
 
@@ -244,7 +292,7 @@ void Engine::drawFrame(float deltaTime)
         return;
     }
 
-    state.scene->update(currentBuffer, deltaTime);
+    state.scene.update(currentBuffer, deltaTime);
 
     const vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     vk::SubmitInfo submitInfo = {};
@@ -307,8 +355,9 @@ void Engine::updateWindow()
 
     for (auto &frameBuffer : colorFramebuffers)
     {
-        frameBuffer.recreate();
+        frameBuffer.destroy();
     }
+    createColorFramebuffers();
     createCommandBuffers();
     device.waitIdle();
 
@@ -328,8 +377,8 @@ void Engine::resizeWindow()
     int height = 0;
     while (width == 0 || height == 0)
     {
-        std::tie(width, height) = state.window->getFrameBufferSize();
-        state.window->wait();
+        std::tie(width, height) = state.window.getFrameBufferSize();
+        tat::Window::wait();
     }
     device.waitIdle();
     auto &window = state.at("settings").at("window");
@@ -345,13 +394,15 @@ void Engine::resizeWindow()
 
     colorPass.recreate();
 
-    state.scene->recreate();
-    state.overlay->recreate();
+    state.scene.recreate();
+    state.overlay.recreate();
 
     for (auto &frameBuffer : colorFramebuffers)
     {
-        frameBuffer.recreate();
+        frameBuffer.destroy();
     }
+    createColorFramebuffers();
+
     createCommandBuffers();
     device.waitIdle();
 
@@ -373,14 +424,15 @@ void Engine::createInstance()
 
     vk::InstanceCreateInfo createInfo = {};
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.enabledExtensionCount = extensions.size();
     createInfo.ppEnabledExtensionNames = extensions.data();
     createInfo.enabledLayerCount = 0;
     createInfo.pNext = nullptr;
-    if (enableValidationLayers)
+
+    if (debug.enableValidationLayers)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+        createInfo.enabledLayerCount = debug.validationLayers.size();
+        createInfo.ppEnabledLayerNames = debug.validationLayers.data();
     }
 
     vk::DynamicLoader dl;
@@ -518,24 +570,17 @@ void Engine::createLogicalDevice()
     deviceFeatures.geometryShader = VK_TRUE;
 
     vk::DeviceCreateInfo createInfo{};
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.enabledExtensionCount = deviceExtensions.size();
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0;
-    if (enableValidationLayers)
+    if (debug.enableValidationLayers)
     {
-        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-        debugInfo.pfnUserCallback = debugCallback;
-
-        debugMessenger = instance.createDebugUtilsMessengerEXT(debugInfo);
+        createInfo.enabledLayerCount = debug.validationLayers.size();
+        createInfo.ppEnabledLayerNames = debug.validationLayers.data();
+        debug.create();
     }
 
     device = physicalDevice.createDevice(createInfo);
@@ -544,22 +589,6 @@ void Engine::createLogicalDevice()
     graphicsQueue = device.getQueue(indices.graphicsFamily.value(), 0);
     presentQueue = device.getQueue(indices.presentFamily.value(), 0);
     spdlog::info("Created Logical Device");
-}
-
-void Engine::createAllocator()
-{
-    VmaAllocatorCreateInfo allocatorInfo{};
-    allocatorInfo.physicalDevice = physicalDevice;
-    allocatorInfo.device = device;
-
-    auto result = vmaCreateAllocator(&allocatorInfo, &allocator);
-    if (result != VK_SUCCESS)
-    {
-        spdlog::error("Unable to create Memory Allocator. Error code {}", result);
-        throw std::runtime_error("Unable to create Memory Allocator");
-        return;
-    }
-    spdlog::info("Created Memory Allocator");
 }
 
 void Engine::createSwapChain()
@@ -636,22 +665,21 @@ void Engine::createShadowFramebuffers()
 {
     auto &state = State::instance();
     auto &settings = state.at("settings");
-    shadowDepth = std::make_unique<Image>();
-    shadowDepth->imageInfo.format = findDepthFormat();
-    shadowDepth->imageInfo.usage =
+    shadowDepth.imageInfo.format = findDepthFormat();
+    shadowDepth.imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    shadowDepth->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadowDepth->imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    shadowDepth->resize(settings.at("shadowSize"), settings.at("shadowSize"));
-    shadowDepth->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    shadowDepth.imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
+    shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     shadowFramebuffers.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        shadowFramebuffers[i].renderPass = shadowPass.renderPass.get();
+        shadowFramebuffers[i].renderPass = shadowPass.renderPass;
         shadowFramebuffers[i].width = settings.at("shadowSize");
         shadowFramebuffers[i].height = settings.at("shadowSize");
-        shadowFramebuffers[i].attachments = {state.scene->shadow->imageView.get(), shadowDepth->imageView.get()};
+        shadowFramebuffers[i].attachments = {state.scene.shadow.imageView, shadowDepth.imageView};
         shadowFramebuffers[i].create();
     }
     spdlog::info("Created Framebuffer for shadows");
@@ -659,34 +687,32 @@ void Engine::createShadowFramebuffers()
 
 void Engine::createColorFramebuffers()
 {
-    colorAttachment = std::make_unique<Image>();
-    colorAttachment->imageInfo.format = swapChainImageFormat;
-    colorAttachment->imageInfo.samples = msaaSamples;
-    colorAttachment->imageInfo.usage =
+    colorAttachment.imageInfo.format = swapChainImageFormat;
+    colorAttachment.imageInfo.samples = msaaSamples;
+    colorAttachment.imageInfo.usage =
         vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment;
-    colorAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    colorAttachment->resize(swapChainExtent.width, swapChainExtent.height);
-    colorAttachment->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    colorAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    colorAttachment.resize(swapChainExtent.width, swapChainExtent.height);
+    colorAttachment.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
-    depthAttachment = std::make_unique<Image>();
-    depthAttachment->imageInfo.format = findDepthFormat();
-    depthAttachment->imageInfo.samples = msaaSamples;
-    depthAttachment->imageInfo.usage =
+    depthAttachment.imageInfo.format = findDepthFormat();
+    depthAttachment.imageInfo.samples = msaaSamples;
+    depthAttachment.imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-    depthAttachment->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    depthAttachment->imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    depthAttachment->resize(swapChainExtent.width, swapChainExtent.height);
-    depthAttachment->transitionImageLayout(vk::ImageLayout::eUndefined,
+    depthAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    depthAttachment.imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+    depthAttachment.resize(swapChainExtent.width, swapChainExtent.height);
+    depthAttachment.transitionImageLayout(vk::ImageLayout::eUndefined,
                                            vk::ImageLayout::eDepthStencilAttachmentOptimal);
     colorFramebuffers.resize(swapChainImageViews.size());
 
     for (size_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        colorFramebuffers[i].renderPass = colorPass.renderPass.get();
+        colorFramebuffers[i].renderPass = colorPass.renderPass;
         colorFramebuffers[i].width = swapChainExtent.width;
         colorFramebuffers[i].height = swapChainExtent.height;
-        colorFramebuffers[i].attachments = {colorAttachment->imageView.get(), depthAttachment->imageView.get(),
-                                       swapChainImageViews[i]};
+        colorFramebuffers[i].attachments = {colorAttachment.imageView, depthAttachment.imageView,
+                                            swapChainImageViews[i]};
         colorFramebuffers[i].create();
     }
     spdlog::info("Created Framebuffer for display");
@@ -763,7 +789,7 @@ void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     device.freeCommandBuffers(commandPool, 1, &commandBuffer);
 };
 
-auto Engine::createShaderModule(const std::string &filename) -> vk::UniqueShaderModule
+auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
 {
     if (!std::filesystem::exists(filename))
     {
@@ -789,7 +815,7 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::UniqueShader
     createInfo.codeSize = buffer.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
-    return device.createShaderModuleUnique(createInfo, nullptr);
+    return device.createShaderModule(createInfo, nullptr);
 }
 
 auto Engine::getRequiredExtensions() -> std::vector<const char *>
@@ -799,9 +825,11 @@ auto Engine::getRequiredExtensions() -> std::vector<const char *>
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    if (enableValidationLayers)
+    if (debug.enableValidationLayers)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
     }
     return extensions;
 };

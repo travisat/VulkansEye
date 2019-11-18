@@ -12,7 +12,7 @@ using json = nlohmann::json;
 namespace tat
 {
 
-Config::Config(const std::string &path)
+void Config::create(const std::string &path)
 {
     try
     {
@@ -37,7 +37,7 @@ Config::Config(const std::string &path)
         loadMeshes(state.at("settings").at("meshesPath"));
         loadModels(state.at("settings").at("modelsPath"));
 
-        spdlog::info("Loaded Config");
+        spdlog::info("Created Config");
     }
     catch (json::exception &e)
     {

@@ -26,13 +26,12 @@ class Buffer
     Buffer() = default;
     ~Buffer();
 
-    void allocate(VkDeviceSize s);
-    void deallocate();
+    void create(VkDeviceSize s);
+    void destroy();
 
     // updates buffer to contents
     void update(void *t, size_t s);
 
-    void resize(vk::DeviceSize s);
     void copyTo(Buffer &destination);
     auto getSize() -> vk::DeviceSize
     {
@@ -43,8 +42,7 @@ class Buffer
     
 
   private:
-    bool allocated = false;
-    VmaAllocation allocation{};
+    int32_t allocId {};
     vk::DeviceSize size = 0;
 };
 

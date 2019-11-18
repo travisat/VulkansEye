@@ -17,11 +17,12 @@ class Framebuffer
     int32_t height;
     int32_t layers = 1;
 
-    vk::UniqueFramebuffer framebuffer;
+    vk::Framebuffer framebuffer;
     std::vector<vk::ImageView> attachments;
 
     void create();
     void recreate();
+    void destroy();
 
   private:
     void createRenderPass();

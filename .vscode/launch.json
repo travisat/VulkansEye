@@ -10,7 +10,7 @@
             "request": "launch",
             "name": "Launch",
             "program": "${command:cmake.launchTargetPath}",
-            "terminal": "console"
+            "terminal": "integrated"
         }
     ]
 }

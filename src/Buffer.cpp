@@ -11,30 +11,12 @@ namespace tat
 
 Buffer::~Buffer()
 {
-    deallocate();
+    destroy();
 }
 
-void Buffer::resize(VkDeviceSize s)
+void Buffer::create(VkDeviceSize s)
 {
-    allocate(s);
-}
-
-void Buffer::update(void *t, size_t s)
-{
-    auto &engine = State::instance().engine;
-    if (s != size)
-    {
-        allocate(s);
-    }
-    void *data = nullptr;
-    vmaMapMemory(engine->allocator, allocation, &data);
-    memcpy(data, t, s);
-    vmaUnmapMemory(engine->allocator, allocation);
-}
-
-void Buffer::allocate(VkDeviceSize s)
-{
-    deallocate();
+    destroy();
 
     auto &engine = State::instance().engine;
     size = s;
@@ -50,28 +32,27 @@ void Buffer::allocate(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    auto result = vmaCreateBuffer(engine->allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &allocInfo,
-                                  reinterpret_cast<VkBuffer *>(&buffer), &allocation, &info);
-
-    if (result != VK_SUCCESS)
-    {
-        spdlog::error("Unable to create buffer of size {}. Error code {}", size, result);
-        throw std::runtime_error("Unable to create buffer");
-        return;
-    }
+    allocId = engine.allocator.createBuffer(bufferInfo, allocInfo, buffer, &info);
     mapped = info.pMappedData;
-    allocated = true;
 }
 
-void Buffer::deallocate()
+void Buffer::destroy()
 {
-    if (allocated)
+        auto &engine = State::instance().engine;
+        engine.allocator.destroyBuffer(buffer, allocId);
+}
+
+void Buffer::update(void *t, size_t s)
+{
+    auto &engine = State::instance().engine;
+    if (s != size)
     {
-        auto &state = State::instance();
-        vmaDestroyBuffer(state.engine->allocator, buffer, allocation);
-        allocated = false;
-        buffer = nullptr;
+        create(s);
     }
+    void *data = nullptr;
+    engine.allocator.mapMemory(allocId, &data);
+    memcpy(data, t, s);
+    engine.allocator.unmapMemory(allocId);
 }
 
 void Buffer::copyTo(Buffer &destination)
@@ -80,22 +61,22 @@ void Buffer::copyTo(Buffer &destination)
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
-        destination.allocate(size);
+        destination.create(size);
     }
 
-    vk::CommandBuffer commandBuffer = engine->beginSingleTimeCommands();
+    vk::CommandBuffer commandBuffer = engine.beginSingleTimeCommands();
 
     vk::BufferCopy copyRegion = {};
     copyRegion.size = size;
     commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
-    engine->endSingleTimeCommands(commandBuffer);
+    engine.endSingleTimeCommands(commandBuffer);
 }
 
 void Buffer::flush(size_t size, vk::DeviceSize offset)
 {
-    auto &state = State::instance();
-    vmaFlushAllocation(state.engine->allocator, allocation, offset, size);
+    auto &engine = State::instance().engine;
+    engine.allocator.flush(allocId, offset, size);
 };
 
 } // namespace tat

@@ -9,6 +9,7 @@ class VulkansEye
     explicit VulkansEye(const std::string &configPath);
     ~VulkansEye() = default;
     static void run();
+    static void cleanup();
 
   private:
 

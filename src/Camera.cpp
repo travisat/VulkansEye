@@ -7,7 +7,7 @@
 namespace tat
 {
 
-Camera::Camera()
+void Camera::create()
 {
     auto &settings = State::instance().at("settings");
     width = settings.at("window").at(0);
@@ -22,6 +22,11 @@ Camera::Camera()
     updateProjection();
     currentMode = Input::getMode();
     spdlog::info("Created Camera");
+}
+
+void Camera::destroy()
+{
+    spdlog::info("Destroyed Camera");
 }
 
 void Camera::look(double mouseX, double mouseY)

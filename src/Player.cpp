@@ -6,7 +6,7 @@
 namespace tat
 {
 
-Player::Player()
+void Player::create()
 {
     auto &player = State::instance().at("player");
     auto size = glm::vec3(0.5F, player.at("height").get<float>() * 2.F, 0.25F);
@@ -22,7 +22,7 @@ Player::Player()
     spdlog::info("Created Player");
 }
 
-Player::~Player()
+void Player::destroy()
 {
     spdlog::info("Destroyed Player");
 }
@@ -31,7 +31,7 @@ void Player::move(glm::vec2 direction, float deltaTime)
 {
     auto &camera = State::instance().camera;
     glm::vec3 camFront;
-    glm::vec3 rotation = camera->rotation();
+    glm::vec3 rotation = camera.rotation();
     camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
     camFront.y = sin(glm::radians(rotation.x));
     camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));

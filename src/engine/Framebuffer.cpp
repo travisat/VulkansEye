@@ -14,13 +14,19 @@ void Framebuffer::create()
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    framebuffer = engine->device.createFramebufferUnique(framebufferInfo);
+    framebuffer = engine.device.createFramebuffer(framebufferInfo);
 }
 
 void Framebuffer::recreate()
 {
-    framebuffer.reset();
+    destroy();
     create();
+}
+
+void Framebuffer::destroy()
+{
+    auto& engine = State::instance().engine;
+    engine.device.destroyFramebuffer(framebuffer);
 }
 
 } // namespace tat

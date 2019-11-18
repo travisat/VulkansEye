@@ -47,6 +47,8 @@ ${CMAKE_SOURCE_DIR}/src/engine/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Allocator.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Debug.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/Config.cpp
 ${CMAKE_SOURCE_DIR}/src/Buffer.cpp

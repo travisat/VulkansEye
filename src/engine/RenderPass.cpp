@@ -1,5 +1,6 @@
 #include "engine/RenderPass.hpp"
 #include "State.hpp"
+#include <iterator>
 
 namespace tat
 {
@@ -7,13 +8,19 @@ namespace tat
 void RenderPass::create()
 {
     auto &engine = State::instance().engine;
-    renderPass = engine->device.createRenderPassUnique(renderPassInfo);
+    renderPass = engine.device.createRenderPass(renderPassInfo);
 }
 
 void RenderPass::recreate()
 {
-    renderPass.reset();
+    destroy();
     create();
+}
+
+void RenderPass::destroy()
+{
+    auto &engine = State::instance().engine;
+    engine.device.destroyRenderPass(renderPass);
 }
 
 void RenderPass::loadColor()
@@ -23,8 +30,8 @@ void RenderPass::loadColor()
     attachments.resize(3);
 
     // color
-    attachments[0].format = engine->swapChainImageFormat;
-    attachments[0].samples = engine->msaaSamples;
+    attachments[0].format = engine.swapChainImageFormat;
+    attachments[0].samples = engine.msaaSamples;
     attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
     attachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -36,8 +43,8 @@ void RenderPass::loadColor()
     colorReference.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
     // depth
-    attachments[1].format = engine->findDepthFormat();
-    attachments[1].samples = engine->msaaSamples;
+    attachments[1].format = engine.findDepthFormat();
+    attachments[1].samples = engine.msaaSamples;
     attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[1].storeOp = vk::AttachmentStoreOp::eDontCare;
     attachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -49,7 +56,7 @@ void RenderPass::loadColor()
     depthReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     // resolve
-    attachments[2].format = engine->swapChainImageFormat;
+    attachments[2].format = engine.swapChainImageFormat;
     attachments[2].samples = vk::SampleCountFlagBits::e1;
     attachments[2].loadOp = vk::AttachmentLoadOp::eDontCare;
     attachments[2].storeOp = vk::AttachmentStoreOp::eStore;
@@ -114,7 +121,7 @@ void RenderPass::loadShadow()
     colorReference.attachment = 0;
     colorReference.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-    attachments[1].format = engine->findDepthFormat();
+    attachments[1].format = engine.findDepthFormat();
     attachments[1].samples = vk::SampleCountFlagBits::e1;
     attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[1].storeOp = vk::AttachmentStoreOp::eDontCare;

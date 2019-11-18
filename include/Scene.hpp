@@ -14,18 +14,16 @@ namespace tat
 class Scene
 {
   public:
-    Scene() = default;
-    ~Scene();
-
     std::string name = "Unknown";
 
-    std::shared_ptr<Image> shadow;
-    std::shared_ptr<Image> brdf;
-    std::shared_ptr<Backdrop> backdrop;
+    Image shadow {};
+    Image brdf {};
+    Backdrop *backdrop = nullptr;
 
     float shadowSize = 1024.F;
 
-    void load();
+    void destroy();
+    void create();
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -44,7 +42,7 @@ class Scene
     UniformFrag fragBuffer{};
     UniformShad shadBuffer{};
 
-    std::vector<std::shared_ptr<Model>> models{};
+    std::vector<Model*> models{};
 
     void createBrdf();
     void createShadow();

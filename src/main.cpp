@@ -43,7 +43,8 @@ auto main(int argc, char *argv[]) -> int
             }
 
             tat::VulkansEye app(config);
-            //tat::VulkansEye::run();
+            tat::VulkansEye::run();
+            tat::VulkansEye::cleanup();
         }
         catch (const std::exception &e)
         {

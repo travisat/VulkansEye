@@ -35,7 +35,7 @@ template <class T> class Collection
 
   public:
     // type of collection, this is in state json (backdrops/materials/meshes/models)
-    explicit Collection(const std::string &type)
+    void create(const std::string &type)
     {
         // get state
         auto &state = State::instance();
@@ -43,21 +43,18 @@ template <class T> class Collection
         int32_t index = 0;
         for (auto &[key, _] : state.at(type).items())
         { // iterate through type in state
-            collection.push_back(std::make_shared<T>());
-            // store the name of the entry in the ptr
-            // this is so the entry can load itself
-            collection[index]->name = key;
+            T t {};
+            t.name = key;
+            collection.push_back(t);
             // store name,index in map for getting index later
             names.insert(std::make_pair(key, index));
             ++index;
         }
     };
 
-    ~Collection() = default;
-
     // returns shared_ptr to loaded entry
     // loads entry if it is not loaded
-    auto get(const std::string &name) -> std::shared_ptr<T>
+    auto get(const std::string &name) -> T *
     {
         int32_t index = getIndex(name);
         return load(index);
@@ -76,17 +73,17 @@ template <class T> class Collection
         return -1;
     }
 
-    // loads entry at index if not loaded and return shared_ptr to it
+    // loads entry at index if not loaded and return ptr to it
     // if index does not exist it returns item at index 0
-    auto load(int32_t index) -> std::shared_ptr<T>
+    auto load(int32_t index) -> T *
     {
         if (index > collection.size() || index < 0)
-        { //return null if index out of range
+        { // return null if index out of range
             return nullptr;
         }
         // load default entry so we always have an entry
-        auto entry = collection[index]; 
-        
+        auto entry = &collection[index];
+
         if (entry->loaded == true)
         { // if already loaded return
             return entry;
@@ -96,10 +93,15 @@ template <class T> class Collection
         return entry;
     }
 
+    // destroys collection
+    void destroy()
+    {
+        collection.clear();
+        names.clear();
+    }
+
   private:
-    // collection of shared ptrs
-    // shared_ptrs objects are lazy loaded so name isn't in collection until loaded
-    std::vector<std::shared_ptr<T>> collection{};
+    std::vector<T> collection{};
     // map of names to index of shared ptr for faster retrieval
     std::map<std::string, int32_t> names{};
 };

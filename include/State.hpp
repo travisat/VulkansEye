@@ -41,16 +41,16 @@ class State: public json
         return instance;
     };
     
-    std::shared_ptr<Engine> engine;
-    std::shared_ptr<Window> window;
-    std::shared_ptr<Camera> camera;
-    std::shared_ptr<Player> player;
-    std::shared_ptr<Overlay> overlay;
-    std::shared_ptr<Scene> scene;
-    std::shared_ptr<Collection<Backdrop>> backdrops;
-    std::shared_ptr<Collection<Material>> materials;
-    std::shared_ptr<Collection<Mesh>> meshes;
-    std::shared_ptr<Collection<Model>> models;
+    Engine engine {};
+    Window window {};
+    Camera camera {};
+    Player player {};
+    Overlay overlay {};
+    Scene scene {};
+    Collection<Backdrop> backdrops {};
+    Collection<Material> materials {};
+    Collection<Mesh> meshes {};
+    Collection<Model> models {};
 
   private:
     State() = default;

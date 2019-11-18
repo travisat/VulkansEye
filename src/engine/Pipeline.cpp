@@ -7,40 +7,73 @@ namespace tat
 
 void Pipeline::create()
 {
-    auto& engine = State::instance().engine;
-    pipelineLayout = engine->device.createPipelineLayoutUnique(pipelineLayoutInfo);
-    pipelineInfo.layout = pipelineLayout.get();
+    auto &engine = State::instance().engine;
+    pipelineLayout = engine.device.createPipelineLayout(pipelineLayoutInfo);
+    pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = engine->device.createGraphicsPipelineUnique(engine->pipelineCache, pipelineInfo);
+    pipeline = engine.device.createGraphicsPipeline(engine.pipelineCache, pipelineInfo);
+}
+
+void Pipeline::destroy()
+{
+    auto &engine = State::instance().engine;
+    if (pipeline)
+    {
+        engine.device.destroyPipeline(pipeline);
+    }
+    if (pipelineLayout)
+    {
+        engine.device.destroyPipelineLayout(pipelineLayout);
+    }
+    if (fragShader)
+    {
+        engine.device.destroyShaderModule(fragShader);
+    }
+    if (vertShader)
+    {
+        engine.device.destroyShaderModule(vertShader);
+    }
+    if (geomShader)
+    {
+        engine.device.destroyShaderModule(geomShader);
+    }
+    if (tescShader)
+    {
+        engine.device.destroyShaderModule(tescShader);
+    }
+    if (teseShader)
+    {
+        engine.device.destroyShaderModule(teseShader);
+    }
 }
 
 void Pipeline::loadDefaults(vk::RenderPass renderPass)
 {
-    auto& engine = State::instance().engine;
+    auto &engine = State::instance().engine;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     vertShaderStageInfo.pName = "main";
-    vertShaderStageInfo.module = vertShader.get();
+    vertShaderStageInfo.module = vertShader;
 
     tescShaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationControl;
     tescShaderStageInfo.pName = "main";
-    tescShaderStageInfo.module = tescShader.get();
+    tescShaderStageInfo.module = tescShader;
 
     teseShaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationEvaluation;
     teseShaderStageInfo.pName = "main";
-    teseShaderStageInfo.module = teseShader.get();
+    teseShaderStageInfo.module = teseShader;
 
     geomShaderStageInfo.stage = vk::ShaderStageFlagBits::eGeometry;
     geomShaderStageInfo.pName = "main";
-    geomShaderStageInfo.module = geomShader.get();
+    geomShaderStageInfo.module = geomShader;
 
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
     fragShaderStageInfo.pName = "main";
-    fragShaderStageInfo.module = fragShader.get();
+    fragShaderStageInfo.module = fragShader;
 
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
     vertexInputInfo.pVertexAttributeDescriptions = nullptr;
@@ -68,7 +101,7 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     rasterizer.depthBiasEnable = VK_FALSE;
 
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = engine->msaaSamples;
+    multisampling.rasterizationSamples = engine.msaaSamples;
 
     colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;

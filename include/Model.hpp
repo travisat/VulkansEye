@@ -43,8 +43,8 @@ class Model : public Object, public Entry
 
     virtual ~Model() = default;
 
-    std::shared_ptr<Image> irradianceMap;
-    std::shared_ptr<Image> radianceMap;
+    Image *irradianceMap;
+    Image *radianceMap;
 
     std::vector<vk::DescriptorSet> colorSets;
     std::vector<Buffer> vertBuffers;
@@ -56,14 +56,14 @@ class Model : public Object, public Entry
     void createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout);
     void createUniformBuffers();
 
-    inline auto getMesh() -> std::shared_ptr<Mesh>
+    inline auto getMesh() -> Mesh *
     {
         return mesh;
     };
 
   private:
-    std::shared_ptr<Material> material;
-    std::shared_ptr<Mesh> mesh;
+    Material *material;
+    Mesh *mesh;
 };
 
 } // namespace tat

@@ -11,7 +11,7 @@
 namespace tat
 {
 
-Overlay::Overlay()
+void Overlay::create()
 {
     ImGui::CreateContext();
     // Color scheme
@@ -38,19 +38,23 @@ Overlay::Overlay()
     spdlog::info("Created Overlay");
 }
 
-Overlay::~Overlay()
+void Overlay::destroy()
 {
     auto &engine = State::instance().engine;
+    fontImage.destroy();
+    pipeline.destroy();
+    vertexBuffer.destroy();
+    indexBuffer.destroy();
     ImGui::DestroyContext();
-    engine->device->destroyDescriptorSetLayout(descriptorSetLayout);
-    engine->device->destroyDescriptorPool(descriptorPool);
+    engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
+    engine.device.destroyDescriptorPool(descriptorPool);
     spdlog::info("Destroyed Overlay");
 }
 
 void Overlay::recreate()
 {
     auto &engine = State::instance().engine;
-    engine->device->destroyDescriptorPool(descriptorPool);
+    engine.device.destroyDescriptorPool(descriptorPool);
     createDescriptorPool();
     createDescriptorSets();
     createPipeline();
@@ -76,11 +80,10 @@ void Overlay::createFont()
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
     VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
-    fontImage = std::make_unique<Image>();
-    fontImage->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
-    fontImage->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    fontImage->resize(texWidth, texHeight);
-    fontImage->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+    fontImage.imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+    fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    fontImage.resize(texWidth, texHeight);
+    fontImage.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     // Staging buffers for font data upload
     Buffer stagingBuffer;
@@ -89,7 +92,7 @@ void Overlay::createFont()
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
-    vk::CommandBuffer copyCmd = engine->beginSingleTimeCommands();
+    vk::CommandBuffer copyCmd = engine.beginSingleTimeCommands();
 
     // Copy
     vk::BufferImageCopy bufferCopyRegion = {};
@@ -99,25 +102,25 @@ void Overlay::createFont()
     bufferCopyRegion.imageExtent.height = texHeight;
     bufferCopyRegion.imageExtent.depth = 1;
 
-    copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage->image, vk::ImageLayout::eTransferDstOptimal, 1,
+    copyCmd.copyBufferToImage(stagingBuffer.buffer, fontImage.image, vk::ImageLayout::eTransferDstOptimal, 1,
                               &bufferCopyRegion);
 
-    engine->endSingleTimeCommands(copyCmd);
+    engine.endSingleTimeCommands(copyCmd);
 
-    fontImage->transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+    fontImage.transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     // Font texture Sampler
-    fontImage->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    fontImage->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    fontImage->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    fontImage->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    fontImage->createSampler();
+    fontImage.samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    fontImage.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    fontImage.createSampler();
 }
 
 void Overlay::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
@@ -129,7 +132,7 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = engine->device->createDescriptorPool(poolInfo);
+    descriptorPool = engine.device.createDescriptorPool(poolInfo);
 }
 
 void Overlay::createDescriptorLayouts()
@@ -147,26 +150,26 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = engine->device->createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Overlay::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), descriptorSetLayout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = engine->device->allocateDescriptorSets(allocInfo);
+    descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
 
-    for (size_t i = 0; i < engine->swapChainImages.size(); i++)
+    for (size_t i = 0; i < engine.swapChainImages.size(); i++)
     {
         vk::DescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        samplerInfo.imageView = fontImage->imageView.get();
-        samplerInfo.sampler = fontImage->sampler.get();
+        samplerInfo.imageView = fontImage.imageView;
+        samplerInfo.sampler = fontImage.sampler;
 
         std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -176,7 +179,7 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                              nullptr);
     }
 }
@@ -184,13 +187,13 @@ void Overlay::createDescriptorSets()
 void Overlay::createPipeline()
 {
     auto &engine = State::instance().engine;
-    pipeline.descriptorSetLayout = descriptorSetLayout;
+    pipeline.descriptorSetLayout = &descriptorSetLayout;
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
-    pipeline.vertShader = engine->createShaderModule(vertPath);
-    pipeline.fragShader = engine->createShaderModule(fragPath);
+    pipeline.vertShader = engine.createShaderModule(vertPath);
+    pipeline.fragShader = engine.createShaderModule(fragPath);
 
-    pipeline.loadDefaults(engine->colorPass.get());
+    pipeline.loadDefaults(engine.colorPass.renderPass);
 
     // Push constants for UI rendering parameters
     vk::PushConstantRange pushConstantRange = {};
@@ -256,8 +259,8 @@ void Overlay::newFrame()
     {
         lastUpdateTime = frameTime;
         uiSettings.fps = 1.F / deltaTime;
-        uiSettings.position = State::instance().player->position();
-        uiSettings.rotation = State::instance().camera->rotation();
+        uiSettings.position = State::instance().player.position();
+        uiSettings.rotation = State::instance().camera.rotation();
 
         switch (Input::getMode())
         {
@@ -304,12 +307,12 @@ void Overlay::updateBuffers()
 
         if (update)
         {
-            engine->device->waitIdle();
+            engine.device.waitIdle();
 
-            vertexBuffer.resize(vertexBufferSize);
+            vertexBuffer.create(vertexBufferSize);
             vertexCount = imDrawData->TotalVtxCount;
 
-            indexBuffer.resize(indexBufferSize);
+            indexBuffer.create(indexBufferSize);
             indexCount = imDrawData->TotalIdxCount;
         }
         // Upload data
@@ -339,14 +342,14 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         updateBuffers();
     }
     ImGuiIO &io = ImGui::GetIO();
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout.get(), 0, 1,
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
                                      &descriptorSets[currentImage], 0, nullptr);
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline.get());
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
 
     // UI scale and translate via push constants
     pushConstBlock.scale = glm::vec2(2.F / io.DisplaySize.x, 2.F / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.F);
-    commandBuffer.pushConstants(pipeline.pipelineLayout.get(), vk::ShaderStageFlagBits::eVertex, 0,
+    commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0,
                                 sizeof(PushConstBlock), &pushConstBlock);
 
     // Render commands

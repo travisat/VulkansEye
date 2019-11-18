@@ -15,16 +15,16 @@ class Material : public Entry
 {
   public:
     void load() override;
-    virtual ~Material() = default;
+    virtual ~Material();
 
-    std::shared_ptr<Image> diffuse = nullptr;
-    std::shared_ptr<Image> normal = nullptr;
-    std::shared_ptr<Image> metallic = nullptr;
-    std::shared_ptr<Image> roughness = nullptr;
-    std::shared_ptr<Image> ao = nullptr;
+    Image diffuse;
+    Image normal;
+    Image metallic;
+    Image roughness;
+    Image ao;
 
   private:
-    auto loadImage(const std::string &file) -> std::shared_ptr<Image>;
+    void loadImage(const std::string &file, Image *image);
 };
 
 } // namespace tat

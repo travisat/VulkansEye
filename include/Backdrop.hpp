@@ -25,15 +25,15 @@ struct UniformBack
 class Backdrop : public Entry
 {
   public:
-    glm::vec3 light{};
-
     Backdrop() = default;
     virtual ~Backdrop();
+    glm::vec3 light{};
 
-    std::shared_ptr<Image> colorMap;
-    std::shared_ptr<Image> radianceMap;
-    std::shared_ptr<Image> irradianceMap;
+    Image colorMap;
+    Image radianceMap;
+    Image irradianceMap;
 
+    void destroy();
     void load() override;
 
     void recreate();
@@ -51,7 +51,7 @@ class Backdrop : public Entry
     UniformBack backBuffer{};
     std::vector<Buffer> backBuffers;
 
-    auto loadCubeMap(const std::string &file) -> std::shared_ptr<Image>;
+    void loadCubeMap(const std::string &file, Image *image);
     void createDescriptorPool();
     void createDescriptorSetLayouts();
     void createUniformBuffers();

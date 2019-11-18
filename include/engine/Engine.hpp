@@ -11,20 +11,17 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
-#include "Framebuffer.hpp"
+#include "engine/Framebuffer.hpp"
+#include "engine/RenderPass.hpp"
+#include "engine/Allocator.hpp"
+
 #include "Image.hpp"
-#include "RenderPass.hpp"
+#include "Debug.hpp"
 
 namespace tat
 {
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
 
 struct SwapChainSupportDetails
 {
@@ -47,10 +44,9 @@ struct QueueFamilyIndices
 class Engine
 {
   public:
-    Engine() = default;
-    ~Engine();
-    void init();
+    void create();
     void prepare();
+    void destroy();
     void drawFrame(float deltaTime);
 
     bool showOverlay = false;
@@ -60,7 +56,7 @@ class Engine
     vk::SurfaceKHR surface;
     vk::Device device;
 
-    VmaAllocator allocator{};
+    Allocator allocator {};
 
     vk::PipelineCache pipelineCache;
     RenderPass colorPass;
@@ -74,18 +70,16 @@ class Engine
     auto beginSingleTimeCommands() -> vk::CommandBuffer;
     void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
-    auto createShaderModule(const std::string &filename) -> vk::UniqueShaderModule;
+    auto createShaderModule(const std::string &filename) -> vk::ShaderModule;
     auto findDepthFormat() -> vk::Format;
 
   private:
-    vk::DebugUtilsMessengerEXT debugMessenger;
     std::vector<Framebuffer> shadowFramebuffers{};
-    std::unique_ptr<Image> shadowDepth;
+    Image shadowDepth;
     std::vector<Framebuffer> colorFramebuffers{};
-    std::unique_ptr<Image> colorAttachment;
-    std::unique_ptr<Image> depthAttachment;
-
-    const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
+    Image colorAttachment;
+    Image depthAttachment;
+    
     const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     std::vector<vk::CommandBuffer> commandBuffers{};
@@ -96,6 +90,8 @@ class Engine
 
     vk::PhysicalDevice physicalDevice;
     vk::PhysicalDeviceProperties properties;
+
+    Debug debug;
 
     vk::CommandPool commandPool;
     vk::SwapchainKHR swapChain;
@@ -119,7 +115,6 @@ class Engine
     void createInstance();
     void pickPhysicalDevice();
     void createLogicalDevice();
-    void createAllocator();
     void createSwapChain();
     void createColorFramebuffers();
     void createShadowFramebuffers();
@@ -127,7 +122,7 @@ class Engine
     void createPipelineCache();
     void createSyncObjects();
 
-    static auto getRequiredExtensions() -> std::vector<const char *>;
+    auto getRequiredExtensions() -> std::vector<const char *>;
     auto getMaxUsableSampleCount() -> vk::SampleCountFlagBits;
     static auto chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
         -> vk::SurfaceFormatKHR;

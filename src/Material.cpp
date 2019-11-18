@@ -10,32 +10,39 @@
 namespace tat
 {
 
+Material::~Material()
+{
+    diffuse.destroy();
+    normal.destroy();
+    metallic.destroy();
+    roughness.destroy();
+    ao.destroy();
+}
+
 void Material::load()
 {
     //get json for material
     auto& material = State::instance().at("materials").at(name);
     //load textures in json
-    diffuse = loadImage(material.at("diffuse"));
-    normal = loadImage(material.at("normal"));
-    metallic = loadImage(material.at("metallic"));
-    roughness = loadImage(material.at("roughness"));
-    ao = loadImage(material.at("ao"));
+    loadImage(material.at("diffuse"), &diffuse);
+    loadImage(material.at("normal"), &normal);
+    loadImage(material.at("metallic"), &metallic);
+    loadImage(material.at("roughness"), &roughness);
+    loadImage(material.at("ao"), &ao);
     //we are now loaded
     loaded = true;
     spdlog::info("Loaded Material {}", name);
 }
 
-auto Material::loadImage(const std::string &file) -> std::shared_ptr<Image>
+void Material::loadImage(const std::string &file, Image *image)
 {
     auto path = State::instance().at("settings").at("materialsPath").get<std::string>();
-    auto image = std::make_shared<Image>();
     image->imageInfo.usage =
         vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     image->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     image->load(path + name + "/" + file);
 
     image->createSampler();
-    return image;
 }
 
 } // namespace tat

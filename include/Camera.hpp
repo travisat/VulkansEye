@@ -13,12 +13,12 @@ namespace tat
 class Camera
 {
   public:
-    Camera();
-    ~Camera() = default;
+    void create();
+    static void destroy();
 
-    float FoV;
-    float zNear;
-    float zFar;
+    float FoV {};
+    float zNear {};
+    float zFar {};
 
     void look(double mouseX, double mouseY);
     void update();

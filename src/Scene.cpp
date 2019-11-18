@@ -6,30 +6,38 @@
 namespace tat
 {
 
-Scene::~Scene()
+void Scene::destroy()
 {
     auto &engine = State::instance().engine;
+
+    shadow.destroy();
+    brdf.destroy();
+
     if (shadowLayout)
     {
-        engine->device->destroyDescriptorSetLayout(shadowLayout);
+        engine.device.destroyDescriptorSetLayout(shadowLayout);
     }
     if (colorLayout)
     {
-        engine->device->destroyDescriptorSetLayout(colorLayout);
+        engine.device.destroyDescriptorSetLayout(colorLayout);
     }
     if (colorPool)
     {
-        engine->device->destroyDescriptorPool(colorPool);
+        engine.device.destroyDescriptorPool(colorPool);
     }
     if (shadowPool)
     {
-        engine->device->destroyDescriptorPool(shadowPool);
+        engine.device.destroyDescriptorPool(shadowPool);
     }
 
+    colorPipeline.destroy();
+    shadowPipeline.destroy();
+
+    spdlog::info("Destroyed Scene");
 }
 
 // can't be constructor cause models require pointer to scene which wouldn't exist yet
-void Scene::load()
+void Scene::create()
 {
     createBrdf();
     createShadow();
@@ -44,23 +52,22 @@ void Scene::load()
     createShadowLayouts();
     createShadowSets();
     createShadowPipeline();
-    spdlog::info("Loaded Scene");
+    spdlog::info("Created Scene");
 }
 
 void Scene::createBrdf()
 {
     auto &settings = State::instance().at("settings");
-    brdf = std::make_shared<Image>();
-    brdf->imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    brdf->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    brdf->load(settings.at("brdfPath"));
+    brdf.imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+    brdf.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    brdf.load(settings.at("brdfPath"));
 
-    brdf->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    brdf->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    brdf->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    brdf->samplerInfo.maxAnisotropy = 1.0F;
-    brdf->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    brdf->createSampler();
+    brdf.samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    brdf.samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    brdf.samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    brdf.samplerInfo.maxAnisotropy = 1.0F;
+    brdf.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    brdf.createSampler();
     spdlog::info("Created BRDF");
 }
 
@@ -68,26 +75,25 @@ void Scene::createShadow()
 {
     auto &settings = State::instance().at("settings");
     shadowSize = settings.at("shadowSize");
-    shadow = std::make_shared<Image>();
-    shadow->imageInfo.format = vk::Format::eR32G32Sfloat;
-    shadow->imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
-    shadow->memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    shadow->resize(static_cast<int>(shadowSize), static_cast<int>(shadowSize));
-    shadow->transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
+    shadow.imageInfo.format = vk::Format::eR32G32Sfloat;
+    shadow.imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+    shadow.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+    shadow.resize(static_cast<int>(shadowSize), static_cast<int>(shadowSize));
+    shadow.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
-    shadow->samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
-    shadow->samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
-    shadow->samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
-    shadow->samplerInfo.maxAnisotropy = 1.F;
-    shadow->samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
-    shadow->createSampler();
+    shadow.samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+    shadow.samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+    shadow.samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+    shadow.samplerInfo.maxAnisotropy = 1.F;
+    shadow.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
+    shadow.createSampler();
     spdlog::info("Created Shadow");
 }
 
 void Scene::loadBackdrop()
 {
     auto &state = State::instance();
-    backdrop = state.backdrops->get(state.at("scene").at("backdrop"));
+    backdrop = state.backdrops.get(state.at("scene").at("backdrop"));
 }
 
 void Scene::loadModels()
@@ -96,7 +102,7 @@ void Scene::loadModels()
     auto &scene = state.at("scene");
     for (auto &model : scene.at("models"))
     {
-        models.push_back(state.models->get(model.get<std::string>()));
+        models.push_back(state.models.get(model.get<std::string>()));
         spdlog::info("Loaded Model {}", model.get<std::string>());
     }
     spdlog::info("Created Models");
@@ -107,13 +113,18 @@ void Scene::recreate()
     auto &engine = State::instance().engine;
     auto &camera = State::instance().camera;
     auto &window = State::instance().window;
-    camera->updateProjection(window->getFrameBufferSize());
+    camera.updateProjection(window.getFrameBufferSize());
 
     backdrop->recreate();
-    engine->device->destroyDescriptorPool(colorPool);
-    
+
+    if (colorPool)
+    {
+        engine.device.destroyDescriptorPool(colorPool);
+    }
     createColorPool();
     createColorSets();
+
+    colorPipeline.destroy();
     createColorPipeline();
 }
 
@@ -121,7 +132,7 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
     backdrop->draw(commandBuffer, currentImage);
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorPipeline.pipeline.get());
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, colorPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
@@ -129,7 +140,7 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         auto mesh = model->getMesh();
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout.get(), 0, 1,
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, colorPipeline.pipelineLayout, 0, 1,
                                          &model->colorSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
@@ -137,7 +148,7 @@ void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 
 void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipeline.get());
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipeline);
 
     std::array<VkDeviceSize, 1> offsets = {0};
     for (auto &model : models)
@@ -145,7 +156,7 @@ void Scene::drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         auto mesh = model->getMesh();
         commandBuffer.bindVertexBuffers(0, 1, &mesh->buffers.vertex.buffer, offsets.data());
         commandBuffer.bindIndexBuffer(mesh->buffers.index.buffer, 0, vk::IndexType::eUint32);
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout.get(), 0, 1,
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, shadowPipeline.pipelineLayout, 0, 1,
                                          &model->shadowSets[currentImage], 0, nullptr);
         commandBuffer.drawIndexed(mesh->data.indices.size(), 1, 0, 0, 0);
     }
@@ -158,10 +169,10 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 
     fragBuffer.position = glm::vec4(backdrop->light, 1.F);
 
-    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, camera->zNear, camera->zFar);
+    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, camera.zNear, camera.zFar);
     glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
 
-    fragBuffer.radianceMipLevels = backdrop->radianceMap->imageInfo.mipLevels;
+    fragBuffer.radianceMipLevels = backdrop->radianceMap.imageInfo.mipLevels;
     fragBuffer.shadowSize = shadowSize;
 
     for (auto &model : models)
@@ -169,10 +180,10 @@ void Scene::update(uint32_t currentImage, float deltaTime)
         model->update(deltaTime);
         // create mvp for player space
         vertBuffer.model = model->model();
-        vertBuffer.view = camera->view();
-        vertBuffer.projection = camera->projection();
-        vertBuffer.normalMatrix = glm::transpose(glm::inverse(camera->projection() * camera->view() * model->model()));
-        vertBuffer.camPos = glm::vec4(-camera->position(), 1.F);
+        vertBuffer.view = camera.view();
+        vertBuffer.projection = camera.projection();
+        vertBuffer.normalMatrix = glm::transpose(glm::inverse(camera.projection() * camera.view() * model->model()));
+        vertBuffer.camPos = glm::vec4(-camera.position(), 1.F);
 
         // create mvp for lightspace
         shadBuffer.model = model->model();
@@ -188,7 +199,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 void Scene::createColorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -204,7 +215,7 @@ void Scene::createColorPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    colorPool = engine->device->createDescriptorPool(poolInfo);
+    colorPool = engine.device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createColorLayouts()
@@ -293,7 +304,7 @@ void Scene::createColorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    colorLayout = engine->device->createDescriptorSetLayout(layoutInfo);
+    colorLayout = engine.device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createColorSets()
@@ -307,14 +318,14 @@ void Scene::createColorSets()
 void Scene::createColorPipeline()
 {
     auto &engine = State::instance().engine;
-    colorPipeline.descriptorSetLayout = colorLayout;
+    colorPipeline.descriptorSetLayout = &colorLayout;
 
     auto vertPath = "assets/shaders/scene.vert.spv";
     auto fragPath = "assets/shaders/scene.frag.spv";
-    colorPipeline.vertShader = engine->createShaderModule(vertPath);
-    colorPipeline.fragShader = engine->createShaderModule(fragPath);
+    colorPipeline.vertShader = engine.createShaderModule(vertPath);
+    colorPipeline.fragShader = engine.createShaderModule(fragPath);
 
-    colorPipeline.loadDefaults(engine->colorPass.get());
+    colorPipeline.loadDefaults(engine.colorPass.renderPass);
 
     colorPipeline.shaderStages = {colorPipeline.vertShaderStageInfo, colorPipeline.fragShaderStageInfo};
     auto bindingDescription = Vertex::getBindingDescription();
@@ -330,7 +341,7 @@ void Scene::createColorPipeline()
 void Scene::createShadowPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine->swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -343,7 +354,7 @@ void Scene::createShadowPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    shadowPool = engine->device->createDescriptorPool(poolInfo);
+    shadowPool = engine.device.createDescriptorPool(poolInfo);
 }
 
 void Scene::createShadowLayouts()
@@ -362,7 +373,7 @@ void Scene::createShadowLayouts()
     layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
     layoutInfo.pBindings = layouts.data();
 
-    shadowLayout = engine->device->createDescriptorSetLayout(layoutInfo);
+    shadowLayout = engine.device.createDescriptorSetLayout(layoutInfo);
 }
 
 void Scene::createShadowSets()
@@ -376,14 +387,14 @@ void Scene::createShadowSets()
 void Scene::createShadowPipeline()
 {
     auto &engine = State::instance().engine;
-    shadowPipeline.descriptorSetLayout = shadowLayout;
+    shadowPipeline.descriptorSetLayout = &shadowLayout;
 
     auto vertPath = "assets/shaders/shadow.vert.spv";
     auto fragPath = "assets/shaders/shadow.frag.spv";
-    shadowPipeline.vertShader = engine->createShaderModule(vertPath);
-    shadowPipeline.fragShader = engine->createShaderModule(fragPath);
+    shadowPipeline.vertShader = engine.createShaderModule(vertPath);
+    shadowPipeline.fragShader = engine.createShaderModule(fragPath);
 
-    shadowPipeline.loadDefaults(engine->shadowPass.get());
+    shadowPipeline.loadDefaults(engine.shadowPass.renderPass);
 
     shadowPipeline.shaderStages = {shadowPipeline.vertShaderStageInfo, shadowPipeline.fragShaderStageInfo};
 

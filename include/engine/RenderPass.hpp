@@ -12,9 +12,10 @@ namespace tat
 class RenderPass
 {
   public:
-    vk::UniqueRenderPass renderPass;
+    vk::RenderPass renderPass;
     void create();
     void recreate();
+    void destroy();
     void loadColor();
     void loadShadow();
 

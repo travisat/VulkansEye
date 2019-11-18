@@ -16,8 +16,8 @@ void Model::load()
     auto &model = state.at("models").at(name);
 
     // get material/mesh from their collections
-    material = state.materials->get(model.at("material"));
-    mesh = state.meshes->get(model.at("mesh"));
+    material = state.materials.get(model.at("material"));
+    mesh = state.meshes.get(model.at("mesh"));
     m_size = mesh->size;
     m_mass = model.at("mass");
 
@@ -35,14 +35,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 {
     auto &state = State::instance();
     auto &engine = state.engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), layout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    colorSets = engine->device->allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < engine->swapChainImages.size(); ++i)
+    colorSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
         vertexInfo.buffer = vertBuffers[i].buffer;
@@ -56,48 +56,48 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
         vk::DescriptorImageInfo shadowInfo = {};
         shadowInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        shadowInfo.imageView = state.scene->shadow->imageView.get();
-        shadowInfo.sampler = state.scene->shadow->sampler.get();
+        shadowInfo.imageView = state.scene.shadow.imageView;
+        shadowInfo.sampler = state.scene.shadow.sampler;
 
         vk::DescriptorImageInfo diffuseInfo = {};
         diffuseInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        diffuseInfo.imageView = material->diffuse->imageView.get();
-        diffuseInfo.sampler = material->diffuse->sampler.get();
+        diffuseInfo.imageView = material->diffuse.imageView;
+        diffuseInfo.sampler = material->diffuse.sampler;
 
         vk::DescriptorImageInfo normalInfo = {};
         normalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        normalInfo.imageView = material->normal->imageView.get();
-        normalInfo.sampler = material->normal->sampler.get();
+        normalInfo.imageView = material->normal.imageView;
+        normalInfo.sampler = material->normal.sampler;
 
         vk::DescriptorImageInfo roughnessInfo = {};
         roughnessInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        roughnessInfo.imageView = material->roughness->imageView.get();
-        roughnessInfo.sampler = material->roughness->sampler.get();
+        roughnessInfo.imageView = material->roughness.imageView;
+        roughnessInfo.sampler = material->roughness.sampler;
 
         vk::DescriptorImageInfo metallicInfo = {};
         metallicInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        metallicInfo.imageView = material->metallic->imageView.get();
-        metallicInfo.sampler = material->metallic->sampler.get();
+        metallicInfo.imageView = material->metallic.imageView;
+        metallicInfo.sampler = material->metallic.sampler;
 
         vk::DescriptorImageInfo aoInfo = {};
         aoInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        aoInfo.imageView = material->ao->imageView.get();
-        aoInfo.sampler = material->ao->sampler.get();
+        aoInfo.imageView = material->ao.imageView;
+        aoInfo.sampler = material->ao.sampler;
 
         vk::DescriptorImageInfo irradianceInfo = {};
         irradianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        irradianceInfo.imageView = state.scene->backdrop->irradianceMap->imageView.get();
-        irradianceInfo.sampler = state.scene->backdrop->irradianceMap->sampler.get();
+        irradianceInfo.imageView = state.scene.backdrop->irradianceMap.imageView;
+        irradianceInfo.sampler = state.scene.backdrop->irradianceMap.sampler;
 
         vk::DescriptorImageInfo radianceInfo = {};
         radianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        radianceInfo.imageView = state.scene->backdrop->radianceMap->imageView.get();
-        radianceInfo.sampler = state.scene->backdrop->radianceMap->sampler.get();
+        radianceInfo.imageView = state.scene.backdrop->radianceMap.imageView;
+        radianceInfo.sampler = state.scene.backdrop->radianceMap.sampler;
 
         vk::DescriptorImageInfo brdfInfo = {};
         brdfInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        brdfInfo.imageView = state.scene->brdf->imageView.get();
-        brdfInfo.sampler = state.scene->brdf->sampler.get();
+        brdfInfo.imageView = state.scene.brdf.imageView;
+        brdfInfo.sampler = state.scene.brdf.sampler;
 
         std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
 
@@ -189,7 +189,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[10].descriptorCount = 1;
         descriptorWrites[10].pImageInfo = &brdfInfo;
 
-        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                              nullptr);
     }
 }
@@ -197,14 +197,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine->swapChainImages.size(), layout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine->swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
     allocInfo.pSetLayouts = layouts.data();
 
-    shadowSets = engine->device->allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < engine->swapChainImages.size(); ++i)
+    shadowSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};
         shadowInfo.buffer = shadBuffers[i].buffer;
@@ -221,7 +221,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &shadowInfo;
 
-        engine->device->updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
                                              nullptr);
     }
 }
@@ -230,22 +230,22 @@ void Model::createUniformBuffers()
 {
     auto &engine = State::instance().engine;
 
-    vertBuffers.resize(engine->swapChainImages.size());
-    fragBuffers.resize(engine->swapChainImages.size());
-    shadBuffers.resize(engine->swapChainImages.size());
-    for (size_t i = 0; i < engine->swapChainImages.size(); ++i)
+    vertBuffers.resize(engine.swapChainImages.size());
+    fragBuffers.resize(engine.swapChainImages.size());
+    shadBuffers.resize(engine.swapChainImages.size());
+    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
     {
         vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        vertBuffers[i].resize(sizeof(UniformVert));
+        vertBuffers[i].create(sizeof(UniformVert));
 
         fragBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         fragBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        fragBuffers[i].resize(sizeof(UniformFrag));
+        fragBuffers[i].create(sizeof(UniformFrag));
 
         shadBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         shadBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        shadBuffers[i].resize(sizeof(UniformShad));
+        shadBuffers[i].create(sizeof(UniformShad));
     }
 }
 

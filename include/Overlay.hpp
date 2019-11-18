@@ -40,9 +40,8 @@ class Overlay
         glm::vec2 translate;
     } pushConstBlock{};
 
-    Overlay();
-    ~Overlay();
-
+    void create();
+    void destroy();
     void recreate();
 
     // Starts a new imGui frame and sets up windows and ui elements
@@ -61,14 +60,14 @@ class Overlay
     int32_t vertexCount = 0;
     int32_t indexCount = 0;
 
-    std::unique_ptr<Image> fontImage;
+    Image fontImage {};
 
-    Pipeline pipeline;
-    vk::DescriptorPool descriptorPool;
-    vk::DescriptorSetLayout descriptorSetLayout;
-    std::vector<vk::DescriptorSet> descriptorSets;
+    Pipeline pipeline {};
+    vk::DescriptorPool descriptorPool {};
+    vk::DescriptorSetLayout descriptorSetLayout {};
+    std::vector<vk::DescriptorSet> descriptorSets {};
 
-    UISettings uiSettings;
+    UISettings uiSettings {};
 
     float lastFrameTime = 0;
     float lastUpdateTime = 0;

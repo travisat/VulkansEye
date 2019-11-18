@@ -15,8 +15,9 @@ namespace tat
 class Window
 {
   public:
-    Window(void *user, int width, int height, const std::string &name);
-    ~Window();
+    void create(void *user, int width, int height, const std::string &name);
+    void destroy();
+
     GLFWwindow *window;
 
     void setKeyCallBack(GLFWkeyfun callback);

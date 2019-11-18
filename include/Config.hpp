@@ -13,8 +13,7 @@ namespace tat
 class Config
 {
   public:
-    explicit Config(const std::string &path);
-    ~Config() = default;
+    void create(const std::string &path);
 
   private:
     static void loadSettings(const std::string &path);

@@ -12,19 +12,20 @@ namespace tat
 class Pipeline
 {
   public:
-    vk::DescriptorSetLayout descriptorSetLayout;
-
-    vk::UniquePipeline pipeline;
-    vk::UniquePipelineLayout pipelineLayout;
-
-    vk::UniqueShaderModule vertShader;
-    vk::UniqueShaderModule fragShader;
-    vk::UniqueShaderModule geomShader;
-    vk::UniqueShaderModule tescShader;
-    vk::UniqueShaderModule teseShader;
-
     void create();
+    void destroy();
     void loadDefaults(vk::RenderPass renderPass);
+
+    vk::Pipeline pipeline = nullptr;
+    vk::PipelineLayout pipelineLayout = nullptr;
+
+    vk::DescriptorSetLayout *descriptorSetLayout = nullptr;
+
+    vk::ShaderModule vertShader = nullptr;
+    vk::ShaderModule fragShader = nullptr;
+    vk::ShaderModule geomShader = nullptr;
+    vk::ShaderModule tescShader = nullptr;
+    vk::ShaderModule teseShader = nullptr;
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo = {};
