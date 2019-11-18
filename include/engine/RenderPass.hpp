@@ -12,19 +12,26 @@ namespace tat
 class RenderPass
 {
   public:
-    vk::RenderPass renderPass;
     void create();
-    void recreate();
     void destroy();
+
+    void recreate()
+    {
+        destroy();
+        create();
+    };
+    
     void loadColor();
     void loadShadow();
 
-    vk::RenderPassCreateInfo renderPassInfo {};
-    vk::SubpassDescription subpass {};
+    vk::RenderPass renderPass;
+
+    vk::RenderPassCreateInfo renderPassInfo{};
+    vk::SubpassDescription subpass{};
     std::vector<vk::AttachmentDescription> attachments{};
-    vk::AttachmentReference colorReference {};
-    vk::AttachmentReference depthReference {};
-    vk::AttachmentReference resolveReference {};
+    vk::AttachmentReference colorReference{};
+    vk::AttachmentReference depthReference{};
+    vk::AttachmentReference resolveReference{};
     std::vector<vk::SubpassDependency> dependencies{};
 };
 

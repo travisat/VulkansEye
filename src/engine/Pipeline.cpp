@@ -12,7 +12,7 @@ void Pipeline::create()
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = engine.device.createGraphicsPipeline(engine.pipelineCache, pipelineInfo);
+    pipeline = engine.device.createGraphicsPipeline(engine.pipelineCache.pipelineCache, pipelineInfo);
 }
 
 void Pipeline::destroy()

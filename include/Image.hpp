@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace tat
 {
@@ -33,6 +34,10 @@ class Image
     void createSampler();
 
     void resize(int width, int height);
+    void resize(vk::Extent2D extent)
+    {
+        resize(extent.width, extent.height);
+    }
 
     void transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);

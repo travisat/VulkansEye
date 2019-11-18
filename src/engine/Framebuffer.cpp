@@ -17,12 +17,6 @@ void Framebuffer::create()
     framebuffer = engine.device.createFramebuffer(framebufferInfo);
 }
 
-void Framebuffer::recreate()
-{
-    destroy();
-    create();
-}
-
 void Framebuffer::destroy()
 {
     auto& engine = State::instance().engine;

@@ -35,14 +35,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 {
     auto &state = State::instance();
     auto &engine = state.engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), layout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
     colorSets = engine.device.allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
+    for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
         vertexInfo.buffer = vertBuffers[i].buffer;
@@ -197,14 +197,14 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout layout)
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), layout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, layout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = pool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
     shadowSets = engine.device.allocateDescriptorSets(allocInfo);
-    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
+    for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};
         shadowInfo.buffer = shadBuffers[i].buffer;
@@ -228,12 +228,12 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
 
 void Model::createUniformBuffers()
 {
-    auto &engine = State::instance().engine;
+    auto &count = State::instance().engine.swapChain.count;
 
-    vertBuffers.resize(engine.swapChainImages.size());
-    fragBuffers.resize(engine.swapChainImages.size());
-    shadBuffers.resize(engine.swapChainImages.size());
-    for (size_t i = 0; i < engine.swapChainImages.size(); ++i)
+    vertBuffers.resize(count);
+    fragBuffers.resize(count);
+    shadBuffers.resize(count);
+    for (size_t i = 0; i < count; ++i)
     {
         vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;

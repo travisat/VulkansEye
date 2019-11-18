@@ -94,7 +94,7 @@ void Backdrop::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 void Backdrop::createUniformBuffers()
 {
     auto &engine = State::instance().engine;
-    backBuffers.resize(engine.swapChainImages.size());
+    backBuffers.resize(engine.swapChain.count);
     for (auto &buffer : backBuffers)
     {
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
@@ -122,7 +122,7 @@ void Backdrop::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
 
-    auto numSwapChainImages = engine.swapChainImages.size();
+    auto numSwapChainImages = engine.swapChain.count;
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -167,15 +167,15 @@ void Backdrop::createDescriptorSetLayouts()
 void Backdrop::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), descriptorSetLayout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = engine.swapChainImages.size();
+    allocInfo.descriptorSetCount = engine.swapChain.count;
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
 
-    for (size_t i = 0; i < engine.swapChainImages.size(); i++)
+    for (size_t i = 0; i < engine.swapChain.count; i++)
     {
         vk::DescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = backBuffers[i].buffer;

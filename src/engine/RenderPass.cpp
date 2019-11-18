@@ -11,12 +11,6 @@ void RenderPass::create()
     renderPass = engine.device.createRenderPass(renderPassInfo);
 }
 
-void RenderPass::recreate()
-{
-    destroy();
-    create();
-}
-
 void RenderPass::destroy()
 {
     auto &engine = State::instance().engine;
@@ -30,7 +24,7 @@ void RenderPass::loadColor()
     attachments.resize(3);
 
     // color
-    attachments[0].format = engine.swapChainImageFormat;
+    attachments[0].format = engine.swapChain.format;
     attachments[0].samples = engine.msaaSamples;
     attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
@@ -56,7 +50,7 @@ void RenderPass::loadColor()
     depthReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
     // resolve
-    attachments[2].format = engine.swapChainImageFormat;
+    attachments[2].format = engine.swapChain.format;
     attachments[2].samples = vk::SampleCountFlagBits::e1;
     attachments[2].loadOp = vk::AttachmentLoadOp::eDontCare;
     attachments[2].storeOp = vk::AttachmentStoreOp::eStore;

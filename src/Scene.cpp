@@ -199,7 +199,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 void Scene::createColorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
+    auto numSwapChainImages = engine.swapChain.count;
 
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -210,7 +210,7 @@ void Scene::createColorPool()
     poolSizes[1].descriptorCount = models.size() * 9 * numSwapChainImages;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
@@ -301,7 +301,7 @@ void Scene::createColorLayouts()
     bindings[10].stageFlags = vk::ShaderStageFlagBits::eFragment;
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
 
     colorLayout = engine.device.createDescriptorSetLayout(layoutInfo);
@@ -332,7 +332,7 @@ void Scene::createColorPipeline()
     auto attributeDescrption = Vertex::getAttributeDescriptions();
     colorPipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
     colorPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    colorPipeline.vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescrption.size());
+    colorPipeline.vertexInputInfo.vertexAttributeDescriptionCount = attributeDescrption.size();
     colorPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
     colorPipeline.create();
@@ -341,7 +341,7 @@ void Scene::createColorPipeline()
 void Scene::createShadowPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
+    auto numSwapChainImages = engine.swapChain.count;
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
@@ -349,7 +349,7 @@ void Scene::createShadowPool()
     poolSizes[0].descriptorCount = models.size() * 1 * numSwapChainImages;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
@@ -370,7 +370,7 @@ void Scene::createShadowLayouts()
     std::array<vk::DescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.bindingCount = static_cast<int32_t>(layouts.size());
+    layoutInfo.bindingCount = layouts.size();
     layoutInfo.pBindings = layouts.data();
 
     shadowLayout = engine.device.createDescriptorSetLayout(layoutInfo);

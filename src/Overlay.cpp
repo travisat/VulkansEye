@@ -120,7 +120,7 @@ void Overlay::createFont()
 void Overlay::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChainImages.size());
+    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChain.count);
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
@@ -156,15 +156,15 @@ void Overlay::createDescriptorLayouts()
 void Overlay::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
-    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChainImages.size(), descriptorSetLayout);
+    std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo = {};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChainImages.size());
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
 
-    for (size_t i = 0; i < engine.swapChainImages.size(); i++)
+    for (size_t i = 0; i < engine.swapChain.count; i++)
     {
         vk::DescriptorImageInfo samplerInfo = {};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
