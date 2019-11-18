@@ -1,6 +1,6 @@
 #include "Backdrop.hpp"
 #include "State.hpp"
-#include "glm/ext/scalar_constants.hpp"
+#include "engine/Debug.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -34,34 +34,46 @@ void Backdrop::load()
 
 Backdrop::~Backdrop()
 {
-    auto &engine = State::instance().engine;
-
-    colorMap.destroy();
-    radianceMap.destroy();
-    irradianceMap.destroy();
-
-    if (descriptorSetLayout)
+    if (loaded)
     {
-        engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
+        auto &engine = State::instance().engine;
+
+        colorMap.destroy();
+        radianceMap.destroy();
+        irradianceMap.destroy();
+
+        if (descriptorSetLayout)
+        {
+            engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
+        }
+        if (descriptorPool)
+        {
+            engine.device.destroyDescriptorPool(descriptorPool);
+        }
+        pipeline.destroy();
+        spdlog::info("Destroyed Backdrop {}", name);
     }
-    if (descriptorPool)
-    {
-        engine.device.destroyDescriptorPool(descriptorPool);
-    }
-    pipeline.destroy();
-    spdlog::info("Destroyed Backdrop {}", name);
 }
 
 void Backdrop::recreate()
 {
-    auto &engine = State::instance().engine;
+    if (loaded)
+    {
+        createUniformBuffers();
+        createDescriptorPool();
+        createDescriptorSets();
+        createPipeline();
+    }
+}
 
-    pipeline.destroy();
-    createPipeline();
-    createUniformBuffers();
-    engine.device.destroyDescriptorPool(descriptorPool);
-    createDescriptorPool();
-    createDescriptorSets();
+void Backdrop::cleanup()
+{
+    if (loaded)
+    {
+        auto &engine = State::instance().engine;
+        engine.device.destroyDescriptorPool(descriptorPool);
+        pipeline.destroy();
+    }
 }
 
 void Backdrop::loadCubeMap(const std::string &file, Image *image)
@@ -136,6 +148,7 @@ void Backdrop::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
+    Debug::setMarker(getHandle(descriptorPool), vk::DescriptorPool::objectType, name + " Pool");
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -162,6 +175,7 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    Debug::setMarker(getHandle(descriptorSetLayout), vk::DescriptorSetLayout::objectType, name + " Layout");
 }
 
 void Backdrop::createDescriptorSets()
@@ -174,6 +188,10 @@ void Backdrop::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (auto &descriptorSet : descriptorSets)
+    {
+        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Descriptor Set");
+    }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
     {
@@ -223,6 +241,8 @@ void Backdrop::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
     pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
+    Debug::setMarker(getHandle(pipeline.pipeline), vk::Pipeline::objectType, name + " Pipeline");
+    Debug::setMarker(getHandle(pipeline.pipelineLayout), vk::PipelineLayout::objectType, name + " PipelineLayout");
 }
 
 } // namespace tat

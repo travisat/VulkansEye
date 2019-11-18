@@ -96,14 +96,10 @@ void Camera::updateView()
 
 void Camera::updateProjection()
 {
+    auto& window = State::instance().window;
+    width = window.width;
+    height = window.height;
     P = glm::perspective(glm::radians(FoV), width / height, zNear, zFar);
-}
-
-void Camera::updateProjection(std::pair<int, int> size)
-{
-    width = static_cast<float>(size.first);
-    height = static_cast<float>(size.second);
-    updateProjection();
 }
 
 auto Camera::view() -> glm::mat4

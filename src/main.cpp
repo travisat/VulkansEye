@@ -3,9 +3,6 @@
 #include <filesystem>
 #include <iostream>
 
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
-
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -20,6 +17,8 @@ auto main(int argc, char *argv[]) -> int
     {
         auto debug = spdlog::basic_logger_mt<spdlog::async_factory>("debug", "logs/debug.log", true);
         auto state = spdlog::basic_logger_mt<spdlog::async_factory>("state", "logs/state.log", true);
+        auto validation = spdlog::basic_logger_st("validation", "logs/validation.log", true);
+        
         spdlog::set_default_logger(debug);
         spdlog::info("BEGIN");
 

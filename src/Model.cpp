@@ -1,5 +1,6 @@
 #include "Model.hpp"
 #include "State.hpp"
+#include "engine/Debug.hpp"
 
 #include <exception>
 #include <memory>
@@ -42,6 +43,10 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     allocInfo.pSetLayouts = layouts.data();
 
     colorSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (auto &descriptorSet : colorSets)
+    {
+        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Color Set");
+    }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
         vk::DescriptorBufferInfo vertexInfo = {};
@@ -204,6 +209,10 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     allocInfo.pSetLayouts = layouts.data();
 
     shadowSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (auto &descriptorSet : shadowSets)
+    {
+        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Shadow Set");
+    }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
         vk::DescriptorBufferInfo shadowInfo = {};

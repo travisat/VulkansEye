@@ -1,7 +1,9 @@
 #include "engine/Window.hpp"
+#include "State.hpp"
 
-#include <stdexcept>
 #include <spdlog/spdlog.h>
+#include <stdexcept>
+
 
 namespace tat
 {
@@ -12,7 +14,9 @@ void Window::create(void *user, int width, int height, const std::string &name)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(window, user);
-    spdlog::info("Created window {} with dimensions {}x{}", name.c_str(), width, height);
+    this->width = width;
+    this->height = height;
+    spdlog::info("Created window");
 }
 
 void Window::destroy()
@@ -20,6 +24,23 @@ void Window::destroy()
     glfwDestroyWindow(window);
     glfwTerminate();
     spdlog::info("Destroyed Window");
+}
+
+void Window::resize()
+{
+    auto &state = State::instance();
+
+    width = 0;
+    height = 0;
+    while (width == 0 || height == 0)
+    {
+        std::tie(width, height) = getFrameBufferSize();
+        wait();
+    }
+
+    state.engine.device.waitIdle();
+    state.at("settings").at("window").at(0) = width;
+    state.at("settings").at("window").at(1) = height;
 }
 
 void Window::setKeyCallBack(GLFWkeyfun callback)

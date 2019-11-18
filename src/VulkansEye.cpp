@@ -88,7 +88,7 @@ void VulkansEye::run()
         lastFrameTime = now;
 
         ImGuiIO &io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(state.window.getFrameBufferSize().first, state.window.getFrameBufferSize().second);
+        io.DisplaySize = ImVec2(state.window.width, state.window.height);
         io.DeltaTime = deltaTime;
         state.overlay.newFrame();
         state.overlay.updateBuffers();
@@ -109,16 +109,18 @@ void VulkansEye::run()
 void VulkansEye::cleanup()
 {
     auto &state = State::instance();
-    state.backdrops.destroy();
-    state.materials.destroy();
-    state.meshes.destroy();
-    state.models.destroy();
 
     tat::Camera::destroy();
     tat::Player::destroy();
 
     state.overlay.destroy();
     state.scene.destroy();
+
+    state.backdrops.destroy();
+    state.materials.destroy();
+    state.meshes.destroy();
+    state.models.destroy();
+
     state.engine.destroy();
 
     // dump state

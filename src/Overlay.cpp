@@ -2,11 +2,21 @@
 #include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
+#include "engine/Debug.hpp"
+
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
 
 #include <filesystem>
 #include <memory>
 
 #include <spdlog/spdlog.h>
+
+
 
 namespace tat
 {
@@ -40,24 +50,32 @@ void Overlay::create()
 
 void Overlay::destroy()
 {
+    ImGui::DestroyContext();
+
     auto &engine = State::instance().engine;
+
     fontImage.destroy();
-    pipeline.destroy();
     vertexBuffer.destroy();
     indexBuffer.destroy();
-    ImGui::DestroyContext();
     engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
     engine.device.destroyDescriptorPool(descriptorPool);
+    pipeline.destroy();
     spdlog::info("Destroyed Overlay");
 }
 
 void Overlay::recreate()
 {
-    auto &engine = State::instance().engine;
-    engine.device.destroyDescriptorPool(descriptorPool);
     createDescriptorPool();
     createDescriptorSets();
     createPipeline();
+    newFrame();
+}
+
+void Overlay::cleanup()
+{
+    auto &engine = State::instance().engine;
+    engine.device.destroyDescriptorPool(descriptorPool);
+    pipeline.destroy();
 }
 
 void Overlay::createBuffers()
@@ -133,6 +151,7 @@ void Overlay::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
+    Debug::setMarker(getHandle(descriptorPool), vk::DescriptorPool::objectType, "OverlayPool");
 }
 
 void Overlay::createDescriptorLayouts()
@@ -151,6 +170,7 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    Debug::setMarker(getHandle(descriptorSetLayout), vk::DescriptorSetLayout::objectType, "OverlayLayout");
 }
 
 void Overlay::createDescriptorSets()
@@ -163,6 +183,10 @@ void Overlay::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
+    for (auto &descriptorSet : descriptorSets)
+    {
+        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, "Overlay Descriptor Set");
+    }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
     {
@@ -180,7 +204,7 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
         engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                             nullptr);
+                                           nullptr);
     }
 }
 
@@ -191,7 +215,9 @@ void Overlay::createPipeline()
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
+    Debug::setMarker(getHandle(pipeline.vertShader), vk::ShaderModule::objectType, "Overlay Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
+    Debug::setMarker(getHandle(pipeline.fragShader), vk::ShaderModule::objectType, "Overlay Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
 
@@ -247,6 +273,8 @@ void Overlay::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
 
     pipeline.create();
+    Debug::setMarker(getHandle(pipeline.pipeline), vk::Pipeline::objectType, "OverlayPipeline");
+    Debug::setMarker(getHandle(pipeline.pipelineLayout), vk::PipelineLayout::objectType, "OverlayPipelineLayout");
 }
 
 void Overlay::newFrame()
@@ -349,8 +377,8 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
     // UI scale and translate via push constants
     pushConstBlock.scale = glm::vec2(2.F / io.DisplaySize.x, 2.F / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.F);
-    commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0,
-                                sizeof(PushConstBlock), &pushConstBlock);
+    commandBuffer.pushConstants(pipeline.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(PushConstBlock),
+                                &pushConstBlock);
 
     // Render commands
     ImDrawData *imDrawData = ImGui::GetDrawData();

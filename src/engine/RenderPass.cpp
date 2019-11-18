@@ -1,6 +1,5 @@
 #include "engine/RenderPass.hpp"
 #include "State.hpp"
-#include <iterator>
 
 namespace tat
 {

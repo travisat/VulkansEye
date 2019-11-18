@@ -1,10 +1,12 @@
 #pragma once
 
 #include <memory>
+
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
 #endif
+
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
@@ -37,6 +39,7 @@ class Backdrop : public Entry
     void load() override;
 
     void recreate();
+    void cleanup();
 
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void update(uint32_t currentImage);

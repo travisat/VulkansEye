@@ -1,7 +1,5 @@
 #include "engine/Engine.hpp"
 #include "State.hpp"
-#include "engine/Window.hpp"
-#include "vulkan/vulkan_core.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -13,9 +11,8 @@
 #include <vector>
 
 #include <spdlog/spdlog.h>
-#include <vk_mem_alloc.h>
+
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-#include <vulkan/vulkan.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -36,7 +33,7 @@ void Engine::create()
     colorPass.loadColor();
     colorPass.create();
     createCommandPool();
-    pipelineCache.create(); 
+    pipelineCache.create();
 
     spdlog::info("Created Engine");
 }
@@ -248,14 +245,15 @@ void Engine::drawFrame(float deltaTime)
     }
 
     uint32_t currentBuffer;
-    result = device.acquireNextImageKHR(swapChain.swapChain, UINT64_MAX, presentSemaphores[currentImage].semaphore, nullptr,
-                                        &currentBuffer);
+    result = device.acquireNextImageKHR(swapChain.swapChain, UINT64_MAX, presentSemaphores[currentImage].semaphore,
+                                        nullptr, &currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
         resizeWindow();
+        return;
     }
-    else if (result != vk::Result::eSuccess)
+    if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to draw command buffer. Error code {}", result);
         throw std::runtime_error("Unable to draw command buffer");
@@ -313,15 +311,28 @@ void Engine::updateWindow()
     prepared = false;
 
     device.waitIdle();
-    swapChain.recreate();
-    colorPass.recreate();
 
+    // Steps to update
+    // 1: free commandBuffers
+    device.freeCommandBuffers(commandPool, commandBuffers.size(), commandBuffers.data());
+    // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
         frameBuffer.destroy();
     }
+    // 3: destroy color renderpass
+    colorPass.destroy();
+    // 4: destroy swapchain
+    swapChain.destroy();
+    // 5: create swap chain
+    swapChain.create();
+    // 6: create color renderpass
+    colorPass.create();
+    // 7: create color framebuffers
     createColorFramebuffers();
+    // 8: create commandbuffers
     createCommandBuffers();
+
     device.waitIdle();
 
     prepared = true;
@@ -329,41 +340,49 @@ void Engine::updateWindow()
 
 void Engine::resizeWindow()
 {
-    auto &state = State::instance();
     if (!prepared)
     {
         return;
     }
     prepared = false;
 
-    int width = 0;
-    int height = 0;
-    while (width == 0 || height == 0)
-    {
-        std::tie(width, height) = state.window.getFrameBufferSize();
-        tat::Window::wait();
-    }
-    device.waitIdle();
-    auto &window = state.at("settings").at("window");
-    window.at(0) = width;
-    window.at(1) = height;
+    auto &state = State::instance();
 
-    swapChain.recreate(); 
-    colorPass.recreate();
-    state.scene.recreate();
-    state.overlay.recreate();
+    state.window.resize();
 
+    // Steps to resize
+    // 1: free commandBuffers
+    device.freeCommandBuffers(commandPool, commandBuffers.size(), commandBuffers.data());
+    // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
         frameBuffer.destroy();
     }
+    // 3: destroy color renderpass
+    colorPass.destroy();
+    // 4: destroy swapchain
+    swapChain.destroy();
+    // 5: cleanup scene
+    state.scene.cleanup();
+    // 6: cleanup overlay
+    state.overlay.cleanup();
+    // 7: create swap chain
+    swapChain.create();
+    // 8: create color renderpass
+    colorPass.create();
+    // 9: recreate scene
+    state.scene.recreate();
+    // 10: recreate overlay
+    state.overlay.recreate();
+    // 11: create color framebuffers
     createColorFramebuffers();
-
+    // 12: create commandbuffers
     createCommandBuffers();
+
     device.waitIdle();
 
     prepared = true;
-    spdlog::info("Resized window to {}x{}", width, height);
+    spdlog::info("Resized window to {}x{}", state.window.width, state.window.height);
 }
 
 void Engine::createInstance()
@@ -520,6 +539,8 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
+    debug.setMarker(getHandle(shadowDepth.image), vk::Image::objectType, "ShadowDepth");
+
     shadowFramebuffers.resize(swapChain.count);
     for (size_t i = 0; i < swapChain.count; i++)
     {
@@ -644,7 +665,6 @@ auto Engine::getRequiredExtensions() -> std::vector<const char *>
     if (debug.enableValidationLayers)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
     return extensions;
 };
@@ -736,8 +756,6 @@ auto Engine::getMaxUsableSampleCount() -> vk::SampleCountFlagBits
         return vk::SampleCountFlagBits::e1;
     }
 }
-
-
 
 auto Engine::findDepthFormat() -> vk::Format
 {

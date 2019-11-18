@@ -1,5 +1,12 @@
 #pragma once
 
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
+
 #include <imgui.h>
 #include <string_view>
 
@@ -43,6 +50,7 @@ class Overlay
     void create();
     void destroy();
     void recreate();
+    void cleanup();
 
     // Starts a new imGui frame and sets up windows and ui elements
     void newFrame();
@@ -63,8 +71,8 @@ class Overlay
     Image fontImage {};
 
     Pipeline pipeline {};
-    vk::DescriptorPool descriptorPool {};
-    vk::DescriptorSetLayout descriptorSetLayout {};
+    vk::DescriptorPool descriptorPool = nullptr;
+    vk::DescriptorSetLayout descriptorSetLayout = nullptr;
     std::vector<vk::DescriptorSet> descriptorSets {};
 
     UISettings uiSettings {};

@@ -1,9 +1,12 @@
 #pragma once
+
+#include <utility>
+
 #ifdef WIN32
 #define NOMINMAX
 #include <windows.h>
 #endif
-#include <utility>
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
@@ -18,7 +21,11 @@ class Window
     void create(void *user, int width, int height, const std::string &name);
     void destroy();
 
-    GLFWwindow *window;
+    void resize();
+
+    GLFWwindow *window = nullptr;
+    int32_t width {};
+    int32_t height {};
 
     void setKeyCallBack(GLFWkeyfun callback);
     void setMouseButtonCallback(GLFWmousebuttonfun callback);

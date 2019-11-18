@@ -70,10 +70,12 @@ void Image::destroy()
     if (sampler)
     {
         engine.device.destroySampler(sampler);
+        sampler = nullptr;
     }
     if (imageView)
     {
         engine.device.destroyImageView(imageView);
+        imageView = nullptr;
     }
 }
 

@@ -7,23 +7,22 @@
 #include "Model.hpp"
 #include "engine/Pipeline.hpp"
 
-
 namespace tat
 {
-
 class Scene
 {
   public:
     std::string name = "Unknown";
 
-    Image shadow {};
-    Image brdf {};
+    Image shadow{};
+    Image brdf{};
     Backdrop *backdrop = nullptr;
 
     float shadowSize = 1024.F;
 
     void destroy();
     void create();
+    void cleanup();
     void recreate();
     void drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage);
     void drawShadow(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -32,17 +31,17 @@ class Scene
   private:
     Pipeline colorPipeline;
     Pipeline shadowPipeline;
-    
-    vk::DescriptorPool colorPool;
-    vk::DescriptorSetLayout colorLayout;
-    vk::DescriptorPool shadowPool;
-    vk::DescriptorSetLayout shadowLayout;
+
+    vk::DescriptorPool colorPool = nullptr;
+    vk::DescriptorSetLayout colorLayout = nullptr;
+    vk::DescriptorPool shadowPool = nullptr;
+    vk::DescriptorSetLayout shadowLayout = nullptr;
 
     UniformVert vertBuffer{};
     UniformFrag fragBuffer{};
     UniformShad shadBuffer{};
 
-    std::vector<Model*> models{};
+    std::vector<Model *> models{};
 
     void createBrdf();
     void createShadow();

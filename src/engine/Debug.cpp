@@ -13,20 +13,21 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
 {
     std::string prefix;
 
+    auto logger = spdlog::get("validation");
+
     if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
     {
-        spdlog::warn("Validation {}", pCallbackData->pMessage);
+        logger->warn("Validation {}", pCallbackData->pMessage);
         std::cerr << pCallbackData->pMessage << std::endl;
     }
     else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
     {
-        spdlog::error("Validation {}", pCallbackData->pMessage);
+        logger->error("Validation {}", pCallbackData->pMessage);
         std::cerr << pCallbackData->pMessage << std::endl;
     }
     else
     {
-        spdlog::info("Validation {}", pCallbackData->pMessage);
-        std::cout << pCallbackData->pMessage << std::endl;
+        logger->info("Validation {}", pCallbackData->pMessage);
     }
 
     return VK_FALSE;
@@ -35,9 +36,9 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
 void Debug::create()
 {
     vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-    debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+    debugInfo.messageSeverity =
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
     debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                             vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
                             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
@@ -54,6 +55,17 @@ void Debug::destroy()
         auto &instance = State::instance().engine.instance;
         instance.destroyDebugUtilsMessengerEXT(debugMessenger);
     }
+}
+
+void Debug::setMarker(uint64_t object, vk::ObjectType type, const std::string &name)
+{
+    vk::DebugUtilsObjectNameInfoEXT nameInfo{};
+    nameInfo.objectHandle = object;
+    nameInfo.objectType = type;
+    nameInfo.pObjectName = name.c_str();
+
+    auto &device = State::instance().engine.device;
+    device.setDebugUtilsObjectNameEXT(nameInfo);
 }
 
 } // namespace tat
