@@ -151,7 +151,7 @@ void Overlay::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setMarker(getHandle(descriptorPool), vk::DescriptorPool::objectType, "OverlayPool");
+    Debug::setName(engine.device, descriptorPool, "Overlay Pool");
 }
 
 void Overlay::createDescriptorLayouts()
@@ -170,7 +170,7 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setMarker(getHandle(descriptorSetLayout), vk::DescriptorSetLayout::objectType, "OverlayLayout");
+    Debug::setName(engine.device, descriptorSetLayout, "Overlay Layout");
 }
 
 void Overlay::createDescriptorSets()
@@ -185,7 +185,7 @@ void Overlay::createDescriptorSets()
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
-        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, "Overlay Descriptor Set");
+        Debug::setName(engine.device, descriptorSet, "Overlay Descriptor Set");
     }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
@@ -215,9 +215,9 @@ void Overlay::createPipeline()
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setMarker(getHandle(pipeline.vertShader), vk::ShaderModule::objectType, "Overlay Vert Shader");
+    Debug::setName(engine.device, pipeline.vertShader, "Overlay Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setMarker(getHandle(pipeline.fragShader), vk::ShaderModule::objectType, "Overlay Frag Shader");
+    Debug::setName(engine.device, pipeline.fragShader, "Overlay Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
 
@@ -273,8 +273,8 @@ void Overlay::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
 
     pipeline.create();
-    Debug::setMarker(getHandle(pipeline.pipeline), vk::Pipeline::objectType, "OverlayPipeline");
-    Debug::setMarker(getHandle(pipeline.pipelineLayout), vk::PipelineLayout::objectType, "OverlayPipelineLayout");
+    Debug::setName(engine.device, pipeline.pipeline, "Overlay Pipeline");
+    Debug::setName(engine.device, pipeline.pipelineLayout, "Overlay PipelineLayout");
 }
 
 void Overlay::newFrame()

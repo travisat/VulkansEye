@@ -98,7 +98,6 @@ void Scene::createBrdf()
     brdf.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     brdf.createSampler();
 
-    Debug::setMarker(getHandle(brdf.image), vk::Image::objectType, "Scene Brdf");
     spdlog::info("Created BRDF");
 }
 
@@ -119,7 +118,6 @@ void Scene::createShadow()
     shadow.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     shadow.createSampler();
 
-    Debug::setMarker(getHandle(shadow.image), vk::Image::objectType, "Scene Shadow");
     spdlog::info("Created Shadow");
 }
 
@@ -229,7 +227,7 @@ void Scene::createColorPool()
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
     colorPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setMarker(getHandle(colorPool), vk::DescriptorPool::objectType, "Scene Color Pool");
+    Debug::setName(engine.device, colorPool, "Scene Color Pool");
 }
 
 void Scene::createColorLayouts()
@@ -319,7 +317,7 @@ void Scene::createColorLayouts()
     layoutInfo.pBindings = bindings.data();
 
     colorLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setMarker(getHandle(colorLayout), vk::DescriptorSetLayout::objectType, "Scene Color Layout");
+    Debug::setName(engine.device, colorLayout, "Scene Color Layout");
 }
 
 void Scene::createColorSets()
@@ -338,9 +336,9 @@ void Scene::createColorPipeline()
     auto vertPath = "assets/shaders/scene.vert.spv";
     auto fragPath = "assets/shaders/scene.frag.spv";
     colorPipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setMarker(getHandle(colorPipeline.vertShader), vk::ShaderModule::objectType, "Scene Vert Shader");
+    Debug::setName(engine.device, colorPipeline.vertShader, "Scene Vert Shader");
     colorPipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setMarker(getHandle(colorPipeline.fragShader), vk::ShaderModule::objectType, "Scene Frag Shader");
+    Debug::setName(engine.device, colorPipeline.fragShader, "Scene Frag Shader");
 
     colorPipeline.loadDefaults(engine.colorPass.renderPass);
 
@@ -353,8 +351,8 @@ void Scene::createColorPipeline()
     colorPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
     colorPipeline.create();
-    Debug::setMarker(getHandle(colorPipeline.pipeline), vk::Pipeline::objectType, "Scene Color Pipeline");
-    Debug::setMarker(getHandle(colorPipeline.pipelineLayout), vk::PipelineLayout::objectType, "Scene Color PipelineLayout");
+    Debug::setName(engine.device, colorPipeline.pipeline, "Scene Color Pipeline");
+    Debug::setName(engine.device, colorPipeline.pipelineLayout, "Scene Color PipelineLayout");
 }
 
 void Scene::createShadowPool()
@@ -374,7 +372,7 @@ void Scene::createShadowPool()
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
     shadowPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setMarker(getHandle(shadowPool), vk::DescriptorPool::objectType, "Scene Shadow Pool");
+    Debug::setName(engine.device, shadowPool, "Scene Shadow Pool");
 }
 
 void Scene::createShadowLayouts()
@@ -394,7 +392,7 @@ void Scene::createShadowLayouts()
     layoutInfo.pBindings = layouts.data();
 
     shadowLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setMarker(getHandle(shadowLayout), vk::DescriptorSetLayout::objectType, "Scene Shadow Layout");
+    Debug::setName(engine.device, shadowLayout, "Scene Shadow Layout");
 }
 
 void Scene::createShadowSets()
@@ -413,9 +411,9 @@ void Scene::createShadowPipeline()
     auto vertPath = "assets/shaders/shadow.vert.spv";
     auto fragPath = "assets/shaders/shadow.frag.spv";
     shadowPipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setMarker(getHandle(shadowPipeline.vertShader), vk::ShaderModule::objectType, "Scene Shadow Vert Shader");
+    Debug::setName(engine.device, shadowPipeline.vertShader, "Scene Shadow Vert Shader");
     shadowPipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setMarker(getHandle(shadowPipeline.fragShader), vk::ShaderModule::objectType, "Scene Shadow Frag Shader");
+    Debug::setName(engine.device, shadowPipeline.fragShader, "Scene Shadow Frag Shader");
 
     shadowPipeline.loadDefaults(engine.shadowPass.renderPass);
 
@@ -432,8 +430,8 @@ void Scene::createShadowPipeline()
     shadowPipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     shadowPipeline.create();
-    Debug::setMarker(getHandle(shadowPipeline.pipeline), vk::Pipeline::objectType, "Scene Shadow Pipeline");
-    Debug::setMarker(getHandle(shadowPipeline.pipelineLayout), vk::PipelineLayout::objectType, "Scene Shadow PipelineLayout");
+    Debug::setName(engine.device, shadowPipeline.pipeline, "Scene Shadow Pipeline");
+    Debug::setName(engine.device, shadowPipeline.pipelineLayout, "Scene Shadow PipelineLayout");
 }
 
 } // namespace tat

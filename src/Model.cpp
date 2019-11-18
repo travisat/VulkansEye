@@ -45,7 +45,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     colorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : colorSets)
     {
-        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Color Set");
+        Debug::setName(engine.device, descriptorSet, name + " Color Set");
     }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
@@ -211,7 +211,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     shadowSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : shadowSets)
     {
-        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Shadow Set");
+        Debug::setName(engine.device, descriptorSet, name + " Shadow Set");
     }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {

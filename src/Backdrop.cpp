@@ -148,7 +148,7 @@ void Backdrop::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setMarker(getHandle(descriptorPool), vk::DescriptorPool::objectType, name + " Pool");
+    Debug::setName(engine.device, descriptorPool, name + " Pool");
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -175,7 +175,7 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setMarker(getHandle(descriptorSetLayout), vk::DescriptorSetLayout::objectType, name + " Layout");
+    Debug::setName(engine.device, descriptorSetLayout, name + " Layout");
 }
 
 void Backdrop::createDescriptorSets()
@@ -190,7 +190,7 @@ void Backdrop::createDescriptorSets()
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
-        Debug::setMarker(getHandle(descriptorSet), vk::DescriptorSet::objectType, name + " Descriptor Set");
+        Debug::setName(engine.device, descriptorSet, name + " Descriptor Set");
     }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
@@ -232,7 +232,9 @@ void Backdrop::createPipeline()
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
+    Debug::setName(engine.device, pipeline.vertShader, name + " Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
+    Debug::setName(engine.device, pipeline.fragShader, name + " Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
@@ -241,8 +243,8 @@ void Backdrop::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
     pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
-    Debug::setMarker(getHandle(pipeline.pipeline), vk::Pipeline::objectType, name + " Pipeline");
-    Debug::setMarker(getHandle(pipeline.pipelineLayout), vk::PipelineLayout::objectType, name + " PipelineLayout");
+    Debug::setName(engine.device, pipeline.pipeline, name + " Pipeline");
+    Debug::setName(engine.device, pipeline.pipelineLayout, name + " PipelineLayout");
 }
 
 } // namespace tat

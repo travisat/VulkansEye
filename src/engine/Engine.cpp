@@ -516,7 +516,7 @@ void Engine::createLogicalDevice()
     {
         createInfo.enabledLayerCount = debug.validationLayers.size();
         createInfo.ppEnabledLayerNames = debug.validationLayers.data();
-        debug.create();
+        debug.create(&instance);
     }
 
     device = physicalDevice.createDevice(createInfo);
@@ -539,7 +539,7 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    debug.setMarker(getHandle(shadowDepth.image), vk::Image::objectType, "ShadowDepth");
+    Debug::setName(device, shadowDepth.image, "ShadowDepth");
 
     shadowFramebuffers.resize(swapChain.count);
     for (size_t i = 0; i < swapChain.count; i++)

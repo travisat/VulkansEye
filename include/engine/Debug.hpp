@@ -11,18 +11,21 @@
 namespace tat
 {
 
-template <typename T>
-auto getHandle(T const &cppHandle) -> uint64_t {
-  return uint64_t(static_cast<typename T::CType>(cppHandle));
-};
-
 class Debug
 {
   public:
-    void create();
+    void create(vk::Instance *instance);
     void destroy();
 
-    static void setMarker(uint64_t object, vk::ObjectType type, const std::string &name);
+    template <typename T>
+    static void setName(const vk::Device &device, const T &t, const std::string_view &name)
+    {
+        vk::DebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.objectHandle = uint64_t(static_cast<typename T::CType>(t));;
+        nameInfo.objectType = t.objectType;
+        nameInfo.pObjectName = name.data();
+        device.setDebugUtilsObjectNameEXT(nameInfo);
+    };
 
     vk::DebugUtilsMessengerEXT debugMessenger = nullptr;
     // TODO(travis) make #ndebug work with this, something is overriding it
@@ -30,6 +33,7 @@ class Debug
     const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
 
   private:
+    vk::Instance *instance = nullptr;
 };
 
 } // namespace tat
