@@ -244,14 +244,17 @@ void Model::createUniformBuffers()
     {
         vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        vertBuffers[i].name = fmt::format("Model {} Vert", name);
         vertBuffers[i].create(sizeof(UniformVert));
 
         fragBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         fragBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        fragBuffers[i].name = fmt::format("Model {} Frag", name);
         fragBuffers[i].create(sizeof(UniformFrag));
 
         shadBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         shadBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        shadBuffers[i].name = fmt::format("Model {} Shad", name);
         shadBuffers[i].create(sizeof(UniformShad));
     }
 }

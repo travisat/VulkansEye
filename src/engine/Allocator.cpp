@@ -1,4 +1,5 @@
 #include "engine/Allocator.hpp"
+#include "State.hpp"
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -22,6 +23,9 @@ void Allocator::create(vk::PhysicalDevice physicalDevice, vk::Device device)
         throw std::runtime_error("Unable to create Memory Allocator");
         return;
     }
+    //initialize allocations
+    allocations.insert(std::make_pair(0, nullptr));
+    
     spdlog::info("Created Memory Allocator");
 }
 
@@ -84,6 +88,12 @@ auto Allocator::createBuffer(vk::BufferCreateInfo &bufferInfo, VmaAllocationCrea
         throw std::runtime_error("Unable to create buffer");
     }
 
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation layers are enabled
+        Debug::setName(State::instance().engine.device.device, buffer, fmt::format("Buffer {}", index));
+        spdlog::info("Allocated Buffer {}", index);
+    }
+
     return index;
 }
 
@@ -93,8 +103,12 @@ void Allocator::destroyBuffer(vk::Buffer &buffer, int32_t allocationId)
     {
         vmaDestroyBuffer(allocator, buffer, allocations.at(allocationId));
         allocations.erase(allocationId);
+        buffer = nullptr;
+        if constexpr (Debug::enableValidationLayers)
+        { // only do this if validation layers are enabled
+            spdlog::info("Deallocated Buffer {}", allocationId);
+        }
     }
-    buffer = nullptr;
 }
 
 void Allocator::mapMemory(int32_t allocId, void **data)

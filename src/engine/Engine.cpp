@@ -20,6 +20,10 @@ void Engine::create()
 {
     auto &state = State::instance();
     createInstance();
+    if constexpr (Debug::enableValidationLayers)
+    {
+        debug.create(&instance);
+    }
     surface = state.window.createSurface(instance);
     physicalDevice.pick(instance);
 
@@ -219,6 +223,7 @@ void Engine::drawFrame(float deltaTime)
 
     if (state.overlay.update)
     {
+        state.overlay.cleanup();
         state.overlay.recreate();
         createCommandBuffers();
     }

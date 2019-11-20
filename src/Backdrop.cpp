@@ -28,6 +28,7 @@ void Backdrop::load()
     createPipeline();
     createUniformBuffers();
     createDescriptorSets();
+
     loaded = true;
     spdlog::info("Loaded Backdrop {}", name);
 }
@@ -112,6 +113,7 @@ void Backdrop::createUniformBuffers()
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        buffer.name  = "Backdrop";
         buffer.create(sizeof(UniformBack));
 
         memcpy(buffer.mapped, &backBuffer, sizeof(backBuffer));

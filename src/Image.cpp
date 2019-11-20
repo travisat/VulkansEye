@@ -103,6 +103,7 @@ void Image::load(const std::string &path)
     Buffer stagingBuffer{};
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
+    stagingBuffer.name = path + " Staging";
     stagingBuffer.update(texture.data(), texture.size());
 
     imageInfo.extent.width = texture.extent().x;
@@ -170,6 +171,7 @@ void Image::load(const std::string &path)
     engine.endSingleTimeCommands(commandBuffer);
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
     spdlog::info("Loaded Image {}", this->path);
 }
 

@@ -18,16 +18,17 @@ namespace tat
 class Buffer
 {
   public:
-    vk::BufferUsageFlags flags{};
-    VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
-    VmaAllocationCreateFlags memFlags = 0;
+    Buffer() = default;
+    ~Buffer();
 
-    //don't use uniquebuffer, vma is used for memory for it
+    // don't use uniquebuffer, vma is used
     vk::Buffer buffer = nullptr;
     void *mapped = nullptr;
 
-    Buffer() = default;
-    ~Buffer();
+    vk::BufferUsageFlags flags{};
+    VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_UNKNOWN;
+    VmaAllocationCreateFlags memFlags = 0;
+    std::string name = "";
 
     void create(VkDeviceSize s);
     void destroy();
@@ -42,10 +43,10 @@ class Buffer
     };
 
     void flush(size_t size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
-    
 
   private:
-    int32_t allocId {};
+    //default to -1 which can't exist
+    int32_t allocId = -1;
     vk::DeviceSize size = 0;
 };
 

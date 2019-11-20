@@ -44,6 +44,7 @@ auto main(int argc, char *argv[]) -> int
             tat::VulkansEye app(config);
             tat::VulkansEye::run();
             tat::VulkansEye::cleanup();
+            spdlog::info("END");
         }
         catch (const std::exception &e)
         {

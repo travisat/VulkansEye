@@ -52,7 +52,7 @@ class Backdrop : public Entry
     std::vector<vk::DescriptorSet> descriptorSets;
 
     UniformBack backBuffer{};
-    std::vector<Buffer> backBuffers;
+    std::vector<Buffer> backBuffers {};
 
     void loadCubeMap(const std::string &file, Image *image);
     void createDescriptorPool();

@@ -16,8 +16,6 @@
 
 #include <spdlog/spdlog.h>
 
-
-
 namespace tat
 {
 
@@ -107,6 +105,7 @@ void Overlay::createFont()
     Buffer stagingBuffer;
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    stagingBuffer.name = "Overlay Staging";
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
@@ -336,9 +335,11 @@ void Overlay::updateBuffers()
         {
             engine.device.waitIdle();
 
+            vertexBuffer.name = "Overlay Vert";
             vertexBuffer.create(vertexBufferSize);
             vertexCount = imDrawData->TotalVtxCount;
 
+            indexBuffer.name = "Overlay index";
             indexBuffer.create(indexBufferSize);
             indexCount = imDrawData->TotalIdxCount;
         }

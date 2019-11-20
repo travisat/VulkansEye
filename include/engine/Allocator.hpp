@@ -35,7 +35,7 @@ class Allocator
 
   private:
     VmaAllocator allocator{};
-    int32_t allocAccumulator = 0;
+    int32_t allocAccumulator = 1;
     std::map<int32_t, VmaAllocation> allocations;
 };
 

@@ -39,12 +39,6 @@ void Device::create()
     createInfo.enabledExtensionCount = engine.physicalDevice.extensions.size();
     createInfo.ppEnabledExtensionNames = engine.physicalDevice.extensions.data();
     createInfo.enabledLayerCount = 0;
-    if constexpr (Debug::enableValidationLayers)
-    {
-        createInfo.enabledLayerCount = engine.debug.validationLayers.size();
-        createInfo.ppEnabledLayerNames = engine.debug.validationLayers.data();
-        engine.debug.create(&engine.instance);
-    }
 
     device = engine.physicalDevice.createDevice(createInfo);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(device);

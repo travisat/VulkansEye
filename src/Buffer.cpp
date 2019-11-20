@@ -34,12 +34,24 @@ void Buffer::create(VkDeviceSize s)
 
     allocId = engine.allocator.createBuffer(bufferInfo, allocInfo, buffer, &info);
     mapped = info.pMappedData;
+
+    if constexpr (Debug::enableValidationLayers)
+    {
+        spdlog::info("Created Buffer {} : {}", name, allocId);
+    }
 }
 
 void Buffer::destroy()
 {
-        auto &engine = State::instance().engine;
-        engine.allocator.destroyBuffer(buffer, allocId);
+    auto &engine = State::instance().engine;
+    engine.allocator.destroyBuffer(buffer, allocId);
+    if constexpr (Debug::enableValidationLayers)
+    {
+        if (allocId >= 0)
+        {
+            spdlog::info("Destroyed Buffer {} : {}", name, allocId);
+        }
+    }
 }
 
 void Buffer::update(void *t, size_t s)

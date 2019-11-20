@@ -68,14 +68,14 @@ class Overlay
     int32_t vertexCount = 0;
     int32_t indexCount = 0;
 
-    Image fontImage {};
+    Image fontImage{};
 
-    Pipeline pipeline {};
+    Pipeline pipeline{};
     vk::DescriptorPool descriptorPool = nullptr;
     vk::DescriptorSetLayout descriptorSetLayout = nullptr;
-    std::vector<vk::DescriptorSet> descriptorSets {};
+    std::vector<vk::DescriptorSet> descriptorSets{};
 
-    UISettings uiSettings {};
+    UISettings uiSettings{};
 
     float lastFrameTime = 0;
     float lastUpdateTime = 0;
