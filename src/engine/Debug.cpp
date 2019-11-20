@@ -55,7 +55,7 @@ void Debug::destroy()
     {
         if (instance != nullptr)
         {
-            instance->destroyDebugUtilsMessengerEXT(debugMessenger);
+            instance->destroy(debugMessenger);
             instance = nullptr;
         }
         debugMessenger = nullptr;

@@ -13,7 +13,7 @@ void RenderPass::create()
 void RenderPass::destroy()
 {
     auto &engine = State::instance().engine;
-    engine.device.destroyRenderPass(renderPass);
+    engine.device.destroy(renderPass);
 }
 
 void RenderPass::loadColor()

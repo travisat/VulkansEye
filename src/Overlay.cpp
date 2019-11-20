@@ -57,8 +57,8 @@ void Overlay::destroy()
     fontImage.destroy();
     vertexBuffer.destroy();
     indexBuffer.destroy();
-    engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
-    engine.device.destroyDescriptorPool(descriptorPool);
+    engine.device.destroy(descriptorSetLayout);
+    engine.device.destroy(descriptorPool);
     pipeline.destroy();
     spdlog::info("Destroyed Overlay");
 }
@@ -74,7 +74,7 @@ void Overlay::recreate()
 void Overlay::cleanup()
 {
     auto &engine = State::instance().engine;
-    engine.device.destroyDescriptorPool(descriptorPool);
+    engine.device.destroy(descriptorPool);
     pipeline.destroy();
 }
 
@@ -151,7 +151,7 @@ void Overlay::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setName(engine.device, descriptorPool, "Overlay Pool");
+    Debug::setName(engine.device.device, descriptorPool, "Overlay Pool");
 }
 
 void Overlay::createDescriptorLayouts()
@@ -170,7 +170,7 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setName(engine.device, descriptorSetLayout, "Overlay Layout");
+    Debug::setName(engine.device.device, descriptorSetLayout, "Overlay Layout");
 }
 
 void Overlay::createDescriptorSets()
@@ -185,7 +185,7 @@ void Overlay::createDescriptorSets()
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
-        Debug::setName(engine.device, descriptorSet, "Overlay Descriptor Set");
+        Debug::setName(engine.device.device, descriptorSet, "Overlay Descriptor Set");
     }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
@@ -195,7 +195,7 @@ void Overlay::createDescriptorSets()
         samplerInfo.imageView = fontImage.imageView;
         samplerInfo.sampler = fontImage.sampler;
 
-        std::array<vk::WriteDescriptorSet, 1> descriptorWrites = {};
+        std::vector<vk::WriteDescriptorSet> descriptorWrites(1);
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
@@ -203,8 +203,7 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                           nullptr);
+        engine.device.updateDescriptorSets(descriptorWrites);
     }
 }
 
@@ -215,9 +214,9 @@ void Overlay::createPipeline()
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setName(engine.device, pipeline.vertShader, "Overlay Vert Shader");
+    Debug::setName(engine.device.device, pipeline.vertShader, "Overlay Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setName(engine.device, pipeline.fragShader, "Overlay Frag Shader");
+    Debug::setName(engine.device.device, pipeline.fragShader, "Overlay Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
 
@@ -273,8 +272,8 @@ void Overlay::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
 
     pipeline.create();
-    Debug::setName(engine.device, pipeline.pipeline, "Overlay Pipeline");
-    Debug::setName(engine.device, pipeline.pipelineLayout, "Overlay PipelineLayout");
+    Debug::setName(engine.device.device, pipeline.pipeline, "Overlay Pipeline");
+    Debug::setName(engine.device.device, pipeline.pipelineLayout, "Overlay PipelineLayout");
 }
 
 void Overlay::newFrame()

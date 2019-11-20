@@ -12,7 +12,7 @@ void Pipeline::create()
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = engine.device.createGraphicsPipeline(engine.pipelineCache.pipelineCache, pipelineInfo);
+    pipeline = engine.device.createGraphicsPipeline(pipelineInfo, engine.pipelineCache.pipelineCache);
 }
 
 void Pipeline::destroy()
@@ -20,31 +20,31 @@ void Pipeline::destroy()
     auto &engine = State::instance().engine;
     if (pipeline)
     {
-        engine.device.destroyPipeline(pipeline);
+        engine.device.destroy(pipeline);
     }
     if (pipelineLayout)
     {
-        engine.device.destroyPipelineLayout(pipelineLayout);
+        engine.device.destroy(pipelineLayout);
     }
     if (fragShader)
     {
-        engine.device.destroyShaderModule(fragShader);
+        engine.device.destroy(fragShader);
     }
     if (vertShader)
     {
-        engine.device.destroyShaderModule(vertShader);
+        engine.device.destroy(vertShader);
     }
     if (geomShader)
     {
-        engine.device.destroyShaderModule(geomShader);
+        engine.device.destroy(geomShader);
     }
     if (tescShader)
     {
-        engine.device.destroyShaderModule(tescShader);
+        engine.device.destroy(tescShader);
     }
     if (teseShader)
     {
-        engine.device.destroyShaderModule(teseShader);
+        engine.device.destroy(teseShader);
     }
 }
 

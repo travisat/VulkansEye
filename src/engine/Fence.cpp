@@ -17,7 +17,7 @@ Fence::~Fence()
     if (fence)
     {
         auto &device = State::instance().engine.device;
-        device.destroyFence(fence);
+        device.destroy(fence);
     }
 }
 

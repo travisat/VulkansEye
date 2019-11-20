@@ -35,11 +35,6 @@ class SwapChain
   public:
     void create();
     void destroy();
-    void recreate()
-    {
-        destroy();
-        create();
-    };
 
     vk::SwapchainKHR swapChain = nullptr;
     std::vector<vk::Image> images{};

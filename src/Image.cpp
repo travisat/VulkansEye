@@ -69,12 +69,12 @@ void Image::destroy()
     engine.allocator.destroyImage(image, allocId);
     if (sampler)
     {
-        engine.device.destroySampler(sampler);
+        engine.device.destroy(sampler);
         sampler = nullptr;
     }
     if (imageView)
     {
-        engine.device.destroyImageView(imageView);
+        engine.device.destroy(imageView);
         imageView = nullptr;
     }
 }
@@ -185,12 +185,12 @@ void Image::resize(int width, int height)
     if (imageInfo.extent != vk::Extent3D(width, height, imageInfo.extent.depth))
     {
         destroy();
-        
+
         imageInfo.extent = vk::Extent3D(width, height, imageInfo.extent.depth);
         vk::ImageLayout tempLayout = currentLayout;
 
         create();
-          
+
         if (tempLayout != vk::ImageLayout::eUndefined)
         {
             transitionImageLayout(vk::ImageLayout::eUndefined, tempLayout);
@@ -304,6 +304,6 @@ void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
     commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
     currentLayout = newLayout;
-} // namespace tat
+}
 
 } // namespace tat

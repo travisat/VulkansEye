@@ -45,6 +45,7 @@ ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Window.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Engine.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/PhysicalDevice.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Device.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/PipelineCache.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/SwapChain.cpp

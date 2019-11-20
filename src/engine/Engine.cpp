@@ -1,4 +1,3 @@
-#include "engine/Engine.hpp"
 #include "State.hpp"
 
 #include <filesystem>
@@ -24,8 +23,9 @@ void Engine::create()
     surface = state.window.createSurface(instance);
     physicalDevice.pick(instance);
 
-    createLogicalDevice();
-    allocator.create(physicalDevice.device, device);
+    device.create();
+
+    allocator.create(physicalDevice.device, device.device);
     swapChain.create();
     shadowPass.loadShadow();
     shadowPass.create();
@@ -64,7 +64,11 @@ void Engine::destroy()
 
     if (!commandBuffers.empty())
     {
-        device.freeCommandBuffers(commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+        device.destroyCommandBuffers(commandPool, commandBuffers);
+    }
+    if (commandPool)
+    {
+        device.destroy(commandPool);
     }
 
     renderSemaphores.clear();
@@ -74,11 +78,6 @@ void Engine::destroy()
     shadowPass.destroy();
     swapChain.destroy();
     pipelineCache.destroy();
-
-    if (commandPool)
-    {
-        device.destroyCommandPool(commandPool);
-    }
 
     for (auto &frameBuffer : colorFramebuffers)
     {
@@ -90,11 +89,7 @@ void Engine::destroy()
     }
 
     allocator.destroy();
-
-    if (device)
-    {
-        device.destroy(nullptr);
-    }
+    device.destroy();
 
     if (surface)
     {
@@ -228,14 +223,14 @@ void Engine::drawFrame(float deltaTime)
         createCommandBuffers();
     }
 
-    auto result = device.waitForFences(1, &waitFences[currentImage].fence, VK_FALSE, UINT64_MAX);
+    auto result = device.waitForFences(waitFences[currentImage].fence);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to wait for fences. Error code {}", result);
         throw std::runtime_error("Unable to wait for fences");
         return;
     }
-    result = device.resetFences(1, &waitFences[currentImage].fence);
+    result = device.resetFences(waitFences[currentImage].fence);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to reset fences. Error code {}", result);
@@ -244,8 +239,7 @@ void Engine::drawFrame(float deltaTime)
     }
 
     uint32_t currentBuffer;
-    result = device.acquireNextImageKHR(swapChain.swapChain, UINT64_MAX, presentSemaphores[currentImage].semaphore,
-                                        nullptr, &currentBuffer);
+    result = device.acquireNextImage(swapChain.swapChain, presentSemaphores[currentImage].semaphore, currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
@@ -270,7 +264,7 @@ void Engine::drawFrame(float deltaTime)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[currentBuffer];
     submitInfo.commandBufferCount = 1;
-    graphicsQueue.submit(1, &submitInfo, waitFences[currentImage].fence);
+    device.graphicsQueue.submit(1, &submitInfo, waitFences[currentImage].fence);
 
     vk::PresentInfoKHR presentInfo = {};
     presentInfo.pNext = nullptr;
@@ -279,7 +273,7 @@ void Engine::drawFrame(float deltaTime)
     presentInfo.pImageIndices = &currentBuffer;
     presentInfo.pWaitSemaphores = &renderSemaphores[currentImage].semaphore;
     presentInfo.waitSemaphoreCount = 1;
-    result = presentQueue.presentKHR(&presentInfo);
+    result = device.presentQueue.presentKHR(&presentInfo);
 
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
@@ -313,7 +307,7 @@ void Engine::updateWindow()
 
     // Steps to update
     // 1: free commandBuffers
-    device.freeCommandBuffers(commandPool, commandBuffers.size(), commandBuffers.data());
+    device.destroyCommandBuffers(commandPool, commandBuffers);
     // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
@@ -351,7 +345,7 @@ void Engine::resizeWindow()
 
     // Steps to resize
     // 1: free commandBuffers
-    device.freeCommandBuffers(commandPool, commandBuffers.size(), commandBuffers.data());
+    device.destroyCommandBuffers(commandPool, commandBuffers);
     // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
@@ -427,50 +421,6 @@ void Engine::createInstance()
     spdlog::info("Created Vulkan instance");
 }
 
-void Engine::createLogicalDevice()
-{
-    QueueFamilyIndices indices = SwapChain::findQueueFamiles(physicalDevice.device);
-
-    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-
-    float queuePriority = 1.0F;
-    for (uint32_t queueFamily : uniqueQueueFamilies)
-    {
-        vk::DeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
-        queueCreateInfos.push_back(queueCreateInfo);
-    }
-
-    vk::PhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
-    deviceFeatures.sampleRateShading = VK_TRUE;
-    deviceFeatures.geometryShader = VK_TRUE;
-
-    vk::DeviceCreateInfo createInfo{};
-    createInfo.queueCreateInfoCount = queueCreateInfos.size();
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = physicalDevice.extensions.size();
-    createInfo.ppEnabledExtensionNames = physicalDevice.extensions.data();
-    createInfo.enabledLayerCount = 0;
-    if constexpr (Debug::enableValidationLayers)
-    {
-        createInfo.enabledLayerCount = debug.validationLayers.size();
-        createInfo.ppEnabledLayerNames = debug.validationLayers.data();
-        debug.create(&instance);
-    }
-
-    device = physicalDevice.createDevice(createInfo);
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
-
-    graphicsQueue = device.getQueue(indices.graphicsFamily.value(), 0);
-    presentQueue = device.getQueue(indices.presentFamily.value(), 0);
-    spdlog::info("Created Logical Device");
-}
-
 void Engine::createShadowFramebuffers()
 {
     auto &state = State::instance();
@@ -483,7 +433,7 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    Debug::setName(device, shadowDepth.image, "ShadowDepth");
+    Debug::setName(device.device, shadowDepth.image, "ShadowDepth");
 
     shadowFramebuffers.resize(swapChain.count);
     for (size_t i = 0; i < swapChain.count; i++)
@@ -565,9 +515,9 @@ void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    graphicsQueue.submit(submitInfo, nullptr);
-    graphicsQueue.waitIdle();
-    device.freeCommandBuffers(commandPool, 1, &commandBuffer);
+    device.graphicsQueue.submit(submitInfo, nullptr);
+    device.graphicsQueue.waitIdle();
+    device.destroyCommandBuffer(commandPool, commandBuffer);
 };
 
 auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
@@ -596,9 +546,8 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
     createInfo.codeSize = buffer.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
-    return device.createShaderModule(createInfo, nullptr);
+    return device.createShaderModule(createInfo);
 }
-
 
 auto Engine::findDepthFormat() -> vk::Format
 {

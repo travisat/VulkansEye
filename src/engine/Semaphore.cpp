@@ -7,7 +7,7 @@ namespace tat
 Semaphore::Semaphore()
 {
     auto &device = State::instance().engine.device;
-    semaphore = device.createSemaphore({});
+    semaphore = device.createSemaphore();
 }
 
 Semaphore::~Semaphore()
@@ -15,7 +15,7 @@ Semaphore::~Semaphore()
     if (semaphore)
     {
         auto &device = State::instance().engine.device;
-        device.destroySemaphore(semaphore);
+        device.destroy(semaphore);
     }
 }
 

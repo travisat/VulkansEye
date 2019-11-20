@@ -13,11 +13,13 @@
 #include "engine/Debug.hpp"
 #include "engine/Fence.hpp"
 #include "engine/Framebuffer.hpp"
+#include "engine/PhysicalDevice.hpp"
+#include "engine/Device.hpp"
 #include "engine/PipelineCache.hpp"
 #include "engine/RenderPass.hpp"
 #include "engine/Semaphore.hpp"
 #include "engine/SwapChain.hpp"
-#include "engine/PhysicalDevice.hpp"
+
 
 #include "Image.hpp"
 
@@ -39,11 +41,12 @@ class Engine
 
     vk::Instance instance;
     vk::SurfaceKHR surface;
-    vk::Device device;
+    Device device;
     PhysicalDevice physicalDevice;
+    Debug debug;
 
     Allocator allocator{};
-    
+
     SwapChain swapChain;
 
     PipelineCache pipelineCache;
@@ -66,18 +69,12 @@ class Engine
     Image depthAttachment;
 
     std::vector<vk::CommandBuffer> commandBuffers{};
-   
+
     std::vector<Semaphore> presentSemaphores{};
     std::vector<Semaphore> renderSemaphores{};
     std::vector<Fence> waitFences{};
 
-    Debug debug;
-
     vk::CommandPool commandPool;
-    
-
-    vk::Queue graphicsQueue;
-    vk::Queue presentQueue;
 
     int32_t currentImage = 0;
     bool prepared = false;
@@ -91,15 +88,13 @@ class Engine
     void resizeWindow();
 
     void createInstance();
-    void createLogicalDevice();
     void createColorFramebuffers();
     void createShadowFramebuffers();
     void createCommandPool();
     void createPipelineCache();
-   
+
     static auto chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
         -> vk::SurfaceFormatKHR;
-   
 };
 
 } // namespace tat

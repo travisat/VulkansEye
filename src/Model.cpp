@@ -45,7 +45,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     colorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : colorSets)
     {
-        Debug::setName(engine.device, descriptorSet, name + " Color Set");
+        Debug::setName(engine.device.device, descriptorSet, name + " Color Set");
     }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
@@ -104,7 +104,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         brdfInfo.imageView = state.scene.brdf.imageView;
         brdfInfo.sampler = state.scene.brdf.sampler;
 
-        std::array<vk::WriteDescriptorSet, 11> descriptorWrites = {};
+        std::vector<vk::WriteDescriptorSet> descriptorWrites(11);
 
         // vert uniform buffer
         descriptorWrites[0].dstSet = colorSets[i];
@@ -194,8 +194,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[10].descriptorCount = 1;
         descriptorWrites[10].pImageInfo = &brdfInfo;
 
-        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                             nullptr);
+        engine.device.updateDescriptorSets(descriptorWrites);
     }
 }
 
@@ -211,7 +210,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     shadowSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : shadowSets)
     {
-        Debug::setName(engine.device, descriptorSet, name + " Shadow Set");
+        Debug::setName(engine.device.device, descriptorSet, name + " Shadow Set");
     }
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
@@ -220,7 +219,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         shadowInfo.offset = 0;
         shadowInfo.range = sizeof(UniformShad);
 
-        std::array<vk::WriteDescriptorSet, 1> descriptorWrites{};
+        std::vector<vk::WriteDescriptorSet> descriptorWrites(1);
 
         // shadow
         descriptorWrites[0].dstSet = shadowSets[i];
@@ -230,8 +229,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &shadowInfo;
 
-        engine.device.updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-                                             nullptr);
+        engine.device.updateDescriptorSets(descriptorWrites);
     }
 }
 

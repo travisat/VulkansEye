@@ -44,11 +44,11 @@ Backdrop::~Backdrop()
 
         if (descriptorSetLayout)
         {
-            engine.device.destroyDescriptorSetLayout(descriptorSetLayout);
+            engine.device.destroy(descriptorSetLayout);
         }
         if (descriptorPool)
         {
-            engine.device.destroyDescriptorPool(descriptorPool);
+            engine.device.destroy(descriptorPool);
         }
         pipeline.destroy();
         spdlog::info("Destroyed Backdrop {}", name);
@@ -71,7 +71,7 @@ void Backdrop::cleanup()
     if (loaded)
     {
         auto &engine = State::instance().engine;
-        engine.device.destroyDescriptorPool(descriptorPool);
+        engine.device.destroy(descriptorPool);
         pipeline.destroy();
     }
 }
@@ -148,7 +148,7 @@ void Backdrop::createDescriptorPool()
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.createDescriptorPool(poolInfo);
-    Debug::setName(engine.device, descriptorPool, name + " Pool");
+    Debug::setName(engine.device.device, descriptorPool, name + " Pool");
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -175,7 +175,7 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
-    Debug::setName(engine.device, descriptorSetLayout, name + " Layout");
+    Debug::setName(engine.device.device, descriptorSetLayout, name + " Layout");
 }
 
 void Backdrop::createDescriptorSets()
@@ -190,7 +190,7 @@ void Backdrop::createDescriptorSets()
     descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
-        Debug::setName(engine.device, descriptorSet, name + " Descriptor Set");
+        Debug::setName(engine.device.device, descriptorSet, name + " Descriptor Set");
     }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
@@ -205,7 +205,7 @@ void Backdrop::createDescriptorSets()
         imageInfo.imageView = colorMap.imageView;
         imageInfo.sampler = colorMap.sampler;
 
-        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{};
+        std::vector<vk::WriteDescriptorSet> descriptorWrites(2);
         descriptorWrites[0].dstSet = descriptorSets[i];
         descriptorWrites[0].dstBinding = 0;
         descriptorWrites[0].dstArrayElement = 0;
@@ -220,7 +220,7 @@ void Backdrop::createDescriptorSets()
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        engine.device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        engine.device.updateDescriptorSets(descriptorWrites);
     }
 };
 
@@ -232,9 +232,9 @@ void Backdrop::createPipeline()
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setName(engine.device, pipeline.vertShader, name + " Vert Shader");
+    Debug::setName(engine.device.device, pipeline.vertShader, name + " Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setName(engine.device, pipeline.fragShader, name + " Frag Shader");
+    Debug::setName(engine.device.device, pipeline.fragShader, name + " Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
@@ -243,8 +243,8 @@ void Backdrop::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
     pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
-    Debug::setName(engine.device, pipeline.pipeline, name + " Pipeline");
-    Debug::setName(engine.device, pipeline.pipelineLayout, name + " PipelineLayout");
+    Debug::setName(engine.device.device, pipeline.pipeline, name + " Pipeline");
+    Debug::setName(engine.device.device, pipeline.pipelineLayout, name + " PipelineLayout");
 }
 
 } // namespace tat

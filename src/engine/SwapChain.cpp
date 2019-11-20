@@ -55,8 +55,8 @@ void SwapChain::create()
 
     createInfo.oldSwapchain = nullptr;
 
-    swapChain = engine.device.createSwapchainKHR(createInfo);
-    images = engine.device.getSwapchainImagesKHR(swapChain);
+    swapChain = engine.device.createSwapchain(createInfo);
+    images = engine.device.getSwapchainImages(swapChain);
     count = images.size();
     imageViews.resize(count);
 
@@ -82,12 +82,12 @@ void SwapChain::destroy()
     auto &device = State::instance().engine.device;
     for (auto imageView : imageViews)
     {
-        device.destroyImageView(imageView);
+        device.destroy(imageView);
     }
     if (swapChain)
     {
 
-        device.destroySwapchainKHR(swapChain);
+        device.destroy(swapChain);
     }
 }
 

@@ -16,7 +16,7 @@ void PipelineCache::destroy()
     if (pipelineCache)
     {
         auto &device = State::instance().engine.device;
-        device.destroyPipelineCache(pipelineCache);
+        device.destroy(pipelineCache);
     }
 }
 

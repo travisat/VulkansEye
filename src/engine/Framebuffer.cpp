@@ -20,7 +20,7 @@ void Framebuffer::create()
 void Framebuffer::destroy()
 {
     auto& engine = State::instance().engine;
-    engine.device.destroyFramebuffer(framebuffer);
+    engine.device.destroy(framebuffer);
 }
 
 } // namespace tat

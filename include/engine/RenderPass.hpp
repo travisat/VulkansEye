@@ -17,12 +17,6 @@ class RenderPass
     void create();
     void destroy();
 
-    void recreate()
-    {
-        destroy();
-        create();
-    };
-    
     void loadColor();
     void loadShadow();
 

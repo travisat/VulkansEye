@@ -23,12 +23,6 @@ class Framebuffer
     void create();
     void destroy();
     
-    void recreate()
-    {
-        destroy();
-        create();
-    };
-
   private:
     void createRenderPass();
 };
