@@ -49,8 +49,8 @@ class SwapChain
     vk::Extent2D extent;
     int32_t count = 0;
 
-    static auto findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIndices;
-    static auto querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails;
+    static auto findQueueFamiles(vk::PhysicalDevice const &physicalDevice) -> QueueFamilyIndices;
+    static auto querySwapChainSupport(vk::PhysicalDevice const &physicalDevice) -> SwapChainSupportDetails;
 
   private:
     static auto chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)

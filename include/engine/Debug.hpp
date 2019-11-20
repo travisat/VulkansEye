@@ -29,7 +29,8 @@ class Debug
 
     vk::DebugUtilsMessengerEXT debugMessenger = nullptr;
     // TODO(travis) make #ndebug work with this, something is overriding it
-    const bool enableValidationLayers = true;
+    
+    static constexpr bool  enableValidationLayers = true;
     const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
 
   private:

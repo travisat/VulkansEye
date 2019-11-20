@@ -1,11 +1,9 @@
 #include "engine/Engine.hpp"
 #include "State.hpp"
 
-#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -24,9 +22,10 @@ void Engine::create()
     auto &state = State::instance();
     createInstance();
     surface = state.window.createSurface(instance);
-    pickPhysicalDevice();
+    physicalDevice.pick(instance);
+
     createLogicalDevice();
-    allocator.create(physicalDevice, device);
+    allocator.create(physicalDevice.device, device);
     swapChain.create();
     shadowPass.loadShadow();
     shadowPass.create();
@@ -58,7 +57,7 @@ void Engine::destroy()
     depthAttachment.destroy();
     shadowDepth.destroy();
 
-    if (debug.enableValidationLayers)
+    if constexpr (Debug::enableValidationLayers)
     {
         debug.destroy();
     }
@@ -395,7 +394,15 @@ void Engine::createInstance()
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_1;
 
-    auto extensions = getRequiredExtensions();
+    uint32_t glfwExtensionCount = 0;
+    const char **glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    if constexpr (Debug::enableValidationLayers)
+    {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
 
     vk::InstanceCreateInfo createInfo = {};
     createInfo.pApplicationInfo = &appInfo;
@@ -404,7 +411,7 @@ void Engine::createInstance()
     createInfo.enabledLayerCount = 0;
     createInfo.pNext = nullptr;
 
-    if (debug.enableValidationLayers)
+    if constexpr (Debug::enableValidationLayers)
     {
         createInfo.enabledLayerCount = debug.validationLayers.size();
         createInfo.ppEnabledLayerNames = debug.validationLayers.data();
@@ -420,72 +427,9 @@ void Engine::createInstance()
     spdlog::info("Created Vulkan instance");
 }
 
-void Engine::pickPhysicalDevice()
-{
-    auto devs = instance.enumeratePhysicalDevices();
-
-    assert(!devs.empty());
-
-    for (const auto &dev : devs)
-    {
-        if (isDeviceSuitable(dev))
-        {
-            properties = dev.getProperties();
-            spdlog::info("Device: {}", properties.deviceName);
-            spdlog::info("ID: {}", properties.deviceID);
-            spdlog::info("Type: {}", properties.deviceType);
-            spdlog::info("Driver: {}", properties.driverVersion);
-            spdlog::info("API: {}", properties.apiVersion);
-            physicalDevice = dev;
-            msaaSamples = getMaxUsableSampleCount();
-            return;
-        }
-    }
-
-    if (!physicalDevice)
-    {
-        spdlog::error("Unable to find suitable physical device");
-        throw std::runtime_error("Unable to find suitable physical device");
-    }
-}
-
-auto Engine::isDeviceSuitable(vk::PhysicalDevice const &device) -> bool
-{
-    QueueFamilyIndices indicies = SwapChain::findQueueFamiles(device);
-
-    bool extensionsSupported = checkDeviceExtensionsSupport(device);
-
-    bool swapChainAdequate = false;
-    if (extensionsSupported)
-    {
-        SwapChainSupportDetails swapChainSupport = SwapChain::querySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-    }
-
-    auto supportedFeatures = device.getFeatures();
-
-    return indicies.isComplete() && extensionsSupported && swapChainAdequate &&
-           (supportedFeatures.samplerAnisotropy != VK_FALSE) && (supportedFeatures.tessellationShader != VK_FALSE) &&
-           (supportedFeatures.geometryShader != VK_FALSE);
-};
-
-auto Engine::checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> bool
-{
-    auto extensions = device.enumerateDeviceExtensionProperties();
-
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-    for (const auto &extension : extensions)
-    {
-        requiredExtensions.erase(extension.extensionName);
-    }
-
-    return requiredExtensions.empty();
-}
-
 void Engine::createLogicalDevice()
 {
-    QueueFamilyIndices indices = SwapChain::findQueueFamiles(physicalDevice);
+    QueueFamilyIndices indices = SwapChain::findQueueFamiles(physicalDevice.device);
 
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -509,10 +453,10 @@ void Engine::createLogicalDevice()
     createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = deviceExtensions.size();
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    createInfo.enabledExtensionCount = physicalDevice.extensions.size();
+    createInfo.ppEnabledExtensionNames = physicalDevice.extensions.data();
     createInfo.enabledLayerCount = 0;
-    if (debug.enableValidationLayers)
+    if constexpr (Debug::enableValidationLayers)
     {
         createInfo.enabledLayerCount = debug.validationLayers.size();
         createInfo.ppEnabledLayerNames = debug.validationLayers.data();
@@ -556,7 +500,7 @@ void Engine::createShadowFramebuffers()
 void Engine::createColorFramebuffers()
 {
     colorAttachment.imageInfo.format = swapChain.format;
-    colorAttachment.imageInfo.samples = msaaSamples;
+    colorAttachment.imageInfo.samples = physicalDevice.msaaSamples;
     colorAttachment.imageInfo.usage =
         vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment;
     colorAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -564,7 +508,7 @@ void Engine::createColorFramebuffers()
     colorAttachment.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal);
 
     depthAttachment.imageInfo.format = findDepthFormat();
-    depthAttachment.imageInfo.samples = msaaSamples;
+    depthAttachment.imageInfo.samples = physicalDevice.msaaSamples;
     depthAttachment.imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     depthAttachment.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -587,7 +531,7 @@ void Engine::createColorFramebuffers()
 
 void Engine::createCommandPool()
 {
-    QueueFamilyIndices QueueFamilyIndices = SwapChain::findQueueFamiles(physicalDevice);
+    QueueFamilyIndices QueueFamilyIndices = SwapChain::findQueueFamiles(physicalDevice.device);
 
     vk::CommandPoolCreateInfo poolInfo = {};
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
@@ -655,107 +599,6 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
     return device.createShaderModule(createInfo, nullptr);
 }
 
-auto Engine::getRequiredExtensions() -> std::vector<const char *>
-{
-    uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    if (debug.enableValidationLayers)
-    {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-    return extensions;
-};
-
-auto Engine::getMaxUsableSampleCount() -> vk::SampleCountFlagBits
-{
-    const auto &colorCounts = properties.limits.framebufferColorSampleCounts;
-    const auto &depthCounts = properties.limits.framebufferDepthSampleCounts;
-
-    // Scoped enums are stupid
-
-    uint8_t colors = 0;
-    if (colorCounts & vk::SampleCountFlagBits::e64)
-    {
-        colors = 64;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e32)
-    {
-        colors = 32;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e16)
-    {
-        colors = 16;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e8)
-    {
-        colors = 8;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e4)
-    {
-        colors = 4;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e2)
-    {
-        colors = 2;
-    }
-    else
-    {
-        colors = 1;
-    }
-
-    uint8_t depth = 0;
-    if (depthCounts & vk::SampleCountFlagBits::e64)
-    {
-        depth = 64;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e32)
-    {
-        depth = 32;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e16)
-    {
-        depth = 16;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e8)
-    {
-        depth = 8;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e4)
-    {
-        depth = 4;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e2)
-    {
-        depth = 2;
-    }
-    else
-    {
-        depth = 1;
-    }
-
-    uint8_t lowest = std::min(colors, depth);
-
-    switch (lowest)
-    {
-    case 64:
-        return vk::SampleCountFlagBits::e64;
-    case 32:
-        return vk::SampleCountFlagBits::e32;
-    case 16:
-        return vk::SampleCountFlagBits::e16;
-    case 8:
-        return vk::SampleCountFlagBits::e8;
-    case 4:
-        return vk::SampleCountFlagBits::e4;
-    case 2:
-        return vk::SampleCountFlagBits::e2;
-    default:
-        return vk::SampleCountFlagBits::e1;
-    }
-}
 
 auto Engine::findDepthFormat() -> vk::Format
 {
@@ -764,8 +607,8 @@ auto Engine::findDepthFormat() -> vk::Format
 
     for (vk::Format format : candidates)
     {
-        auto props = physicalDevice.getFormatProperties(format);
-        if (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+        auto properties = physicalDevice.getFormatProperties(format);
+        if (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
         {
             return format;
         }

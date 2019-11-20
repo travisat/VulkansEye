@@ -17,6 +17,7 @@
 #include "engine/RenderPass.hpp"
 #include "engine/Semaphore.hpp"
 #include "engine/SwapChain.hpp"
+#include "engine/PhysicalDevice.hpp"
 
 #include "Image.hpp"
 
@@ -39,8 +40,7 @@ class Engine
     vk::Instance instance;
     vk::SurfaceKHR surface;
     vk::Device device;
-    vk::PhysicalDevice physicalDevice;
-    vk::PhysicalDeviceProperties properties;
+    PhysicalDevice physicalDevice;
 
     Allocator allocator{};
     
@@ -51,7 +51,6 @@ class Engine
     RenderPass shadowPass;
 
     vk::PresentModeKHR defaultPresentMode = vk::PresentModeKHR::eMailbox;
-    vk::SampleCountFlagBits msaaSamples = vk::SampleCountFlagBits::e1;
 
     auto beginSingleTimeCommands() -> vk::CommandBuffer;
     void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
@@ -65,8 +64,6 @@ class Engine
     std::vector<Framebuffer> colorFramebuffers{};
     Image colorAttachment;
     Image depthAttachment;
-
-    const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     std::vector<vk::CommandBuffer> commandBuffers{};
    
@@ -82,8 +79,6 @@ class Engine
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
 
-    
-
     int32_t currentImage = 0;
     bool prepared = false;
 
@@ -96,19 +91,15 @@ class Engine
     void resizeWindow();
 
     void createInstance();
-    void pickPhysicalDevice();
     void createLogicalDevice();
     void createColorFramebuffers();
     void createShadowFramebuffers();
     void createCommandPool();
     void createPipelineCache();
-
-    auto getRequiredExtensions() -> std::vector<const char *>;
-    auto getMaxUsableSampleCount() -> vk::SampleCountFlagBits;
+   
     static auto chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR> &availableFormats)
         -> vk::SurfaceFormatKHR;
-    auto isDeviceSuitable(vk::PhysicalDevice const &device) -> bool;
-    auto checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> bool;
+   
 };
 
 } // namespace tat

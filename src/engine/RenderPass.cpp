@@ -24,7 +24,7 @@ void RenderPass::loadColor()
 
     // color
     attachments[0].format = engine.swapChain.format;
-    attachments[0].samples = engine.msaaSamples;
+    attachments[0].samples = engine.physicalDevice.msaaSamples;
     attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
     attachments[0].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
@@ -37,7 +37,7 @@ void RenderPass::loadColor()
 
     // depth
     attachments[1].format = engine.findDepthFormat();
-    attachments[1].samples = engine.msaaSamples;
+    attachments[1].samples = engine.physicalDevice.msaaSamples;
     attachments[1].loadOp = vk::AttachmentLoadOp::eClear;
     attachments[1].storeOp = vk::AttachmentStoreOp::eDontCare;
     attachments[1].stencilLoadOp = vk::AttachmentLoadOp::eDontCare;

@@ -11,7 +11,7 @@ void SwapChain::create()
     auto &state = State::instance();
     auto &engine = state.engine;
     auto &window = state.at("settings").at("window");
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.physicalDevice);
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.physicalDevice.device);
 
     vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     format = surfaceFormat.format;
@@ -34,7 +34,7 @@ void SwapChain::create()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
-    QueueFamilyIndices indices = findQueueFamiles(engine.physicalDevice);
+    QueueFamilyIndices indices = findQueueFamiles(engine.physicalDevice.device);
     std::array<uint32_t, 2> queueFamilyIndices = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily)
@@ -91,13 +91,13 @@ void SwapChain::destroy()
     }
 }
 
-auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamilyIndices
+auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &physicalDevice) -> QueueFamilyIndices
 {
     auto &surface = State::instance().engine.surface;
 
     QueueFamilyIndices indices;
 
-    auto queueFamilies = device.getQueueFamilyProperties();
+    auto queueFamilies = physicalDevice.getQueueFamilyProperties();
 
     int i = 0;
     for (const auto &queueFamily : queueFamilies)
@@ -107,7 +107,7 @@ auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamil
             indices.graphicsFamily = i;
         }
 
-        auto presentSupport = device.getSurfaceSupportKHR(i, surface);
+        auto presentSupport = physicalDevice.getSurfaceSupportKHR(i, surface);
 
         if (queueFamily.queueCount > 0 && (presentSupport != VK_FALSE))
         {
@@ -123,13 +123,13 @@ auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &device) -> QueueFamil
     return indices;
 }
 
-auto SwapChain::querySwapChainSupport(vk::PhysicalDevice const &device) -> SwapChainSupportDetails
+auto SwapChain::querySwapChainSupport(vk::PhysicalDevice const &physicalDevice) -> SwapChainSupportDetails
 {
     auto &surface = State::instance().engine.surface;
     SwapChainSupportDetails details{};
-    details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
-    details.formats = device.getSurfaceFormatsKHR(surface);
-    details.presentModes = device.getSurfacePresentModesKHR(surface);
+    details.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+    details.formats = physicalDevice.getSurfaceFormatsKHR(surface);
+    details.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
     return details;
 }
 

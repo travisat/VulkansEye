@@ -101,7 +101,7 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     rasterizer.depthBiasEnable = VK_FALSE;
 
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = engine.msaaSamples;
+    multisampling.rasterizationSamples = engine.physicalDevice.msaaSamples;
 
     colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
