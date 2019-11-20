@@ -23,9 +23,9 @@ void Allocator::create(vk::PhysicalDevice physicalDevice, vk::Device device)
         throw std::runtime_error("Unable to create Memory Allocator");
         return;
     }
-    //initialize allocations
+    // initialize allocations
     allocations.insert(std::make_pair(0, nullptr));
-    
+
     spdlog::info("Created Memory Allocator");
 }
 
@@ -59,6 +59,12 @@ auto Allocator::createImage(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateI
         throw std::runtime_error("Unable to create image");
     }
 
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation layers are enabled
+        Debug::setName(State::instance().engine.device.device, image, fmt::format("Image {}", index));
+        spdlog::info("Allocated Image {}", index);
+    }
+
     return index;
 }
 
@@ -68,8 +74,12 @@ void Allocator::destroyImage(vk::Image &image, int32_t allocationId)
     {
         vmaDestroyImage(allocator, image, allocations.at(allocationId));
         allocations.erase(allocationId);
+        image = nullptr;
+        if constexpr (Debug::enableValidationLayers)
+        { // only do this if validation layers are enabled
+            spdlog::info("Deallocated Image {}", allocationId);
+        }
     }
-    image = nullptr;
 }
 
 auto Allocator::createBuffer(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo, vk::Buffer &buffer,

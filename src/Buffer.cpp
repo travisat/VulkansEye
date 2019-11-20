@@ -37,7 +37,7 @@ void Buffer::create(VkDeviceSize s)
 
     if constexpr (Debug::enableValidationLayers)
     {
-        spdlog::info("Created Buffer {} : {}", name, allocId);
+        spdlog::info("Created Buffer {} : {}", allocId, name);
     }
 }
 
@@ -49,7 +49,7 @@ void Buffer::destroy()
     {
         if (allocId >= 0)
         {
-            spdlog::info("Destroyed Buffer {} : {}", name, allocId);
+            spdlog::info("Destroyed Buffer {} : {}", allocId, name);
         }
     }
 }

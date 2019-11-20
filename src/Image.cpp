@@ -172,7 +172,7 @@ void Image::load(const std::string &path)
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    spdlog::info("Loaded Image {}", this->path);
+    spdlog::info("Loaded Image  {} : {}", allocId, this->path);
 }
 
 void Image::createSampler()

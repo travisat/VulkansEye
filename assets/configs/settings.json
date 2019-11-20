@@ -6,7 +6,7 @@
     "mouseSensitivity": 33.4,
     "windowWidth": 1024,
     "windowHeight": 768,
-    "vsync": true,
+    "vsync": false,
     "shadowSize": 4096,
     "brdfPath": "assets/brdf.dds",
     "playerConfig": "assets/configs/player.json",
