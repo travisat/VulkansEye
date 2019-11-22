@@ -144,8 +144,6 @@ void Allocator::destroy(Allocation *allocation)
     }
 }
 
-
-
 auto Allocator::map(Allocation *allocation) -> void *
 {
     void *data;
