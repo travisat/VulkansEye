@@ -83,35 +83,6 @@ auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &
     return &allocations.at(allocation.descriptor);
 }
 
-void Allocator::destroy(Allocation *allocation)
-{
-    if (allocations.find(allocation->descriptor) != allocations.end())
-    {
-        if (std::holds_alternative<vk::Image>(allocation->handle))
-        {
-            vmaDestroyImage(allocator, std::get<vk::Image>(allocation->handle), allocation->allocation);
-
-            if constexpr (Debug::enableValidationLayers)
-            { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Image {}", allocation->descriptor);
-            }
-            allocations.erase(allocation->descriptor);
-            allocation = nullptr;
-        }
-        else if (std::holds_alternative<vk::Buffer>(allocation->handle))
-        {
-            vmaDestroyBuffer(allocator, std::get<vk::Buffer>(allocation->handle), allocation->allocation);
-
-            if constexpr (Debug::enableValidationLayers)
-            { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Buffer {}", allocation->descriptor);
-            }
-            allocations.erase(allocation->descriptor);
-            allocation = nullptr;
-        }
-    }
-}
-
 auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo)
     -> Allocation *
 {
@@ -143,6 +114,37 @@ auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo
 
     return &allocations.at(allocation.descriptor);
 }
+
+void Allocator::destroy(Allocation *allocation)
+{
+    if (allocations.find(allocation->descriptor) != allocations.end())
+    {
+        if (std::holds_alternative<vk::Image>(allocation->handle))
+        {
+            vmaDestroyImage(allocator, std::get<vk::Image>(allocation->handle), allocation->allocation);
+
+            if constexpr (Debug::enableValidationLayers)
+            { // only do this if validation layers are enabled
+                spdlog::info("Deallocated Image {}", allocation->descriptor);
+            }
+            allocations.erase(allocation->descriptor);
+            allocation = nullptr;
+        }
+        else if (std::holds_alternative<vk::Buffer>(allocation->handle))
+        {
+            vmaDestroyBuffer(allocator, std::get<vk::Buffer>(allocation->handle), allocation->allocation);
+
+            if constexpr (Debug::enableValidationLayers)
+            { // only do this if validation layers are enabled
+                spdlog::info("Deallocated Buffer {}", allocation->descriptor);
+            }
+            allocations.erase(allocation->descriptor);
+            allocation = nullptr;
+        }
+    }
+}
+
+
 
 auto Allocator::map(Allocation *allocation) -> void *
 {

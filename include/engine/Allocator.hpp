@@ -29,10 +29,10 @@ class Allocator
     // destroys allocations, will free all memory held by allocations
     // even if buffer or image has not been destroyed
     void destroy();
-    // creates image using vma and returns descriptor and pointer of allocation
+
+    // creates image using vma and returns pointer to allocation
     auto create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo,
                 VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
-
     // same for buffer
     auto create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo,
                 VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
