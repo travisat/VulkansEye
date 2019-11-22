@@ -1,0 +1,10 @@
+{
+    "color": "color.dds",
+    "radiance": "radiance.dds",
+    "irradiance": "irradiance.dds",
+    "light": [
+        2,
+        -15,
+        2
+    ]
+}
