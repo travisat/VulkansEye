@@ -226,7 +226,7 @@ void Scene::createColorPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    colorPool = engine.device.createDescriptorPool(poolInfo);
+    colorPool = engine.device.create(poolInfo);
     Debug::setName(engine.device.device, colorPool, "Scene Color Pool");
 }
 
@@ -316,7 +316,7 @@ void Scene::createColorLayouts()
     layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
 
-    colorLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    colorLayout = engine.device.create(layoutInfo);
     Debug::setName(engine.device.device, colorLayout, "Scene Color Layout");
 }
 
@@ -371,7 +371,7 @@ void Scene::createShadowPool()
     // number of models * swapchainimages
     poolInfo.maxSets = models.size() * numSwapChainImages;
 
-    shadowPool = engine.device.createDescriptorPool(poolInfo);
+    shadowPool = engine.device.create(poolInfo);
     Debug::setName(engine.device.device, shadowPool, "Scene Shadow Pool");
 }
 
@@ -391,7 +391,7 @@ void Scene::createShadowLayouts()
     layoutInfo.bindingCount = layouts.size();
     layoutInfo.pBindings = layouts.data();
 
-    shadowLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    shadowLayout = engine.device.create(layoutInfo);
     Debug::setName(engine.device.device, shadowLayout, "Scene Shadow Layout");
 }
 

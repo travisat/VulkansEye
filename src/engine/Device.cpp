@@ -57,17 +57,12 @@ void Device::destroy()
     }
 }
 
-auto Device::allocateCommandBuffers(const vk::CommandBufferAllocateInfo &allocInfo) -> std::vector<vk::CommandBuffer>
-{
-    return device.allocateCommandBuffers(allocInfo);
-}
-
-auto Device::waitForFences(vk::Fence &fence) -> vk::Result
+auto Device::wait(vk::Fence &fence) -> vk::Result
 {
     return device.waitForFences(1, &fence, VK_FALSE, UINT64_MAX);
 }
 
-auto Device::resetFences(vk::Fence &fence) -> vk::Result
+auto Device::reset(vk::Fence &fence) -> vk::Result
 {
     return device.resetFences(1, &fence);
 }
@@ -83,93 +78,7 @@ void Device::waitIdle()
     device.waitIdle();
 }
 
-auto Device::createCommandPool(const vk::CommandPoolCreateInfo &createInfo) -> vk::CommandPool
-{
-    return device.createCommandPool(createInfo);
-}
-
-auto Device::createShaderModule(const vk::ShaderModuleCreateInfo &createInfo) -> vk::ShaderModule
-{
-    return device.createShaderModule(createInfo, nullptr);
-}
-
-auto Device::createDescriptorPool(const vk::DescriptorPoolCreateInfo &createInfo) -> vk::DescriptorPool
-{
-    return device.createDescriptorPool(createInfo);
-}
-
-auto Device::createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo &createInfo) -> vk::DescriptorSetLayout
-{
-    return device.createDescriptorSetLayout(createInfo);
-}
-
-auto Device::createSampler(const vk::SamplerCreateInfo &createInfo) -> vk::Sampler
-{
-    return device.createSampler(createInfo);
-}
-
-auto Device::createImageView(const vk::ImageViewCreateInfo &createInfo) -> vk::ImageView
-{
-    return device.createImageView(createInfo);
-}
-
-auto Device::createSwapchain(const vk::SwapchainCreateInfoKHR &createInfo) -> vk::SwapchainKHR
-{
-    return device.createSwapchainKHR(createInfo);
-}
-
-auto Device::createFramebuffer(const vk::FramebufferCreateInfo &createInfo) -> vk::Framebuffer
-{
-    return device.createFramebuffer(createInfo);
-}
-
-auto Device::createFence(const vk::FenceCreateInfo &createInfo) -> vk::Fence
-{
-    return device.createFence(createInfo);
-}
-
-auto Device::createPipelineLayout(const vk::PipelineLayoutCreateInfo &createInfo) -> vk::PipelineLayout
-{
-    return device.createPipelineLayout(createInfo);
-}
-
-auto Device::createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo &createInfo, vk::PipelineCache cache)
-    -> vk::Pipeline
-{
-    return device.createGraphicsPipeline(cache, createInfo);
-}
-
-auto Device::createPipelineCache(const vk::PipelineCacheCreateInfo &createInfo) -> vk::PipelineCache
-{
-    return device.createPipelineCache(createInfo);
-}
-
-auto Device::createRenderPass(const vk::RenderPassCreateInfo &createInfo) -> vk::RenderPass
-{
-    return device.createRenderPass(createInfo);
-}
-
-auto Device::createSemaphore() -> vk::Semaphore
-{
-    return device.createSemaphore({});
-}
-
-void Device::destroyCommandBuffers(vk::CommandPool pool, std::vector<vk::CommandBuffer> &commandBuffers)
-{
-    device.freeCommandBuffers(pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
-}
-
-void Device::destroyCommandBuffer(vk::CommandPool pool, vk::CommandBuffer commandBuffer)
-{
-    device.freeCommandBuffers(pool, 1, &commandBuffer);
-}
-
-auto Device::allocateDescriptorSets(const vk::DescriptorSetAllocateInfo &allocInfo) -> std::vector<vk::DescriptorSet>
-{
-    return device.allocateDescriptorSets(allocInfo);
-}
-
-void Device::updateDescriptorSets(std::vector<vk::WriteDescriptorSet> &descriptorWrites)
+void Device::update(std::vector<vk::WriteDescriptorSet> &descriptorWrites)
 {
     device.updateDescriptorSets(descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
@@ -177,6 +86,96 @@ void Device::updateDescriptorSets(std::vector<vk::WriteDescriptorSet> &descripto
 auto Device::getSwapchainImages(const vk::SwapchainKHR &swapChain) -> std::vector<vk::Image>
 {
     return device.getSwapchainImagesKHR(swapChain);
+}
+
+auto Device::create(const vk::CommandBufferAllocateInfo &allocInfo) -> std::vector<vk::CommandBuffer>
+{
+    return device.allocateCommandBuffers(allocInfo);
+}
+
+auto Device::create(const vk::DescriptorSetAllocateInfo &allocInfo) -> std::vector<vk::DescriptorSet>
+{
+    return device.allocateDescriptorSets(allocInfo);
+}
+
+auto Device::create(const vk::CommandPoolCreateInfo &createInfo) -> vk::CommandPool
+{
+    return device.createCommandPool(createInfo);
+}
+
+auto Device::create(const vk::ShaderModuleCreateInfo &createInfo) -> vk::ShaderModule
+{
+    return device.createShaderModule(createInfo, nullptr);
+}
+
+auto Device::create(const vk::DescriptorPoolCreateInfo &createInfo) -> vk::DescriptorPool
+{
+    return device.createDescriptorPool(createInfo);
+}
+
+auto Device::create(const vk::DescriptorSetLayoutCreateInfo &createInfo) -> vk::DescriptorSetLayout
+{
+    return device.createDescriptorSetLayout(createInfo);
+}
+
+auto Device::create(const vk::SamplerCreateInfo &createInfo) -> vk::Sampler
+{
+    return device.createSampler(createInfo);
+}
+
+auto Device::create(const vk::ImageViewCreateInfo &createInfo) -> vk::ImageView
+{
+    return device.createImageView(createInfo);
+}
+
+auto Device::create(const vk::SwapchainCreateInfoKHR &createInfo) -> vk::SwapchainKHR
+{
+    return device.createSwapchainKHR(createInfo);
+}
+
+auto Device::create(const vk::FramebufferCreateInfo &createInfo) -> vk::Framebuffer
+{
+    return device.createFramebuffer(createInfo);
+}
+
+auto Device::create(const vk::FenceCreateInfo &createInfo) -> vk::Fence
+{
+    return device.createFence(createInfo);
+}
+
+auto Device::create(const vk::PipelineLayoutCreateInfo &createInfo) -> vk::PipelineLayout
+{
+    return device.createPipelineLayout(createInfo);
+}
+
+auto Device::create(const vk::GraphicsPipelineCreateInfo &createInfo, vk::PipelineCache cache) -> vk::Pipeline
+{
+    return device.createGraphicsPipeline(cache, createInfo);
+}
+
+auto Device::create(const vk::PipelineCacheCreateInfo &createInfo) -> vk::PipelineCache
+{
+    return device.createPipelineCache(createInfo);
+}
+
+auto Device::create(const vk::RenderPassCreateInfo &createInfo) -> vk::RenderPass
+{
+    return device.createRenderPass(createInfo);
+}
+
+auto Device::create(const vk::SemaphoreCreateInfo &createInfo) -> vk::Semaphore
+{
+    return device.createSemaphore(createInfo);
+}
+
+void Device::destroy(vk::CommandPool pool, std::vector<vk::CommandBuffer> &commandBuffers)
+{
+    device.freeCommandBuffers(pool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+}
+
+void Device::destroy(vk::CommandPool pool, vk::CommandBuffer commandBuffer)
+{
+    device.freeCommandBuffers(pool, 1, &commandBuffer);
 }
 
 } // namespace tat

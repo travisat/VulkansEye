@@ -14,7 +14,7 @@ void Framebuffer::create()
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    framebuffer = engine.device.createFramebuffer(framebufferInfo);
+    framebuffer = engine.device.create(framebufferInfo);
 }
 
 void Framebuffer::destroy()

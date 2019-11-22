@@ -68,7 +68,7 @@ void Engine::destroy()
 
     if (!commandBuffers.empty())
     {
-        device.destroyCommandBuffers(commandPool, commandBuffers);
+        device.destroy(commandPool, commandBuffers);
     }
     if (commandPool)
     {
@@ -194,7 +194,7 @@ void Engine::createCommandBuffers()
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-    commandBuffers = device.allocateCommandBuffers(allocInfo);
+    commandBuffers = device.create(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
@@ -228,14 +228,14 @@ void Engine::drawFrame(float deltaTime)
         createCommandBuffers();
     }
 
-    auto result = device.waitForFences(waitFences[currentImage].fence);
+    auto result = device.wait(waitFences[currentImage].fence);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to wait for fences. Error code {}", result);
         throw std::runtime_error("Unable to wait for fences");
         return;
     }
-    result = device.resetFences(waitFences[currentImage].fence);
+    result = device.reset(waitFences[currentImage].fence);
     if (result != vk::Result::eSuccess)
     {
         spdlog::error("Unable to reset fences. Error code {}", result);
@@ -312,7 +312,7 @@ void Engine::updateWindow()
 
     // Steps to update
     // 1: free commandBuffers
-    device.destroyCommandBuffers(commandPool, commandBuffers);
+    device.destroy(commandPool, commandBuffers);
     // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
@@ -350,7 +350,7 @@ void Engine::resizeWindow()
 
     // Steps to resize
     // 1: free commandBuffers
-    device.destroyCommandBuffers(commandPool, commandBuffers);
+    device.destroy(commandPool, commandBuffers);
     // 2: destroy color framebuffers
     for (auto &frameBuffer : colorFramebuffers)
     {
@@ -491,7 +491,7 @@ void Engine::createCommandPool()
     vk::CommandPoolCreateInfo poolInfo = {};
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
-    commandPool = device.createCommandPool(poolInfo);
+    commandPool = device.create(poolInfo);
     spdlog::info("Created Command Pool");
 }
 
@@ -502,7 +502,7 @@ auto Engine::beginSingleTimeCommands() -> vk::CommandBuffer
     allocInfo.commandPool = commandPool;
     allocInfo.commandBufferCount = 1;
 
-    auto commandBuffer = device.allocateCommandBuffers(allocInfo);
+    auto commandBuffer = device.create(allocInfo);
 
     vk::CommandBufferBeginInfo beginInfo = {};
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
@@ -522,7 +522,7 @@ void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
 
     device.graphicsQueue.submit(submitInfo, nullptr);
     device.graphicsQueue.waitIdle();
-    device.destroyCommandBuffer(commandPool, commandBuffer);
+    device.destroy(commandPool, commandBuffer);
 };
 
 auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
@@ -551,7 +551,7 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
     createInfo.codeSize = buffer.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
-    return device.createShaderModule(createInfo);
+    return device.create(createInfo);
 }
 
 auto Engine::findDepthFormat() -> vk::Format

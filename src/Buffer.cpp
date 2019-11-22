@@ -32,24 +32,28 @@ void Buffer::create(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    allocId = engine.allocator.createBuffer(bufferInfo, allocInfo, buffer, &info);
+    allocation = engine.allocator.create(bufferInfo, allocInfo, &info);
+    buffer = std::get<vk::Buffer>(allocation->handle);
     mapped = info.pMappedData;
 
     if constexpr (Debug::enableValidationLayers)
     {
-        spdlog::info("Created Buffer {} : {}", allocId, name);
+        spdlog::info("Created Buffer {} : {}", allocation->descriptor, name);
     }
 }
 
 void Buffer::destroy()
 {
-    auto &engine = State::instance().engine;
-    engine.allocator.destroyBuffer(buffer, allocId);
-    if constexpr (Debug::enableValidationLayers)
+    if (buffer)
     {
-        if (allocId >= 0)
+        auto &engine = State::instance().engine;
+        engine.allocator.destroy(allocation);
+        if constexpr (Debug::enableValidationLayers)
         {
-            spdlog::info("Destroyed Buffer {} : {}", allocId, name);
+            if (allocation->descriptor >= 0)
+            {
+                spdlog::info("Destroyed Buffer {} : {}", allocation->descriptor, name);
+            }
         }
     }
 }
@@ -61,10 +65,9 @@ void Buffer::update(void *t, size_t s)
     {
         create(s);
     }
-    void *data = nullptr;
-    engine.allocator.mapMemory(allocId, &data);
-    memcpy(data, t, s);
-    engine.allocator.unmapMemory(allocId);
+    
+    memcpy(engine.allocator.map(allocation), t, s);
+    engine.allocator.unmap(allocation);
 }
 
 void Buffer::copyTo(Buffer &destination)
@@ -88,7 +91,7 @@ void Buffer::copyTo(Buffer &destination)
 void Buffer::flush(size_t size, vk::DeviceSize offset)
 {
     auto &engine = State::instance().engine;
-    engine.allocator.flush(allocId, offset, size);
+    engine.allocator.flush(allocation, offset, size);
 };
 
 } // namespace tat

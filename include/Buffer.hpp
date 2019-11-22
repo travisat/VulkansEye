@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Vertex.hpp"
+#include "engine/Allocator.hpp"
 namespace tat
 {
 
@@ -22,6 +23,7 @@ class Buffer
     ~Buffer();
 
     // don't use uniquebuffer, vma is used
+
     vk::Buffer buffer = nullptr;
     void *mapped = nullptr;
 
@@ -45,8 +47,7 @@ class Buffer
     void flush(size_t size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
 
   private:
-    //default to -1 which can't exist
-    int32_t allocId = -1;
+    Allocation *allocation = nullptr;
     vk::DeviceSize size = 0;
 };
 

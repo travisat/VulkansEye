@@ -9,7 +9,7 @@ Fence::Fence()
     auto &device = State::instance().engine.device;
     vk::FenceCreateInfo fenceInfo {};
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-    fence = device.createFence(fenceInfo);
+    fence = device.create(fenceInfo);
 }
 
 Fence::~Fence()

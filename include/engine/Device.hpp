@@ -19,37 +19,36 @@ class Device
 
     void waitIdle();
 
-    auto waitForFences(vk::Fence &fence) -> vk::Result;
-    auto resetFences(vk::Fence &fence) -> vk::Result;
+    auto wait(vk::Fence &fence) -> vk::Result;
+    auto reset(vk::Fence &fence) -> vk::Result;
     auto acquireNextImage(vk::SwapchainKHR &swapChain, vk::Semaphore &semaphore, uint32_t &currentBuffer) -> vk::Result;
 
-    auto allocateCommandBuffers(const vk::CommandBufferAllocateInfo &allocInfo) -> std::vector<vk::CommandBuffer>;
-    auto allocateDescriptorSets(const vk::DescriptorSetAllocateInfo &allocInfo) -> std::vector<vk::DescriptorSet>;
-    void updateDescriptorSets(std::vector<vk::WriteDescriptorSet> &descriptorWrites);
+    void update(std::vector<vk::WriteDescriptorSet> &descriptorWrites);
     auto getSwapchainImages(const vk::SwapchainKHR &swapChain) -> std::vector<vk::Image>;
 
-    auto createCommandPool(const vk::CommandPoolCreateInfo &createInfo) -> vk::CommandPool;
-    auto createShaderModule(const vk::ShaderModuleCreateInfo &createInfo) -> vk::ShaderModule;
-    auto createDescriptorPool(const vk::DescriptorPoolCreateInfo &createInfo) -> vk::DescriptorPool;
-    auto createDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo &createInfo) -> vk::DescriptorSetLayout;
-    auto createSampler(const vk::SamplerCreateInfo &createInfo) -> vk::Sampler;
-    auto createImageView(const vk::ImageViewCreateInfo &createInfo) -> vk::ImageView;
-    auto createSwapchain(const vk::SwapchainCreateInfoKHR &createInfo) -> vk::SwapchainKHR;
-    auto createFramebuffer(const vk::FramebufferCreateInfo &createInfo) -> vk::Framebuffer;
-    auto createFence(const vk::FenceCreateInfo &createInfo) -> vk::Fence;
-    auto createPipelineLayout(const vk::PipelineLayoutCreateInfo &createInfo) -> vk::PipelineLayout;
-    auto createGraphicsPipeline(const vk::GraphicsPipelineCreateInfo &createInfo, vk::PipelineCache cache = nullptr) -> vk::Pipeline;
-    auto createPipelineCache(const vk::PipelineCacheCreateInfo &createInfo) -> vk::PipelineCache;
-    auto createRenderPass(const vk::RenderPassCreateInfo &createInfo) -> vk::RenderPass;
-    auto createSemaphore() -> vk::Semaphore;
+    auto create(const vk::CommandBufferAllocateInfo &allocInfo) -> std::vector<vk::CommandBuffer>;
+    auto create(const vk::DescriptorSetAllocateInfo &allocInfo) -> std::vector<vk::DescriptorSet>;
+    auto create(const vk::CommandPoolCreateInfo &createInfo) -> vk::CommandPool;
+    auto create(const vk::ShaderModuleCreateInfo &createInfo) -> vk::ShaderModule;
+    auto create(const vk::DescriptorPoolCreateInfo &createInfo) -> vk::DescriptorPool;
+    auto create(const vk::DescriptorSetLayoutCreateInfo &createInfo) -> vk::DescriptorSetLayout;
+    auto create(const vk::SamplerCreateInfo &createInfo) -> vk::Sampler;
+    auto create(const vk::ImageViewCreateInfo &createInfo) -> vk::ImageView;
+    auto create(const vk::SwapchainCreateInfoKHR &createInfo) -> vk::SwapchainKHR;
+    auto create(const vk::FramebufferCreateInfo &createInfo) -> vk::Framebuffer;
+    auto create(const vk::FenceCreateInfo &createInfo) -> vk::Fence;
+    auto create(const vk::PipelineLayoutCreateInfo &createInfo) -> vk::PipelineLayout;
+    auto create(const vk::GraphicsPipelineCreateInfo &createInfo, vk::PipelineCache cache = nullptr) -> vk::Pipeline;
+    auto create(const vk::PipelineCacheCreateInfo &createInfo) -> vk::PipelineCache;
+    auto create(const vk::RenderPassCreateInfo &createInfo) -> vk::RenderPass;
+    auto create(const vk::SemaphoreCreateInfo &createInfo) -> vk::Semaphore;
 
-    void destroyCommandBuffers(vk::CommandPool pool, std::vector<vk::CommandBuffer> &commandBuffers);
-    void destroyCommandBuffer(vk::CommandPool pool, vk::CommandBuffer commandBuffer);
-    
-    template <typename T>
-    void destroy(T t)
+    void destroy(vk::CommandPool pool, std::vector<vk::CommandBuffer> &commandBuffers);
+    void destroy(vk::CommandPool pool, vk::CommandBuffer commandBuffer);
+
+    template <typename T> void destroy(T t)
     {
-      device.destroy(t);
+        device.destroy(t);
     };
 
     vk::Device device = nullptr;

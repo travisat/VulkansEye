@@ -8,11 +8,11 @@ namespace tat
 void Pipeline::create()
 {
     auto &engine = State::instance().engine;
-    pipelineLayout = engine.device.createPipelineLayout(pipelineLayoutInfo);
+    pipelineLayout = engine.device.create(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
     pipelineInfo.pStages = shaderStages.data();
-    pipeline = engine.device.createGraphicsPipeline(pipelineInfo, engine.pipelineCache.pipelineCache);
+    pipeline = engine.device.create(pipelineInfo, engine.pipelineCache.pipelineCache);
 }
 
 void Pipeline::destroy()

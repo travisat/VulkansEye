@@ -42,7 +42,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
-    colorSets = engine.device.allocateDescriptorSets(allocInfo);
+    colorSets = engine.device.create(allocInfo);
     for (auto &descriptorSet : colorSets)
     {
         Debug::setName(engine.device.device, descriptorSet, name + " Color Set");
@@ -194,7 +194,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
         descriptorWrites[10].descriptorCount = 1;
         descriptorWrites[10].pImageInfo = &brdfInfo;
 
-        engine.device.updateDescriptorSets(descriptorWrites);
+        engine.device.update(descriptorWrites);
     }
 }
 
@@ -207,7 +207,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
-    shadowSets = engine.device.allocateDescriptorSets(allocInfo);
+    shadowSets = engine.device.create(allocInfo);
     for (auto &descriptorSet : shadowSets)
     {
         Debug::setName(engine.device.device, descriptorSet, name + " Shadow Set");
@@ -229,7 +229,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pBufferInfo = &shadowInfo;
 
-        engine.device.updateDescriptorSets(descriptorWrites);
+        engine.device.update(descriptorWrites);
     }
 }
 

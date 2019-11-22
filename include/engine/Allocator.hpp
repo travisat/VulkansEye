@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <variant>
 
 #ifdef WIN32
 #define NOMINMAX
@@ -13,6 +14,14 @@
 
 namespace tat
 {
+
+struct Allocation
+{
+    int32_t descriptor = -1;
+    std::variant<vk::Image, vk::Buffer> handle;
+    VmaAllocation allocation{};
+};
+
 class Allocator
 {
   public:
@@ -20,23 +29,24 @@ class Allocator
     // destroys allocations, will free all memory held by allocations
     // even if buffer or image has not been destroyed
     void destroy();
-    // creates image using vma and returns id of allocation
-    auto createImage(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo, vk::Image &image, VmaAllocationInfo *allocInfo = nullptr) -> int32_t;
-    void destroyImage(vk::Image &image, int32_t allocationId);
+    // creates image using vma and returns descriptor and pointer of allocation
+    auto create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo,
+                VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
 
     // same for buffer
-    auto createBuffer(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo, vk::Buffer &buffer, VmaAllocationInfo *allocInfo = nullptr)
-        -> int32_t;
-    void destroyBuffer(vk::Buffer &buffer, int32_t allocationId);
+    auto create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo,
+                VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
 
-    void mapMemory(int32_t allocId, void **data);
-    void unmapMemory(int32_t allocId);
-    void flush(int32_t allocId, size_t offset, size_t size);
+    void destroy(Allocation *allocation);
+
+    auto map(Allocation *allocation) -> void *;
+    void unmap(Allocation *allocation);
+    void flush(Allocation *allocation, size_t offset, size_t size);
 
   private:
     VmaAllocator allocator{};
-    int32_t allocAccumulator = 1;
-    std::map<int32_t, VmaAllocation> allocations;
+    int32_t accumulator = 1;
+    std::map<int32_t, Allocation> allocations{};
 };
 
 } // namespace tat

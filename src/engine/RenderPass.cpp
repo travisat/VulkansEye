@@ -6,14 +6,18 @@ namespace tat
 
 void RenderPass::create()
 {
-    auto &engine = State::instance().engine;
-    renderPass = engine.device.createRenderPass(renderPassInfo);
+    auto &device = State::instance().engine.device;
+    renderPass = device.create(renderPassInfo);
 }
 
 void RenderPass::destroy()
 {
-    auto &engine = State::instance().engine;
-    engine.device.destroy(renderPass);
+    if (renderPass)
+    {
+        auto &device = State::instance().engine.device;
+        device.destroy(renderPass);
+        renderPass = nullptr;
+    }
 }
 
 void RenderPass::loadColor()

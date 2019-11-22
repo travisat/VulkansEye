@@ -20,7 +20,7 @@ class RenderPass
     void loadColor();
     void loadShadow();
 
-    vk::RenderPass renderPass;
+    vk::RenderPass renderPass = nullptr;
 
     vk::RenderPassCreateInfo renderPassInfo{};
     vk::SubpassDescription subpass{};

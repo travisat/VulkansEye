@@ -55,7 +55,7 @@ void SwapChain::create()
 
     createInfo.oldSwapchain = nullptr;
 
-    swapChain = engine.device.createSwapchain(createInfo);
+    swapChain = engine.device.create(createInfo);
     images = engine.device.getSwapchainImages(swapChain);
     count = images.size();
     imageViews.resize(count);
@@ -72,7 +72,7 @@ void SwapChain::create()
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        imageViews[i] = engine.device.createImageView(viewInfo);
+        imageViews[i] = engine.device.create(viewInfo);
     }
     spdlog::info("Created SwapChain");
 }

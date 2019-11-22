@@ -7,7 +7,8 @@ namespace tat
 Semaphore::Semaphore()
 {
     auto &device = State::instance().engine.device;
-    semaphore = device.createSemaphore();
+    vk::SemaphoreCreateInfo createInfo {};
+    semaphore = device.create(createInfo);
 }
 
 Semaphore::~Semaphore()

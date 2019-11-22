@@ -8,7 +8,7 @@ void PipelineCache::create()
 {
     auto &device = State::instance().engine.device;
     vk::PipelineCacheCreateInfo createInfo{};
-    pipelineCache = device.createPipelineCache(createInfo);
+    pipelineCache = device.create(createInfo);
 }
 
 void PipelineCache::destroy()

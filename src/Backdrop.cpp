@@ -149,7 +149,7 @@ void Backdrop::createDescriptorPool()
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = engine.device.createDescriptorPool(poolInfo);
+    descriptorPool = engine.device.create(poolInfo);
     Debug::setName(engine.device.device, descriptorPool, name + " Pool");
 }
 
@@ -176,7 +176,7 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = engine.device.create(layoutInfo);
     Debug::setName(engine.device.device, descriptorSetLayout, name + " Layout");
 }
 
@@ -189,7 +189,7 @@ void Backdrop::createDescriptorSets()
     allocInfo.descriptorSetCount = engine.swapChain.count;
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
+    descriptorSets = engine.device.create(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
         Debug::setName(engine.device.device, descriptorSet, name + " Descriptor Set");
@@ -222,7 +222,7 @@ void Backdrop::createDescriptorSets()
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        engine.device.updateDescriptorSets(descriptorWrites);
+        engine.device.update(descriptorWrites);
     }
 };
 

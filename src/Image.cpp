@@ -60,13 +60,18 @@ void Image::create()
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     currentLayout = vk::ImageLayout::eUndefined;
 
-    allocId = engine.allocator.createImage(imageInfo, allocInfo, image);
+    allocation = engine.allocator.create(imageInfo, allocInfo);
+    image = std::get<vk::Image>(allocation->handle);
 }
 
 void Image::destroy()
 {
     auto &engine = State::instance().engine;
-    engine.allocator.destroyImage(image, allocId);
+    if (allocation != nullptr)
+    {
+        image = nullptr;
+        engine.allocator.destroy(allocation);
+    }
     if (sampler)
     {
         engine.device.destroy(sampler);
@@ -128,7 +133,7 @@ void Image::load(const std::string &path)
     imageViewInfo.format = imageInfo.format;
     imageViewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
     imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
-    imageView = engine.device.createImageView(imageViewInfo);
+    imageView = engine.device.create(imageViewInfo);
 
     vk::CommandBuffer commandBuffer = engine.beginSingleTimeCommands();
     std::vector<vk::BufferImageCopy> bufferCopyRegions;
@@ -172,13 +177,13 @@ void Image::load(const std::string &path)
 
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    spdlog::info("Loaded Image  {} : {}", allocId, this->path);
+    spdlog::info("Loaded Image  {} : {}", allocation->descriptor, this->path);
 }
 
 void Image::createSampler()
 {
     auto &engine = State::instance().engine;
-    sampler = engine.device.createSampler(samplerInfo);
+    sampler = engine.device.create(samplerInfo);
 }
 
 void Image::resize(int width, int height)
@@ -201,7 +206,7 @@ void Image::resize(int width, int height)
         imageViewInfo.format = imageInfo.format;
         imageViewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
         imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
-        imageView = engine.device.createImageView(imageViewInfo);
+        imageView = engine.device.create(imageViewInfo);
     }
 }
 

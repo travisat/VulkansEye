@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Buffer.hpp"
+#include "engine/Allocator.hpp"
 
 namespace tat
 {
@@ -17,7 +18,6 @@ namespace tat
 class Image
 {
   public:
-    // don't use uniqueimage, vma is used for memory for it
     vk::Image image;
     vk::ImageView imageView;
     vk::Sampler sampler;
@@ -51,7 +51,7 @@ class Image
     void transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
   private:
-    int32_t allocId{};
+    Allocation *allocation = nullptr;
     std::string path;
 
     void createImageView();

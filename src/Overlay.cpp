@@ -149,7 +149,7 @@ void Overlay::createDescriptorPool()
     // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
-    descriptorPool = engine.device.createDescriptorPool(poolInfo);
+    descriptorPool = engine.device.create(poolInfo);
     Debug::setName(engine.device.device, descriptorPool, "Overlay Pool");
 }
 
@@ -168,7 +168,7 @@ void Overlay::createDescriptorLayouts()
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    descriptorSetLayout = engine.device.createDescriptorSetLayout(layoutInfo);
+    descriptorSetLayout = engine.device.create(layoutInfo);
     Debug::setName(engine.device.device, descriptorSetLayout, "Overlay Layout");
 }
 
@@ -181,7 +181,7 @@ void Overlay::createDescriptorSets()
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
-    descriptorSets = engine.device.allocateDescriptorSets(allocInfo);
+    descriptorSets = engine.device.create(allocInfo);
     for (auto &descriptorSet : descriptorSets)
     {
         Debug::setName(engine.device.device, descriptorSet, "Overlay Descriptor Set");
@@ -202,7 +202,7 @@ void Overlay::createDescriptorSets()
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &samplerInfo;
 
-        engine.device.updateDescriptorSets(descriptorWrites);
+        engine.device.update(descriptorWrites);
     }
 }
 
