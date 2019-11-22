@@ -23,6 +23,8 @@ void Backdrop::load()
     light.y = backdrop.at("light").at(1);
     light.z = backdrop.at("light").at(2);
 
+    brightness = backdrop.at("brightness");
+
     createDescriptorPool();
     createDescriptorSetLayouts();
     createPipeline();

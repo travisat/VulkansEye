@@ -185,6 +185,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 
     fragBuffer.radianceMipLevels = backdrop->radianceMap.imageInfo.mipLevels;
     fragBuffer.shadowSize = shadowSize;
+    fragBuffer.brightness = backdrop->brightness;
 
     for (auto &model : models)
     {
@@ -195,6 +196,7 @@ void Scene::update(uint32_t currentImage, float deltaTime)
         vertBuffer.projection = camera.projection();
         vertBuffer.normalMatrix = glm::transpose(glm::inverse(camera.projection() * camera.view() * model->model()));
         vertBuffer.camPos = glm::vec4(-camera.position(), 1.F);
+        vertBuffer.uvScale = model->uvScale();
 
         // create mvp for lightspace
         shadBuffer.model = model->model();

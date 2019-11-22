@@ -35,6 +35,8 @@ class Backdrop : public Entry
     Image radianceMap;
     Image irradianceMap;
 
+    float brightness = 100.F;
+
     void destroy();
     void load() override;
 

@@ -8,6 +8,7 @@ layout(binding = 0) uniform UniformVertex
     mat4 lightMVP;
     mat4 normalMatrix;
     vec4 camPos;
+    float uvScale;
 }
 vertexBuffer;
 
@@ -28,7 +29,7 @@ const mat4 biasMat = mat4(0.5, 0.0, 0.0, 0.0, //
 
 void main()
 {
-    outUV = inUV;
+    outUV = inUV * vertexBuffer.uvScale;
     outNormal = normalize(mat3(vertexBuffer.normalMatrix) * inNormal);
     camPos = vertexBuffer.camPos;
     

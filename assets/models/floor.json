@@ -1,6 +1,6 @@
 {
     "mesh": "floor",
-    "material": "planks",
+    "material": "metalplate",
     "mass": 0,
     "position": [
          0,

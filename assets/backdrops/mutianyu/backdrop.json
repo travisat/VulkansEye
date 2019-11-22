@@ -3,8 +3,9 @@
     "radiance": "radiance.dds",
     "irradiance": "irradiance.dds",
     "light": [
-        2,
-        -15,
-        2
-    ]
+        20,
+        -5,
+        20
+    ],
+    "brightness": 20
 }

@@ -29,6 +29,7 @@ void Material::load()
     loadImage(material.at("metallic"), &metallic);
     loadImage(material.at("roughness"), &roughness);
     loadImage(material.at("ao"), &ao);
+    scale = material.at("scale");
     //we are now loaded
     loaded = true;
     spdlog::info("Loaded Material {}", name);

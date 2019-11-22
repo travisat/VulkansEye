@@ -23,6 +23,8 @@ class Material : public Entry
     Image roughness;
     Image ao;
 
+    float scale = 1.F;
+
   private:
     void loadImage(const std::string &file, Image *image);
 };

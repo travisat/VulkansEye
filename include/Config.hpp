@@ -54,13 +54,15 @@ class Config
     json backdrop = {{"color", "assets/backdrops/default/color.dds"},           //
                      {"radiance", "assets/backdrops/default/radiance.dds"},     //
                      {"irradiance", "assets/backdrops/default/irradiance.dds"}, //
-                     {"light", {-10, -15, 0}}};                                //
+                     {"light", {-10, -15, 0}},
+                     {"brightness", 30}};                                //
 
     json material = {{"diffuse", "diffuse.dds"},     //
                      {"normal", "normal.dds"},       //
                      {"metallic", "metallic.dds"},   //
                      {"roughness", "roughness.dds"}, //
-                     {"ao", "ao.dds"}};              //
+                     {"ao", "ao.dds"},
+                     {"scale", 1}};              //
 
     json mesh = {{"file", "default.glb"}, //
                  {"size", {2, 2, 2}}};    //

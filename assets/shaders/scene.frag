@@ -19,6 +19,7 @@ layout(binding = 1) uniform UniformLights
     vec4 position;
     float radianceMipLevels;
     float shadowSize;
+    float brightness;
 }
 lights;
 
@@ -102,8 +103,11 @@ float shadowCalc(vec3 lightVec, vec3 normal)
     float pmax = variance / (variance + d * d);
     // remove light bleeding
     float shadow = smoothstep(0.5, 1.0, pmax);
-    // map to [0.7-1.0]
-    return shadow * 0.3 + 0.7;
+    // map to brightness
+    // brighter the harder the shadow
+    // brightness is scale 0-100
+    float bScale = lights.brightness / 100.F;
+    return shadow * bScale + (1.F - bScale);
 }
 
 vec3 iblBRDF(vec3 N, vec3 V, vec3 baseColor, float roughness, float metallic)

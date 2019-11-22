@@ -21,12 +21,14 @@ struct UniformVert
     glm::mat4 lightMVP;
     glm::mat4 normalMatrix;
     glm::vec4 camPos;
+    float uvScale;
 };
 struct UniformFrag
 {
     glm::vec4 position;
     float radianceMipLevels;
     float shadowSize;
+    float brightness;
 };
 
 struct UniformShad
@@ -59,6 +61,11 @@ class Model : public Object, public Entry
     inline auto getMesh() -> Mesh *
     {
         return mesh;
+    };
+
+    inline auto uvScale() -> float
+    {
+        return material->scale;
     };
 
   private:
