@@ -20,7 +20,6 @@ VulkansEye::VulkansEye(const std::string &configPath)
     // start timers
     Timer::getInstance();
     Timer::time();
-    Timer::systemTime();
     spdlog::info("Started Timers");
 
     // load config

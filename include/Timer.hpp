@@ -32,15 +32,9 @@ class Timer
         return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
     };
 
-    static auto systemTime() -> float
-    {
-        static auto startTime = std::chrono::system_clock::now();
-        auto currentTime = std::chrono::system_clock::now();
-        return std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-    };
-
   private:
-    Timer()= default;;
+    Timer() = default;
+    ;
 };
 
 } // namespace tat
