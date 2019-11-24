@@ -24,8 +24,8 @@ void Overlay::create()
     ImGui::CreateContext();
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
-    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.F, 0.F, 0.F, 0.6F);
-    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.F, 0.F, 0.F, 0.8F);
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(1.F, 0.3F, 0.3F, 0.6F);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.F, 0.4F, 0.4F, 0.8F);
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_Header] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_CheckMark] = ImVec4(1.F, 1.F, 1.F, 1.F);
