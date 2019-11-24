@@ -85,6 +85,11 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw)
 
+set(BUILD_IMGUI OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_DEMOS OFF CACHE BOOL "" FORCE)
+add_subdirectory(external/zep)
+
 find_package(Vulkan REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
@@ -94,7 +99,7 @@ ENDIF(CMAKE_HOST_UNIX)
 
 IF(CMAKE_HOST_WIN32)
 target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp)
+target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp Zep::Zep)
 
 IF (MSVC)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
@@ -114,6 +119,7 @@ target_include_directories(VulkansEye
         "external/spdlog/include"
         "external/json/include"
         "external/fmt/include"
+        "external/zep/include"
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

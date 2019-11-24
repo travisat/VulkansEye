@@ -1,4 +1,4 @@
-#include "Overlay.hpp"
+#include "overlay/Overlay.hpp"
 #include "Input.hpp"
 #include "State.hpp"
 #include "Timer.hpp"
@@ -15,6 +15,7 @@
 #include <memory>
 
 #include <spdlog/spdlog.h>
+#include <zep.h>
 
 namespace tat
 {

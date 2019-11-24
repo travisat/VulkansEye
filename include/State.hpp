@@ -12,9 +12,9 @@ using json = nlohmann::json;
 
 #include "engine/Engine.hpp"
 #include "engine/Window.hpp"
+#include "overlay/Overlay.hpp"
 #include "Camera.hpp"
 #include "Player.hpp"
-#include "Overlay.hpp"
 #include "Scene.hpp"
 #include "Collection.hpp"
 
