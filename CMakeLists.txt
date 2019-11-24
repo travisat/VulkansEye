@@ -10,6 +10,42 @@ include(CTest)
 enable_testing()
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+set(SOURCES
+${CMAKE_SOURCE_DIR}/src/main.cpp
+${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
+${CMAKE_SOURCE_DIR}/src/Config.cpp
+${CMAKE_SOURCE_DIR}/src/Buffer.cpp
+${CMAKE_SOURCE_DIR}/src/Image.cpp
+${CMAKE_SOURCE_DIR}/src/Camera.cpp
+${CMAKE_SOURCE_DIR}/src/Material.cpp
+${CMAKE_SOURCE_DIR}/src/Mesh.cpp
+${CMAKE_SOURCE_DIR}/src/Object.cpp
+${CMAKE_SOURCE_DIR}/src/Model.cpp
+${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
+${CMAKE_SOURCE_DIR}/src/Player.cpp
+${CMAKE_SOURCE_DIR}/src/Scene.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Window.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Engine.cpp
+${CMAKE_SOURCE_DIR}/src/engine/PhysicalDevice.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Device.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
+${CMAKE_SOURCE_DIR}/src/engine/PipelineCache.cpp
+${CMAKE_SOURCE_DIR}/src/engine/SwapChain.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
+${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Allocator.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Debug.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Semaphore.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Fence.cpp
+${CMAKE_SOURCE_DIR}/src/overlay/Overlay.cpp
+${CMAKE_SOURCE_DIR}/src/overlay/Zep.cpp
+${CMAKE_SOURCE_DIR}/src/overlay/Editor.cpp
+${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 
+${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+${CMAKE_SOURCE_DIR}/external/imgui/imgui_demo.cpp
+)
+
 set(SHADERS 
 ${CMAKE_SOURCE_DIR}/assets/shaders/shadow.vert
 ${CMAKE_SOURCE_DIR}/assets/shaders/shadow.frag
@@ -40,40 +76,6 @@ foreach(SHADER ${SHADERS})
     )
 endforeach()
 
-set(SOURCES
-${CMAKE_SOURCE_DIR}/src/main.cpp
-${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
-${CMAKE_SOURCE_DIR}/src/Config.cpp
-${CMAKE_SOURCE_DIR}/src/Buffer.cpp
-${CMAKE_SOURCE_DIR}/src/Image.cpp
-${CMAKE_SOURCE_DIR}/src/Camera.cpp
-${CMAKE_SOURCE_DIR}/src/Material.cpp
-${CMAKE_SOURCE_DIR}/src/Mesh.cpp
-${CMAKE_SOURCE_DIR}/src/Object.cpp
-${CMAKE_SOURCE_DIR}/src/Model.cpp
-${CMAKE_SOURCE_DIR}/src/Backdrop.cpp
-${CMAKE_SOURCE_DIR}/src/Player.cpp
-${CMAKE_SOURCE_DIR}/src/Scene.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Window.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Engine.cpp
-${CMAKE_SOURCE_DIR}/src/engine/PhysicalDevice.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Device.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
-${CMAKE_SOURCE_DIR}/src/engine/PipelineCache.cpp
-${CMAKE_SOURCE_DIR}/src/engine/SwapChain.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
-${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Allocator.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Debug.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Semaphore.cpp
-${CMAKE_SOURCE_DIR}/src/engine/Fence.cpp
-${CMAKE_SOURCE_DIR}/src/overlay/Overlay.cpp
-${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 
-${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
-${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
-${CMAKE_SOURCE_DIR}/external/imgui/imgui_demo.cpp
-)
-
 add_executable(VulkansEye
 ${SOURCES}
 ${SHADERS}
@@ -85,11 +87,6 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw)
 
-set(BUILD_IMGUI OFF CACHE BOOL "" FORCE)
-set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(BUILD_DEMOS OFF CACHE BOOL "" FORCE)
-add_subdirectory(external/zep)
-
 find_package(Vulkan REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
@@ -99,7 +96,7 @@ ENDIF(CMAKE_HOST_UNIX)
 
 IF(CMAKE_HOST_WIN32)
 target_compile_definitions(VulkansEye PRIVATE VK_USE_PLATFORM_WIN64_KHR _CRT_SECURE_NO_WARNINGS)
-target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp Zep::Zep)
+target_link_libraries(VulkansEye PRIVATE glfw Vulkan::Vulkan assimp::assimp)
 
 IF (MSVC)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
@@ -109,10 +106,7 @@ ENDIF(CMAKE_HOST_WIN32)
 target_include_directories(VulkansEye 
     PUBLIC
         "external/glfw/Include"
-        "external/GSL/Include"
         "external/glm"
-        "external/tinygltf"
-        "external/tinyobjloader"
         "external/vma/src"
         "external/gli"
         "external/imgui"

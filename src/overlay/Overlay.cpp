@@ -15,7 +15,6 @@
 #include <memory>
 
 #include <spdlog/spdlog.h>
-#include <zep.h>
 
 namespace tat
 {
@@ -279,40 +278,50 @@ void Overlay::createPipeline()
 void Overlay::newFrame()
 {
     ImGui::NewFrame();
-    float frameTime = Timer::time();
-    float deltaTime = frameTime - lastFrameTime;
-    lastFrameTime = frameTime;
-    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
-    {
-        lastUpdateTime = frameTime;
-        uiSettings.fps = 1.F / deltaTime;
-        uiSettings.position = State::instance().player.position();
-        uiSettings.rotation = State::instance().camera.rotation();
 
-        switch (Input::getMode())
-        {
-        case InputMode::Normal:
-            uiSettings.modeNum = 0;
-            break;
-        case InputMode::Visual:
-            uiSettings.modeNum = 1;
-            break;
-        case InputMode::Insert:
-            uiSettings.modeNum = 2;
-            break;
-        }
-    }
-    ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-    ImGui::Begin("Temp");
-    ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
-    ImGui::InputFloat("Fps", &uiSettings.fps);
-    ImGui::InputFloat3("Position", &uiSettings.position.x);
-    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
-
-    ImGui::End();
+    showInfo(uiSettings.showInfo);
+    editor.showZep(uiSettings.showEditor);
 
     ImGui::Render();
+}
+
+void Overlay::showInfo(bool &open)
+{
+    if (open)
+    {
+        float frameTime = Timer::time();
+        float deltaTime = frameTime - lastFrameTime;
+        lastFrameTime = frameTime;
+        if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
+        {
+            lastUpdateTime = frameTime;
+            uiSettings.fps = 1.F / deltaTime;
+            uiSettings.position = State::instance().player.position();
+            uiSettings.rotation = State::instance().camera.rotation();
+
+            switch (Input::getMode())
+            {
+            case InputMode::Normal:
+                uiSettings.modeNum = 0;
+                break;
+            case InputMode::Visual:
+                uiSettings.modeNum = 1;
+                break;
+            case InputMode::Insert:
+                uiSettings.modeNum = 2;
+                break;
+            }
+        }
+        ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Temp");
+        ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
+        ImGui::InputFloat("Fps", &uiSettings.fps);
+        ImGui::InputFloat3("Position", &uiSettings.position.x);
+        ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
+
+        ImGui::End();
+    }
 }
 
 void Overlay::updateBuffers()

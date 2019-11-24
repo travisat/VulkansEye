@@ -13,6 +13,7 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "engine/Pipeline.hpp"
+#include "overlay/Editor.hpp"
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -29,6 +30,9 @@ struct UISettings
     float velocity = 0.F;
     float fps = 0.F;
     int32_t modeNum = 0;
+
+    bool showEditor = true;
+    bool showInfo = false;
 };
 
 constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
@@ -70,6 +74,8 @@ class Overlay
 
     Image fontImage{};
 
+    Editor editor {};
+
     Pipeline pipeline{};
     vk::DescriptorPool descriptorPool = nullptr;
     vk::DescriptorSetLayout descriptorSetLayout = nullptr;
@@ -80,6 +86,8 @@ class Overlay
     float lastFrameTime = 0;
     float lastUpdateTime = 0;
     float updateFreqTime = 0.1F; // time between updates
+
+    void showInfo(bool &open);
 
     void createBuffers();
     void createFont();
