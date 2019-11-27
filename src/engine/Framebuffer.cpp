@@ -4,10 +4,16 @@
 namespace tat
 {
 
+Framebuffer::~Framebuffer()
+{
+    auto &device = State::instance().engine.device;
+    device.destroy(framebuffer);
+}
+
 void Framebuffer::create()
 {
-    auto& engine = State::instance().engine;
-    vk::FramebufferCreateInfo framebufferInfo = {};
+    auto &engine = State::instance().engine;
+    vk::FramebufferCreateInfo framebufferInfo{};
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
@@ -15,12 +21,6 @@ void Framebuffer::create()
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
     framebuffer = engine.device.create(framebufferInfo);
-}
-
-void Framebuffer::destroy()
-{
-    auto& engine = State::instance().engine;
-    engine.device.destroy(framebuffer);
 }
 
 } // namespace tat

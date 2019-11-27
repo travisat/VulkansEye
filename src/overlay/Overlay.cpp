@@ -66,7 +66,7 @@ void Overlay::recreate()
     auto &window = State::instance().window;
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2(window.width, window.height);
-    
+
     createDescriptorPool();
     createDescriptorSets();
     createPipeline();
@@ -82,9 +82,12 @@ void Overlay::cleanup()
 
 void Overlay::createBuffers()
 {
+    vertexBuffer.name = "Overlay Vert";
     vertexBuffer.flags = vk::BufferUsageFlagBits::eVertexBuffer;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     vertexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    indexBuffer.name = "Overlay index";
     indexBuffer.flags = vk::BufferUsageFlagBits::eIndexBuffer;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     indexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -345,19 +348,15 @@ void Overlay::updateBuffers()
         if (vertexBuffer.getSize() < vertexBufferSize)
         {
             engine.device.waitIdle();
-
-            vertexBuffer.name = "Overlay Vert";
             vertexBuffer.create(vertexBufferSize);
-            update = true;
+            engine.updateCommandBuffer = true;
         }
 
         if (indexBuffer.getSize() < indexBufferSize)
         {
             engine.device.waitIdle();
-
-            indexBuffer.name = "Overlay index";
             indexBuffer.create(indexBufferSize);
-            update = true;
+            engine.updateCommandBuffer = true;
         }
 
         // Upload data

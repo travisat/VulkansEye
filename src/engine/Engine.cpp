@@ -84,14 +84,8 @@ void Engine::destroy()
     swapChain.destroy();
     pipelineCache.destroy();
 
-    for (auto &frameBuffer : colorFramebuffers)
-    {
-        frameBuffer.destroy();
-    }
-    for (auto &frameBuffer : shadowFramebuffers)
-    {
-        frameBuffer.destroy();
-    }
+    colorFramebuffers.clear();
+    shadowFramebuffers.clear();
 
     allocator.destroy();
     device.destroy();
@@ -128,11 +122,11 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
 
     commandBuffer.setLineWidth(1.0F);
 
-    std::array<vk::ClearValue, 2> clearValues = {};
+    std::array<vk::ClearValue, 2> clearValues{};
     clearValues[0].color = std::array<float, 4>{0.F, 0.F, 0.F, 0.F};
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
-    vk::RenderPassBeginInfo sunPassInfo = {};
+    vk::RenderPassBeginInfo sunPassInfo{};
     sunPassInfo.renderPass = shadowPass.renderPass;
     sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
     sunPassInfo.renderArea.extent.width = settings.at("shadowSize");
@@ -199,8 +193,7 @@ void Engine::createCommandBuffers()
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
     {
-
-        vk::CommandBuffer commandBuffer = commandBuffers[i];
+        auto commandBuffer = commandBuffers[i];
         vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
 
@@ -222,10 +215,10 @@ void Engine::drawFrame(float deltaTime)
         return;
     }
 
-    if (state.overlay.update)
+    if (updateCommandBuffer)
     {
         updateWindow();
-        state.overlay.update = false;
+        updateCommandBuffer = false;
     }
 
     auto result = device.wait(waitFences[currentImage].fence);
@@ -261,7 +254,7 @@ void Engine::drawFrame(float deltaTime)
     state.scene.update(currentBuffer, deltaTime);
 
     const vk::PipelineStageFlags waitStages = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    vk::SubmitInfo submitInfo = {};
+    vk::SubmitInfo submitInfo{};
     submitInfo.pWaitDstStageMask = &waitStages;
     submitInfo.pWaitSemaphores = &presentSemaphores[currentImage].semaphore;
     submitInfo.waitSemaphoreCount = 1;
@@ -271,7 +264,7 @@ void Engine::drawFrame(float deltaTime)
     submitInfo.commandBufferCount = 1;
     device.graphicsQueue.submit(1, &submitInfo, waitFences[currentImage].fence);
 
-    vk::PresentInfoKHR presentInfo = {};
+    vk::PresentInfoKHR presentInfo{};
     presentInfo.pNext = nullptr;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &swapChain.swapChain;
@@ -291,11 +284,6 @@ void Engine::drawFrame(float deltaTime)
         throw std::runtime_error("Unable to present command buffer");
         return;
     }
-    if (updateCommandBuffer)
-    {
-        updateWindow();
-        updateCommandBuffer = false;
-    }
 
     currentImage = (currentImage + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -314,10 +302,7 @@ void Engine::updateWindow()
     // 1: free commandBuffers
     device.destroy(commandPool, commandBuffers);
     // 2: destroy color framebuffers
-    for (auto &frameBuffer : colorFramebuffers)
-    {
-        frameBuffer.destroy();
-    }
+    colorFramebuffers.clear();
     // 3: destroy color renderpass
     colorPass.destroy();
     // 4: destroy swapchain
@@ -325,7 +310,7 @@ void Engine::updateWindow()
 
     auto &overlay = State::instance().overlay;
     overlay.cleanup();
-    
+
     // 5: create swap chain
     swapChain.create();
     // 6: create color renderpass
@@ -359,10 +344,7 @@ void Engine::resizeWindow()
     // 1: free commandBuffers
     device.destroy(commandPool, commandBuffers);
     // 2: destroy color framebuffers
-    for (auto &frameBuffer : colorFramebuffers)
-    {
-        frameBuffer.destroy();
-    }
+    colorFramebuffers.clear();
     // 3: destroy color renderpass
     colorPass.destroy();
     // 4: destroy swapchain

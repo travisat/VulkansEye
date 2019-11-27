@@ -12,17 +12,19 @@ namespace tat
 class Framebuffer
 {
   public:
+    Framebuffer() = default;
+    ~Framebuffer();
+
+    void create();
+
     vk::RenderPass renderPass;
-    int32_t width;
-    int32_t height;
+    int32_t width = 0;
+    int32_t height = 0;
     int32_t layers = 1;
 
     vk::Framebuffer framebuffer;
     std::vector<vk::ImageView> attachments;
 
-    void create();
-    void destroy();
-    
   private:
     void createRenderPass();
 };

@@ -43,7 +43,6 @@ constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
 class Overlay
 {
   public:
-    bool update = false;
     // UI params are set via push constants
     struct PushConstBlock
     {
