@@ -14,8 +14,6 @@ set(SOURCES
 ${CMAKE_SOURCE_DIR}/src/main.cpp
 ${CMAKE_SOURCE_DIR}/src/VulkansEye.cpp
 ${CMAKE_SOURCE_DIR}/src/Config.cpp
-${CMAKE_SOURCE_DIR}/src/Buffer.cpp
-${CMAKE_SOURCE_DIR}/src/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/Camera.cpp
 ${CMAKE_SOURCE_DIR}/src/Material.cpp
 ${CMAKE_SOURCE_DIR}/src/Mesh.cpp
@@ -30,6 +28,8 @@ ${CMAKE_SOURCE_DIR}/src/engine/PhysicalDevice.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Device.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Pipeline.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/PipelineCache.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Buffer.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Image.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/SwapChain.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp

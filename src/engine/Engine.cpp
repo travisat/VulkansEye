@@ -1,3 +1,4 @@
+#include "engine/Engine.hpp"
 #include "State.hpp"
 
 #include <filesystem>
@@ -223,9 +224,8 @@ void Engine::drawFrame(float deltaTime)
 
     if (state.overlay.update)
     {
-        state.overlay.cleanup();
-        state.overlay.recreate();
-        createCommandBuffers();
+        updateWindow();
+        state.overlay.update = false;
     }
 
     auto result = device.wait(waitFences[currentImage].fence);
@@ -322,10 +322,17 @@ void Engine::updateWindow()
     colorPass.destroy();
     // 4: destroy swapchain
     swapChain.destroy();
+
+    auto &overlay = State::instance().overlay;
+    overlay.cleanup();
+    
     // 5: create swap chain
     swapChain.create();
     // 6: create color renderpass
     colorPass.create();
+
+    overlay.recreate();
+
     // 7: create color framebuffers
     createColorFramebuffers();
     // 8: create commandbuffers

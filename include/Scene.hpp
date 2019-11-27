@@ -1,11 +1,22 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+#include <string>
+
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <vulkan/vulkan.hpp>
+
+#include "engine/Image.hpp"
+#include "engine/Pipeline.hpp"
 
 #include "Backdrop.hpp"
-#include "Image.hpp"
 #include "Model.hpp"
-#include "engine/Pipeline.hpp"
 
 namespace tat
 {

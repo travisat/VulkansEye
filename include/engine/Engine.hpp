@@ -19,9 +19,7 @@
 #include "engine/RenderPass.hpp"
 #include "engine/Semaphore.hpp"
 #include "engine/SwapChain.hpp"
-
-
-#include "Image.hpp"
+#include "engine/Image.hpp"
 
 namespace tat
 {

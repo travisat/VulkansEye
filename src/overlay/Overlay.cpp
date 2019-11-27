@@ -63,6 +63,10 @@ void Overlay::destroy()
 
 void Overlay::recreate()
 {
+    auto &window = State::instance().window;
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(window.width, window.height);
+    
     createDescriptorPool();
     createDescriptorSets();
     createPipeline();
@@ -338,21 +342,24 @@ void Overlay::updateBuffers()
         // Update buffers only if vertex or index count has been changed compared to
         // current buffer size
 
-        update = (!vertexBuffer.buffer) || (vertexCount < imDrawData->TotalVtxCount) || (!indexBuffer.buffer) ||
-                 (indexCount < imDrawData->TotalIdxCount);
-
-        if (update)
+        if (vertexBuffer.getSize() < vertexBufferSize)
         {
             engine.device.waitIdle();
 
             vertexBuffer.name = "Overlay Vert";
             vertexBuffer.create(vertexBufferSize);
-            vertexCount = imDrawData->TotalVtxCount;
+            update = true;
+        }
+
+        if (indexBuffer.getSize() < indexBufferSize)
+        {
+            engine.device.waitIdle();
 
             indexBuffer.name = "Overlay index";
             indexBuffer.create(indexBufferSize);
-            indexCount = imDrawData->TotalIdxCount;
+            update = true;
         }
+
         // Upload data
         auto *vtxDst = reinterpret_cast<ImDrawVert *>(vertexBuffer.mapped);
         auto *idxDst = reinterpret_cast<ImDrawVert *>(indexBuffer.mapped);

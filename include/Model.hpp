@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <memory>
 
-#include "Buffer.hpp"
+#include "engine/Buffer.hpp"
+#include "engine/Image.hpp"
+
 #include "Collection.hpp"
-#include "Image.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
 #include "Object.hpp"

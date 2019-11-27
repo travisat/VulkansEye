@@ -79,7 +79,7 @@ void VulkansEye::run()
 {
     auto &state = State::instance();
     spdlog::info("Begin Main Loop");
-    float lastFrameTime = 0.0F;
+    float lastFrameTime = 0.F;
     while (state.window.shouldClose() == 0)
     {
         float now = Timer::time();

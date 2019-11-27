@@ -10,8 +10,8 @@
 #include <imgui.h>
 #include <string_view>
 
-#include "Buffer.hpp"
-#include "Image.hpp"
+#include "engine/Buffer.hpp"
+#include "engine/Image.hpp"
 #include "engine/Pipeline.hpp"
 #include "overlay/Editor.hpp"
 
@@ -69,8 +69,6 @@ class Overlay
     // Vulkan resources for rendering the UI
     Buffer vertexBuffer{};
     Buffer indexBuffer{};
-    int32_t vertexCount = 0;
-    int32_t indexCount = 0;
 
     Image fontImage{};
 
