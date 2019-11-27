@@ -4,7 +4,6 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 
-
 namespace tat
 {
 
@@ -34,7 +33,7 @@ void Window::resize()
     height = 0;
     while (width == 0 || height == 0)
     {
-        std::tie(width, height) = getFrameBufferSize();
+        glfwGetFramebufferSize(window, &width, &height);
         wait();
     }
 
@@ -83,14 +82,6 @@ auto Window::createSurface(vk::Instance &instance) -> vk::SurfaceKHR
         throw std::runtime_error("Unable to create surface");
     }
     return surface;
-}
-
-auto Window::getFrameBufferSize() -> std::pair<int, int>
-{
-    int width;
-    int height;
-    glfwGetFramebufferSize(window, &width, &height);
-    return std::make_pair(width, height);
 }
 
 } // namespace tat

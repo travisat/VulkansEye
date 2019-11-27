@@ -36,7 +36,6 @@ class Window
     void setClose(int value);
 
     auto createSurface(vk::Instance &instance) -> vk::SurfaceKHR;
-    auto getFrameBufferSize() -> std::pair<int, int>;
 
     static void wait()
     {

@@ -11,12 +11,11 @@ void SwapChain::create()
     auto &state = State::instance();
     auto &engine = state.engine;
     auto &window = state.at("settings").at("window");
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.physicalDevice.device);
 
-    vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    auto swapChainSupport = querySwapChainSupport(engine.physicalDevice.device);
+    auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     format = surfaceFormat.format;
-
-    vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    auto presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     extent = chooseSwapExtent(swapChainSupport.capabilities, window.at(0), window.at(1));
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -34,7 +33,7 @@ void SwapChain::create()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
-    QueueFamilyIndices indices = findQueueFamiles(engine.physicalDevice.device);
+    auto indices = findQueueFamiles(engine.physicalDevice.device);
     std::array<uint32_t, 2> queueFamilyIndices = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     if (indices.graphicsFamily != indices.presentFamily)
@@ -80,14 +79,17 @@ void SwapChain::create()
 void SwapChain::destroy()
 {
     auto &device = State::instance().engine.device;
+    
     for (auto imageView : imageViews)
     {
         device.destroy(imageView);
     }
+    imageViews.clear();
+
     if (swapChain)
     {
-
         device.destroy(swapChain);
+        swapChain = nullptr;
     }
 }
 

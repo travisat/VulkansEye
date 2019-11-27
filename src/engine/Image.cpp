@@ -53,14 +53,15 @@ Image::Image()
 void Image::create()
 {
     destroy();
-    auto &engine = State::instance().engine;
+
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memUsage;
 
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     currentLayout = vk::ImageLayout::eUndefined;
 
-    allocation = engine.allocator.create(imageInfo, allocInfo);
+    auto &allocator = State::instance().engine.allocator;
+    allocation = allocator.create(imageInfo, allocInfo);
     image = std::get<vk::Image>(allocation->handle);
 }
 
@@ -69,8 +70,9 @@ void Image::destroy()
     auto &engine = State::instance().engine;
     if (allocation != nullptr)
     {
-        image = nullptr;
         engine.allocator.destroy(allocation);
+        image = nullptr;
+        allocation = nullptr;
     }
     if (sampler)
     {
@@ -93,7 +95,8 @@ void Image::load(const std::string &path)
         spdlog::warn("Unable to load {}", path);
         return;
     }
-    gli::texture texture = gli::load(this->path);
+
+    auto texture = gli::load(this->path);
 
     // this really isn't out of range, the enum in gli is weird
 #pragma clang diagnostic push
@@ -135,11 +138,10 @@ void Image::load(const std::string &path)
     imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
     imageView = engine.device.create(imageViewInfo);
 
-    vk::CommandBuffer commandBuffer = engine.beginSingleTimeCommands();
-    std::vector<vk::BufferImageCopy> bufferCopyRegions;
+    auto commandBuffer = engine.beginSingleTimeCommands();
 
-    // loop through faces/mipLevels in gli loaded texture and create regions to
-    // copy
+    std::vector<vk::BufferImageCopy> bufferCopyRegions;
+    // loop through faces/mipLevels in gli loaded texture and create regions
     uint32_t offset = 0;
     for (uint32_t layer = 0; layer < imageViewInfo.subresourceRange.layerCount; layer++)
     {
@@ -147,7 +149,7 @@ void Image::load(const std::string &path)
         {
             auto extent(texture.extent(level));
 
-            vk::BufferImageCopy bufferCopyRegion = {};
+            vk::BufferImageCopy bufferCopyRegion{};
             bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
             bufferCopyRegion.imageSubresource.mipLevel = level;
             bufferCopyRegion.imageSubresource.baseArrayLayer = layer;
@@ -159,11 +161,11 @@ void Image::load(const std::string &path)
 
             bufferCopyRegions.push_back(bufferCopyRegion);
 
-            offset += static_cast<uint32_t>(texture.size(level));
+            offset += texture.size(level);
         }
     }
 
-    vk::ImageSubresourceRange subresourceRange = {};
+    vk::ImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = imageInfo.mipLevels;
@@ -171,7 +173,7 @@ void Image::load(const std::string &path)
 
     // copy gli loaded texture to image using regious created
     commandBuffer.copyBufferToImage(stagingBuffer.buffer, image, vk::ImageLayout::eTransferDstOptimal,
-                                    static_cast<uint32_t>(bufferCopyRegions.size()), bufferCopyRegions.data());
+                                    bufferCopyRegions.size(), bufferCopyRegions.data());
 
     engine.endSingleTimeCommands(commandBuffer);
 
@@ -182,19 +184,18 @@ void Image::load(const std::string &path)
 
 void Image::createSampler()
 {
-    auto &engine = State::instance().engine;
-    sampler = engine.device.create(samplerInfo);
+    auto &device = State::instance().engine.device;
+    sampler = device.create(samplerInfo);
 }
 
 void Image::resize(int width, int height)
 {
-    auto &engine = State::instance().engine;
     if (imageInfo.extent != vk::Extent3D(width, height, imageInfo.extent.depth))
     {
         destroy();
 
         imageInfo.extent = vk::Extent3D(width, height, imageInfo.extent.depth);
-        vk::ImageLayout tempLayout = currentLayout;
+        auto tempLayout = currentLayout;
 
         create();
 
@@ -206,7 +207,9 @@ void Image::resize(int width, int height)
         imageViewInfo.format = imageInfo.format;
         imageViewInfo.subresourceRange.levelCount = imageInfo.mipLevels;
         imageViewInfo.subresourceRange.layerCount = imageInfo.arrayLayers;
-        imageView = engine.device.create(imageViewInfo);
+
+        auto &device = State::instance().engine.device;
+        imageView = device.create(imageViewInfo);
     }
 }
 
@@ -221,7 +224,7 @@ void Image::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout new
 void Image::transitionImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
 
-    vk::ImageMemoryBarrier barrier = {};
+    vk::ImageMemoryBarrier barrier{};
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

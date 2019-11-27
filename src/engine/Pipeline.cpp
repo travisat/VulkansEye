@@ -10,41 +10,41 @@ void Pipeline::create()
     auto &engine = State::instance().engine;
     pipelineLayout = engine.device.create(pipelineLayoutInfo);
     pipelineInfo.layout = pipelineLayout;
-    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.stageCount = shaderStages.size();
     pipelineInfo.pStages = shaderStages.data();
     pipeline = engine.device.create(pipelineInfo, engine.pipelineCache.pipelineCache);
 }
 
 void Pipeline::destroy()
 {
-    auto &engine = State::instance().engine;
+    auto &device = State::instance().engine.device;
     if (pipeline)
     {
-        engine.device.destroy(pipeline);
+        device.destroy(pipeline);
     }
     if (pipelineLayout)
     {
-        engine.device.destroy(pipelineLayout);
+        device.destroy(pipelineLayout);
     }
     if (fragShader)
     {
-        engine.device.destroy(fragShader);
+        device.destroy(fragShader);
     }
     if (vertShader)
     {
-        engine.device.destroy(vertShader);
+        device.destroy(vertShader);
     }
     if (geomShader)
     {
-        engine.device.destroy(geomShader);
+        device.destroy(geomShader);
     }
     if (tescShader)
     {
-        engine.device.destroy(tescShader);
+        device.destroy(tescShader);
     }
     if (teseShader)
     {
-        engine.device.destroy(teseShader);
+        device.destroy(teseShader);
     }
 }
 
@@ -88,7 +88,7 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     dynamicStateEnables = {vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eLineWidth};
 
     dynamicState.pDynamicStates = dynamicStateEnables.data();
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+    dynamicState.dynamicStateCount = dynamicStateEnables.size();
 
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
@@ -111,10 +111,10 @@ void Pipeline::loadDefaults(vk::RenderPass renderPass)
     colorBlending.logicOp = vk::LogicOp::eCopy;
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0F;
-    colorBlending.blendConstants[1] = 0.0F;
-    colorBlending.blendConstants[2] = 0.0F;
-    colorBlending.blendConstants[3] = 0.0F;
+    colorBlending.blendConstants[0] = 0.F;
+    colorBlending.blendConstants[1] = 0.F;
+    colorBlending.blendConstants[2] = 0.F;
+    colorBlending.blendConstants[3] = 0.F;
 
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;

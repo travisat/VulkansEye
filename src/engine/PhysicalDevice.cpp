@@ -41,14 +41,13 @@ void PhysicalDevice::pick(const vk::Instance &instance)
 
 auto PhysicalDevice::isDeviceSuitable(vk::PhysicalDevice const &physicalDevice) -> bool
 {
-    QueueFamilyIndices indicies = SwapChain::findQueueFamiles(physicalDevice);
-
-    bool extensionsSupported = checkDeviceExtensionsSupport(physicalDevice);
-
+    auto indicies = SwapChain::findQueueFamiles(physicalDevice);
+    auto extensionsSupported = checkDeviceExtensionsSupport(physicalDevice);
     bool swapChainAdequate = false;
+
     if (extensionsSupported)
     {
-        SwapChainSupportDetails swapChainSupport = SwapChain::querySwapChainSupport(physicalDevice);
+        auto swapChainSupport = SwapChain::querySwapChainSupport(physicalDevice);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
@@ -62,7 +61,6 @@ auto PhysicalDevice::isDeviceSuitable(vk::PhysicalDevice const &physicalDevice) 
 auto PhysicalDevice::checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> bool
 {
     auto deviceExtensions = device.enumerateDeviceExtensionProperties();
-
     std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
 
     for (const auto &deviceExtension : deviceExtensions)

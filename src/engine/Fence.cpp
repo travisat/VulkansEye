@@ -7,7 +7,7 @@ namespace tat
 Fence::Fence()
 {
     auto &device = State::instance().engine.device;
-    vk::FenceCreateInfo fenceInfo {};
+    vk::FenceCreateInfo fenceInfo{};
     fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
     fence = device.create(fenceInfo);
 }
