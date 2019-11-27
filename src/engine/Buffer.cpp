@@ -18,7 +18,6 @@ void Buffer::create(VkDeviceSize s)
 {
     destroy();
 
-    auto &engine = State::instance().engine;
     size = s;
 
     vk::BufferCreateInfo bufferInfo{};
@@ -32,7 +31,9 @@ void Buffer::create(VkDeviceSize s)
 
     VmaAllocationInfo info{};
 
-    allocation = engine.allocator.create(bufferInfo, allocInfo, &info);
+    auto &allocator = State::instance().engine.allocator;
+    allocation = allocator.create(bufferInfo, allocInfo, &info);
+
     buffer = std::get<vk::Buffer>(allocation->handle);
     mapped = info.pMappedData;
 
@@ -46,8 +47,8 @@ void Buffer::destroy()
 {
     if (buffer)
     {
-        auto &engine = State::instance().engine;
-        engine.allocator.destroy(allocation);
+        auto &allocator = State::instance().engine.allocator;
+        allocator.destroy(allocation);
         if constexpr (Debug::enableValidationLayers)
         {
             if (allocation->descriptor >= 0)
@@ -60,28 +61,28 @@ void Buffer::destroy()
 
 void Buffer::update(void *t, size_t s)
 {
-    auto &engine = State::instance().engine;
     if (s != size)
     {
         create(s);
     }
-    
-    memcpy(engine.allocator.map(allocation), t, s);
-    engine.allocator.unmap(allocation);
+
+    auto &allocator = State::instance().engine.allocator;
+    memcpy(allocator.map(allocation), t, s);
+    allocator.unmap(allocation);
 }
 
 void Buffer::copyTo(Buffer &destination)
 {
-    auto &engine = State::instance().engine;
     // if destination buffer is a different size than source buffer reaclloate
     if (size != destination.size)
     {
         destination.create(size);
     }
 
-    vk::CommandBuffer commandBuffer = engine.beginSingleTimeCommands();
+    auto &engine = State::instance().engine;
+    auto commandBuffer = engine.beginSingleTimeCommands();
 
-    vk::BufferCopy copyRegion = {};
+    vk::BufferCopy copyRegion{};
     copyRegion.size = size;
     commandBuffer.copyBuffer(buffer, destination.buffer, 1, &copyRegion);
 
@@ -90,8 +91,8 @@ void Buffer::copyTo(Buffer &destination)
 
 void Buffer::flush(size_t size, vk::DeviceSize offset)
 {
-    auto &engine = State::instance().engine;
-    engine.allocator.flush(allocation, offset, size);
+    auto &allocator = State::instance().engine.allocator;
+    allocator.flush(allocation, offset, size);
 };
 
 } // namespace tat
