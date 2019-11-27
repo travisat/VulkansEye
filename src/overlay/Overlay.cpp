@@ -23,14 +23,14 @@ void Overlay::create()
 {
     ImGui::CreateContext();
     // Color scheme
-    ImGuiStyle &style = ImGui::GetStyle();
+    auto &style = ImGui::GetStyle();
     style.Colors[ImGuiCol_TitleBg] = ImVec4(1.F, 0.3F, 0.3F, 0.6F);
     style.Colors[ImGuiCol_TitleBgActive] = ImVec4(1.F, 0.4F, 0.4F, 0.8F);
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_Header] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_CheckMark] = ImVec4(1.F, 1.F, 1.F, 1.F);
     // Dimensions
-    ImGuiIO &io = ImGui::GetIO();
+    auto &io = ImGui::GetIO();
     auto &window = State::instance().at("settings").at("window");
     io.DisplaySize = ImVec2(window.at(0), window.at(1));
     io.DisplayFramebufferScale = ImVec2(1.F, 1.F);
@@ -50,13 +50,13 @@ void Overlay::destroy()
 {
     ImGui::DestroyContext();
 
-    auto &engine = State::instance().engine;
+    auto &device = State::instance().engine.device;
 
     fontImage.destroy();
     vertexBuffer.destroy();
     indexBuffer.destroy();
-    engine.device.destroy(descriptorSetLayout);
-    engine.device.destroy(descriptorPool);
+    device.destroy(descriptorSetLayout);
+    device.destroy(descriptorPool);
     pipeline.destroy();
     spdlog::info("Destroyed Overlay");
 }
@@ -64,7 +64,7 @@ void Overlay::destroy()
 void Overlay::recreate()
 {
     auto &window = State::instance().window;
-    ImGuiIO &io = ImGui::GetIO();
+    auto &io = ImGui::GetIO();
     io.DisplaySize = ImVec2(window.width, window.height);
 
     createDescriptorPool();
@@ -75,8 +75,8 @@ void Overlay::recreate()
 
 void Overlay::cleanup()
 {
-    auto &engine = State::instance().engine;
-    engine.device.destroy(descriptorPool);
+    auto &device = State::instance().engine.device;
+    device.destroy(descriptorPool);
     pipeline.destroy();
 }
 
@@ -101,7 +101,7 @@ void Overlay::createFont()
     int texWidth;
     int texHeight;
     io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
-    VkDeviceSize uploadSize = texWidth * texHeight * 4 * sizeof(char);
+    auto uploadSize = texWidth * texHeight * 4 * sizeof(char);
 
     fontImage.imageInfo.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
     fontImage.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -109,17 +109,17 @@ void Overlay::createFont()
     fontImage.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
     // Staging buffers for font data upload
-    Buffer stagingBuffer;
+    Buffer stagingBuffer{};
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     stagingBuffer.name = "Overlay Staging";
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image
-    vk::CommandBuffer copyCmd = engine.beginSingleTimeCommands();
+    auto copyCmd = engine.beginSingleTimeCommands();
 
     // Copy
-    vk::BufferImageCopy bufferCopyRegion = {};
+    vk::BufferImageCopy bufferCopyRegion{};
     bufferCopyRegion.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     bufferCopyRegion.imageSubresource.layerCount = 1;
     bufferCopyRegion.imageExtent.width = texWidth;
@@ -144,16 +144,15 @@ void Overlay::createFont()
 void Overlay::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = static_cast<uint32_t>(engine.swapChain.count);
+    auto numSwapChainImages = engine.swapChain.count;
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
     poolSizes[0].descriptorCount = numSwapChainImages;
 
-    vk::DescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    vk::DescriptorPoolCreateInfo poolInfo{};
+    poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    // set max set size to which set is larger
     poolInfo.maxSets = numSwapChainImages;
 
     descriptorPool = engine.device.create(poolInfo);
@@ -163,7 +162,7 @@ void Overlay::createDescriptorPool()
 void Overlay::createDescriptorLayouts()
 {
     auto &engine = State::instance().engine;
-    vk::DescriptorSetLayoutBinding samplerBinding = {};
+    vk::DescriptorSetLayoutBinding samplerBinding{};
     samplerBinding.binding = 0;
     samplerBinding.descriptorCount = 1;
     samplerBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -171,8 +170,8 @@ void Overlay::createDescriptorLayouts()
     samplerBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
     std::array<vk::DescriptorSetLayoutBinding, 1> bindings = {samplerBinding};
-    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.create(layoutInfo);
@@ -183,9 +182,9 @@ void Overlay::createDescriptorSets()
 {
     auto &engine = State::instance().engine;
     std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, descriptorSetLayout);
-    vk::DescriptorSetAllocateInfo allocInfo = {};
+    vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
+    allocInfo.descriptorSetCount = engine.swapChain.count;
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.create(allocInfo);
@@ -196,7 +195,7 @@ void Overlay::createDescriptorSets()
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
     {
-        vk::DescriptorImageInfo samplerInfo = {};
+        vk::DescriptorImageInfo samplerInfo{};
         samplerInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         samplerInfo.imageView = fontImage.imageView;
         samplerInfo.sampler = fontImage.sampler;
@@ -227,7 +226,7 @@ void Overlay::createPipeline()
     pipeline.loadDefaults(engine.colorPass.renderPass);
 
     // Push constants for UI rendering parameters
-    vk::PushConstantRange pushConstantRange = {};
+    vk::PushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
     pushConstantRange.size = sizeof(PushConstBlock);
     pushConstantRange.offset = 0;
@@ -237,12 +236,12 @@ void Overlay::createPipeline()
 
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
 
-    vk::VertexInputBindingDescription bindingDescription = {};
+    vk::VertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(ImDrawVert);
     bindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
-    std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions = {};
+    std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = vk::Format::eR32G32Sfloat;
@@ -334,17 +333,15 @@ void Overlay::showInfo(bool &open)
 void Overlay::updateBuffers()
 {
     auto &engine = State::instance().engine;
-    ImDrawData *imDrawData = ImGui::GetDrawData();
+    auto *imDrawData = ImGui::GetDrawData();
 
     if (imDrawData != nullptr)
     {
         // Note: Alignment is done inside buffer creation
-        vk::DeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
-        vk::DeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
+        auto vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
+        auto indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
 
-        // Update buffers only if vertex or index count has been changed compared to
-        // current buffer size
-
+        // Update buffers only if vertex or index count has been changed
         if (vertexBuffer.getSize() < vertexBufferSize)
         {
             engine.device.waitIdle();
@@ -365,7 +362,7 @@ void Overlay::updateBuffers()
 
         for (int n = 0; n < imDrawData->CmdListsCount; n++)
         {
-            const ImDrawList *cmd_list = imDrawData->CmdLists[n];
+            const auto *cmd_list = imDrawData->CmdLists[n];
             memcpy(vtxDst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
             memcpy(idxDst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
             vtxDst += cmd_list->VtxBuffer.Size;
@@ -385,7 +382,7 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
         newFrame();
         updateBuffers();
     }
-    ImGuiIO &io = ImGui::GetIO();
+    auto &io = ImGui::GetIO();
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,
                                      &descriptorSets[currentImage], 0, nullptr);
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.pipeline);
@@ -397,21 +394,21 @@ void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
                                 &pushConstBlock);
 
     // Render commands
-    ImDrawData *imDrawData = ImGui::GetDrawData();
+    auto *imDrawData = ImGui::GetDrawData();
     int32_t vertexOffset = 0;
     int32_t indexOffset = 0;
 
-    std::array<vk::DeviceSize, 1> offsets = {0};
+    std::array<vk::DeviceSize, 1> offsets{};
     commandBuffer.bindVertexBuffers(0, 1, &vertexBuffer.buffer, offsets.data());
     commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint16);
 
     for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)
     {
-        const ImDrawList *cmd_list = imDrawData->CmdLists[i];
+        const auto *cmd_list = imDrawData->CmdLists[i];
         for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++)
         {
-            const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[j];
-            vk::Rect2D scissorRect;
+            const auto *pcmd = &cmd_list->CmdBuffer[j];
+            vk::Rect2D scissorRect{};
             scissorRect.offset.x = std::max((int32_t)(pcmd->ClipRect.x), 0);
             scissorRect.offset.y = std::max((int32_t)(pcmd->ClipRect.y), 0);
             scissorRect.extent.width = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);

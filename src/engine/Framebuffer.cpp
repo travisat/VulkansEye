@@ -12,7 +12,7 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::create()
 {
-    auto &engine = State::instance().engine;
+    auto &device = State::instance().engine.device;
     vk::FramebufferCreateInfo framebufferInfo{};
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -20,7 +20,7 @@ void Framebuffer::create()
     framebufferInfo.width = width;
     framebufferInfo.height = height;
     framebufferInfo.layers = layers;
-    framebuffer = engine.device.create(framebufferInfo);
+    framebuffer = device.create(framebufferInfo);
 }
 
 } // namespace tat

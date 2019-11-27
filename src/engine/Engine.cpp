@@ -375,7 +375,7 @@ void Engine::resizeWindow()
 void Engine::createInstance()
 {
     auto &state = State::instance();
-    vk::ApplicationInfo appInfo = {};
+    vk::ApplicationInfo appInfo{};
     appInfo.pApplicationName = state.at("settings").at("name").get<std::string>().c_str();
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "vulcanned";
@@ -383,8 +383,7 @@ void Engine::createInstance()
     appInfo.apiVersion = VK_API_VERSION_1_1;
 
     uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
     if constexpr (Debug::enableValidationLayers)
@@ -392,7 +391,7 @@ void Engine::createInstance()
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    vk::InstanceCreateInfo createInfo = {};
+    vk::InstanceCreateInfo createInfo{};
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = extensions.size();
     createInfo.ppEnabledExtensionNames = extensions.data();
@@ -475,9 +474,9 @@ void Engine::createColorFramebuffers()
 
 void Engine::createCommandPool()
 {
-    QueueFamilyIndices QueueFamilyIndices = SwapChain::findQueueFamiles(physicalDevice.device);
+    auto QueueFamilyIndices = SwapChain::findQueueFamiles(physicalDevice.device);
 
-    vk::CommandPoolCreateInfo poolInfo = {};
+    vk::CommandPoolCreateInfo poolInfo{};
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
     commandPool = device.create(poolInfo);
@@ -486,7 +485,7 @@ void Engine::createCommandPool()
 
 auto Engine::beginSingleTimeCommands() -> vk::CommandBuffer
 {
-    vk::CommandBufferAllocateInfo allocInfo = {};
+    vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandPool = commandPool;
     allocInfo.commandBufferCount = 1;
@@ -505,7 +504,7 @@ void Engine::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
 {
     commandBuffer.end();
 
-    vk::SubmitInfo submitInfo = {};
+    vk::SubmitInfo submitInfo{};
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
@@ -536,7 +535,7 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
     file.read(buffer.data(), fileSize);
     file.close();
 
-    vk::ShaderModuleCreateInfo createInfo = {};
+    vk::ShaderModuleCreateInfo createInfo{};
     createInfo.codeSize = buffer.size();
     createInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
