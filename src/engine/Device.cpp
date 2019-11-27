@@ -12,13 +12,13 @@ namespace tat
 void Device::create()
 {
     auto &engine = State::instance().engine;
-    QueueFamilyIndices indices = SwapChain::findQueueFamiles(engine.physicalDevice.device);
+    auto indices = SwapChain::findQueueFamiles(engine.physicalDevice.device);
 
-    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{};
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-    float queuePriority = 1.0F;
-    for (uint32_t queueFamily : uniqueQueueFamilies)
+    float queuePriority = 1.F;
+    for (auto queueFamily : uniqueQueueFamilies)
     {
         vk::DeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -54,7 +54,13 @@ void Device::destroy()
     if (device)
     {
         device.destroy(nullptr);
+        device = nullptr;
     }
+}
+
+void Device::wait()
+{
+    device.waitIdle();
 }
 
 auto Device::wait(vk::Fence &fence) -> vk::Result
@@ -73,10 +79,6 @@ auto Device::acquireNextImage(vk::SwapchainKHR &swapChain, vk::Semaphore &semaph
     return device.acquireNextImageKHR(swapChain, UINT64_MAX, semaphore, nullptr, &currentBuffer);
 }
 
-void Device::waitIdle()
-{
-    device.waitIdle();
-}
 
 void Device::update(std::vector<vk::WriteDescriptorSet> &descriptorWrites)
 {

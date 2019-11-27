@@ -101,7 +101,7 @@ void VulkansEye::run()
         state.engine.drawFrame(deltaTime);
     }
 
-    state.engine.device.waitIdle();
+    state.engine.device.wait();
     spdlog::info("End Main Loop");
 }
 

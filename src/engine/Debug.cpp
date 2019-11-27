@@ -11,8 +11,6 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
                                          const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *
                                          /*pUserData*/) -> VkBool32
 {
-    std::string prefix;
-
     auto logger = spdlog::get("validation");
 
     if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
@@ -37,7 +35,7 @@ void Debug::create(vk::Instance *instance)
 {
     this->instance = instance;
 
-    vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+    vk::DebugUtilsMessengerCreateInfoEXT debugInfo{};
     debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
                                 vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
                                 vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;

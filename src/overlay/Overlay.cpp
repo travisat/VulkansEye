@@ -344,14 +344,14 @@ void Overlay::updateBuffers()
         // Update buffers only if vertex or index count has been changed
         if (vertexBuffer.getSize() < vertexBufferSize)
         {
-            engine.device.waitIdle();
+            engine.device.wait();
             vertexBuffer.create(vertexBufferSize);
             engine.updateCommandBuffer = true;
         }
 
         if (indexBuffer.getSize() < indexBufferSize)
         {
-            engine.device.waitIdle();
+            engine.device.wait();
             indexBuffer.create(indexBufferSize);
             engine.updateCommandBuffer = true;
         }

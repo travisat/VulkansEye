@@ -296,7 +296,7 @@ void Engine::updateWindow()
     }
     prepared = false;
 
-    device.waitIdle();
+    device.wait();
 
     // Steps to update
     // 1: free commandBuffers
@@ -323,7 +323,7 @@ void Engine::updateWindow()
     // 8: create commandbuffers
     createCommandBuffers();
 
-    device.waitIdle();
+    device.wait();
 
     prepared = true;
 }
@@ -366,7 +366,7 @@ void Engine::resizeWindow()
     // 12: create commandbuffers
     createCommandBuffers();
 
-    device.waitIdle();
+    device.wait();
 
     prepared = true;
     spdlog::info("Resized window to {}x{}", state.window.width, state.window.height);

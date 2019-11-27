@@ -17,7 +17,7 @@ class Device
     void create();
     void destroy();
 
-    void waitIdle();
+    void wait();
 
     auto wait(vk::Fence &fence) -> vk::Result;
     auto reset(vk::Fence &fence) -> vk::Result;

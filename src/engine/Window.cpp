@@ -38,7 +38,7 @@ void Window::resize()
         wait();
     }
 
-    state.engine.device.waitIdle();
+    state.engine.device.wait();
     state.at("settings").at("window").at(0) = width;
     state.at("settings").at("window").at(1) = height;
 }
