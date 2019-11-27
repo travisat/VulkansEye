@@ -37,69 +37,74 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
     auto &state = State::instance();
     auto &engine = state.engine;
     std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, layout);
-    vk::DescriptorSetAllocateInfo allocInfo = {};
+    vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
     colorSets = engine.device.create(allocInfo);
-    for (auto &descriptorSet : colorSets)
-    {
-        Debug::setName(engine.device.device, descriptorSet, name + " Color Set");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        for (auto &descriptorSet : colorSets)
+        {
+            Debug::setName(engine.device.device, descriptorSet, name + " Color Set");
+        }
     }
+
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
-        vk::DescriptorBufferInfo vertexInfo = {};
+        vk::DescriptorBufferInfo vertexInfo{};
         vertexInfo.buffer = vertBuffers[i].buffer;
         vertexInfo.offset = 0;
         vertexInfo.range = sizeof(UniformVert);
 
-        vk::DescriptorBufferInfo fragInfo = {};
+        vk::DescriptorBufferInfo fragInfo{};
         fragInfo.buffer = fragBuffers[i].buffer;
         fragInfo.offset = 0;
         fragInfo.range = sizeof(UniformFrag);
 
-        vk::DescriptorImageInfo shadowInfo = {};
+        vk::DescriptorImageInfo shadowInfo{};
         shadowInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         shadowInfo.imageView = state.scene.shadow.imageView;
         shadowInfo.sampler = state.scene.shadow.sampler;
 
-        vk::DescriptorImageInfo diffuseInfo = {};
+        vk::DescriptorImageInfo diffuseInfo{};
         diffuseInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         diffuseInfo.imageView = material->diffuse.imageView;
         diffuseInfo.sampler = material->diffuse.sampler;
 
-        vk::DescriptorImageInfo normalInfo = {};
+        vk::DescriptorImageInfo normalInfo{};
         normalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         normalInfo.imageView = material->normal.imageView;
         normalInfo.sampler = material->normal.sampler;
 
-        vk::DescriptorImageInfo roughnessInfo = {};
+        vk::DescriptorImageInfo roughnessInfo{};
         roughnessInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         roughnessInfo.imageView = material->roughness.imageView;
         roughnessInfo.sampler = material->roughness.sampler;
 
-        vk::DescriptorImageInfo metallicInfo = {};
+        vk::DescriptorImageInfo metallicInfo{};
         metallicInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         metallicInfo.imageView = material->metallic.imageView;
         metallicInfo.sampler = material->metallic.sampler;
 
-        vk::DescriptorImageInfo aoInfo = {};
+        vk::DescriptorImageInfo aoInfo{};
         aoInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         aoInfo.imageView = material->ao.imageView;
         aoInfo.sampler = material->ao.sampler;
 
-        vk::DescriptorImageInfo irradianceInfo = {};
+        vk::DescriptorImageInfo irradianceInfo{};
         irradianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         irradianceInfo.imageView = state.scene.backdrop->irradianceMap.imageView;
         irradianceInfo.sampler = state.scene.backdrop->irradianceMap.sampler;
 
-        vk::DescriptorImageInfo radianceInfo = {};
+        vk::DescriptorImageInfo radianceInfo{};
         radianceInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         radianceInfo.imageView = state.scene.backdrop->radianceMap.imageView;
         radianceInfo.sampler = state.scene.backdrop->radianceMap.sampler;
 
-        vk::DescriptorImageInfo brdfInfo = {};
+        vk::DescriptorImageInfo brdfInfo{};
         brdfInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         brdfInfo.imageView = state.scene.brdf.imageView;
         brdfInfo.sampler = state.scene.brdf.sampler;
@@ -202,19 +207,24 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
 {
     auto &engine = State::instance().engine;
     std::vector<vk::DescriptorSetLayout> layouts(engine.swapChain.count, layout);
-    vk::DescriptorSetAllocateInfo allocInfo = {};
+    vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(engine.swapChain.count);
     allocInfo.pSetLayouts = layouts.data();
 
     shadowSets = engine.device.create(allocInfo);
-    for (auto &descriptorSet : shadowSets)
-    {
-        Debug::setName(engine.device.device, descriptorSet, name + " Shadow Set");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        for (auto &descriptorSet : shadowSets)
+        {
+            Debug::setName(engine.device.device, descriptorSet, name + " Shadow Set");
+        }
     }
+
     for (size_t i = 0; i < engine.swapChain.count; ++i)
     {
-        vk::DescriptorBufferInfo shadowInfo = {};
+        vk::DescriptorBufferInfo shadowInfo{};
         shadowInfo.buffer = shadBuffers[i].buffer;
         shadowInfo.offset = 0;
         shadowInfo.range = sizeof(UniformShad);

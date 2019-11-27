@@ -86,7 +86,7 @@ void VulkansEye::run()
         float deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
-        ImGuiIO &io = ImGui::GetIO();
+        auto &io = ImGui::GetIO();
         io.DisplaySize = ImVec2(state.window.width, state.window.height);
         io.DeltaTime = deltaTime;
         state.overlay.newFrame();

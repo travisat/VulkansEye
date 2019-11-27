@@ -30,12 +30,11 @@ void Player::destroy()
 void Player::move(glm::vec2 direction, float deltaTime)
 {
     auto &camera = State::instance().camera;
-    glm::vec3 camFront;
-    glm::vec3 rotation = camera.rotation();
-    camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
-    camFront.y = sin(glm::radians(rotation.x));
-    camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
-    camFront = glm::normalize(camFront);
+
+    auto rotation = camera.rotation();
+    auto camFront = glm::normalize(glm::vec3(-cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y)),
+                                             sin(glm::radians(rotation.x)),
+                                             cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y))));
 
     // convert input move direction into player view
     auto moveDir = glm::vec3(0.F);

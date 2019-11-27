@@ -1,7 +1,6 @@
 #include "Scene.hpp"
-#include "engine/Debug.hpp"
 #include "State.hpp"
-
+#include "engine/Debug.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -10,29 +9,29 @@ namespace tat
 
 void Scene::destroy()
 {
-    auto &engine = State::instance().engine;
-
     shadow.destroy();
     brdf.destroy();
 
+    auto &device = State::instance().engine.device;
+
     if (shadowLayout)
     {
-        engine.device.destroy(shadowLayout);
+        device.destroy(shadowLayout);
         shadowLayout = nullptr;
     }
     if (colorLayout)
     {
-        engine.device.destroy(colorLayout);
+        device.destroy(colorLayout);
         colorLayout = nullptr;
     }
     if (colorPool)
     {
-        engine.device.destroy(colorPool);
+        device.destroy(colorPool);
         colorPool = nullptr;
     }
     if (shadowPool)
     {
-        engine.device.destroy(shadowPool);
+        device.destroy(shadowPool);
         shadowPool = nullptr;
     }
 
@@ -66,8 +65,8 @@ void Scene::cleanup()
     backdrop->cleanup();
     if (colorPool)
     {
-        auto &engine = State::instance().engine;
-        engine.device.destroy(colorPool);
+        auto &device = State::instance().engine.device;
+        device.destroy(colorPool);
         colorPool = nullptr;
     }
     colorPipeline.destroy();
@@ -180,8 +179,8 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 
     fragBuffer.position = glm::vec4(backdrop->light, 1.F);
 
-    glm::mat4 depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, camera.zNear, camera.zFar);
-    glm::mat4 depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0, 1, 0));
+    auto depthProjectionMatrix = glm::ortho(-30.F, 30.F, -30.F, 30.F, camera.zNear, camera.zFar);
+    auto depthViewMatrix = glm::lookAt(glm::vec3(fragBuffer.position), glm::vec3(0.F), glm::vec3(0.F, 1.F, 0.F));
 
     fragBuffer.radianceMipLevels = backdrop->radianceMap.imageInfo.mipLevels;
     fragBuffer.shadowSize = shadowSize;
@@ -212,29 +211,31 @@ void Scene::update(uint32_t currentImage, float deltaTime)
 void Scene::createColorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = engine.swapChain.count;
 
-    std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
+    std::array<vk::DescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
     // number of models * uniform buffers * swapchainimages
-    poolSizes[0].descriptorCount = models.size() * (2) * numSwapChainImages;
+    poolSizes[0].descriptorCount = models.size() * (2) * engine.swapChain.count;
     poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
     // number of models * imagesamplers * swapchainimages
-    poolSizes[1].descriptorCount = models.size() * 9 * numSwapChainImages;
+    poolSizes[1].descriptorCount = models.size() * 9 * engine.swapChain.count;
 
-    vk::DescriptorPoolCreateInfo poolInfo = {};
+    vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
     // number of models * swapchainimages
-    poolInfo.maxSets = models.size() * numSwapChainImages;
+    poolInfo.maxSets = models.size() * engine.swapChain.count;
 
     colorPool = engine.device.create(poolInfo);
-    Debug::setName(engine.device.device, colorPool, "Scene Color Pool");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, colorPool, "Scene Color Pool");
+    }
 }
 
 void Scene::createColorLayouts()
 {
-    auto &engine = State::instance().engine;
     std::array<vk::DescriptorSetLayoutBinding, 11> bindings{};
 
     // UniformBuffer
@@ -314,12 +315,17 @@ void Scene::createColorLayouts()
     bindings[10].pImmutableSamplers = nullptr;
     bindings[10].stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.bindingCount = bindings.size();
     layoutInfo.pBindings = bindings.data();
 
-    colorLayout = engine.device.create(layoutInfo);
-    Debug::setName(engine.device.device, colorLayout, "Scene Color Layout");
+    auto &device = State::instance().engine.device;
+    colorLayout = device.create(layoutInfo);
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(device.device, colorLayout, "Scene Color Layout");
+    }
 }
 
 void Scene::createColorSets()
@@ -338,9 +344,7 @@ void Scene::createColorPipeline()
     auto vertPath = "assets/shaders/scene.vert.spv";
     auto fragPath = "assets/shaders/scene.frag.spv";
     colorPipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setName(engine.device.device, colorPipeline.vertShader, "Scene Vert Shader");
     colorPipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setName(engine.device.device, colorPipeline.fragShader, "Scene Frag Shader");
 
     colorPipeline.loadDefaults(engine.colorPass.renderPass);
 
@@ -353,34 +357,42 @@ void Scene::createColorPipeline()
     colorPipeline.vertexInputInfo.pVertexAttributeDescriptions = attributeDescrption.data();
 
     colorPipeline.create();
-    Debug::setName(engine.device.device, colorPipeline.pipeline, "Scene Color Pipeline");
-    Debug::setName(engine.device.device, colorPipeline.pipelineLayout, "Scene Color PipelineLayout");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, colorPipeline.vertShader, "Scene Vert Shader");
+        Debug::setName(engine.device.device, colorPipeline.fragShader, "Scene Frag Shader");
+        Debug::setName(engine.device.device, colorPipeline.pipeline, "Scene Color Pipeline");
+        Debug::setName(engine.device.device, colorPipeline.pipelineLayout, "Scene Color PipelineLayout");
+    }
 }
 
 void Scene::createShadowPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = engine.swapChain.count;
 
-    std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
+    std::array<vk::DescriptorPoolSize, 1> poolSizes{};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
     // number of models * uniformBuffers * swapchainimages
-    poolSizes[0].descriptorCount = models.size() * 1 * numSwapChainImages;
+    poolSizes[0].descriptorCount = models.size() * 1 * engine.swapChain.count;
 
-    vk::DescriptorPoolCreateInfo poolInfo = {};
+    vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
     // number of models * swapchainimages
-    poolInfo.maxSets = models.size() * numSwapChainImages;
+    poolInfo.maxSets = models.size() * engine.swapChain.count;
 
     shadowPool = engine.device.create(poolInfo);
-    Debug::setName(engine.device.device, shadowPool, "Scene Shadow Pool");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, shadowPool, "Scene Shadow Pool");
+    }
 }
 
 void Scene::createShadowLayouts()
 {
-    auto &engine = State::instance().engine;
-    vk::DescriptorSetLayoutBinding shadowLayoutBinding = {};
+    vk::DescriptorSetLayoutBinding shadowLayoutBinding{};
     shadowLayoutBinding.binding = 0;
     shadowLayoutBinding.descriptorCount = 1;
     shadowLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -389,12 +401,17 @@ void Scene::createShadowLayouts()
 
     std::array<vk::DescriptorSetLayoutBinding, 1> layouts = {shadowLayoutBinding};
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo = {};
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.bindingCount = layouts.size();
     layoutInfo.pBindings = layouts.data();
 
-    shadowLayout = engine.device.create(layoutInfo);
-    Debug::setName(engine.device.device, shadowLayout, "Scene Shadow Layout");
+    auto &device = State::instance().engine.device;
+    shadowLayout = device.create(layoutInfo);
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(device.device, shadowLayout, "Scene Shadow Layout");
+    }
 }
 
 void Scene::createShadowSets()
@@ -413,9 +430,7 @@ void Scene::createShadowPipeline()
     auto vertPath = "assets/shaders/shadow.vert.spv";
     auto fragPath = "assets/shaders/shadow.frag.spv";
     shadowPipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setName(engine.device.device, shadowPipeline.vertShader, "Scene Shadow Vert Shader");
     shadowPipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setName(engine.device.device, shadowPipeline.fragShader, "Scene Shadow Frag Shader");
 
     shadowPipeline.loadDefaults(engine.shadowPass.renderPass);
 
@@ -432,8 +447,14 @@ void Scene::createShadowPipeline()
     shadowPipeline.rasterizer.cullMode = vk::CullModeFlagBits::eFront;
 
     shadowPipeline.create();
-    Debug::setName(engine.device.device, shadowPipeline.pipeline, "Scene Shadow Pipeline");
-    Debug::setName(engine.device.device, shadowPipeline.pipelineLayout, "Scene Shadow PipelineLayout");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, shadowPipeline.vertShader, "Scene Shadow Vert Shader");
+        Debug::setName(engine.device.device, shadowPipeline.fragShader, "Scene Shadow Frag Shader");
+        Debug::setName(engine.device.device, shadowPipeline.pipeline, "Scene Shadow Pipeline");
+        Debug::setName(engine.device.device, shadowPipeline.pipelineLayout, "Scene Shadow PipelineLayout");
+    }
 }
 
 } // namespace tat

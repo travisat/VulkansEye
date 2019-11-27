@@ -39,7 +39,7 @@ Backdrop::~Backdrop()
 {
     if (loaded)
     {
-        auto &engine = State::instance().engine;
+        auto &device = State::instance().engine.device;
 
         colorMap.destroy();
         radianceMap.destroy();
@@ -47,11 +47,11 @@ Backdrop::~Backdrop()
 
         if (descriptorSetLayout)
         {
-            engine.device.destroy(descriptorSetLayout);
+            device.destroy(descriptorSetLayout);
         }
         if (descriptorPool)
         {
-            engine.device.destroy(descriptorPool);
+            device.destroy(descriptorPool);
         }
         pipeline.destroy();
         spdlog::info("Destroyed Backdrop {}", name);
@@ -73,8 +73,8 @@ void Backdrop::cleanup()
 {
     if (loaded)
     {
-        auto &engine = State::instance().engine;
-        engine.device.destroy(descriptorPool);
+        auto &device = State::instance().engine.device;
+        device.destroy(descriptorPool);
         pipeline.destroy();
     }
 }
@@ -115,7 +115,7 @@ void Backdrop::createUniformBuffers()
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        buffer.name  = "Backdrop";
+        buffer.name = "Backdrop";
         buffer.create(sizeof(UniformBack));
 
         memcpy(buffer.mapped, &backBuffer, sizeof(backBuffer));
@@ -138,21 +138,23 @@ void Backdrop::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
 
-    auto numSwapChainImages = engine.swapChain.count;
-
     std::array<vk::DescriptorPoolSize, 2> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
-    poolSizes[0].descriptorCount = numSwapChainImages;
+    poolSizes[0].descriptorCount = engine.swapChain.count;
     poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
-    poolSizes[1].descriptorCount = numSwapChainImages;
+    poolSizes[1].descriptorCount = engine.swapChain.count;
 
     vk::DescriptorPoolCreateInfo poolInfo = {};
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = numSwapChainImages;
+    poolInfo.maxSets = engine.swapChain.count;
 
     descriptorPool = engine.device.create(poolInfo);
-    Debug::setName(engine.device.device, descriptorPool, name + " Pool");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, descriptorPool, name + " Pool");
+    }
 }
 
 void Backdrop::createDescriptorSetLayouts()
@@ -179,7 +181,11 @@ void Backdrop::createDescriptorSetLayouts()
     layoutInfo.pBindings = bindings.data();
 
     descriptorSetLayout = engine.device.create(layoutInfo);
-    Debug::setName(engine.device.device, descriptorSetLayout, name + " Layout");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, descriptorSetLayout, name + " Layout");
+    }
 }
 
 void Backdrop::createDescriptorSets()
@@ -192,9 +198,13 @@ void Backdrop::createDescriptorSets()
     allocInfo.pSetLayouts = layouts.data();
 
     descriptorSets = engine.device.create(allocInfo);
-    for (auto &descriptorSet : descriptorSets)
-    {
-        Debug::setName(engine.device.device, descriptorSet, name + " Descriptor Set");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        for (auto &descriptorSet : descriptorSets)
+        {
+            Debug::setName(engine.device.device, descriptorSet, name + " Descriptor Set");
+        }
     }
 
     for (size_t i = 0; i < engine.swapChain.count; i++)
@@ -236,9 +246,7 @@ void Backdrop::createPipeline()
     auto vertPath = "assets/shaders/backdrop.vert.spv";
     auto fragPath = "assets/shaders/backdrop.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
-    Debug::setName(engine.device.device, pipeline.vertShader, name + " Vert Shader");
     pipeline.fragShader = engine.createShaderModule(fragPath);
-    Debug::setName(engine.device.device, pipeline.fragShader, name + " Frag Shader");
 
     pipeline.loadDefaults(engine.colorPass.renderPass);
     pipeline.shaderStages = {pipeline.vertShaderStageInfo, pipeline.fragShaderStageInfo};
@@ -247,8 +255,14 @@ void Backdrop::createPipeline()
     pipeline.depthStencil.depthWriteEnable = VK_FALSE;
     pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
-    Debug::setName(engine.device.device, pipeline.pipeline, name + " Pipeline");
-    Debug::setName(engine.device.device, pipeline.pipelineLayout, name + " PipelineLayout");
+
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(engine.device.device, pipeline.vertShader, name + " Vert Shader");
+        Debug::setName(engine.device.device, pipeline.fragShader, name + " Frag Shader");
+        Debug::setName(engine.device.device, pipeline.pipeline, name + " Pipeline");
+        Debug::setName(engine.device.device, pipeline.pipelineLayout, name + " PipelineLayout");
+    }
 }
 
 } // namespace tat

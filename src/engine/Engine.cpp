@@ -426,7 +426,10 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    Debug::setName(device.device, shadowDepth.image, "ShadowDepth");
+    if constexpr (Debug::enableValidationLayers)
+    { // only do this if validation is enabled
+        Debug::setName(device.device, shadowDepth.image, "ShadowDepth");
+    }
 
     shadowFramebuffers.resize(swapChain.count);
     for (size_t i = 0; i < swapChain.count; i++)
