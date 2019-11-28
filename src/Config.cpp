@@ -16,7 +16,10 @@ void Config::create(const std::string &path)
 {
     try
     {
-        spdlog::info("Loading Config");
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Loading Config");
+        }
         // setup state with default vaules
         auto &state = State::instance();
 

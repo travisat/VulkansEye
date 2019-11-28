@@ -26,18 +26,29 @@ void Mesh::load()
     Buffer stagingBuffer{};
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = fmt::format("Mesh {} Staging", name);
+    if constexpr (Debug::enable)
+    {
+        stagingBuffer.name = fmt::format("Mesh {} Staging", name);
+    }
 
+    //upload vertex data
     stagingBuffer.update(data.vertices.data(), data.vertices.size() * sizeof(data.vertices[0]));
     buffers.vertex.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
     buffers.vertex.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    buffers.vertex.name = "Mesh Vertex";
+    if constexpr (Debug::enable)
+    {
+        buffers.vertex.name = "Mesh Vertex";
+    }
     stagingBuffer.copyTo(buffers.vertex);
 
+    //upload index data
     stagingBuffer.update(data.indices.data(), data.indices.size() * sizeof(data.indices[0]));
     buffers.index.flags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
     buffers.index.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
-    buffers.index.name = "Mesh Index";
+    if constexpr (Debug::enable)
+    {
+        buffers.index.name = "Mesh Index";
+    }
     stagingBuffer.copyTo(buffers.index);
 
     loaded = true;

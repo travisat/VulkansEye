@@ -30,7 +30,10 @@ void Camera::create()
 
 void Camera::destroy()
 {
-    spdlog::info("Destroyed Camera");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Camera");
+    }
 }
 
 void Camera::look(double mouseX, double mouseY)

@@ -15,7 +15,7 @@ class Debug
 {
   public:
     // TODO(travis) set enable at compile time using cmake
-    static constexpr bool enable = true;
+    static constexpr bool enable = false;
     const std::vector<const char *> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
 
     void create(vk::Instance *instance);

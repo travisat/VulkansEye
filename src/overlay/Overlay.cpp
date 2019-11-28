@@ -124,7 +124,10 @@ void Overlay::createFont()
     Buffer stagingBuffer{};
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-    stagingBuffer.name = "Overlay Staging";
+    if constexpr (Debug::enable)
+    {
+        stagingBuffer.name = "Overlay Staging";
+    }
     stagingBuffer.update(fontData, uploadSize);
 
     // Copy buffer data to font image

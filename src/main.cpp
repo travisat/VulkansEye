@@ -17,10 +17,7 @@ auto main(int argc, char *argv[]) -> int
     {
         auto debug = spdlog::basic_logger_mt<spdlog::async_factory>("debug", "logs/debug.log", true);
         auto state = spdlog::basic_logger_mt<spdlog::async_factory>("state", "logs/state.log", true);
-        auto validation = spdlog::basic_logger_st("validation", "logs/validation.log", true);
-        
         spdlog::set_default_logger(debug);
-        spdlog::info("BEGIN");
 
         try
         {
@@ -44,7 +41,6 @@ auto main(int argc, char *argv[]) -> int
             tat::VulkansEye app(config);
             tat::VulkansEye::run();
             tat::VulkansEye::cleanup();
-            spdlog::info("END");
         }
         catch (const std::exception &e)
         {

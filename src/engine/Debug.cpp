@@ -11,21 +11,19 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT 
                                          const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *
                                          /*pUserData*/) -> VkBool32
 {
-    auto logger = spdlog::get("validation");
-
     if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
     {
-        logger->warn("Validation {}", pCallbackData->pMessage);
+        spdlog::warn("Validation {}", pCallbackData->pMessage);
         std::cerr << pCallbackData->pMessage << std::endl;
     }
     else if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
     {
-        logger->error("Validation {}", pCallbackData->pMessage);
+        spdlog::error("Validation {}", pCallbackData->pMessage);
         std::cerr << pCallbackData->pMessage << std::endl;
     }
     else
     {
-        logger->info("Validation {}", pCallbackData->pMessage);
+        spdlog::info("Validation {}", pCallbackData->pMessage);
     }
 
     return VK_FALSE;

@@ -110,7 +110,10 @@ void Image::load(const std::string &path)
     Buffer stagingBuffer{};
     stagingBuffer.flags = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBuffer.memUsage = VMA_MEMORY_USAGE_CPU_ONLY;
-    stagingBuffer.name = path + " Staging";
+    if constexpr (Debug::enable)
+    {
+        stagingBuffer.name = path + " Staging";
+    }
     stagingBuffer.update(texture.data(), texture.size());
 
     imageInfo.extent.width = texture.extent().x;

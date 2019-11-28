@@ -73,13 +73,17 @@ void SwapChain::create()
 
         imageViews[i] = engine.device.create(viewInfo);
     }
-    spdlog::info("Created SwapChain");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created SwapChain");
+    }
 }
 
 void SwapChain::destroy()
 {
     auto &device = State::instance().engine.device;
-    
+
     for (auto imageView : imageViews)
     {
         device.destroy(imageView);
