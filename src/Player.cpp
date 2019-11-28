@@ -19,12 +19,19 @@ void Player::create()
     velocityMax = player.at("velocityMax");
     timeToReachVMax = player.at("timeToReachVMax");
     timeToStopfromVMax = player.at("timeToStopFromVMax");
-    spdlog::info("Created Player");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Player");
+    }
 }
 
 void Player::destroy()
 {
-    spdlog::info("Destroyed Player");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Player");
+    }
 }
 
 void Player::move(glm::vec2 direction, float deltaTime)

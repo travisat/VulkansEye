@@ -37,7 +37,7 @@ void Buffer::create(VkDeviceSize s)
     buffer = std::get<vk::Buffer>(allocation->handle);
     mapped = info.pMappedData;
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     {
         spdlog::info("Created Buffer {} : {}", allocation->descriptor, name);
     }

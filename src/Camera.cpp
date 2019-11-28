@@ -21,7 +21,11 @@ void Camera::create()
     updateView();
     updateProjection();
     currentMode = Input::getMode();
-    spdlog::info("Created Camera");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Camera");
+    }
 }
 
 void Camera::destroy()
@@ -41,7 +45,7 @@ void Camera::look(double mouseX, double mouseY)
     {
         lastMousePosition = mousePosition;
     }
-    
+
     else if (lastMousePosition != mousePosition)
     { // don't update rotation  unless mouse is moved
         glm::vec2 deltaMousePosition = mousePosition - lastMousePosition;
@@ -96,7 +100,7 @@ void Camera::updateView()
 
 void Camera::updateProjection()
 {
-    auto& window = State::instance().window;
+    auto &window = State::instance().window;
     width = window.width;
     height = window.height;
     P = glm::perspective(glm::radians(FoV), width / height, zNear, zFar);

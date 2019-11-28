@@ -24,7 +24,10 @@ void Allocator::create(vk::PhysicalDevice physicalDevice, vk::Device device)
         return;
     }
 
-    spdlog::info("Created Allocator");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Allocator");
+    }
 }
 
 void Allocator::destroy()
@@ -48,7 +51,11 @@ void Allocator::destroy()
         allocations.clear();
     }
     vmaDestroyAllocator(allocator);
-    spdlog::info("Destroyed Allocator");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Allocator");
+    }
 }
 
 auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo)
@@ -72,7 +79,7 @@ auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &
     allocations.insert(std::make_pair(allocation.descriptor, allocation));
     ++accumulator;
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation layers are enabled
         Debug::setName(State::instance().engine.device.device,
                        std::get<vk::Image>(allocations.at(allocation.descriptor).handle),
@@ -105,8 +112,8 @@ auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo
     allocations.insert(std::make_pair(allocation.descriptor, allocation));
     ++accumulator;
 
-    if constexpr (Debug::enableValidationLayers)
-    { // only do this if validation layers are enabled
+    if constexpr (Debug::enable)
+    {
         Debug::setName(State::instance().engine.device.device,
                        std::get<vk::Buffer>(allocations.at(allocation.descriptor).handle),
                        fmt::format("Buffer {}", allocation.descriptor));
@@ -125,25 +132,26 @@ void Allocator::destroy(Allocation *allocation)
         if (std::holds_alternative<vk::Image>(allocation->handle))
         {
             vmaDestroyImage(allocator, std::get<vk::Image>(allocation->handle), allocation->allocation);
-
-            if constexpr (Debug::enableValidationLayers)
-            { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Image {}", descriptor);
-            }
             allocations.erase(descriptor);
             allocation = nullptr;
+
+            if constexpr (Debug::enable)
+            {
+                spdlog::info("Deallocated Image {}", descriptor);
+            }
+
             return;
         }
         if (std::holds_alternative<vk::Buffer>(allocation->handle))
         {
             vmaDestroyBuffer(allocator, std::get<vk::Buffer>(allocation->handle), allocation->allocation);
-
-            if constexpr (Debug::enableValidationLayers)
-            { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Buffer {}", descriptor);
-            }
             allocations.erase(descriptor);
             allocation = nullptr;
+
+            if constexpr (Debug::enable)
+            {
+                spdlog::info("Deallocated Buffer {}", descriptor);
+            }
         }
     }
 }

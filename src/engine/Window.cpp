@@ -15,14 +15,22 @@ void Window::create(void *user, int width, int height, const std::string &name)
     glfwSetWindowUserPointer(window, user);
     this->width = width;
     this->height = height;
-    spdlog::info("Created window");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created window");
+    }
 }
 
 void Window::destroy()
 {
     glfwDestroyWindow(window);
     glfwTerminate();
-    spdlog::info("Destroyed Window");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Window");
+    }
 }
 
 void Window::resize()

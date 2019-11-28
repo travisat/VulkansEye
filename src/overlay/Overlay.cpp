@@ -43,7 +43,11 @@ void Overlay::create()
     createPipeline();
     newFrame();
     createBuffers();
-    spdlog::info("Created Overlay");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Overlay");
+    }
 }
 
 void Overlay::destroy()
@@ -58,7 +62,11 @@ void Overlay::destroy()
     device.destroy(descriptorSetLayout);
     device.destroy(descriptorPool);
     pipeline.destroy();
-    spdlog::info("Destroyed Overlay");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Overlay");
+    }
 }
 
 void Overlay::recreate()
@@ -82,15 +90,19 @@ void Overlay::cleanup()
 
 void Overlay::createBuffers()
 {
-    vertexBuffer.name = "Overlay Vert";
     vertexBuffer.flags = vk::BufferUsageFlagBits::eVertexBuffer;
     vertexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     vertexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    indexBuffer.name = "Overlay index";
     indexBuffer.flags = vk::BufferUsageFlagBits::eIndexBuffer;
     indexBuffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     indexBuffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    if constexpr (Debug::enable)
+    {
+        vertexBuffer.name = "Overlay Vert";
+        indexBuffer.name = "Overlay index";
+    }
 }
 
 void Overlay::createFont()
@@ -157,7 +169,7 @@ void Overlay::createDescriptorPool()
 
     descriptorPool = engine.device.create(poolInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, descriptorPool, "Overlay Pool");
     }
@@ -180,7 +192,7 @@ void Overlay::createDescriptorLayouts()
 
     descriptorSetLayout = engine.device.create(layoutInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, descriptorSetLayout, "Overlay Layout");
     }
@@ -197,7 +209,7 @@ void Overlay::createDescriptorSets()
 
     descriptorSets = engine.device.create(allocInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         for (auto &descriptorSet : descriptorSets)
         {
@@ -228,7 +240,7 @@ void Overlay::createPipeline()
 {
     auto &engine = State::instance().engine;
     pipeline.descriptorSetLayout = &descriptorSetLayout;
-    
+
     auto vertPath = "assets/shaders/ui.vert.spv";
     auto fragPath = "assets/shaders/ui.frag.spv";
     pipeline.vertShader = engine.createShaderModule(vertPath);
@@ -289,7 +301,7 @@ void Overlay::createPipeline()
 
     pipeline.create();
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, pipeline.vertShader, "Overlay Vert Shader");
         Debug::setName(engine.device.device, pipeline.fragShader, "Overlay Frag Shader");

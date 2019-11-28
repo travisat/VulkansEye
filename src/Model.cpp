@@ -44,7 +44,7 @@ void Model::createColorSets(vk::DescriptorPool pool, vk::DescriptorSetLayout lay
 
     colorSets = engine.device.create(allocInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         for (auto &descriptorSet : colorSets)
         {
@@ -214,7 +214,7 @@ void Model::createShadowSets(vk::DescriptorPool pool, vk::DescriptorSetLayout la
 
     shadowSets = engine.device.create(allocInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         for (auto &descriptorSet : shadowSets)
         {
@@ -254,17 +254,26 @@ void Model::createUniformBuffers()
     {
         vertBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         vertBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        vertBuffers[i].name = fmt::format("Model {} Vert", name);
+        if constexpr (Debug::enable)
+        {
+            vertBuffers[i].name = fmt::format("Model {} Vert", name);
+        }
         vertBuffers[i].create(sizeof(UniformVert));
 
         fragBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         fragBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        fragBuffers[i].name = fmt::format("Model {} Frag", name);
+        if constexpr (Debug::enable)
+        {
+            fragBuffers[i].name = fmt::format("Model {} Frag", name);
+        }
         fragBuffers[i].create(sizeof(UniformFrag));
 
         shadBuffers[i].flags = vk::BufferUsageFlagBits::eUniformBuffer;
         shadBuffers[i].memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        shadBuffers[i].name = fmt::format("Model {} Shad", name);
+        if constexpr (Debug::enable)
+        {
+            shadBuffers[i].name = fmt::format("Model {} Shad", name);
+        }
         shadBuffers[i].create(sizeof(UniformShad));
     }
 }

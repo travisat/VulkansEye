@@ -21,7 +21,7 @@ void Engine::create()
 {
     auto &state = State::instance();
     createInstance();
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     {
         debug.create(&instance);
     }
@@ -39,7 +39,10 @@ void Engine::create()
     createCommandPool();
     pipelineCache.create();
 
-    spdlog::info("Created Engine");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Engine");
+    }
 }
 
 void Engine::prepare()
@@ -52,7 +55,11 @@ void Engine::prepare()
 
     createCommandBuffers();
     prepared = true;
-    spdlog::info("Prepared Engine");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Prepared Engine");
+    }
 }
 
 void Engine::destroy()
@@ -62,7 +69,7 @@ void Engine::destroy()
     depthAttachment.destroy();
     shadowDepth.destroy();
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     {
         debug.destroy();
     }
@@ -99,7 +106,10 @@ void Engine::destroy()
         instance.destroy();
     }
 
-    spdlog::info("Destroyed Engine");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Engine");
+    }
 }
 
 void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
@@ -369,7 +379,11 @@ void Engine::resizeWindow()
     device.wait();
 
     prepared = true;
-    spdlog::info("Resized window to {}x{}", state.window.width, state.window.height);
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Resized window to {}x{}", state.window.width, state.window.height);
+    }
 }
 
 void Engine::createInstance()
@@ -386,7 +400,7 @@ void Engine::createInstance()
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -398,7 +412,7 @@ void Engine::createInstance()
     createInfo.enabledLayerCount = 0;
     createInfo.pNext = nullptr;
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     {
         createInfo.enabledLayerCount = debug.validationLayers.size();
         createInfo.ppEnabledLayerNames = debug.validationLayers.data();
@@ -411,7 +425,10 @@ void Engine::createInstance()
     instance = vk::createInstance(createInfo);
     VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
-    spdlog::info("Created Vulkan instance");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Vulkan instance");
+    }
 }
 
 void Engine::createShadowFramebuffers()
@@ -426,7 +443,7 @@ void Engine::createShadowFramebuffers()
     shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(device.device, shadowDepth.image, "ShadowDepth");
     }
@@ -440,7 +457,11 @@ void Engine::createShadowFramebuffers()
         shadowFramebuffers[i].attachments = {state.scene.shadow.imageView, shadowDepth.imageView};
         shadowFramebuffers[i].create();
     }
-    spdlog::info("Created Framebuffer for shadows");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Framebuffer for shadows");
+    }
 }
 
 void Engine::createColorFramebuffers()
@@ -472,7 +493,11 @@ void Engine::createColorFramebuffers()
                                             swapChain.imageViews[i]};
         colorFramebuffers[i].create();
     }
-    spdlog::info("Created Framebuffer for display");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Framebuffer for display");
+    }
 }
 
 void Engine::createCommandPool()
@@ -483,7 +508,11 @@ void Engine::createCommandPool()
     poolInfo.queueFamilyIndex = QueueFamilyIndices.graphicsFamily.value();
 
     commandPool = device.create(poolInfo);
-    spdlog::info("Created Command Pool");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Command Pool");
+    }
 }
 
 auto Engine::beginSingleTimeCommands() -> vk::CommandBuffer
@@ -528,6 +557,7 @@ auto Engine::createShaderModule(const std::string &filename) -> vk::ShaderModule
 
     if (!file.is_open())
     {
+        spdlog::error("Failed to open ", filename);
         throw std::runtime_error("failed to open file");
     }
 

@@ -37,7 +37,10 @@ void Config::create(const std::string &path)
         loadMeshes(state.at("settings").at("meshesPath"));
         loadModels(state.at("settings").at("modelsPath"));
 
-        spdlog::info("Created Config");
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Created Config");
+        }
     }
     catch (json::exception &e)
     {
@@ -57,7 +60,10 @@ void Config::loadSettings(const std::string &path)
 
         state.at("settings").update(j);
 
-        spdlog::info("Loaded Config {}", path);
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Loaded Config {}", path);
+        }
     }
     else
     { // just let default values be used
@@ -76,7 +82,11 @@ void Config::loadPlayer(const std::string &path)
         file >> j;
 
         state.at("player").update(j);
-        spdlog::info("Loaded Config {}", path);
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Loaded Config {}", path);
+        }
     }
     else
     {
@@ -94,7 +104,11 @@ void Config::loadScene(const std::string &path)
         file >> j;
 
         state.at("scene").update(j);
-        spdlog::info("Loaded Config {}", path);
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Loaded Config {}", path);
+        }
     }
     else
     {
@@ -127,7 +141,11 @@ void Config::loadBackdrops(const std::string &path)
                 {
                     state.at("backdrops").at(name).update(item);
                 }
-                spdlog::info("Loaded Config {}", configFile);
+
+                if constexpr (Debug::enable)
+                {
+                    spdlog::info("Loaded Config {}", configFile);
+                }
             }
             else
             {
@@ -166,7 +184,11 @@ void Config::loadMaterials(const std::string &path)
                 {
                     state.at("materials").at(name).update(item);
                 }
-                spdlog::info("Loaded Config {}", configFile);
+
+                if constexpr (Debug::enable)
+                {
+                    spdlog::info("Loaded Config {}", configFile);
+                }
             }
             else
             {
@@ -205,7 +227,11 @@ void Config::loadMeshes(const std::string &path)
                 {
                     state.at("meshes").at(name).update(item);
                 }
-                spdlog::info("Loaded Config {}", configFile);
+
+                if constexpr (Debug::enable)
+                {
+                    spdlog::info("Loaded Config {}", configFile);
+                }
             }
             else
             {
@@ -246,7 +272,11 @@ void Config::loadModels(const std::string &path)
                     {
                         state.at("models").at(name).update(item);
                     }
-                    spdlog::info("Loaded Config {}", configFile);
+
+                    if constexpr (Debug::enable)
+                    {
+                        spdlog::info("Loaded Config {}", configFile);
+                    }
                 }
             }
             else

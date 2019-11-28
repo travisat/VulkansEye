@@ -21,18 +21,22 @@ Material::~Material()
 
 void Material::load()
 {
-    //get json for material
-    auto& material = State::instance().at("materials").at(name);
-    //load textures in json
+    // get json for material
+    auto &material = State::instance().at("materials").at(name);
+    // load textures in json
     loadImage(material.at("diffuse"), &diffuse);
     loadImage(material.at("normal"), &normal);
     loadImage(material.at("metallic"), &metallic);
     loadImage(material.at("roughness"), &roughness);
     loadImage(material.at("ao"), &ao);
     scale = material.at("scale");
-    //we are now loaded
+    // we are now loaded
     loaded = true;
-    spdlog::info("Loaded Material {}", name);
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Loaded Material {}", name);
+    }
 }
 
 void Material::loadImage(const std::string &file, Image *image)

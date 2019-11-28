@@ -32,7 +32,11 @@ void Backdrop::load()
     createDescriptorSets();
 
     loaded = true;
-    spdlog::info("Loaded Backdrop {}", name);
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Loaded Backdrop {}", name);
+    }
 }
 
 Backdrop::~Backdrop()
@@ -54,7 +58,11 @@ Backdrop::~Backdrop()
             device.destroy(descriptorPool);
         }
         pipeline.destroy();
-        spdlog::info("Destroyed Backdrop {}", name);
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Destroyed Backdrop {}", name);
+        }
     }
 }
 
@@ -115,7 +123,10 @@ void Backdrop::createUniformBuffers()
         buffer.flags = vk::BufferUsageFlagBits::eUniformBuffer;
         buffer.memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU;
         buffer.memFlags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        buffer.name = "Backdrop";
+        if constexpr (Debug::enable)
+        {
+            buffer.name = "Backdrop";
+        }
         buffer.create(sizeof(UniformBack));
 
         memcpy(buffer.mapped, &backBuffer, sizeof(backBuffer));
@@ -151,7 +162,7 @@ void Backdrop::createDescriptorPool()
 
     descriptorPool = engine.device.create(poolInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, descriptorPool, name + " Pool");
     }
@@ -182,7 +193,7 @@ void Backdrop::createDescriptorSetLayouts()
 
     descriptorSetLayout = engine.device.create(layoutInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, descriptorSetLayout, name + " Layout");
     }
@@ -199,7 +210,7 @@ void Backdrop::createDescriptorSets()
 
     descriptorSets = engine.device.create(allocInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         for (auto &descriptorSet : descriptorSets)
         {
@@ -256,7 +267,7 @@ void Backdrop::createPipeline()
     pipeline.depthStencil.depthCompareOp = vk::CompareOp::eNever;
     pipeline.create();
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, pipeline.vertShader, name + " Vert Shader");
         Debug::setName(engine.device.device, pipeline.fragShader, name + " Frag Shader");

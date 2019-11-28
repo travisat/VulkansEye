@@ -38,7 +38,10 @@ void Scene::destroy()
     colorPipeline.destroy();
     shadowPipeline.destroy();
 
-    spdlog::info("Destroyed Scene");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Destroyed Scene");
+    }
 }
 
 // can't be constructor cause models require pointer to scene which wouldn't exist yet
@@ -57,7 +60,11 @@ void Scene::create()
     createShadowLayouts();
     createShadowSets();
     createShadowPipeline();
-    spdlog::info("Created Scene");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Scene");
+    }
 }
 
 void Scene::cleanup()
@@ -97,7 +104,10 @@ void Scene::createBrdf()
     brdf.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     brdf.createSampler();
 
-    spdlog::info("Created BRDF");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created BRDF");
+    }
 }
 
 void Scene::createShadow()
@@ -117,7 +127,10 @@ void Scene::createShadow()
     shadow.samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
     shadow.createSampler();
 
-    spdlog::info("Created Shadow");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Shadow");
+    }
 }
 
 void Scene::loadBackdrop()
@@ -133,9 +146,16 @@ void Scene::loadModels()
     for (auto &model : scene.at("models"))
     {
         models.push_back(state.models.get(model.get<std::string>()));
-        spdlog::info("Loaded Model {}", model.get<std::string>());
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Loaded Model {}", model.get<std::string>());
+        }
     }
-    spdlog::info("Created Models");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Models");
+    }
 }
 
 void Scene::drawColor(vk::CommandBuffer commandBuffer, uint32_t currentImage)
@@ -228,7 +248,7 @@ void Scene::createColorPool()
 
     colorPool = engine.device.create(poolInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, colorPool, "Scene Color Pool");
     }
@@ -322,7 +342,7 @@ void Scene::createColorLayouts()
     auto &device = State::instance().engine.device;
     colorLayout = device.create(layoutInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(device.device, colorLayout, "Scene Color Layout");
     }
@@ -358,7 +378,7 @@ void Scene::createColorPipeline()
 
     colorPipeline.create();
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, colorPipeline.vertShader, "Scene Vert Shader");
         Debug::setName(engine.device.device, colorPipeline.fragShader, "Scene Frag Shader");
@@ -384,7 +404,7 @@ void Scene::createShadowPool()
 
     shadowPool = engine.device.create(poolInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, shadowPool, "Scene Shadow Pool");
     }
@@ -408,7 +428,7 @@ void Scene::createShadowLayouts()
     auto &device = State::instance().engine.device;
     shadowLayout = device.create(layoutInfo);
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(device.device, shadowLayout, "Scene Shadow Layout");
     }
@@ -448,7 +468,7 @@ void Scene::createShadowPipeline()
 
     shadowPipeline.create();
 
-    if constexpr (Debug::enableValidationLayers)
+    if constexpr (Debug::enable)
     { // only do this if validation is enabled
         Debug::setName(engine.device.device, shadowPipeline.vertShader, "Scene Shadow Vert Shader");
         Debug::setName(engine.device.device, shadowPipeline.fragShader, "Scene Shadow Frag Shader");

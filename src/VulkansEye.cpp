@@ -20,7 +20,11 @@ VulkansEye::VulkansEye(const std::string &configPath)
     // start timers
     Timer::getInstance();
     Timer::time();
-    spdlog::info("Started Timers");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Started Timers");
+    }
 
     // load config
     Config config;
@@ -50,20 +54,36 @@ VulkansEye::VulkansEye(const std::string &configPath)
     state.window.setCursorPosCallback(&Input::cursorPosCallback);
     state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-    spdlog::info("Created Input");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Input");
+    }
 
     // create engine
     state.engine.create();
 
     // create collections
     state.backdrops.create("backdrops");
-    spdlog::info("Created Collection backdrops");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Collection backdrops");
+    }
     state.materials.create("materials");
-    spdlog::info("Created Collection materials");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Collection materials");
+    }
     state.meshes.create("meshes");
-    spdlog::info("Created Collection meshes");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Collection meshes");
+    }
     state.models.create("models");
-    spdlog::info("Created Collection models");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Collection models");
+    }
 
     // create other objects
     state.player.create();
@@ -78,7 +98,10 @@ VulkansEye::VulkansEye(const std::string &configPath)
 void VulkansEye::run()
 {
     auto &state = State::instance();
-    spdlog::info("Begin Main Loop");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Begin Main Loop");
+    }
     float lastFrameTime = 0.F;
     while (state.window.shouldClose() == 0)
     {
@@ -102,7 +125,10 @@ void VulkansEye::run()
     }
 
     state.engine.device.wait();
-    spdlog::info("End Main Loop");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("End Main Loop");
+    }
 }
 
 void VulkansEye::cleanup()
@@ -123,7 +149,10 @@ void VulkansEye::cleanup()
     state.engine.destroy();
 
     // dump state
-    spdlog::get("state")->info(State::instance().dump(4));
+    if constexpr (Debug::enable)
+    {
+        spdlog::get("state")->info(State::instance().dump(4));
+    }
 }
 
 void VulkansEye::handleInput(float deltaTime)
@@ -187,7 +216,11 @@ void VulkansEye::switchToNormalMode()
         state.engine.showOverlay = false;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Normal);
-        spdlog::info("Changed Mode to Normal");
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Changed Mode to Normal");
+        }
     }
 }
 
@@ -207,7 +240,11 @@ void VulkansEye::switchToVisualMode()
         state.engine.showOverlay = true;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Visual);
-        spdlog::info("Changed Mode to Visual");
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Changed Mode to Visual");
+        }
     }
 }
 
@@ -222,14 +259,23 @@ void VulkansEye::switchToInsertMode()
         state.engine.showOverlay = true;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Insert);
-        spdlog::info("Changed Mode to Insert");
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Changed Mode to Insert");
+        }
     }
 }
 
 void VulkansEye::close()
 {
     auto &state = State::instance();
-    spdlog::info("Closing");
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Closing");
+    }
+    
     state.window.setClose(1);
 }
 

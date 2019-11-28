@@ -15,11 +15,11 @@ namespace tat
 
 void Mesh::load()
 {
-    auto& mesh = State::instance().at("meshes").at(name);
+    auto &mesh = State::instance().at("meshes").at(name);
     size.x = mesh.at("size").at(0);
     size.y = mesh.at("size").at(1);
     size.z = mesh.at("size").at(2);
-    
+
     import(mesh.at("file"));
 
     // copy buffers to gpu only memory
@@ -41,7 +41,11 @@ void Mesh::load()
     stagingBuffer.copyTo(buffers.index);
 
     loaded = true;
-    spdlog::info("Loaded Mesh {}", name);
+
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Loaded Mesh {}", name);
+    }
 }
 
 void Mesh::import(const std::string &file)

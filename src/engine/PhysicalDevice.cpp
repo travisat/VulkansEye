@@ -21,11 +21,16 @@ void PhysicalDevice::pick(const vk::Instance &instance)
         if (isDeviceSuitable(physicalDevice))
         {
             properties = physicalDevice.getProperties();
-            spdlog::info("Device: {}", properties.deviceName);
-            spdlog::info("ID: {}", properties.deviceID);
-            spdlog::info("Type: {}", properties.deviceType);
-            spdlog::info("Driver: {}", properties.driverVersion);
-            spdlog::info("API: {}", properties.apiVersion);
+
+            if constexpr (Debug::enable)
+            {
+                spdlog::info("Device: {}", properties.deviceName);
+                spdlog::info("ID: {}", properties.deviceID);
+                spdlog::info("Type: {}", properties.deviceType);
+                spdlog::info("Driver: {}", properties.driverVersion);
+                spdlog::info("API: {}", properties.apiVersion);
+            }
+
             device = physicalDevice;
             msaaSamples = getMaxUsableSampleCount();
             return;
@@ -158,6 +163,5 @@ auto PhysicalDevice::getMaxUsableSampleCount() -> vk::SampleCountFlagBits
         return vk::SampleCountFlagBits::e1;
     }
 }
-
 
 } // namespace tat

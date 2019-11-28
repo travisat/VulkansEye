@@ -46,7 +46,10 @@ void Device::create()
     graphicsQueue = device.getQueue(indices.graphicsFamily.value(), 0);
     presentQueue = device.getQueue(indices.presentFamily.value(), 0);
 
-    spdlog::info("Created Logical Device");
+    if constexpr (Debug::enable)
+    {
+        spdlog::info("Created Logical Device");
+    }
 }
 
 void Device::destroy()
@@ -78,7 +81,6 @@ auto Device::acquireNextImage(vk::SwapchainKHR &swapChain, vk::Semaphore &semaph
 {
     return device.acquireNextImageKHR(swapChain, UINT64_MAX, semaphore, nullptr, &currentBuffer);
 }
-
 
 void Device::update(std::vector<vk::WriteDescriptorSet> &descriptorWrites)
 {
