@@ -12,15 +12,10 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
+#include "engine/Allocation.hpp"
+
 namespace tat
 {
-
-struct Allocation
-{
-    int32_t descriptor = -1;
-    std::variant<vk::Image, vk::Buffer> handle;
-    VmaAllocation allocation{};
-};
 
 class Allocator
 {
@@ -37,11 +32,8 @@ class Allocator
     auto create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo,
                 VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
 
+    //destroys allocation
     void destroy(Allocation *allocation);
-
-    auto map(Allocation *allocation) -> void *;
-    void unmap(Allocation *allocation);
-    void flush(Allocation *allocation, size_t offset, size_t size);
 
   private:
     VmaAllocator allocator{};

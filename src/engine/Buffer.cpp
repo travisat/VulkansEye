@@ -49,13 +49,7 @@ void Buffer::destroy()
     {
         auto &allocator = State::instance().engine.allocator;
         allocator.destroy(allocation);
-        if constexpr (Debug::enableValidationLayers)
-        {
-            if (allocation->descriptor >= 0)
-            {
-                spdlog::info("Destroyed Buffer {} : {}", allocation->descriptor, name);
-            }
-        }
+        buffer = nullptr;
     }
 }
 
@@ -66,9 +60,8 @@ void Buffer::update(void *t, size_t s)
         create(s);
     }
 
-    auto &allocator = State::instance().engine.allocator;
-    memcpy(allocator.map(allocation), t, s);
-    allocator.unmap(allocation);
+    memcpy(allocation->map(), t, s);
+    allocation->unmap();
 }
 
 void Buffer::copyTo(Buffer &destination)
@@ -91,8 +84,7 @@ void Buffer::copyTo(Buffer &destination)
 
 void Buffer::flush(size_t size, vk::DeviceSize offset)
 {
-    auto &allocator = State::instance().engine.allocator;
-    allocator.flush(allocation, offset, size);
+    allocation->flush(size, offset);
 };
 
 } // namespace tat

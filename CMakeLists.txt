@@ -34,6 +34,7 @@ ${CMAKE_SOURCE_DIR}/src/engine/SwapChain.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Framebuffer.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/RenderPass.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Allocator.cpp
+${CMAKE_SOURCE_DIR}/src/engine/Allocation.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Debug.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Semaphore.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Fence.cpp

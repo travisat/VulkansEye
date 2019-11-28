@@ -72,7 +72,6 @@ void Image::destroy()
     {
         engine.allocator.destroy(allocation);
         image = nullptr;
-        allocation = nullptr;
     }
     if (sampler)
     {

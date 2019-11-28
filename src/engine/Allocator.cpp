@@ -55,7 +55,6 @@ auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &
     -> Allocation *
 {
     Allocation allocation{};
-    allocation.descriptor = accumulator;
 
     vk::Image image{};
     auto result = vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &memInfo,
@@ -68,9 +67,10 @@ auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &
     }
 
     allocation.handle = image;
-
-    ++accumulator;
+    allocation.allocator = allocator;
+    allocation.descriptor = accumulator;
     allocations.insert(std::make_pair(allocation.descriptor, allocation));
+    ++accumulator;
 
     if constexpr (Debug::enableValidationLayers)
     { // only do this if validation layers are enabled
@@ -87,7 +87,6 @@ auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo
     -> Allocation *
 {
     Allocation allocation{};
-    allocation.descriptor = accumulator;
 
     vk::Buffer buffer{};
 
@@ -99,10 +98,12 @@ auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo
         spdlog::error("Unable to create buffer. Error Code {}", result);
         throw std::runtime_error("Unable to create buffer");
     }
-    allocation.handle = buffer;
 
-    ++accumulator;
+    allocation.handle = buffer;
+    allocation.allocator = allocator;
+    allocation.descriptor = accumulator;
     allocations.insert(std::make_pair(allocation.descriptor, allocation));
+    ++accumulator;
 
     if constexpr (Debug::enableValidationLayers)
     { // only do this if validation layers are enabled
@@ -117,75 +118,33 @@ auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo
 
 void Allocator::destroy(Allocation *allocation)
 {
-    if (allocations.find(allocation->descriptor) != allocations.end())
+    if (allocation != nullptr && allocation->descriptor >= 0 && allocation->allocation != nullptr &&
+        allocation->allocator != nullptr)
     {
+        auto descriptor = allocation->descriptor;
         if (std::holds_alternative<vk::Image>(allocation->handle))
         {
             vmaDestroyImage(allocator, std::get<vk::Image>(allocation->handle), allocation->allocation);
 
             if constexpr (Debug::enableValidationLayers)
             { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Image {}", allocation->descriptor);
+                spdlog::info("Deallocated Image {}", descriptor);
             }
-            allocations.erase(allocation->descriptor);
+            allocations.erase(descriptor);
             allocation = nullptr;
+            return;
         }
-        else if (std::holds_alternative<vk::Buffer>(allocation->handle))
+        if (std::holds_alternative<vk::Buffer>(allocation->handle))
         {
             vmaDestroyBuffer(allocator, std::get<vk::Buffer>(allocation->handle), allocation->allocation);
 
             if constexpr (Debug::enableValidationLayers)
             { // only do this if validation layers are enabled
-                spdlog::info("Deallocated Buffer {}", allocation->descriptor);
+                spdlog::info("Deallocated Buffer {}", descriptor);
             }
-            allocations.erase(allocation->descriptor);
+            allocations.erase(descriptor);
             allocation = nullptr;
         }
-    }
-}
-
-auto Allocator::map(Allocation *allocation) -> void *
-{
-    void *data;
-    if (allocations.find(allocation->descriptor) != allocations.end())
-    {
-        auto result = vmaMapMemory(allocator, allocation->allocation, &data);
-        if (result != VK_SUCCESS)
-        {
-            spdlog::error("Unable to map memory of allocation {}", allocation->descriptor);
-            throw std::runtime_error("Unable to map memory of allocation");
-        }
-        return data;
-    }
-
-    spdlog::error("Unable to map memory, Allocation Id {} not found", allocation->descriptor);
-    throw std::runtime_error("Unable to map memory, allocation not found");
-    return nullptr;
-}
-
-void Allocator::unmap(Allocation *allocation)
-{
-    if (allocations.find(allocation->descriptor) != allocations.end())
-    {
-        vmaUnmapMemory(allocator, allocation->allocation);
-    }
-    else
-    {
-        spdlog::error("Unable to unmap memory, Allocation Id {} not found", allocation->descriptor);
-        throw std::runtime_error("Unable to unmap memory, allocation not found");
-    }
-}
-
-void Allocator::flush(Allocation *allocation, size_t offset, size_t size)
-{
-    if (allocations.find(allocation->descriptor) != allocations.end())
-    {
-        vmaFlushAllocation(allocator, allocation->allocation, offset, size);
-    }
-    else
-    {
-        spdlog::error("Unable to flush memory, Allocation Id {} not found", allocation->descriptor);
-        throw std::runtime_error("Unable to flush memory, allocation not found");
     }
 }
 
