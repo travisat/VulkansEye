@@ -10,6 +10,16 @@
 namespace tat
 {
 
+inline auto isImageCreateInfo(const HandleCreateInfo &createInfo) -> bool
+{
+    return std::holds_alternative<vk::ImageCreateInfo>(createInfo);
+}
+
+inline auto isBufferCreateInfo(const HandleCreateInfo &createInfo) -> bool
+{
+    return std::holds_alternative<vk::BufferCreateInfo>(createInfo);
+}
+
 void Allocator::create(vk::PhysicalDevice physicalDevice, vk::Device device)
 {
     VmaAllocatorCreateInfo allocatorInfo{};
@@ -37,12 +47,12 @@ void Allocator::destroy()
         spdlog::warn("Destroying Allocator with {} allocations", allocations.size());
         for (auto &[descriptor, allocation] : allocations)
         {
-            if (std::holds_alternative<vk::Image>(allocation.handle))
+            if (allocation.isImage())
             {
                 spdlog::warn("Destroying Image {}", descriptor);
                 vmaDestroyImage(allocator, std::get<vk::Image>(allocation.handle), allocation.allocation);
             }
-            else if (std::holds_alternative<vk::Buffer>(allocation.handle))
+            else if (allocation.isBuffer())
             {
                 spdlog::warn("Destroying Buffer {}", descriptor);
                 vmaDestroyBuffer(allocator, std::get<vk::Buffer>(allocation.handle), allocation.allocation);
@@ -58,69 +68,70 @@ void Allocator::destroy()
     }
 }
 
-auto Allocator::create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo)
+auto Allocator::create(HandleCreateInfo createInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo)
     -> Allocation *
 {
-    Allocation allocation{};
-
-    vk::Image image{};
-    auto result = vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo *>(&imageInfo), &memInfo,
-                                 reinterpret_cast<VkImage *>(&image), &allocation.allocation, allocInfo);
-
-    if (result != VK_SUCCESS)
+    if (isImageCreateInfo(createInfo))
     {
-        spdlog::error("Unable to create image. Error Code {}", result);
-        throw std::runtime_error("Unable to create image");
+        Allocation allocation{};
+        vk::Image image{};
+        auto result = vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo *>(&createInfo), &memInfo,
+                                     reinterpret_cast<VkImage *>(&image), &allocation.allocation, allocInfo);
+
+        if (result != VK_SUCCESS)
+        {
+            spdlog::error("Unable to create image. Error Code {}", result);
+            throw std::runtime_error("Unable to create image");
+        }
+
+        allocation.handle = image;
+        allocation.allocator = allocator;
+        allocation.descriptor = accumulator;
+        allocations.insert(std::make_pair(allocation.descriptor, allocation));
+        ++accumulator;
+
+        if constexpr (Debug::enable)
+        { // only do this if validation layers are enabled
+            Debug::setName(State::instance().engine.device.device,
+                           std::get<vk::Image>(allocations.at(allocation.descriptor).handle),
+                           fmt::format("Image {}", allocation.descriptor));
+            spdlog::info("Allocated Image {}", allocation.descriptor);
+        }
+        return &allocations.at(allocation.descriptor);
     }
 
-    allocation.handle = image;
-    allocation.allocator = allocator;
-    allocation.descriptor = accumulator;
-    allocations.insert(std::make_pair(allocation.descriptor, allocation));
-    ++accumulator;
-
-    if constexpr (Debug::enable)
-    { // only do this if validation layers are enabled
-        Debug::setName(State::instance().engine.device.device,
-                       std::get<vk::Image>(allocations.at(allocation.descriptor).handle),
-                       fmt::format("Image {}", allocation.descriptor));
-        spdlog::info("Allocated Image {}", allocation.descriptor);
-    }
-
-    return &allocations.at(allocation.descriptor);
-}
-
-auto Allocator::create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo)
-    -> Allocation *
-{
-    Allocation allocation{};
-
-    vk::Buffer buffer{};
-
-    auto result = vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo *>(&bufferInfo), &memInfo,
-                                  reinterpret_cast<VkBuffer *>(&buffer), &allocation.allocation, allocInfo);
-
-    if (result != VK_SUCCESS)
+    if (isBufferCreateInfo(createInfo))
     {
-        spdlog::error("Unable to create buffer. Error Code {}", result);
-        throw std::runtime_error("Unable to create buffer");
+        Allocation allocation{};
+        vk::Buffer buffer{};
+
+        auto result = vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo *>(&createInfo), &memInfo,
+                                      reinterpret_cast<VkBuffer *>(&buffer), &allocation.allocation, allocInfo);
+
+        if (result != VK_SUCCESS)
+        {
+            spdlog::error("Unable to create buffer. Error Code {}", result);
+            throw std::runtime_error("Unable to create buffer");
+        }
+
+        allocation.handle = buffer;
+        allocation.allocator = allocator;
+        allocation.descriptor = accumulator;
+        allocations.insert(std::make_pair(allocation.descriptor, allocation));
+        ++accumulator;
+
+        if constexpr (Debug::enable)
+        {
+            Debug::setName(State::instance().engine.device.device,
+                           std::get<vk::Buffer>(allocations.at(allocation.descriptor).handle),
+                           fmt::format("Buffer {}", allocation.descriptor));
+            spdlog::info("Allocated buffer {}", allocation.descriptor);
+        }
+
+        return &allocations.at(allocation.descriptor);
     }
 
-    allocation.handle = buffer;
-    allocation.allocator = allocator;
-    allocation.descriptor = accumulator;
-    allocations.insert(std::make_pair(allocation.descriptor, allocation));
-    ++accumulator;
-
-    if constexpr (Debug::enable)
-    {
-        Debug::setName(State::instance().engine.device.device,
-                       std::get<vk::Buffer>(allocations.at(allocation.descriptor).handle),
-                       fmt::format("Buffer {}", allocation.descriptor));
-        spdlog::info("Allocated buffer {}", allocation.descriptor);
-    }
-
-    return &allocations.at(allocation.descriptor);
+    return nullptr;
 }
 
 void Allocator::destroy(Allocation *allocation)

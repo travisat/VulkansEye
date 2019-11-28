@@ -17,6 +17,8 @@
 namespace tat
 {
 
+using HandleCreateInfo = std::variant<vk::ImageCreateInfo, vk::BufferCreateInfo>;
+
 class Allocator
 {
   public:
@@ -25,14 +27,11 @@ class Allocator
     // even if buffer or image has not been destroyed
     void destroy();
 
-    // creates image using vma and returns pointer to allocation
-    auto create(vk::ImageCreateInfo &imageInfo, VmaAllocationCreateInfo &memInfo,
-                VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
-    // same for buffer
-    auto create(vk::BufferCreateInfo &bufferInfo, VmaAllocationCreateInfo &memInfo,
-                VmaAllocationInfo *allocInfo = nullptr) -> Allocation *;
+    // creates handle using vma and returns pointer to allocation
+    auto create(HandleCreateInfo createInfo, VmaAllocationCreateInfo &memInfo, VmaAllocationInfo *allocInfo = nullptr)
+        -> Allocation *;
 
-    //destroys allocation
+    // destroys allocation
     void destroy(Allocation *allocation);
 
   private:

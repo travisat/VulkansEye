@@ -4,7 +4,7 @@ project(VulkansEye VERSION 0.1.0)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/logs)
 
 set(CMAKE_CXX_STANDARD 17)
-add_compile_options(-Wno-pragma-pack)
+add_compile_options(-Wno-pragma-pack -Wno-nonportable-include-path -Wno-documentation -Wno-documentation-unknown-command)
 
 include(CTest)
 enable_testing()

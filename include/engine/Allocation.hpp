@@ -15,17 +15,29 @@
 namespace tat
 {
 
+using Handle = std::variant<vk::Image, vk::Buffer>;
+
 class Allocation
 {
   public:
     int32_t descriptor = -1;
-    std::variant<vk::Image, vk::Buffer> handle;
+    Handle handle;
     VmaAllocator allocator = nullptr;
     VmaAllocation allocation = nullptr;
 
     auto map() -> void *;
     void unmap();
     void flush(size_t size = VK_WHOLE_SIZE, size_t offset = 0);
+
+    auto isImage() -> bool
+    {
+        return std::holds_alternative<vk::Image>(handle);
+    };
+
+    auto isBuffer() -> bool
+    {
+        return std::holds_alternative<vk::Buffer>(handle);
+    };
 
   private:
 };
