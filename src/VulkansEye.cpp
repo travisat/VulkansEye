@@ -109,17 +109,17 @@ void VulkansEye::run()
         float deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
-        auto &io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(state.window.width, state.window.height);
-        io.DeltaTime = deltaTime;
-        state.overlay.newFrame();
-        state.overlay.updateBuffers();
-
         glfwPollEvents();
         handleInput(deltaTime);
         state.player.update(deltaTime);
         state.camera.setPosition(glm::vec3(-1.F, -1.F, -1.F) * state.player.position());
         state.camera.update();
+
+        auto &io = ImGui::GetIO();
+        io.DisplaySize = ImVec2(state.window.width, state.window.height);
+        io.DeltaTime = deltaTime;
+        state.overlay.newFrame();
+        state.overlay.updateBuffers();
 
         state.engine.drawFrame(deltaTime);
     }
@@ -238,6 +238,8 @@ void VulkansEye::switchToVisualMode()
         }
 
         state.engine.showOverlay = true;
+        state.overlay.uiSettings.showEditor = false;
+        state.overlay.uiSettings.showInfo = true;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Visual);
 
@@ -257,6 +259,8 @@ void VulkansEye::switchToInsertMode()
         // switch it back
         state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         state.engine.showOverlay = true;
+        state.overlay.uiSettings.showEditor = true;
+        state.overlay.uiSettings.showInfo = false;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Insert);
 

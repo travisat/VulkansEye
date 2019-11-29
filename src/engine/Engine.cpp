@@ -11,7 +11,6 @@
 #include <spdlog/spdlog.h>
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace tat
@@ -49,9 +48,9 @@ void Engine::prepare()
 {
     createShadowFramebuffers();
     createColorFramebuffers();
-    presentSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    waitFences.resize(MAX_FRAMES_IN_FLIGHT);
+    presentSemaphores.resize(maxFramesInFlight);
+    renderSemaphores.resize(maxFramesInFlight);
+    waitFences.resize(maxFramesInFlight);
 
     createCommandBuffers();
     prepared = true;
@@ -64,7 +63,7 @@ void Engine::prepare()
 
 void Engine::destroy()
 {
-    // manually delete
+    // manually destroy
     colorAttachment.destroy();
     depthAttachment.destroy();
     shadowDepth.destroy();
@@ -136,16 +135,16 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     clearValues[0].color = std::array<float, 4>{0.F, 0.F, 0.F, 0.F};
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
-    vk::RenderPassBeginInfo sunPassInfo{};
-    sunPassInfo.renderPass = shadowPass.renderPass;
-    sunPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    sunPassInfo.renderArea.extent.width = settings.at("shadowSize");
-    sunPassInfo.renderArea.extent.height = settings.at("shadowSize");
-    sunPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    sunPassInfo.pClearValues = clearValues.data();
-    sunPassInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer;
+    vk::RenderPassBeginInfo shadowPassBeginInfo{};
+    shadowPassBeginInfo.renderPass = shadowPass.renderPass;
+    shadowPassBeginInfo.renderArea.offset = vk::Offset2D{0, 0};
+    shadowPassBeginInfo.renderArea.extent.width = settings.at("shadowSize");
+    shadowPassBeginInfo.renderArea.extent.height = settings.at("shadowSize");
+    shadowPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    shadowPassBeginInfo.pClearValues = clearValues.data();
+    shadowPassBeginInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer;
 
-    commandBuffer.beginRenderPass(sunPassInfo, vk::SubpassContents::eInline);
+    commandBuffer.beginRenderPass(shadowPassBeginInfo, vk::SubpassContents::eInline);
     state.scene.drawShadow(commandBuffer, currentImage);
     commandBuffer.endRenderPass();
 }
@@ -169,19 +168,19 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
 
     commandBuffer.setLineWidth(1.0F);
 
-    std::array<vk::ClearValue, 2> clearValues = {};
+    std::array<vk::ClearValue, 2> clearValues{};
     clearValues[0].color = std::array<float, 4>{0.0F, 0.0F, 0.0F, 0.0F};
     clearValues[1].depthStencil = vk::ClearDepthStencilValue{1.0F, 0};
 
-    vk::RenderPassBeginInfo colorPassInfo = {};
-    colorPassInfo.renderPass = colorPass.renderPass;
-    colorPassInfo.renderArea.offset = vk::Offset2D{0, 0};
-    colorPassInfo.renderArea.extent = swapChain.extent;
-    colorPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    colorPassInfo.pClearValues = clearValues.data();
-    colorPassInfo.framebuffer = colorFramebuffers[currentImage].framebuffer;
+    vk::RenderPassBeginInfo colorPassBeginInfo{};
+    colorPassBeginInfo.renderPass = colorPass.renderPass;
+    colorPassBeginInfo.renderArea.offset = vk::Offset2D{0, 0};
+    colorPassBeginInfo.renderArea.extent = swapChain.extent;
+    colorPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    colorPassBeginInfo.pClearValues = clearValues.data();
+    colorPassBeginInfo.framebuffer = colorFramebuffers[currentImage].framebuffer;
 
-    commandBuffer.beginRenderPass(colorPassInfo, vk::SubpassContents::eInline);
+    commandBuffer.beginRenderPass(colorPassBeginInfo, vk::SubpassContents::eInline);
     state.scene.drawColor(commandBuffer, currentImage);
     if (showOverlay)
     {
@@ -194,11 +193,10 @@ void Engine::createCommandBuffers()
 {
     commandBuffers.resize(colorFramebuffers.size());
 
-    vk::CommandBufferAllocateInfo allocInfo = {};
+    vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.commandPool = commandPool;
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-
     commandBuffers = device.create(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
@@ -206,13 +204,10 @@ void Engine::createCommandBuffers()
         auto commandBuffer = commandBuffers[i];
         vk::CommandBufferBeginInfo beginInfo{};
         commandBuffer.begin(beginInfo);
-
         // draw shadows
         renderShadows(commandBuffer, i);
-
         // draw colors
         renderColors(commandBuffer, i);
-
         commandBuffer.end();
     }
 }
@@ -295,7 +290,7 @@ void Engine::drawFrame(float deltaTime)
         return;
     }
 
-    currentImage = (currentImage + 1) % MAX_FRAMES_IN_FLIGHT;
+    currentImage = (currentImage + 1) % maxFramesInFlight;
 }
 
 void Engine::updateWindow()
@@ -317,20 +312,18 @@ void Engine::updateWindow()
     colorPass.destroy();
     // 4: destroy swapchain
     swapChain.destroy();
-
+    // 5: cleanup overlay
     auto &overlay = State::instance().overlay;
     overlay.cleanup();
-
-    // 5: create swap chain
+    // 6: create swap chain
     swapChain.create();
-    // 6: create color renderpass
+    // 7: create color renderpass
     colorPass.create();
-
+    // 8: recreate overlay
     overlay.recreate();
-
-    // 7: create color framebuffers
+    // 9: create color framebuffers
     createColorFramebuffers();
-    // 8: create commandbuffers
+    // 10: create commandbuffers
     createCommandBuffers();
 
     device.wait();
@@ -444,7 +437,7 @@ void Engine::createShadowFramebuffers()
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     if constexpr (Debug::enable)
-    { // only do this if validation is enabled
+    {
         Debug::setName(device.device, shadowDepth.image, "ShadowDepth");
     }
 

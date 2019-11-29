@@ -64,6 +64,8 @@ class Overlay
     // Draw current imGui frame into a command buffer
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
 
+    UISettings uiSettings{};
+
   private:
     // Vulkan resources for rendering the UI
     Buffer vertexBuffer{};
@@ -71,20 +73,18 @@ class Overlay
 
     Image fontImage{};
 
-    Editor editor {};
+    Editor editor{};
 
     Pipeline pipeline{};
     vk::DescriptorPool descriptorPool = nullptr;
     vk::DescriptorSetLayout descriptorSetLayout = nullptr;
     std::vector<vk::DescriptorSet> descriptorSets{};
 
-    UISettings uiSettings{};
-
     float lastFrameTime = 0;
     float lastUpdateTime = 0;
     float updateFreqTime = 0.1F; // time between updates
 
-    void showInfo(bool &open);
+    void showInfo();
 
     void createBuffers();
     void createFont();

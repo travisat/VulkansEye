@@ -29,6 +29,13 @@ void Overlay::create()
     style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_Header] = ImVec4(0.4F, 0.4F, 0.4F, 0.4F);
     style.Colors[ImGuiCol_CheckMark] = ImVec4(1.F, 1.F, 1.F, 1.F);
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.13F, 0.1F, 0.12F, 0.95F);
+    style.WindowRounding = 0.F;
+    style.WindowPadding = ImVec2(2.F, 2.F);
+    style.WindowBorderSize = 1.F;
+    style.Alpha = 0.5F;
+    style.FrameRounding = 0.F;
+    style.FrameBorderSize = 0.F;
     // Dimensions
     auto &io = ImGui::GetIO();
     auto &window = State::instance().at("settings").at("window");
@@ -159,21 +166,20 @@ void Overlay::createFont()
 void Overlay::createDescriptorPool()
 {
     auto &engine = State::instance().engine;
-    auto numSwapChainImages = engine.swapChain.count;
 
     std::array<vk::DescriptorPoolSize, 1> poolSizes = {};
     poolSizes[0].type = vk::DescriptorType::eCombinedImageSampler;
-    poolSizes[0].descriptorCount = numSwapChainImages;
+    poolSizes[0].descriptorCount = engine.swapChain.count;
 
     vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = numSwapChainImages;
+    poolInfo.maxSets = engine.swapChain.count;
 
     descriptorPool = engine.device.create(poolInfo);
 
     if constexpr (Debug::enable)
-    { // only do this if validation is enabled
+    { // only do this if debug is enabled
         Debug::setName(engine.device.device, descriptorPool, "Overlay Pool");
     }
 }
@@ -196,7 +202,7 @@ void Overlay::createDescriptorLayouts()
     descriptorSetLayout = engine.device.create(layoutInfo);
 
     if constexpr (Debug::enable)
-    { // only do this if validation is enabled
+    { // only do this if debug is enabled
         Debug::setName(engine.device.device, descriptorSetLayout, "Overlay Layout");
     }
 }
@@ -317,70 +323,71 @@ void Overlay::newFrame()
 {
     ImGui::NewFrame();
 
-    showInfo(uiSettings.showInfo);
-    editor.showZep(uiSettings.showEditor);
+    if (uiSettings.showEditor)
+    {
+        editor.show();
+    }
+    if (uiSettings.showInfo)
+    {
+        showInfo();
+    }
 
     ImGui::Render();
 }
 
-void Overlay::showInfo(bool &open)
+void Overlay::showInfo()
 {
-    if (open)
+    float frameTime = Timer::time();
+    float deltaTime = frameTime - lastFrameTime;
+    lastFrameTime = frameTime;
+    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
     {
-        float frameTime = Timer::time();
-        float deltaTime = frameTime - lastFrameTime;
-        lastFrameTime = frameTime;
-        if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
+        lastUpdateTime = frameTime;
+        uiSettings.fps = 1.F / deltaTime;
+        uiSettings.position = State::instance().player.position();
+        uiSettings.rotation = State::instance().camera.rotation();
+
+        switch (Input::getMode())
         {
-            lastUpdateTime = frameTime;
-            uiSettings.fps = 1.F / deltaTime;
-            uiSettings.position = State::instance().player.position();
-            uiSettings.rotation = State::instance().camera.rotation();
-
-            switch (Input::getMode())
-            {
-            case InputMode::Normal:
-                uiSettings.modeNum = 0;
-                break;
-            case InputMode::Visual:
-                uiSettings.modeNum = 1;
-                break;
-            case InputMode::Insert:
-                uiSettings.modeNum = 2;
-                break;
-            }
+        case InputMode::Normal:
+            uiSettings.modeNum = 0;
+            break;
+        case InputMode::Visual:
+            uiSettings.modeNum = 1;
+            break;
+        case InputMode::Insert:
+            uiSettings.modeNum = 2;
+            break;
         }
-        ImGui::SetNextWindowSize(ImVec2(300, 180), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Temp");
-        ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
-        ImGui::InputFloat("Fps", &uiSettings.fps);
-        ImGui::InputFloat3("Position", &uiSettings.position.x);
-        ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
-
-        ImGui::End();
     }
+    ImGui::SetNextWindowSize(ImVec2(320, 120));
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    auto windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_NoSavedSettings;
+    ImGui::Begin("Temp", nullptr, windowFlags);
+    ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
+    ImGui::InputFloat("Fps", &uiSettings.fps);
+    ImGui::InputFloat3("Position", &uiSettings.position.x);
+    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
+
+    ImGui::End();
 }
 
 void Overlay::updateBuffers()
 {
-    auto &engine = State::instance().engine;
     auto *imDrawData = ImGui::GetDrawData();
-
     if (imDrawData != nullptr)
     {
-        // Note: Alignment is done inside buffer creation
+        //recreate buffers only if vertex or index size has been changed
         auto vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
         auto indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
-
-        // Update buffers only if vertex or index count has been changed
+        auto &engine = State::instance().engine;
         if (vertexBuffer.getSize() < vertexBufferSize)
         {
             engine.device.wait();
             vertexBuffer.create(vertexBufferSize);
             engine.updateCommandBuffer = true;
         }
-
         if (indexBuffer.getSize() < indexBufferSize)
         {
             engine.device.wait();
@@ -391,7 +398,6 @@ void Overlay::updateBuffers()
         // Upload data
         auto *vtxDst = reinterpret_cast<ImDrawVert *>(vertexBuffer.mapped);
         auto *idxDst = reinterpret_cast<ImDrawVert *>(indexBuffer.mapped);
-
         for (int n = 0; n < imDrawData->CmdListsCount; n++)
         {
             const auto *cmd_list = imDrawData->CmdLists[n];

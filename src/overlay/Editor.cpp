@@ -1,21 +1,19 @@
 #include "overlay/Editor.hpp"
+#include "State.hpp"
 
 namespace tat
 {
 
-void Editor::showZep(bool &open)
+void Editor::show()
 {
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.13F, 0.1F, 0.12F, 0.95F));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.F, 2.F));
+    auto &window = State::instance().window;
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(window.width, floor(window.height / 3)));
 
-    ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
-
-    if (!ImGui::Begin("Zep", &open, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar))
+    auto windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar |
+                       ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
+    if (!ImGui::Begin("Zep", nullptr, windowFlags))
     {
-        ImGui::PopStyleVar(2);
-        ImGui::PopStyleColor(1);
         ImGui::End();
         return;
     }
@@ -99,8 +97,6 @@ void Editor::showZep(bool &open)
         ImGui::SetWindowFocus();
     }
     ImGui::End();
-    ImGui::PopStyleVar(2);
-    ImGui::PopStyleColor(1);
 }
 
 } // namespace tat

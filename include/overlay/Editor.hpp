@@ -54,7 +54,7 @@ struct ZepWrapper : Zep::IZepComponent
 class Editor
 {
   public:
-    void showZep(bool &open);
+    void show();
 
   private:
     ZepWrapper zep;

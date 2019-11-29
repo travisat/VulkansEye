@@ -11,20 +11,19 @@
 
 #include "engine/Allocator.hpp"
 #include "engine/Debug.hpp"
+#include "engine/Device.hpp"
 #include "engine/Fence.hpp"
 #include "engine/Framebuffer.hpp"
+#include "engine/Image.hpp"
 #include "engine/PhysicalDevice.hpp"
-#include "engine/Device.hpp"
 #include "engine/PipelineCache.hpp"
 #include "engine/RenderPass.hpp"
 #include "engine/Semaphore.hpp"
 #include "engine/SwapChain.hpp"
-#include "engine/Image.hpp"
+
 
 namespace tat
 {
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
 
 class Engine
 {
@@ -60,6 +59,8 @@ class Engine
     auto findDepthFormat() -> vk::Format;
 
   private:
+    static constexpr int maxFramesInFlight = 2;
+
     std::vector<Framebuffer> shadowFramebuffers{};
     Image shadowDepth;
     std::vector<Framebuffer> colorFramebuffers{};
