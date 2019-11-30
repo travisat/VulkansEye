@@ -13,6 +13,7 @@
 #include "engine/Buffer.hpp"
 #include "engine/Image.hpp"
 #include "engine/Pipeline.hpp"
+#include "engine/Window.hpp"
 #include "overlay/Editor.hpp"
 
 // sourced from
@@ -56,10 +57,7 @@ class Overlay
     void cleanup();
 
     // Starts a new imGui frame and sets up windows and ui elements
-    void newFrame();
-
-    // Update vertex and index buffer containing the imGui elements when required
-    void updateBuffers();
+    void update(float deltaTime);
 
     // Draw current imGui frame into a command buffer
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
@@ -74,6 +72,9 @@ class Overlay
     Image fontImage{};
 
     Editor editor{};
+
+    ImGuiIO *io = nullptr;
+    Window *window = nullptr;
 
     Pipeline pipeline{};
     vk::DescriptorPool descriptorPool = nullptr;

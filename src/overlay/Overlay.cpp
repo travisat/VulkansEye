@@ -36,11 +36,12 @@ void Overlay::create()
     style.Alpha = 0.5F;
     style.FrameRounding = 0.F;
     style.FrameBorderSize = 0.F;
+
     // Dimensions
-    auto &io = ImGui::GetIO();
-    auto &window = State::instance().at("settings").at("window");
-    io.DisplaySize = ImVec2(window.at(0), window.at(1));
-    io.DisplayFramebufferScale = ImVec2(1.F, 1.F);
+    window = &State::instance().window;
+    io = &ImGui::GetIO();
+    io->DisplaySize = ImVec2(window->width, window->height);
+    io->DisplayFramebufferScale = ImVec2(1.F, 1.F);
 
     createFont();
 
@@ -48,8 +49,9 @@ void Overlay::create()
     createDescriptorLayouts();
     createDescriptorSets();
     createPipeline();
-    newFrame();
     createBuffers();
+
+    update(0.F);
 
     if constexpr (Debug::enable)
     {
@@ -78,14 +80,11 @@ void Overlay::destroy()
 
 void Overlay::recreate()
 {
-    auto &window = State::instance().window;
-    auto &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(window.width, window.height);
+    io->DisplaySize = ImVec2(window->width, window->height);
 
     createDescriptorPool();
     createDescriptorSets();
     createPipeline();
-    newFrame();
 }
 
 void Overlay::cleanup()
@@ -319,8 +318,14 @@ void Overlay::createPipeline()
     }
 }
 
-void Overlay::newFrame()
+void Overlay::update(float deltaTime)
 {
+    io->DisplaySize = ImVec2(window->width, window->height);
+    if (deltaTime > 0.F)
+    {
+        io->DeltaTime = deltaTime;
+    }
+
     ImGui::NewFrame();
 
     if (uiSettings.showEditor)
@@ -333,6 +338,43 @@ void Overlay::newFrame()
     }
 
     ImGui::Render();
+
+    auto *imDrawData = ImGui::GetDrawData();
+    if (imDrawData != nullptr)
+    {
+        // recreate buffers only if vertex or index size has been changed
+        auto vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
+        auto indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
+        auto &engine = State::instance().engine;
+        if (vertexBuffer.getSize() < vertexBufferSize)
+        {
+            engine.device.wait();
+            vertexBuffer.create(vertexBufferSize);
+            engine.updateCommandBuffer = true;
+        }
+        if (indexBuffer.getSize() < indexBufferSize)
+        {
+            engine.device.wait();
+            indexBuffer.create(indexBufferSize);
+            engine.updateCommandBuffer = true;
+        }
+
+        // Upload data
+        auto *vtxDst = reinterpret_cast<ImDrawVert *>(vertexBuffer.mapped);
+        auto *idxDst = reinterpret_cast<ImDrawVert *>(indexBuffer.mapped);
+        for (int n = 0; n < imDrawData->CmdListsCount; n++)
+        {
+            const auto *cmd_list = imDrawData->CmdLists[n];
+            memcpy(vtxDst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+            memcpy(idxDst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+            vtxDst += cmd_list->VtxBuffer.Size;
+            idxDst += cmd_list->IdxBuffer.Size;
+        }
+
+        // Flush to make writes visible to GPU
+        vertexBuffer.flush();
+        indexBuffer.flush();
+    }
 }
 
 void Overlay::showInfo()
@@ -373,52 +415,11 @@ void Overlay::showInfo()
     ImGui::End();
 }
 
-void Overlay::updateBuffers()
-{
-    auto *imDrawData = ImGui::GetDrawData();
-    if (imDrawData != nullptr)
-    {
-        //recreate buffers only if vertex or index size has been changed
-        auto vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
-        auto indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
-        auto &engine = State::instance().engine;
-        if (vertexBuffer.getSize() < vertexBufferSize)
-        {
-            engine.device.wait();
-            vertexBuffer.create(vertexBufferSize);
-            engine.updateCommandBuffer = true;
-        }
-        if (indexBuffer.getSize() < indexBufferSize)
-        {
-            engine.device.wait();
-            indexBuffer.create(indexBufferSize);
-            engine.updateCommandBuffer = true;
-        }
-
-        // Upload data
-        auto *vtxDst = reinterpret_cast<ImDrawVert *>(vertexBuffer.mapped);
-        auto *idxDst = reinterpret_cast<ImDrawVert *>(indexBuffer.mapped);
-        for (int n = 0; n < imDrawData->CmdListsCount; n++)
-        {
-            const auto *cmd_list = imDrawData->CmdLists[n];
-            memcpy(vtxDst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-            memcpy(idxDst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-            vtxDst += cmd_list->VtxBuffer.Size;
-            idxDst += cmd_list->IdxBuffer.Size;
-        }
-
-        // Flush to make writes visible to GPU
-        vertexBuffer.flush();
-        indexBuffer.flush();
-    }
-}
-
 void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)
 {
     if ((!vertexBuffer.buffer) || (!indexBuffer.buffer))
     {
-        newFrame();
-        updateBuffers();
+        update(0.F);
     }
     auto &io = ImGui::GetIO();
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.pipelineLayout, 0, 1,

@@ -114,12 +114,8 @@ void VulkansEye::run()
         state.player.update(deltaTime);
         state.camera.setPosition(glm::vec3(-1.F, -1.F, -1.F) * state.player.position());
         state.camera.update();
-
-        auto &io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(state.window.width, state.window.height);
-        io.DeltaTime = deltaTime;
-        state.overlay.newFrame();
-        state.overlay.updateBuffers();
+        
+        state.overlay.update(deltaTime);
 
         state.engine.drawFrame(deltaTime);
     }

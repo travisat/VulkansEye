@@ -224,6 +224,7 @@ void Engine::drawFrame(float deltaTime)
     {
         updateWindow();
         updateCommandBuffer = false;
+        return;
     }
 
     auto result = device.wait(waitFences[currentImage].fence);
