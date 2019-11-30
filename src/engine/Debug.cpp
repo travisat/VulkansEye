@@ -1,6 +1,8 @@
 #include "engine/Debug.hpp"
 #include "State.hpp"
 
+#include <iostream>
+
 #include <spdlog/spdlog.h>
 
 namespace tat

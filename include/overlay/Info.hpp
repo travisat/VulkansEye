@@ -16,7 +16,7 @@
 namespace tat
 {
 
-constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
+constexpr std::array<std::string_view, 4> mode = {"Normal", "Visual", "Insert", "Paused"};
 
 class Info
 {

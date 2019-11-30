@@ -44,7 +44,7 @@ void Camera::look(double mouseX, double mouseY)
     glm::vec2 mousePosition(mouseX, mouseY);
 
     // discard old lastMousePosition so mouse doesn't jump when leaving insert
-    if (Input::getMode() == InputMode::Insert)
+    if (Input::getMode() == InputMode::Insert || Input::getMode() == InputMode::Paused)
     {
         lastMousePosition = mousePosition;
     }

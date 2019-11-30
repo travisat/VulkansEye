@@ -16,6 +16,7 @@
 #include "engine/Window.hpp"
 #include "overlay/Editor.hpp"
 #include "overlay/Info.hpp"
+#include "overlay/Paused.hpp"
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -28,6 +29,7 @@ class Overlay
   public:
     Editor editor{};
     Info info{};
+    Paused paused{};
     
     // UI params are set via push constants
     struct PushConstBlock
@@ -51,7 +53,7 @@ class Overlay
     {
         bool showEditor = true;
         bool showInfo = false;
-        bool showExit = false;
+        bool showPaused = false;
     } settings;
 
   private:

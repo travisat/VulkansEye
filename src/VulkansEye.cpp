@@ -21,6 +21,9 @@ VulkansEye::VulkansEye(const std::string &configPath)
     Timer::getInstance();
     Timer::time();
 
+    // init mode stack
+    Input::pushMode(InputMode::Normal);
+
     if constexpr (Debug::enable)
     {
         spdlog::info("Started Timers");
@@ -175,6 +178,12 @@ void VulkansEye::handleInput(float deltaTime)
         switchToInsertMode();
     }
 
+    // Paused Mode
+    if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
+    {
+        switchToPausedMode();
+    }
+
     state.camera.look(Input::getMouseX(), Input::getMouseY());
 
     auto moveDir = glm::vec2(0.F);
@@ -193,120 +202,121 @@ void VulkansEye::handleInput(float deltaTime)
     }
     // still update player for friction
     state.player.move(moveDir, deltaTime);
-
-    if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
-    {
-        handleEscape();
-    }
 }
 
 void VulkansEye::switchToNormalMode()
 {
     auto &state = State::instance();
-    if (Input::getMode() != InputMode::Normal)
+    state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+    state.overlay.settings.showEditor = false;
+    state.overlay.settings.showInfo = false;
+    state.overlay.settings.showPaused = false;
+
+    state.engine.showOverlay = false;
+    state.engine.updateCommandBuffer = true;
+    Input::popMode();
+    Input::pushMode(InputMode::Normal);
+
+    if constexpr (Debug::enable)
     {
-        // if mode is insert set glfw to take over cursor before switching
-        if (Input::getMode() == InputMode::Insert)
-        {
-            state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-        }
-
-        state.overlay.settings.showEditor = false;
-        state.overlay.settings.showInfo = false;
-        state.overlay.settings.showExit = false;
-
-        state.engine.showOverlay = false;
-        state.engine.updateCommandBuffer = true;
-        Input::switchMode(InputMode::Normal);
-
-        if constexpr (Debug::enable)
-        {
-            spdlog::info("Changed Mode to Normal");
-        }
+        spdlog::info("Changed Mode to Normal");
     }
 }
 
 void VulkansEye::switchToVisualMode()
 {
     auto &state = State::instance();
+    state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
-    if (Input::getMode() != InputMode::Visual)
+    state.overlay.settings.showEditor = false;
+    state.overlay.settings.showInfo = true;
+    state.overlay.settings.showPaused = false;
+
+    state.engine.showOverlay = true;
+    state.engine.updateCommandBuffer = true;
+    Input::popMode();
+    Input::pushMode(InputMode::Visual);
+
+    if constexpr (Debug::enable)
     {
-        // if mode is insert set glfw to take over cursor before switching
-        if (Input::getMode() == InputMode::Insert)
-        {
-            state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-        }
-
-        state.overlay.settings.showEditor = false;
-        state.overlay.settings.showInfo = true;
-        state.overlay.settings.showExit = false;
-
-        state.engine.showOverlay = true;
-        state.engine.updateCommandBuffer = true;
-        Input::switchMode(InputMode::Visual);
-
-        if constexpr (Debug::enable)
-        {
-            spdlog::info("Changed Mode to Visual");
-        }
+        spdlog::info("Changed Mode to Visual");
     }
 }
 
 void VulkansEye::switchToInsertMode()
 {
     auto &state = State::instance();
-    if (Input::getMode() != InputMode::Insert)
+    state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    state.overlay.settings.showEditor = true;
+    state.overlay.settings.showInfo = false;
+    state.overlay.settings.showPaused = false;
+
+    state.engine.showOverlay = true;
+    state.engine.updateCommandBuffer = true;
+    Input::popMode();
+    Input::pushMode(InputMode::Insert);
+
+    if constexpr (Debug::enable)
     {
-        // all other modes glfw owns cursor
-        // switch it back
-        state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-        state.overlay.settings.showEditor = true;
-        state.overlay.settings.showInfo = false;
-        state.overlay.settings.showExit = false;
-
-        state.engine.showOverlay = true;
-        state.engine.updateCommandBuffer = true;
-        Input::switchMode(InputMode::Insert);
-
-        if constexpr (Debug::enable)
-        {
-            spdlog::info("Changed Mode to Insert");
-        }
+        spdlog::info("Changed Mode to Insert");
     }
 }
 
-void VulkansEye::handleEscape()
+void VulkansEye::switchToPausedMode()
 {
-    if constexpr (Debug::enable)
-    {
-        spdlog::info("Pressed Escape");
-    }
-
-    // only exit from normal mode
+    // only pause on normal mode
     if (Input::getMode() == InputMode::Normal)
     {
         auto &state = State::instance();
-        state.window.setClose(1);
+        state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+        state.overlay.settings.showEditor = false;
+        state.overlay.settings.showInfo = false;
+        state.overlay.settings.showPaused = true;
+
+        state.engine.showOverlay = true;
+        state.engine.updateCommandBuffer = true;
+        Input::pushMode(InputMode::Paused);
+
+        if constexpr (Debug::enable)
+        {
+            spdlog::info("Changed Mode to Paused");
+        }
         return;
     }
 
     if (Input::getMode() == InputMode::Insert)
     {
         auto &editor = State::instance().overlay.editor;
-        if (editor.getMode() == Zep::EditorMode::Normal)
+        if (editor.getMode() != Zep::EditorMode::Normal)
         {
-            switchToNormalMode();
+            // don't do anything with escape if editor is not in normal mode
+            return;
         }
-        //don't do anything with escape if editor is not in normal mode
-        return;
     }
 
-    // otherwise switch to normal mode
-    switchToNormalMode();
+    // otherwise go back to previous mode
+    Input::popMode();
+    switch (Input::getMode())
+    {
+    case InputMode::Normal:
+        switchToNormalMode();
+        break;
+
+    case InputMode::Visual:
+        switchToVisualMode();
+        break;
+
+    case InputMode::Insert:
+        switchToInsertMode();
+        break;
+
+    default:;
+    }
 }
 
 } // namespace tat

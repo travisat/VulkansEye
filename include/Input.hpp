@@ -7,33 +7,34 @@
 #endif
 
 #include <array>
-#include <imgui.h>
-#include <iostream>
+#include <stack>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #ifdef _WIN32
 #undef APIENTRY
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>   // for glfwGetWin32Window
+#include <GLFW/glfw3native.h> // for glfwGetWin32Window
 #endif
-#define GLFW_HAS_WINDOW_TOPMOST       (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200) // 3.2+ GLFW_FLOATING
-#define GLFW_HAS_WINDOW_HOVERED       (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ GLFW_HOVERED
-#define GLFW_HAS_WINDOW_ALPHA         (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ glfwSetWindowOpacity
-#define GLFW_HAS_PER_MONITOR_DPI      (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ glfwGetMonitorContentScale
-#define GLFW_HAS_VULKAN               (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200) // 3.2+ glfwCreateWindowSurface
+#define GLFW_HAS_WINDOW_TOPMOST (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200) // 3.2+ GLFW_FLOATING
+#define GLFW_HAS_WINDOW_HOVERED (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ GLFW_HOVERED
+#define GLFW_HAS_WINDOW_ALPHA                                                                                          \
+    (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ glfwSetWindowOpacity
+#define GLFW_HAS_PER_MONITOR_DPI                                                                                       \
+    (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300) // 3.3+ glfwGetMonitorContentScale
+#define GLFW_HAS_VULKAN (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200) // 3.2+ glfwCreateWindowSurface
 
-// Singleton as there can only be one Input and Input should never be locked
+#include <imgui.h>
 
 namespace tat
 {
 
-// vimlike modes don't know what visual will do yet
 enum class InputMode
 {
     Normal,
     Insert,
-    Visual
+    Visual,
+    Paused
 };
 
 class Input
@@ -48,14 +49,28 @@ class Input
         return instance;
     }
 
-    static void switchMode(InputMode mode)
+    static void pushMode(InputMode m)
     {
-        getInstance().switchModeImpl(mode);
+        getInstance().pushModeImpl(m);
     }
 
-    void switchModeImpl(InputMode mode)
+    void pushModeImpl(InputMode m)
     {
-        this->mode = mode;
+        mode.push(m);
+    }
+
+    static void popMode()
+    {
+        getInstance().popModeImpl();
+    }
+
+    void popModeImpl()
+    {
+        mode.pop();
+        if (mode.empty())
+        {
+            mode.push(InputMode::Normal);
+        }
     }
 
     static auto getMode() -> InputMode
@@ -65,7 +80,7 @@ class Input
 
     auto getModeImpl() -> InputMode
     {
-        return mode;
+        return mode.top();
     }
 
     static void mouseButtonCallback(GLFWwindow *window, int button, int action,
@@ -79,7 +94,7 @@ class Input
     // in array of mouse buttons the correspondin button is true while pressed
     void mouseButtonCallbackImpl(GLFWwindow * /*window*/, int button, int action, int /*mods*/)
     {
-        if (mode == InputMode::Insert)
+        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
         {
             auto &io = ImGui::GetIO();
             if (action == GLFW_PRESS)
@@ -128,7 +143,7 @@ class Input
         mouseX = xpos;
         mouseY = ypos;
 
-        if (mode == InputMode::Insert)
+        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
         {
             auto &io = ImGui::GetIO();
             io.MousePos.x = static_cast<float>(xpos);
@@ -143,7 +158,7 @@ class Input
 
     void keyCallbackImpl(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
     {
-        if (mode == InputMode::Insert)
+        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
         {
             auto &io = ImGui::GetIO();
             if (action == GLFW_PRESS)
@@ -268,7 +283,7 @@ class Input
     // GLFW_KEY_LAST == 348
     std::array<int8_t, 349> pressed{0};
     std::array<int8_t, 349> released{0};
-    InputMode mode = InputMode::Normal;
+    std::stack<InputMode> mode{};
 
     double mouseX{};
     double mouseY{};

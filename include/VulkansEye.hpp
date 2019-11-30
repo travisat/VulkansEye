@@ -1,4 +1,7 @@
 #include <string>
+#include <vector>
+
+#include <Input.hpp>
 
 namespace tat
 {
@@ -14,10 +17,11 @@ class VulkansEye
   private:
 
     static void handleInput(float deltaTime);
+
     static void switchToNormalMode();
     static void switchToVisualMode();
     static void switchToInsertMode();
-    static void handleEscape();
+    static void switchToPausedMode();
 };
 
 } // namespace tat

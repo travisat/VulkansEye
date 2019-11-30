@@ -57,6 +57,7 @@ void Overlay::create()
     io->BackendFlags |= ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
     io->BackendPlatformName = "imgui-vulkanseye";
 
+/*
     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
     io->KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
     io->KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
@@ -80,6 +81,7 @@ void Overlay::create()
     io->KeyMap[ImGuiKey_X] = GLFW_KEY_X;
     io->KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
     io->KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+    */
 
     io->SetClipboardTextFn = ImGui_ImplGlfw_SetClipboardText;
     io->GetClipboardTextFn = ImGui_ImplGlfw_GetClipboardText;
@@ -104,6 +106,7 @@ void Overlay::create()
 
     info.create();
     editor.create();
+    paused.create();
 
     update(0.F);
 
@@ -389,6 +392,10 @@ void Overlay::update(float deltaTime)
     if (settings.showInfo)
     {
         info.show(deltaTime);
+    }
+    if (settings.showPaused)
+    {
+        paused.show();
     }
 
     ImGui::Render();
