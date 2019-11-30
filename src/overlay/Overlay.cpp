@@ -19,6 +19,16 @@
 namespace tat
 {
 
+static auto ImGui_ImplGlfw_GetClipboardText(void *user_data) -> const char *
+{
+    return glfwGetClipboardString(reinterpret_cast<GLFWwindow *>(user_data));
+}
+
+static void ImGui_ImplGlfw_SetClipboardText(void *user_data, const char *text)
+{
+    glfwSetClipboardString(reinterpret_cast<GLFWwindow *>(user_data), text);
+}
+
 void Overlay::create()
 {
     ImGui::CreateContext();
@@ -43,6 +53,47 @@ void Overlay::create()
     io->DisplaySize = ImVec2(window->width, window->height);
     io->DisplayFramebufferScale = ImVec2(1.F, 1.F);
 
+    // Input
+    io->BackendFlags |= ImGuiBackendFlags_HasMouseCursors; // We can honor GetMouseCursor() values (optional)
+    io->BackendPlatformName = "imgui-vulkanseye";
+
+    // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
+    io->KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
+    io->KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
+    io->KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
+    io->KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
+    io->KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
+    io->KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
+    io->KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
+    io->KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
+    io->KeyMap[ImGuiKey_End] = GLFW_KEY_END;
+    io->KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
+    io->KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
+    io->KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
+    io->KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
+    io->KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
+    io->KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
+    io->KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
+    io->KeyMap[ImGuiKey_A] = GLFW_KEY_A;
+    io->KeyMap[ImGuiKey_C] = GLFW_KEY_C;
+    io->KeyMap[ImGuiKey_V] = GLFW_KEY_V;
+    io->KeyMap[ImGuiKey_X] = GLFW_KEY_X;
+    io->KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
+    io->KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+
+    io->SetClipboardTextFn = ImGui_ImplGlfw_SetClipboardText;
+    io->GetClipboardTextFn = ImGui_ImplGlfw_GetClipboardText;
+    io->ClipboardUserData = window->window;
+#if defined(_WIN32)
+    io->ImeWindowHandle = (void *)glfwGetWin32Window(window->window);
+#endif
+
+    g_MouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    g_MouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+    g_MouseCursors[ImGuiMouseCursor_ResizeNS] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+    g_MouseCursors[ImGuiMouseCursor_ResizeEW] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+    g_MouseCursors[ImGuiMouseCursor_Hand] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+
     createFont();
 
     createDescriptorPool();
@@ -50,6 +101,8 @@ void Overlay::create()
     createDescriptorSets();
     createPipeline();
     createBuffers();
+
+    info.create();
 
     update(0.F);
 
@@ -328,13 +381,13 @@ void Overlay::update(float deltaTime)
 
     ImGui::NewFrame();
 
-    if (uiSettings.showEditor)
+    if (settings.showEditor)
     {
         editor.show();
     }
-    if (uiSettings.showInfo)
+    if (settings.showInfo)
     {
-        showInfo();
+        info.show(deltaTime);
     }
 
     ImGui::Render();
@@ -375,44 +428,6 @@ void Overlay::update(float deltaTime)
         vertexBuffer.flush();
         indexBuffer.flush();
     }
-}
-
-void Overlay::showInfo()
-{
-    float frameTime = Timer::time();
-    float deltaTime = frameTime - lastFrameTime;
-    lastFrameTime = frameTime;
-    if (((frameTime - lastUpdateTime) > updateFreqTime) || (lastUpdateTime == 0.F))
-    {
-        lastUpdateTime = frameTime;
-        uiSettings.fps = 1.F / deltaTime;
-        uiSettings.position = State::instance().player.position();
-        uiSettings.rotation = State::instance().camera.rotation();
-
-        switch (Input::getMode())
-        {
-        case InputMode::Normal:
-            uiSettings.modeNum = 0;
-            break;
-        case InputMode::Visual:
-            uiSettings.modeNum = 1;
-            break;
-        case InputMode::Insert:
-            uiSettings.modeNum = 2;
-            break;
-        }
-    }
-    ImGui::SetNextWindowSize(ImVec2(320, 120));
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    auto windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                       ImGuiWindowFlags_NoSavedSettings;
-    ImGui::Begin("Temp", nullptr, windowFlags);
-    ImGui::BulletText("%s", mode[uiSettings.modeNum].data());
-    ImGui::InputFloat("Fps", &uiSettings.fps);
-    ImGui::InputFloat3("Position", &uiSettings.position.x);
-    ImGui::InputFloat3("Rotation", &uiSettings.rotation.x);
-
-    ImGui::End();
 }
 
 void Overlay::draw(vk::CommandBuffer commandBuffer, uint32_t currentImage)

@@ -15,6 +15,7 @@
 #include "engine/Pipeline.hpp"
 #include "engine/Window.hpp"
 #include "overlay/Editor.hpp"
+#include "overlay/Info.hpp"
 
 // sourced from
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/imgui/main.cpp
@@ -22,25 +23,6 @@
 namespace tat
 {
 
-// Options and values to display/toggle from the UI
-struct UISettings
-{
-    glm::vec3 position = glm::vec3(0.F);
-    glm::vec3 rotation = glm::vec3(0.F);
-
-    float velocity = 0.F;
-    float fps = 0.F;
-    int32_t modeNum = 0;
-
-    bool showEditor = true;
-    bool showInfo = false;
-};
-
-constexpr std::array<std::string_view, 3> mode = {"Normal", "Visual", "Input"};
-
-// ----------------------------------------------------------------------------
-// Overlay class
-// ----------------------------------------------------------------------------
 class Overlay
 {
   public:
@@ -62,7 +44,12 @@ class Overlay
     // Draw current imGui frame into a command buffer
     void draw(vk::CommandBuffer commandBuffer, uint32_t currentImage);
 
-    UISettings uiSettings{};
+    struct
+    {
+        bool showEditor = true;
+        bool showInfo = false;
+        bool showExit = false;
+    } settings;
 
   private:
     // Vulkan resources for rendering the UI
@@ -72,6 +59,7 @@ class Overlay
     Image fontImage{};
 
     Editor editor{};
+    Info info{};
 
     ImGuiIO *io = nullptr;
     Window *window = nullptr;
@@ -81,11 +69,7 @@ class Overlay
     vk::DescriptorSetLayout descriptorSetLayout = nullptr;
     std::vector<vk::DescriptorSet> descriptorSets{};
 
-    float lastFrameTime = 0;
-    float lastUpdateTime = 0;
-    float updateFreqTime = 0.1F; // time between updates
-
-    void showInfo();
+    std::array<GLFWcursor *, ImGuiMouseCursor_COUNT> g_MouseCursors{};
 
     void createBuffers();
     void createFont();

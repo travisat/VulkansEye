@@ -52,6 +52,8 @@ VulkansEye::VulkansEye(const std::string &configPath)
     state.window.setKeyCallBack(&Input::keyCallback);
     state.window.setMouseButtonCallback(&Input::mouseButtonCallback);
     state.window.setCursorPosCallback(&Input::cursorPosCallback);
+    state.window.setCharCallback(&Input::charCallback);
+    state.window.setScrollCallback(&Input::scrollCallback);
     state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
@@ -109,12 +111,11 @@ void VulkansEye::run()
         float deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
-        glfwPollEvents();
         handleInput(deltaTime);
         state.player.update(deltaTime);
         state.camera.setPosition(glm::vec3(-1.F, -1.F, -1.F) * state.player.position());
         state.camera.update();
-        
+
         state.overlay.update(deltaTime);
 
         state.engine.drawFrame(deltaTime);
@@ -153,6 +154,8 @@ void VulkansEye::cleanup()
 
 void VulkansEye::handleInput(float deltaTime)
 {
+    glfwPollEvents();
+
     auto &state = State::instance();
     // Normal Mode
     if (Input::wasKeyReleased(GLFW_KEY_F1))
@@ -209,6 +212,10 @@ void VulkansEye::switchToNormalMode()
             state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
+        state.overlay.settings.showEditor = false;
+        state.overlay.settings.showInfo = false;
+        state.overlay.settings.showExit = false;
+
         state.engine.showOverlay = false;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Normal);
@@ -233,9 +240,11 @@ void VulkansEye::switchToVisualMode()
             state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
+        state.overlay.settings.showEditor = false;
+        state.overlay.settings.showInfo = true;
+        state.overlay.settings.showExit = false;
+
         state.engine.showOverlay = true;
-        state.overlay.uiSettings.showEditor = false;
-        state.overlay.uiSettings.showInfo = true;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Visual);
 
@@ -254,9 +263,12 @@ void VulkansEye::switchToInsertMode()
         // all other modes glfw owns cursor
         // switch it back
         state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        
+        state.overlay.settings.showEditor = true;
+        state.overlay.settings.showInfo = false;
+        state.overlay.settings.showExit = false;
+
         state.engine.showOverlay = true;
-        state.overlay.uiSettings.showEditor = true;
-        state.overlay.uiSettings.showInfo = false;
         state.engine.updateCommandBuffer = true;
         Input::switchMode(InputMode::Insert);
 
@@ -275,7 +287,7 @@ void VulkansEye::close()
     {
         spdlog::info("Closing");
     }
-    
+
     state.window.setClose(1);
 }
 

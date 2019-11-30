@@ -65,6 +65,16 @@ void Window::setCursorPosCallback(GLFWcursorposfun callback)
     glfwSetCursorPosCallback(window, callback);
 }
 
+void Window::setCharCallback(GLFWcharfun callback)
+{
+    glfwSetCharCallback(window, callback);
+}
+
+void Window::setScrollCallback(GLFWscrollfun callback)
+{
+    glfwSetScrollCallback(window, callback);
+}
+
 void Window::setInputMode(int mode, int value)
 {
     glfwSetInputMode(window, mode, value);

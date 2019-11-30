@@ -39,8 +39,8 @@ ${CMAKE_SOURCE_DIR}/src/engine/Debug.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Semaphore.cpp
 ${CMAKE_SOURCE_DIR}/src/engine/Fence.cpp
 ${CMAKE_SOURCE_DIR}/src/overlay/Overlay.cpp
-${CMAKE_SOURCE_DIR}/src/overlay/Zep.cpp
 ${CMAKE_SOURCE_DIR}/src/overlay/Editor.cpp
+${CMAKE_SOURCE_DIR}/src/overlay/Info.cpp
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp 
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
 ${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
