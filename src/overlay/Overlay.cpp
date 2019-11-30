@@ -103,6 +103,7 @@ void Overlay::create()
     createBuffers();
 
     info.create();
+    editor.create();
 
     update(0.F);
 

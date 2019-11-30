@@ -196,7 +196,7 @@ void VulkansEye::handleInput(float deltaTime)
 
     if (Input::wasKeyReleased(GLFW_KEY_ESCAPE))
     {
-        close();
+        handleEscape();
     }
 }
 
@@ -263,7 +263,7 @@ void VulkansEye::switchToInsertMode()
         // all other modes glfw owns cursor
         // switch it back
         state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        
+
         state.overlay.settings.showEditor = true;
         state.overlay.settings.showInfo = false;
         state.overlay.settings.showExit = false;
@@ -279,16 +279,34 @@ void VulkansEye::switchToInsertMode()
     }
 }
 
-void VulkansEye::close()
+void VulkansEye::handleEscape()
 {
-    auto &state = State::instance();
-
     if constexpr (Debug::enable)
     {
-        spdlog::info("Closing");
+        spdlog::info("Pressed Escape");
     }
 
-    state.window.setClose(1);
+    // only exit from normal mode
+    if (Input::getMode() == InputMode::Normal)
+    {
+        auto &state = State::instance();
+        state.window.setClose(1);
+        return;
+    }
+
+    if (Input::getMode() == InputMode::Insert)
+    {
+        auto &editor = State::instance().overlay.editor;
+        if (editor.getMode() == Zep::EditorMode::Normal)
+        {
+            switchToNormalMode();
+        }
+        //don't do anything with escape if editor is not in normal mode
+        return;
+    }
+
+    // otherwise switch to normal mode
+    switchToNormalMode();
 }
 
 } // namespace tat

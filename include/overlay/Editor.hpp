@@ -5,6 +5,8 @@
 #include <imgui.h>
 #include <zep.h>
 
+#include "engine/Window.hpp"
+
 namespace tat
 {
 
@@ -54,10 +56,16 @@ struct ZepWrapper : Zep::IZepComponent
 class Editor
 {
   public:
+    void create();
     void show();
+    auto getMode() -> Zep::EditorMode
+    {
+        return zep.zepEditor.GetGlobalMode()->GetEditorMode();
+    };
 
   private:
     ZepWrapper zep;
+    Window *window;
 };
 
 } // namespace tat

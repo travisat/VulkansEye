@@ -26,6 +26,9 @@ namespace tat
 class Overlay
 {
   public:
+    Editor editor{};
+    Info info{};
+    
     // UI params are set via push constants
     struct PushConstBlock
     {
@@ -57,9 +60,6 @@ class Overlay
     Buffer indexBuffer{};
 
     Image fontImage{};
-
-    Editor editor{};
-    Info info{};
 
     ImGuiIO *io = nullptr;
     Window *window = nullptr;

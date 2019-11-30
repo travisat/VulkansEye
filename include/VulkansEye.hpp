@@ -17,8 +17,7 @@ class VulkansEye
     static void switchToNormalMode();
     static void switchToVisualMode();
     static void switchToInsertMode();
-    
-    static void close();
+    static void handleEscape();
 };
 
 } // namespace tat
