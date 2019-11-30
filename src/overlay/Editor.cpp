@@ -24,11 +24,7 @@ void Editor::show()
 
     auto windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                        ImGuiWindowFlags_NoSavedSettings;
-    if (!ImGui::Begin("Zep", nullptr, windowFlags))
-    {
-        ImGui::End();
-        return;
-    }
+    ImGui::Begin("Zep", nullptr, windowFlags);
 
     // Fill the window
     auto min = ImGui::GetCursorScreenPos();
