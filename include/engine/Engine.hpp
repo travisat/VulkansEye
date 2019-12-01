@@ -20,7 +20,7 @@
 #include "engine/RenderPass.hpp"
 #include "engine/Semaphore.hpp"
 #include "engine/SwapChain.hpp"
-
+#include "engine/Window.hpp"
 
 namespace tat
 {
@@ -32,6 +32,7 @@ class Engine
     void prepare();
     void destroy();
     void drawFrame(float deltaTime);
+    void resize(int width, int height);
 
     bool showOverlay = false;
     bool updateCommandBuffer = false;
@@ -84,7 +85,6 @@ class Engine
     void renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage);
 
     void updateWindow();
-    void resizeWindow();
 
     void createInstance();
     void createColorFramebuffers();

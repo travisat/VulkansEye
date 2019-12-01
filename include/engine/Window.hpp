@@ -31,13 +31,14 @@ class Window
   public:
     void create(void *user, int width, int height, const std::string &name);
     void destroy();
-
-    void resize();
+    void resize(int width, int height);
+   
 
     GLFWwindow *window = nullptr;
     int32_t width {};
     int32_t height {};
 
+    void setWindowSizeCallBack(GLFWwindowsizefun callback);
     void setKeyCallBack(GLFWkeyfun callback);
     void setMouseButtonCallback(GLFWmousebuttonfun callback);
     void setCursorPosCallback(GLFWcursorposfun callback);

@@ -33,21 +33,19 @@ void Window::destroy()
     }
 }
 
-void Window::resize()
+void Window::resize(int width, int height)
 {
+    this->width = width;
+    this->height = height;
+
     auto &state = State::instance();
-
-    width = 0;
-    height = 0;
-    while (width == 0 || height == 0)
-    {
-        glfwGetFramebufferSize(window, &width, &height);
-        wait();
-    }
-
-    state.engine.device.wait();
     state.at("settings").at("window").at(0) = width;
     state.at("settings").at("window").at(1) = height;
+}
+
+void Window::setWindowSizeCallBack(GLFWwindowsizefun callback)
+{
+    glfwSetWindowSizeCallback(window, callback);
 }
 
 void Window::setKeyCallBack(GLFWkeyfun callback)

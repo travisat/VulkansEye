@@ -215,16 +215,11 @@ void Engine::createCommandBuffers()
 void Engine::drawFrame(float deltaTime)
 {
     auto &state = State::instance();
-    if (!prepared)
-    {
-        return;
-    }
 
-    if (updateCommandBuffer)
+    if (showOverlay || updateCommandBuffer)
     {
         updateWindow();
         updateCommandBuffer = false;
-        return;
     }
 
     auto result = device.wait(waitFences[currentImage].fence);
@@ -247,7 +242,7 @@ void Engine::drawFrame(float deltaTime)
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
-        resizeWindow();
+        updateWindow();
         return;
     }
     if (result != vk::Result::eSuccess)
@@ -281,7 +276,7 @@ void Engine::drawFrame(float deltaTime)
 
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
-        resizeWindow();
+        updateWindow();
         return;
     }
     if (result != vk::Result::eSuccess)
@@ -300,49 +295,23 @@ void Engine::updateWindow()
     {
         return;
     }
-    prepared = false;
-
     device.wait();
-
-    // Steps to update
-    // 1: free commandBuffers
     device.destroy(commandPool, commandBuffers);
-    // 2: destroy color framebuffers
-    colorFramebuffers.clear();
-    // 3: destroy color renderpass
-    colorPass.destroy();
-    // 4: destroy swapchain
-    swapChain.destroy();
-    // 5: cleanup overlay
-    auto &overlay = State::instance().overlay;
-    overlay.cleanup();
-    // 6: create swap chain
-    swapChain.create();
-    // 7: create color renderpass
-    colorPass.create();
-    // 8: recreate overlay
-    overlay.recreate();
-    // 9: create color framebuffers
-    createColorFramebuffers();
-    // 10: create commandbuffers
     createCommandBuffers();
-
     device.wait();
-
-    prepared = true;
 }
 
-void Engine::resizeWindow()
+void Engine::resize(int width, int height)
 {
     if (!prepared)
     {
         return;
     }
-    prepared = false;
 
     auto &state = State::instance();
+    state.window.resize(width, height);
 
-    state.window.resize();
+    device.wait();
 
     // Steps to resize
     // 1: free commandBuffers
@@ -371,8 +340,6 @@ void Engine::resizeWindow()
     createCommandBuffers();
 
     device.wait();
-
-    prepared = true;
 
     if constexpr (Debug::enable)
     {

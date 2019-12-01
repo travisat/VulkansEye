@@ -12,6 +12,11 @@
 namespace tat
 {
 
+static void resizeWindow(GLFWwindow * /*window*/, int width, int height)
+{
+    State::instance().engine.resize(width, height);
+};
+
 VulkansEye::VulkansEye(const std::string &configPath)
 {
     // init state
@@ -52,6 +57,7 @@ VulkansEye::VulkansEye(const std::string &configPath)
 
     // setup input
     Input::getInstance();
+    state.window.setWindowSizeCallBack(&resizeWindow);
     state.window.setKeyCallBack(&Input::keyCallback);
     state.window.setMouseButtonCallback(&Input::mouseButtonCallback);
     state.window.setCursorPosCallback(&Input::cursorPosCallback);
@@ -236,7 +242,6 @@ void VulkansEye::switchToVisualMode()
     state.overlay.settings.showPaused = false;
 
     state.engine.showOverlay = true;
-    state.engine.updateCommandBuffer = true;
     Input::popMode();
     Input::pushMode(InputMode::Visual);
 
@@ -256,7 +261,6 @@ void VulkansEye::switchToInsertMode()
     state.overlay.settings.showPaused = false;
 
     state.engine.showOverlay = true;
-    state.engine.updateCommandBuffer = true;
     Input::popMode();
     Input::pushMode(InputMode::Insert);
 
@@ -279,7 +283,6 @@ void VulkansEye::switchToPausedMode()
         state.overlay.settings.showPaused = true;
 
         state.engine.showOverlay = true;
-        state.engine.updateCommandBuffer = true;
         Input::pushMode(InputMode::Paused);
 
         if constexpr (Debug::enable)

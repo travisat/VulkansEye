@@ -16,12 +16,15 @@ using json = nlohmann::json;
 #include "overlay/Overlay.hpp"
 
 #include "Camera.hpp"
+#include "Collection.hpp"
 #include "Player.hpp"
 #include "Scene.hpp"
-#include "Collection.hpp"
+
 
 namespace tat
 {
+
+
 
 // State is stored in json, this is a singleton
 // There cannot be more than one state.
@@ -30,30 +33,30 @@ namespace tat
 // ie being able to have a terminal like interface to move/create/update state
 // Right now it holds initial state from config and some members are updated
 // Additionally holds shared ptrs to the state classes that are single
-class State: public json
+class State : public json
 {
   public:
     State(State const &) = delete;
-    State(State&&) = delete;
+    State(State &&) = delete;
     void operator=(State const &) = delete;
-    void operator=(State&&) = delete;
+    void operator=(State &&) = delete;
 
     static auto instance() -> State &
     {
         static State instance;
         return instance;
     };
-    
-    Engine engine {};
-    Window window {};
-    Camera camera {};
-    Player player {};
-    Overlay overlay {};
-    Scene scene {};
-    Collection<Backdrop> backdrops {};
-    Collection<Material> materials {};
-    Collection<Mesh> meshes {};
-    Collection<Model> models {};
+
+    Engine engine{};
+    Window window{};
+    Camera camera{};
+    Player player{};
+    Overlay overlay{};
+    Scene scene{};
+    Collection<Backdrop> backdrops{};
+    Collection<Material> materials{};
+    Collection<Mesh> meshes{};
+    Collection<Model> models{};
 
   private:
     State() = default;
