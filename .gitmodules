@@ -24,4 +24,4 @@
 	url = https://github.com/fmtlib/fmt.git
 [submodule "external/zep"]
 	path = external/zep
-	url = https://github.com/cmaughan/zep.git
+	url = https://github.com/travisat/tezep.git
