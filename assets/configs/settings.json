@@ -1,5 +1,4 @@
 {
-    "name": "Vulkan's Eye",
     "zNear": 0.1,
     "zFar": 256.0,
     "FoV": 67,

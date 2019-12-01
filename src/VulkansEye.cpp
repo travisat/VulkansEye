@@ -12,6 +12,7 @@
 namespace tat
 {
 
+// window resize callback
 static void resizeWindow(GLFWwindow * /*window*/, int width, int height)
 {
     State::instance().engine.resize(width, height);
@@ -54,10 +55,10 @@ VulkansEye::VulkansEye(const std::string &configPath)
     // load glfw window
     auto &window = settings.at("window");
     state.window.create(this, window.at(0), window.at(1), "Vulkans Eye");
+    state.window.setWindowSizeCallBack(&resizeWindow);
 
     // setup input
     Input::getInstance();
-    state.window.setWindowSizeCallBack(&resizeWindow);
     state.window.setKeyCallBack(&Input::keyCallback);
     state.window.setMouseButtonCallback(&Input::mouseButtonCallback);
     state.window.setCursorPosCallback(&Input::cursorPosCallback);
@@ -113,11 +114,12 @@ void VulkansEye::run()
     {
         spdlog::info("Begin Main Loop");
     }
-    float lastFrameTime = 0.F;
+
+    auto lastFrameTime = 0.F;
     while (state.window.shouldClose() == 0)
     {
-        float now = Timer::time();
-        float deltaTime = now - lastFrameTime;
+        auto now = Timer::time();
+        auto deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
         handleInput(deltaTime);

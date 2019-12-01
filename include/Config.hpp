@@ -25,8 +25,7 @@ class Config
     void loadModels(const std::string &path);
 
     // Default configs
-    json settings = {{"name", "None"},                               //
-                     {"zNear", 0.1},                                 //
+    json settings = {{"zNear", 0.1},                                 //
                      {"zFar", 256.0},                                //
                      {"FoV", 70},                                    //
                      {"mouseSensitivity", 35},                       //
@@ -39,7 +38,7 @@ class Config
                      {"materialsPath", "assets/materials/"},         //
                      {"meshesPath", "assets/meshes/"},               //
                      {"backdropsPath", "assets/backdrops/"},
-                     {"modelsPath", "assets/models/"}};        //
+                     {"modelsPath", "assets/models/"}}; //
 
     json player = {{"height", 1.7},             //
                    {"mass", 100},               //
@@ -48,21 +47,21 @@ class Config
                    {"timeToStopFromVMax", 0.1}, //
                    {"jumpHeight", 1.0}};        //
 
-    json scene = {{"backdrop", "default"},   //
-                  {"models", {}}}; //
+    json scene = {{"backdrop", "default"}, //
+                  {"models", {}}};         //
 
     json backdrop = {{"color", "assets/backdrops/default/color.dds"},           //
                      {"radiance", "assets/backdrops/default/radiance.dds"},     //
                      {"irradiance", "assets/backdrops/default/irradiance.dds"}, //
                      {"light", {-10, -15, 0}},
-                     {"brightness", 30}};                                //
+                     {"brightness", 30}}; //
 
     json material = {{"diffuse", "diffuse.dds"},     //
                      {"normal", "normal.dds"},       //
                      {"metallic", "metallic.dds"},   //
                      {"roughness", "roughness.dds"}, //
                      {"ao", "ao.dds"},
-                     {"scale", 1}};              //
+                     {"scale", 1}}; //
 
     json mesh = {{"file", "default.glb"}, //
                  {"size", {2, 2, 2}}};    //

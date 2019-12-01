@@ -114,17 +114,16 @@ void Engine::destroy()
 void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage)
 {
     auto &state = State::instance();
-    auto &settings = state.at("settings");
     vk::Viewport viewport{};
-    viewport.width = settings.at("shadowSize");
-    viewport.height = settings.at("shadowSize");
+    viewport.width = state.scene.shadowSize;
+    viewport.height = state.scene.shadowSize;
     viewport.minDepth = 0.0F;
     viewport.maxDepth = 1.0F;
     commandBuffer.setViewport(0, 1, &viewport);
 
     vk::Rect2D scissor{};
-    scissor.extent.width = settings.at("shadowSize");
-    scissor.extent.height = settings.at("shadowSize");
+    scissor.extent.width = state.scene.shadowSize;
+    scissor.extent.height = state.scene.shadowSize;
     scissor.offset.x = 0;
     scissor.offset.y = 0;
     commandBuffer.setScissor(0, 1, &scissor);
@@ -138,9 +137,9 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
     vk::RenderPassBeginInfo shadowPassBeginInfo{};
     shadowPassBeginInfo.renderPass = shadowPass.renderPass;
     shadowPassBeginInfo.renderArea.offset = vk::Offset2D{0, 0};
-    shadowPassBeginInfo.renderArea.extent.width = settings.at("shadowSize");
-    shadowPassBeginInfo.renderArea.extent.height = settings.at("shadowSize");
-    shadowPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    shadowPassBeginInfo.renderArea.extent.width = state.scene.shadowSize;
+    shadowPassBeginInfo.renderArea.extent.height = state.scene.shadowSize;
+    shadowPassBeginInfo.clearValueCount = clearValues.size();
     shadowPassBeginInfo.pClearValues = clearValues.data();
     shadowPassBeginInfo.framebuffer = shadowFramebuffers[currentImage].framebuffer;
 
@@ -152,10 +151,9 @@ void Engine::renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage
 void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
 {
     auto &state = State::instance();
-    auto &settings = state.at("settings");
     vk::Viewport viewport{};
-    viewport.width = settings.at("window").at(0);
-    viewport.height = settings.at("window").at(1);
+    viewport.width = state.window.width;
+    viewport.height = state.window.height;
     viewport.minDepth = 0.0F;
     viewport.maxDepth = 1.0F;
     commandBuffer.setViewport(0, 1, &viewport);
@@ -176,7 +174,7 @@ void Engine::renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage)
     colorPassBeginInfo.renderPass = colorPass.renderPass;
     colorPassBeginInfo.renderArea.offset = vk::Offset2D{0, 0};
     colorPassBeginInfo.renderArea.extent = swapChain.extent;
-    colorPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    colorPassBeginInfo.clearValueCount = clearValues.size();
     colorPassBeginInfo.pClearValues = clearValues.data();
     colorPassBeginInfo.framebuffer = colorFramebuffers[currentImage].framebuffer;
 
@@ -196,7 +194,7 @@ void Engine::createCommandBuffers()
     vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.commandPool = commandPool;
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+    allocInfo.commandBufferCount =commandBuffers.size();
     commandBuffers = device.create(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
@@ -218,7 +216,7 @@ void Engine::drawFrame(float deltaTime)
 
     if (showOverlay || updateCommandBuffer)
     {
-        updateWindow();
+        updateCommandBuffers();
         updateCommandBuffer = false;
     }
 
@@ -242,7 +240,7 @@ void Engine::drawFrame(float deltaTime)
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
-        updateWindow();
+        updateCommandBuffers();
         return;
     }
     if (result != vk::Result::eSuccess)
@@ -276,7 +274,7 @@ void Engine::drawFrame(float deltaTime)
 
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
-        updateWindow();
+        updateCommandBuffers();
         return;
     }
     if (result != vk::Result::eSuccess)
@@ -289,12 +287,8 @@ void Engine::drawFrame(float deltaTime)
     currentImage = (currentImage + 1) % maxFramesInFlight;
 }
 
-void Engine::updateWindow()
+void Engine::updateCommandBuffers()
 {
-    if (!prepared)
-    {
-        return;
-    }
     device.wait();
     device.destroy(commandPool, commandBuffers);
     createCommandBuffers();
@@ -349,9 +343,8 @@ void Engine::resize(int width, int height)
 
 void Engine::createInstance()
 {
-    auto &state = State::instance();
     vk::ApplicationInfo appInfo{};
-    appInfo.pApplicationName = state.at("settings").at("name").get<std::string>().c_str();
+    appInfo.pApplicationName = "Vulkans Eye";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "vulcanned";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);

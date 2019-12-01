@@ -80,11 +80,10 @@ class Engine
     bool prepared = false;
 
     void createCommandBuffers();
+    void updateCommandBuffers();
 
     void renderShadows(vk::CommandBuffer commandBuffer, int32_t currentImage);
     void renderColors(vk::CommandBuffer commandBuffer, int32_t currentImage);
-
-    void updateWindow();
 
     void createInstance();
     void createColorFramebuffers();
