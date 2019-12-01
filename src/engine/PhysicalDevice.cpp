@@ -12,11 +12,7 @@ namespace tat
 
 void PhysicalDevice::pick(const vk::Instance &instance)
 {
-    auto physicalDevices = instance.enumeratePhysicalDevices();
-
-    assert(!physicalDevices.empty());
-
-    for (const auto &physicalDevice : physicalDevices)
+    for (const auto &physicalDevice : instance.enumeratePhysicalDevices())
     {
         if (isDeviceSuitable(physicalDevice))
         {
@@ -46,29 +42,27 @@ void PhysicalDevice::pick(const vk::Instance &instance)
 
 auto PhysicalDevice::isDeviceSuitable(vk::PhysicalDevice const &physicalDevice) -> bool
 {
-    auto indicies = SwapChain::findQueueFamiles(physicalDevice);
-    auto extensionsSupported = checkDeviceExtensionsSupport(physicalDevice);
-    bool swapChainAdequate = false;
+    auto indiciesComplete = SwapChain::findQueueFamiles(physicalDevice).isComplete();
 
-    if (extensionsSupported)
+    auto swapChainAdequate = false;
+    if (checkDeviceExtensionsSupport(physicalDevice))
     {
         auto swapChainSupport = SwapChain::querySwapChainSupport(physicalDevice);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
     auto supportedFeatures = physicalDevice.getFeatures();
+    auto featuresSupported = true;
+    featuresSupported = featuresSupported && (supportedFeatures.samplerAnisotropy != VK_FALSE);
+    featuresSupported = featuresSupported && (supportedFeatures.geometryShader != VK_FALSE);
 
-    return indicies.isComplete() && extensionsSupported && swapChainAdequate &&
-           (supportedFeatures.samplerAnisotropy != VK_FALSE) && (supportedFeatures.tessellationShader != VK_FALSE) &&
-           (supportedFeatures.geometryShader != VK_FALSE);
+    return indiciesComplete && swapChainAdequate && featuresSupported;
 };
 
 auto PhysicalDevice::checkDeviceExtensionsSupport(vk::PhysicalDevice const &device) -> bool
 {
-    auto deviceExtensions = device.enumerateDeviceExtensionProperties();
     std::set<std::string> requiredExtensions(extensions.begin(), extensions.end());
-
-    for (const auto &deviceExtension : deviceExtensions)
+    for (const auto &deviceExtension : device.enumerateDeviceExtensionProperties())
     {
         requiredExtensions.erase(deviceExtension.extensionName);
     }
@@ -76,76 +70,41 @@ auto PhysicalDevice::checkDeviceExtensionsSupport(vk::PhysicalDevice const &devi
     return requiredExtensions.empty();
 }
 
+auto getSamples(const vk::SampleCountFlags& sampleFlag) -> uint8_t
+{
+    if (sampleFlag & vk::SampleCountFlagBits::e64)
+    {
+        return 64;
+    }
+    if (sampleFlag & vk::SampleCountFlagBits::e32)
+    {
+        return 32;
+    }
+    if (sampleFlag & vk::SampleCountFlagBits::e16)
+    {
+        return 16;
+    }
+    if (sampleFlag & vk::SampleCountFlagBits::e8)
+    {
+        return 8;
+    }
+    if (sampleFlag & vk::SampleCountFlagBits::e4)
+    {
+        return 4;
+    }
+    if (sampleFlag & vk::SampleCountFlagBits::e2)
+    {
+        return 2;
+    }
+    return 1;
+}
+
 auto PhysicalDevice::getMaxUsableSampleCount() -> vk::SampleCountFlagBits
 {
-    const auto &colorCounts = properties.limits.framebufferColorSampleCounts;
-    const auto &depthCounts = properties.limits.framebufferDepthSampleCounts;
+    auto colors = getSamples(properties.limits.framebufferColorSampleCounts);
+    auto depths = getSamples(properties.limits.framebufferDepthSampleCounts);
 
-    // Scoped enums are stupid
-
-    uint8_t colors = 0;
-    if (colorCounts & vk::SampleCountFlagBits::e64)
-    {
-        colors = 64;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e32)
-    {
-        colors = 32;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e16)
-    {
-        colors = 16;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e8)
-    {
-        colors = 8;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e4)
-    {
-        colors = 4;
-    }
-    else if (colorCounts & vk::SampleCountFlagBits::e2)
-    {
-        colors = 2;
-    }
-    else
-    {
-        colors = 1;
-    }
-
-    uint8_t depth = 0;
-    if (depthCounts & vk::SampleCountFlagBits::e64)
-    {
-        depth = 64;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e32)
-    {
-        depth = 32;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e16)
-    {
-        depth = 16;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e8)
-    {
-        depth = 8;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e4)
-    {
-        depth = 4;
-    }
-    else if (depthCounts & vk::SampleCountFlagBits::e2)
-    {
-        depth = 2;
-    }
-    else
-    {
-        depth = 1;
-    }
-
-    uint8_t lowest = std::min(colors, depth);
-
-    switch (lowest)
+    switch (std::min(colors, depths))
     {
     case 64:
         return vk::SampleCountFlagBits::e64;

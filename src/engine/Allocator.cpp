@@ -26,12 +26,10 @@ void Allocator::create(vk::PhysicalDevice physicalDevice, vk::Device device)
     allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device = device;
 
-    auto result = vmaCreateAllocator(&allocatorInfo, &allocator);
-    if (result != VK_SUCCESS)
+    if (vmaCreateAllocator(&allocatorInfo, &allocator) != VK_SUCCESS)
     {
-        spdlog::error("Unable to create Allocator. Error code {}", result);
+        spdlog::error("Unable to create Allocator");
         throw std::runtime_error("Unable to create Allocator");
-        return;
     }
 
     if constexpr (Debug::enable)
@@ -75,12 +73,11 @@ auto Allocator::create(HandleCreateInfo createInfo, VmaAllocationCreateInfo &mem
     {
         Allocation allocation{};
         vk::Image image{};
-        auto result = vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo *>(&createInfo), &memInfo,
-                                     reinterpret_cast<VkImage *>(&image), &allocation.allocation, allocInfo);
 
-        if (result != VK_SUCCESS)
+        if (vmaCreateImage(allocator, reinterpret_cast<VkImageCreateInfo *>(&createInfo), &memInfo,
+                           reinterpret_cast<VkImage *>(&image), &allocation.allocation, allocInfo) != VK_SUCCESS)
         {
-            spdlog::error("Unable to create image. Error Code {}", result);
+            spdlog::error("Unable to create image");
             throw std::runtime_error("Unable to create image");
         }
 
@@ -105,12 +102,10 @@ auto Allocator::create(HandleCreateInfo createInfo, VmaAllocationCreateInfo &mem
         Allocation allocation{};
         vk::Buffer buffer{};
 
-        auto result = vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo *>(&createInfo), &memInfo,
-                                      reinterpret_cast<VkBuffer *>(&buffer), &allocation.allocation, allocInfo);
-
-        if (result != VK_SUCCESS)
+        if (vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo *>(&createInfo), &memInfo,
+                            reinterpret_cast<VkBuffer *>(&buffer), &allocation.allocation, allocInfo) != VK_SUCCESS)
         {
-            spdlog::error("Unable to create buffer. Error Code {}", result);
+            spdlog::error("Unable to create buffer");
             throw std::runtime_error("Unable to create buffer");
         }
 

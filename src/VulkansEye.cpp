@@ -26,14 +26,13 @@ VulkansEye::VulkansEye(const std::string &configPath)
     // start timers
     Timer::getInstance();
     Timer::time();
-
-    // init mode stack
-    Input::pushMode(InputMode::Normal);
-
     if constexpr (Debug::enable)
     {
         spdlog::info("Started Timers");
     }
+
+    // init mode stack
+    Input::pushMode(InputMode::Normal);
 
     // load config
     Config config;
@@ -115,20 +114,18 @@ void VulkansEye::run()
         spdlog::info("Begin Main Loop");
     }
 
-    auto lastFrameTime = 0.F;
-    while (state.window.shouldClose() == 0)
+    for (auto lastFrameTime = 0.F; state.window.shouldClose() == 0;)
     {
         auto now = Timer::time();
         auto deltaTime = now - lastFrameTime;
         lastFrameTime = now;
 
         handleInput(deltaTime);
+
         state.player.update(deltaTime);
-        state.camera.setPosition(glm::vec3(-1.F, -1.F, -1.F) * state.player.position());
+        state.camera.setPosition(-1.F * state.player.position());
         state.camera.update();
-
         state.overlay.update(deltaTime);
-
         state.engine.drawFrame(deltaTime);
     }
 
@@ -143,8 +140,8 @@ void VulkansEye::cleanup()
 {
     auto &state = State::instance();
 
-    tat::Camera::destroy();
-    tat::Player::destroy();
+    Camera::destroy();
+    Player::destroy();
 
     state.overlay.destroy();
     state.scene.destroy();

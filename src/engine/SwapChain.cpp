@@ -10,13 +10,13 @@ void SwapChain::create()
 {
     auto &state = State::instance();
     auto &engine = state.engine;
-    auto &window = state.at("settings").at("window");
+    auto &window = state.window;
 
     auto swapChainSupport = querySwapChainSupport(engine.physicalDevice.device);
     auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     format = surfaceFormat.format;
     auto presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    extent = chooseSwapExtent(swapChainSupport.capabilities, window.at(0), window.at(1));
+    extent = chooseSwapExtent(swapChainSupport.capabilities, window.width, window.height);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
@@ -105,17 +105,16 @@ auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &physicalDevice) -> Qu
 
     auto queueFamilies = physicalDevice.getQueueFamilyProperties();
 
-    int i = 0;
-    for (const auto &queueFamily : queueFamilies)
+    for (int i = 0; i < queueFamilies.size(); ++i)
     {
-        if (queueFamily.queueCount > 0 && (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics))
+        if (queueFamilies[i].queueCount > 0 && (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics))
         {
             indices.graphicsFamily = i;
         }
 
         auto presentSupport = physicalDevice.getSurfaceSupportKHR(i, surface);
 
-        if (queueFamily.queueCount > 0 && (presentSupport != VK_FALSE))
+        if (queueFamilies[i].queueCount > 0 && (presentSupport != VK_FALSE))
         {
             indices.presentFamily = i;
         }
@@ -124,7 +123,6 @@ auto SwapChain::findQueueFamiles(vk::PhysicalDevice const &physicalDevice) -> Qu
         {
             break;
         }
-        i++;
     }
     return indices;
 }

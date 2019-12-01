@@ -53,7 +53,6 @@ void Config::create(const std::string &path)
 
 void Config::loadSettings(const std::string &path)
 {
-    auto &state = State::instance();
     // load settings
     if (std::filesystem::exists(path))
     { // if path exists load it
@@ -61,6 +60,7 @@ void Config::loadSettings(const std::string &path)
         json j;
         file >> j;
 
+        auto &state = State::instance();
         state.at("settings").update(j);
 
         if constexpr (Debug::enable)
@@ -76,14 +76,13 @@ void Config::loadSettings(const std::string &path)
 
 void Config::loadPlayer(const std::string &path)
 {
-    auto &state = State::instance();
-
     if (std::filesystem::exists(path))
     {
         std::ifstream file(path);
         json j;
         file >> j;
 
+        auto &state = State::instance();
         state.at("player").update(j);
 
         if constexpr (Debug::enable)
@@ -99,13 +98,13 @@ void Config::loadPlayer(const std::string &path)
 
 void Config::loadScene(const std::string &path)
 {
-    auto &state = State::instance();
     if (std::filesystem::exists(path))
     {
         std::ifstream file(path);
         json j;
         file >> j;
 
+        auto &state = State::instance();
         state.at("scene").update(j);
 
         if constexpr (Debug::enable)
@@ -121,14 +120,12 @@ void Config::loadScene(const std::string &path)
 
 void Config::loadBackdrops(const std::string &path)
 {
-    auto &state = State::instance();
 
     if (std::filesystem::exists(path))
     {
         for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            auto configFile = config.path().string() + "/backdrop.json";
-            if (std::filesystem::exists(configFile))
+            if (auto configFile = config.path().string() + "/backdrop.json"; std::filesystem::exists(configFile))
             {
                 std::ifstream file(configFile);
                 json j;
@@ -139,7 +136,9 @@ void Config::loadBackdrops(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
+                auto &state = State::instance();
                 state.at("backdrops")[name] = backdrop;
+
                 for (auto &item : j.items())
                 {
                     state.at("backdrops").at(name).update(item);
@@ -164,14 +163,11 @@ void Config::loadBackdrops(const std::string &path)
 
 void Config::loadMaterials(const std::string &path)
 {
-    auto &state = State::instance();
-
     if (std::filesystem::exists(path))
     {
         for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            auto configFile = config.path().string() + "/material.json";
-            if (std::filesystem::exists(configFile))
+            if (auto configFile = config.path().string() + "/material.json"; std::filesystem::exists(configFile))
             {
                 std::ifstream file(configFile);
                 json j;
@@ -182,7 +178,9 @@ void Config::loadMaterials(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
+                auto &state = State::instance();
                 state.at("materials")[name] = material;
+
                 for (auto &item : j.items())
                 {
                     state.at("materials").at(name).update(item);
@@ -207,14 +205,11 @@ void Config::loadMaterials(const std::string &path)
 
 void Config::loadMeshes(const std::string &path)
 {
-    auto &state = State::instance();
-
     if (std::filesystem::exists(path))
     {
         for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            auto configFile = config.path().string() + "/mesh.json";
-            if (std::filesystem::exists(configFile))
+            if (auto configFile = config.path().string() + "/mesh.json"; std::filesystem::exists(configFile))
             {
                 std::ifstream file(configFile);
                 json j;
@@ -225,7 +220,9 @@ void Config::loadMeshes(const std::string &path)
                 // extra entries don't matter*, missing ones do
                 // TODO(travis) *they probably do matter
                 auto name = config.path().filename().string();
+                auto &state = State::instance();
                 state.at("meshes")[name] = mesh;
+
                 for (auto &item : j.items())
                 {
                     state.at("meshes").at(name).update(item);
@@ -250,14 +247,11 @@ void Config::loadMeshes(const std::string &path)
 
 void Config::loadModels(const std::string &path)
 {
-    auto &state = State::instance();
-
     if (std::filesystem::exists(path))
     {
         for (const auto &config : std::filesystem::directory_iterator(path))
         {
-            auto configFile = config.path().string();
-            if (std::filesystem::exists(configFile))
+            if (auto configFile = config.path().string(); std::filesystem::exists(configFile))
             {
                 if (config.path().extension() == ".json")
                 {
@@ -270,7 +264,9 @@ void Config::loadModels(const std::string &path)
                     // extra entries don't matter*, missing ones do
                     // TODO(travis) *they probably do matter
                     auto name = config.path().filename().stem().string();
+                    auto &state = State::instance();
                     state.at("models")[name] = model;
+
                     for (auto &item : j.items())
                     {
                         state.at("models").at(name).update(item);

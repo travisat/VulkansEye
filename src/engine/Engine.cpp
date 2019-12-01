@@ -194,7 +194,7 @@ void Engine::createCommandBuffers()
     vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.commandPool = commandPool;
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocInfo.commandBufferCount =commandBuffers.size();
+    allocInfo.commandBufferCount = commandBuffers.size();
     commandBuffers = device.create(allocInfo);
 
     for (uint32_t i = 0; i < commandBuffers.size(); ++i)
@@ -220,23 +220,22 @@ void Engine::drawFrame(float deltaTime)
         updateCommandBuffer = false;
     }
 
-    auto result = device.wait(waitFences[currentImage].fence);
-    if (result != vk::Result::eSuccess)
+    if (device.wait(waitFences[currentImage].fence) != vk::Result::eSuccess)
     {
-        spdlog::error("Unable to wait for fences. Error code {}", result);
+        spdlog::error("Unable to wait for fences");
         throw std::runtime_error("Unable to wait for fences");
         return;
     }
-    result = device.reset(waitFences[currentImage].fence);
-    if (result != vk::Result::eSuccess)
+    if (device.reset(waitFences[currentImage].fence) != vk::Result::eSuccess)
     {
-        spdlog::error("Unable to reset fences. Error code {}", result);
+        spdlog::error("Unable to reset fences");
         throw std::runtime_error("Unable to reset fences");
         return;
     }
 
     uint32_t currentBuffer;
-    result = device.acquireNextImage(swapChain.swapChain, presentSemaphores[currentImage].semaphore, currentBuffer);
+    auto result =
+        device.acquireNextImage(swapChain.swapChain, presentSemaphores[currentImage].semaphore, currentBuffer);
 
     if ((result == vk::Result::eErrorOutOfDateKHR) || (result == vk::Result::eSuboptimalKHR))
     {
@@ -388,13 +387,12 @@ void Engine::createInstance()
 void Engine::createShadowFramebuffers()
 {
     auto &state = State::instance();
-    auto &settings = state.at("settings");
     shadowDepth.imageInfo.format = findDepthFormat();
     shadowDepth.imageInfo.usage =
         vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
     shadowDepth.memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     shadowDepth.imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-    shadowDepth.resize(settings.at("shadowSize"), settings.at("shadowSize"));
+    shadowDepth.resize(floor(state.scene.shadowSize), floor(state.scene.shadowSize));
     shadowDepth.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
     if constexpr (Debug::enable)
@@ -403,13 +401,13 @@ void Engine::createShadowFramebuffers()
     }
 
     shadowFramebuffers.resize(swapChain.count);
-    for (size_t i = 0; i < swapChain.count; i++)
+    for (auto &framebuffer : shadowFramebuffers)
     {
-        shadowFramebuffers[i].renderPass = shadowPass.renderPass;
-        shadowFramebuffers[i].width = settings.at("shadowSize");
-        shadowFramebuffers[i].height = settings.at("shadowSize");
-        shadowFramebuffers[i].attachments = {state.scene.shadow.imageView, shadowDepth.imageView};
-        shadowFramebuffers[i].create();
+        framebuffer.renderPass = shadowPass.renderPass;
+        framebuffer.width = floor(state.scene.shadowSize);
+        framebuffer.height = floor(state.scene.shadowSize);
+        framebuffer.attachments = {state.scene.shadow.imageView, shadowDepth.imageView};
+        framebuffer.create();
     }
 
     if constexpr (Debug::enable)
@@ -436,8 +434,8 @@ void Engine::createColorFramebuffers()
     depthAttachment.imageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
     depthAttachment.resize(swapChain.extent);
     depthAttachment.transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-    colorFramebuffers.resize(swapChain.count);
 
+    colorFramebuffers.resize(swapChain.count);
     for (size_t i = 0; i < swapChain.count; i++)
     {
         colorFramebuffers[i].renderPass = colorPass.renderPass;
@@ -533,11 +531,10 @@ auto Engine::findDepthFormat() -> vk::Format
 {
     std::vector<vk::Format> candidates = {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
                                           vk::Format::eD24UnormS8Uint};
-
-    for (vk::Format format : candidates)
+    for (auto &format : candidates)
     {
-        auto properties = physicalDevice.getFormatProperties(format);
-        if (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+        if (physicalDevice.getFormatProperties(format).optimalTilingFeatures &
+            vk::FormatFeatureFlagBits::eDepthStencilAttachment)
         {
             return format;
         }
