@@ -3,7 +3,7 @@
 #include <memory>
 
 #include <imgui.h>
-#include <zep.h>
+#include <zep.hpp>
 
 #include "engine/Window.hpp"
 

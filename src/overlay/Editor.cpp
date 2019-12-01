@@ -2,7 +2,7 @@
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
 #define ZEP_FEATURE_CPP_FILE_SYSTEM
 #define ZEP_SINGLE_HEADER_BUILD
-#include <zep.h>
+#include <zep.hpp>
 
 #include "State.hpp"
 #include "overlay/Editor.hpp"
