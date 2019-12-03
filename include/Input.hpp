@@ -41,7 +41,7 @@ class Input
 {
   public:
     Input(Input const &) = delete;          // prevent copies
-    void operator=(Input const &) = delete; // prevent assignments
+    auto operator=(Input const &) = delete; // prevent assignments
 
     static auto getInstance() -> Input & // Singleton is accessed via getInstance()
     {
