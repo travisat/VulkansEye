@@ -43,7 +43,7 @@ template <class T> class Collection
         int32_t index = 0;
         for (auto &[key, _] : state.at(type).items())
         { // iterate through type in state
-            T t {};
+            T t{};
             t.name = key;
             collection.push_back(t);
             // store name,index in map for getting index later
@@ -52,7 +52,7 @@ template <class T> class Collection
         }
     };
 
-    // returns shared_ptr to loaded entry
+    // returns ptr to loaded entry
     // loads entry if it is not loaded
     auto get(const std::string &name) -> T *
     {
@@ -102,7 +102,7 @@ template <class T> class Collection
 
   private:
     std::vector<T> collection{};
-    // map of names to index of shared ptr for faster retrieval
+    // map of names to index
     std::map<std::string, int32_t> names{};
 };
 
