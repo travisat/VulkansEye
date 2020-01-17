@@ -33,6 +33,8 @@ class Info
         glm::vec3 position = glm::vec3(0.F);
         glm::vec3 rotation = glm::vec3(0.F);
 
+        std::array<char, 10> buffer;
+
         float velocity = 0.F;
         float fps = 0.F;
         int32_t modeNum = 0;

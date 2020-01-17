@@ -233,8 +233,7 @@ void VulkansEye::switchToNormalMode()
 void VulkansEye::switchToVisualMode()
 {
     auto &state = State::instance();
-    state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    state.window.setInputMode(GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    state.window.setInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     state.overlay.settings.showEditor = false;
     state.overlay.settings.showInfo = true;

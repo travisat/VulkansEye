@@ -94,7 +94,7 @@ class Input
     // in array of mouse buttons the correspondin button is true while pressed
     void mouseButtonCallbackImpl(GLFWwindow * /*window*/, int button, int action, int /*mods*/)
     {
-        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
+        if (mode.top() != InputMode::Normal)
         {
             auto &io = ImGui::GetIO();
             if (action == GLFW_PRESS)
@@ -143,7 +143,7 @@ class Input
         mouseX = xpos;
         mouseY = ypos;
 
-        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
+        if (mode.top() != InputMode::Normal)
         {
             auto &io = ImGui::GetIO();
             io.MousePos.x = static_cast<float>(xpos);
@@ -158,49 +158,41 @@ class Input
 
     void keyCallbackImpl(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
     {
-        if (mode.top() == InputMode::Insert || mode.top() == InputMode::Paused)
+        if (mode.top() != InputMode::Normal)
         {
             auto &io = ImGui::GetIO();
-            if (action == GLFW_PRESS)
-            {
-                if (key >= 0 && key < 349)
-                {
-                    pressed[key] = 1;
-                    released[key] = 0;
-                }
-                io.KeysDown[key] = true;
-            }
-            else if (action == GLFW_RELEASE)
-            {
-                if (key >= 0 && key < 349)
-                {
-                    pressed[key] = 0;
-                    released[key] = 1;
-                }
-                io.KeysDown[key] = false;
-            }
             io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
             io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
             io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
             io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+
+            if (action == GLFW_PRESS)
+            {
+                pressed[key] = 1;
+                released[key] = 0;
+                io.KeysDown[key] = true;
+                return;
+            }
+            if (action == GLFW_RELEASE)
+            {
+                pressed[key] = 0;
+                released[key] = 1;
+                io.KeysDown[key] = false;
+            }
             return;
         }
 
         if (action == GLFW_PRESS)
         {
-            if (key >= 0 && key < 349)
-            {
-                pressed[key] = 1;
-                released[key] = 0;
-            }
+            pressed[key] = 1;
+            released[key] = 0;
+            return;
         }
-        else if (action == GLFW_RELEASE)
+
+        if (action == GLFW_RELEASE)
         {
-            if (key >= 0 && key < 349)
-            {
-                pressed[key] = 0;
-                released[key] = 1;
-            }
+            pressed[key] = 0;
+            released[key] = 1;
         }
     }
 

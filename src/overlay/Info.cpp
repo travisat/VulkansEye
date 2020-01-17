@@ -31,6 +31,7 @@ void Info::show(float deltaTime)
     ImGui::InputFloat("Fps", &data.fps, 0.F, 0.F, "%.1f", ImGuiInputTextFlags_ReadOnly);
     ImGui::InputFloat3("Position", &data.position.x, "%.1f", ImGuiInputTextFlags_ReadOnly);
     ImGui::InputFloat3("Rotation", &data.rotation.x, "%.1f", ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText("Test", data.buffer.data(), data.buffer.size());
     ImGui::End();
 }
 
